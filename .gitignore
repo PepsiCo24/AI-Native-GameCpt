@@ -15,8 +15,11 @@ playwright-report/
 # env / secrets (NEVER commit)
 .env
 .env.*
+*.secret
 *.key
 *.pem
+credentials*
+auth.json
 secrets/
 
 # os / editor

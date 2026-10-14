@@ -1,5 +1,6 @@
 # Asset Request 06 — Goal + Phase Portal
 
+- **Asset ID:** `A-06`
 - **Asset Name:** `goal` (destination tile), `portal_a` (Phase A portal), `portal_b` (Phase B portal)
 - **用途:** The level goal marker, and the Phase Portal mechanic (introduced at L36). Must read clearly at grid-cell size.
 - **数量:** 3
@@ -22,3 +23,12 @@
 - **文件名:** `goal.png`, `portal_a.png`, `portal_b.png`
 - **目标目录:** `assets/art/props/`
 - **依赖与阻塞:** Goal blocks Stage 2 (every level needs it). Portal blocks Stage 5 (L36).
+- **验收标准 / Acceptance criteria:**
+  1. Three PNG files, ≥ 512 × 512 px, **real alpha channel**; no white box, no baked background, no fringe on glow edges.
+  2. Each sprite centred, filling **65–80 %** of the canvas, with identical framing across all three so they swap in place without a layout shift.
+  3. **`portal_a` and `portal_b` must have an identical silhouette and identical apparent size** — recoloured only (overlay test: 100 % silhouette match). Mismatched portal shapes = rejected.
+  4. **Goal must not read as a wall or a door**: it stays a *hollow ring* form (per `docs/ui-ux.md` R-C1/R-C2, blocking objects are solid, reachable objects are hollow).
+  5. Goal keeps the **same gold/amber hue family in both phases** and portal keeps the same **teal/blue family** (R-C10: same class, same hue family across phases; only value and temperature flip).
+  6. **Downscale test:** all three still unambiguous at **48 × 48 px** (grid-cell size on a small phone); goal vs portal distinguishable at that size without colour.
+  7. No text, arrows, letters, numbers, brick/stone texture, fire, lava, 3D render or photorealism.
+  8. Delivered as `goal.png`, `portal_a.png`, `portal_b.png` into `assets/art/props/`.

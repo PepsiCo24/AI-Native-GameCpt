@@ -1,7 +1,7 @@
 # AI Native Pipeline — Phase Shift: Echo Grid
 
-> Owner: **Agent 4 (Level AI + Solver)** with **Agent 0 (Orchestrator)**
-> Version: V0.1 · Date: 2026-10-14
+> Owner: **Level AI + Solver** with **Orchestrator** (formatting maintenance by Docs + GitHub; content belongs to the owners)
+> Version: V0.2 · Date: 2026-10-14
 
 ---
 
@@ -90,25 +90,21 @@ difficultyScore           D = w1·L + w2·B + w3·T + w4·R + w5·M
 
 Weights are **calibrated from real playtest data**, never hard-frozen. See `docs/level-difficulty.md`.
 
-## 5. Model routing (do not bind architecture to a model)
+## 5. Model routing (roles abstract; the matrix is the single source of truth)
 
-Abstract roles, so any model can be swapped in:
+Routing is **not** maintained here. `AGENTS.md` §11 delegates it to **`docs/ai-model-matrix.md`**, whose §3 routing table is the authoritative, measured mapping (five candidate models, identical five-part live probe: text reasoning, TS coding, strict JSON, tool calling, vision):
 
-```ts
-REASONING_MODEL
-FAST_MODEL
-MULTIMODAL_MODEL
-```
-
-| Role | Tasks | Current mapping |
+| Role (abstract) | Measured assignment | Pipeline use |
 |---|---|---|
-| **REASONING_MODEL** | Game design, architecture, hard level analysis, code review, playtest analysis, final review | **Kimi K3** (preferred for complex reasoning / long context) |
-| **FAST_MODEL** | Bulk level candidates, test cases, simple code tasks, doc drafts, repetitive analysis | **DeepSeek V4.1-Flash** (preferred for low latency) |
-| **MULTIMODAL_MODEL** | User asset inspection, UI screenshots, gameplay screenshot review | vision-capable model, TBD |
+| **REASONING_MODEL** | `kimi-k3` | design & architecture drafting, hard level analysis, playtest diagnosis |
+| **CODING_MODEL** | `deepseek-v4.1-flash` | rule/solver/validator implementation, test code |
+| **FAST_MODEL** | `qwen3.8-flash` | bulk level-candidate generation, doc drafts, repetitive analysis |
+| **REVIEW_MODEL** | `qwen3.8-max` | cross-agent review, playtest analysis |
+| **VISION_MODEL** | `qwen3.8-max` | delivered-asset validation, screenshot review (sole vision-capable model on this endpoint) |
 
-> Model names are config, not architecture. If a model is unavailable, the role is reassigned; nothing else changes.
+A model name is **config, not architecture** — any role can be reassigned in the matrix / agent frontmatter without changing anything in this pipeline or the codebase. There is no separate "TBD" multimodal slot: vision capability was probed and decided on 2026-10-14.
 
-**Invariant:** level solvability is always judged by the program Solver, never by any model — including the MULTIMODAL_MODEL.
+**Invariant (unchanged by any routing decision):** level solvability is always judged by the **program Solver**, never by any model — including the VISION_MODEL. `AGENTS.md` §7 and ADR-0004 outrank any model opinion.
 
 ## 6. What "AI truly participated" must be provable as
 
@@ -132,3 +128,4 @@ The final submission must show the chain, not a claim:
 | Date | Version | Change | Author |
 |---|---|---|---|
 | 2026-10-14 | V0.1 | Pipeline, validation gate, model routing, evidence requirements | Agent 4 / Orchestrator |
+| 2026-10-14 | V0.2 | RV-001 **LOW-4** reconciliation: §5 rewritten — "vision-capable model, TBD" and the FAST=DeepSeek mapping were stale; routing now delegates to `docs/ai-model-matrix.md` §3 as single source of truth (REASONING `kimi-k3` · CODING `deepseek-v4.1-flash` · FAST `qwen3.8-flash` · REVIEW/VISION `qwen3.8-max`); Solver-decides-solvability invariant kept verbatim | Docs + GitHub (DG-002) |

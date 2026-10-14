@@ -1,5 +1,6 @@
 # Asset Request 07 — Basic UI Kit
 
+- **Asset ID:** `A-07`
 - **Asset Name:** `ui_kit` — basic interface elements
 - **用途:** Minimal HUD/overlay for the prototype: undo, restart, level label backdrop, primary "Next" button, and a phase indicator. Keep it extremely light — this is a puzzle, not a console.
 - **数量:** 1 sheet (delivered as separate transparent PNGs; a single sheet is fine as the source)
@@ -22,3 +23,12 @@
 - **文件名:** `ui_kit.png` (source sheet) → export: `btn_primary.png`, `btn_ghost.png`, `icon_undo.png`, `icon_restart.png`, `icon_back.png`, `icon_sound_on.png`, `icon_sound_off.png`, `icon_next.png`, `panel_frame_a.png`, `panel_frame_b.png`, `phase_chip_a.png`, `phase_chip_b.png`
 - **目标目录:** `assets/art/ui/`
 - **依赖与阻塞:** Blocks no core puzzle work; needed before UI polish (Stage 4+). Level label / Next button are the minimum used in the Stage 2 prototype.
+- **验收标准 / Acceptance criteria:**
+  1. Source sheet ≥ 2048 × 2048 px **or** the 12 exports delivered directly; every delivered element has a **real alpha channel** (no white box, no baked panel behind icons).
+  2. **Zero baked text**: no labels, no numbers, no letters on buttons, panels or chips. All text is DOM text (see `docs/ui-ux.md` §7.1).
+  3. **Icons legible at 48 px and still recognisable at 24 px** (downscale screenshots required); consistent stroke weight and corner radius across the whole icon set.
+  4. Icon meanings unambiguous **without colour**: undo (curved arrow), restart (circular arrow), back (chevron-left), next (chevron-right), sound on/off (speaker + waves / speaker + slash).
+  5. `panel_frame_a` / `panel_frame_b` are **9-slice safe**: flat (non-gradient) border region, corners ≤ 24 % of the panel width, centre area free of detail so it can stretch.
+  6. `phase_chip_a` / `phase_chip_b` are **icon-only** (sun glyph / crescent glyph) and remain distinguishable in a **greyscale conversion** — the chip fill contrast must not be the only difference.
+  7. Everything calm, rounded, low-contrast; no glossy 3D, no bevel, no skeuomorphism, no neon, no heavy drop shadow.
+  8. Delivered into `assets/art/ui/` with exactly the export filenames listed in **文件名**.

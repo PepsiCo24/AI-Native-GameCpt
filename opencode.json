@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "learnings_campus/deepseek-v4.1-flash",
+  "default_agent": "orchestrator",
+  "permissions": [
+    { "action": "read", "resource": "*.env", "effect": "deny" },
+    { "action": "read", "resource": "*.env.*", "effect": "deny" },
+    { "action": "read", "resource": "*.key", "effect": "deny" },
+    { "action": "read", "resource": "*.pem", "effect": "deny" },
+    { "action": "read", "resource": "*credentials*", "effect": "deny" },
+    { "action": "read", "resource": "*auth.json", "effect": "deny" },
+    { "action": "read", "resource": "*.secret", "effect": "deny" },
+    { "action": "read", "resource": "secrets/*", "effect": "deny" }
+  ],
+  "agents": {}
+}

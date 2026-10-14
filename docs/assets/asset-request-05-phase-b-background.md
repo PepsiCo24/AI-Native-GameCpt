@@ -1,5 +1,6 @@
 # Asset Request 05 — Phase B Background (Shadow / 夜晚)
 
+- **Asset ID:** `A-05`
 - **Asset Name:** `bg_phase_b`
 - **用途:** Full-screen background behind the play board while in Phase B. Must feel clearly different from Phase A yet keep board readability.
 - **数量:** 1
@@ -20,3 +21,12 @@
 - **文件名:** `bg_phase_b_1920x1080.png`
 - **目标目录:** `assets/art/background/`
 - **依赖与阻塞:** **Blocks Stage 2 prototype visual integration** (readability test).
+- **验收标准 / Acceptance criteria:**
+  1. PNG or JPG, ≥ 1920 × 1080 px, exact 16:9; no alpha required.
+  2. **Central region quiet and even**: no distinct object or hard edge behind the board; local contrast inside the centre ≤ roughly **1.6:1**.
+  3. Survives a **9:16 centre crop** without losing identity.
+  4. Clearly **night / Shadow World**: deep indigo, violet dusk, moonlight, a few tiny distant stars. Greyscale-converted it must read as the *dark* member of the A/B pair.
+  5. **Dreamy and gentle — never horror.** No monsters, no oppressive mood, no blood, no scary silhouettes.
+  6. **No** text, characters, board, grid, tiles, objects, props or UI; no nebula overload, no neon oversaturation, no photorealistic starfield.
+  7. Same composition language and camera as A-04 (one world, another time of day) — the two files should align when cross-dissolved.
+  8. Delivered as `bg_phase_b_1920x1080.png` into `assets/art/background/`.
