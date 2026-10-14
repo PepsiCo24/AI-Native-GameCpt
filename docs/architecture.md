@@ -1,7 +1,7 @@
 # Architecture — Phase Shift: Echo Grid
 
 > Owner: **Agent 2 — Technical Architect**
-> Version: **V0.4**
+> Version: **V0.5**
 > Date: 2026-10-14
 > Status: **LOCKED for prototype**
 
@@ -83,7 +83,7 @@ type Phase = "A" | "B";
 type Vec = { x: number; y: number };
 
 // All tile coordinates are [x, y], 0-indexed from the top-left corner.
-interface LevelDef {
+interface Level {
   id: number;                       // int ≥ 1
   width: number;
   height: number;
@@ -121,11 +121,17 @@ interface GameState {
   };
   moveCount: number;
   history: Snapshot[]; // for Undo
-  status: "playing" | "won";
+  status: "playing" | "won";  // WIN LATCH (§6.2): once "won", the GameState
+                              // reducer returns the identical state for ANY
+                              // further move — gameplay bookkeeping, not a
+                              // movement rule; the SearchState functions stay
+                              // status-unaware
 }
 ```
 
 > `DoorDef` / `SwitchDef` / `PortalDef` shapes are deliberately **not** duplicated here — they are defined field-by-field in `docs/level-design.md` §1 and owned by the zod schema (§7). This file owns only the core type skeleton.
+>
+> Naming is **frozen** (2026-10-14, RV-002 M-2): the level type is **`Level`** — the code contract in `src/core/level`, already imported by GAME-001. Earlier drafts of this document called it `LevelDef`; the rename is complete and the name must not change again.
 
 Design intent: `GameState` is **serializable and diff-able**, so it can be hashed for BFS visited-sets and replayed deterministically.
 
@@ -142,9 +148,9 @@ interface SearchState {
   switchesOn: Record<string, boolean>;
 }
 
-function isLegalMove(level: LevelDef, s: SearchState, m: Move): boolean;
-function applyMove(level: LevelDef, s: SearchState, m: Move): SearchState;
-function isGoal(level: LevelDef, s: SearchState): boolean;
+function isLegalMove(level: Level, s: SearchState, m: Move): boolean;
+function applyMove(level: Level, s: SearchState, m: Move): SearchState;
+function isGoal(level: Level, s: SearchState): boolean;
 function hashState(s: SearchState): string;
 ```
 
@@ -193,10 +199,12 @@ A player standing inside a solid-in-current-phase cell **may move out**: the des
 
 Implementation contract: the only illegal condition is at step 1; once validation passes, steps 2–6 always complete — there is no later failure path and no rollback machinery. `isLegalMove(level, s, m)` is defined as the predicate "applyMove completes without hitting an illegal condition," which under Option B reduces to the §6.1 current-phase check. An allocation-free pre-check implementation is allowed, but a property test MUST pin `isLegalMove(s, m) ⟺ applyMove(s, m) ≢ s` over generated states — including states where the player stands inside a current-phase-solid cell — so the two can never diverge.
 
+**Layer precision (RV-002 M-4):** the equivalence above is a **`SearchState`-layer** property of the pure rule functions only. The `GameState` reducer (`applyMoveToGameState`, §5) adds a second identity case — the **win latch**: once `status === "won"` it returns the identical state for every further move, legal or not, so `applyMove ≢ s`-style reasoning does NOT hold at the `GameState` layer. The latch is bookkeeping (it keeps `moveCount` and `history` honest after completion; locking post-win input remains Gameplay's job), not a movement rule. QA property tests — including any refusal/identity assertions — MUST target the `SearchState` functions.
+
 Interaction semantics pinned by step 3 / step 5 (normative — one definition, shared by Gameplay and Solver):
 
 - **Switch** — entering a switch tile while its `activePhase` is the current phase toggles `switchesOn[id]`. Leaving the tile, or standing on it in the other phase, does nothing.
-- **Portal** — a portal teleports **only on the entering move**: when a step lands on a portal end while the portal's `activePhase` is current, the player is moved to the paired end. The landing tile must pass the same current-phase solidity checks as a normal move; the far end does NOT chain-trigger (no portal-to-portal chains within one move). Standing on a portal tile later — including when the flip activates the portal under the player — never teleports.
+- **Portal** — a portal teleports **only on the entering move**: when a step lands on a portal end while the portal's `activePhase` is current, the player is moved to the paired end. **The teleport is unconditional once the entering move is legal** (RV-002 H-2, ruling (a), 2026-10-14): step 1 has already judged the stepped-onto tile, and steps 2–6 contain no failure path — so the far end is NOT re-checked. If the far end is solid in the current phase, the result is an ordinary embedded state (§6.1, ADR-0008 clause 3): legal, stable, and escapable by the same entry rule. The landing tile never coincides with the stepped-on end (level validation requires the two ends to differ) and never chain-triggers — the landing tile fires nothing else in this move. Standing on a portal tile later — including when the flip activates the portal under the player — never teleports. The ambiguity's real fix sits in the **data layer**, not the rule: §7 hard-requires both portal ends to be non-wall in BOTH phases and off every door tile, so a validated level never produces a portal-embedded landing anyway. **Rejected alternative (b):** re-judging the far end inside step 1 would give one object (the portal) two rule paths — its legality decided at two different tiles — exactly the hybrid failure mode ADR-0008's Alternatives section bans. Rejected.
 - **Door openness** — `doorsOpen[d]` is an absolute derived value recomputed at step 5 from `(door.color, current phase, switchesOn)` per the door rules of `docs/level-design.md` §1; it is never an incremental carryover from the previous state.
 
 ### 6.3 State hash (BFS visited-set)
@@ -206,11 +214,17 @@ Interaction semantics pinned by step 3 / step 5 (normative — one definition, s
 | Field | Canonicalization |
 |---|---|
 | `player` position | `(x, y)` grid coordinates |
-| `phase` | `"A" \| "B"` |
-| `doorsOpen` | keys sorted before serialization |
-| `switchesOn` | keys sorted before serialization |
+| `phase` | `"A" \| "B"` — redundant with `player` under the board-parity invariant (§8); becomes payload once opposite-parity portals exist. **Kept.** |
+| `doorsOpen` | keys sorted; falsy entries omitted; keys length-prefixed (rules below) |
+| `switchesOn` | keys sorted; falsy entries omitted; keys length-prefixed (rules below) |
 
 Deliberately **excluded**: `moveCount`, `history`, `status` — gameplay bookkeeping, not puzzle state. Including them would break transposition detection and make the visited-set useless.
+
+**Canonicalization rules (normative — RV-002 M-3; QA property-test targets, §12).** Record serialization applies three rules, in order:
+
+1. **Sorted keys** — insertion/iteration order never affects the hash.
+2. **Falsy omission** — entries whose value is not literally `true` are dropped, so `{ d1: false }` and `{}` hash identically. Sound because a missing key always reads closed/off (the fail-closed reading rule); this is what lets one producer materialize every key (`initialState`) while another emits only the true ones, without splitting the visited-set.
+3. **Length prefix** — each surviving entry is emitted as `<key.length>:<key>=1,`, so the encoding is injective even for ids that contain the separators.
 
 **Canonical by construction.** Both records are canonical: `switchesOn` changes only at applyMove step 3, and `doorsOpen` is fully recomputed at step 5 (never incremental). Equal logical states therefore always serialize identically — the visited-set can neither split equivalent states nor merge distinct ones, which is what makes BFS over the hashed graph correct.
 
@@ -220,8 +234,9 @@ Deliberately **excluded**: `moveCount`, `history`, `status` — gameplay bookkee
 
 ## 7. Level schema & validation
 
-- `zod` schema mirrors `LevelDef` — **including the required `par`** (int ≥ 1, stamped by the generator from the Solver's `shortestSolution`; display-only "perfect clear" target, never a fail condition — `docs/level-design.md` §1).
+- `zod` schema mirrors `Level` — **including the required `par`** (int ≥ 1, stamped by the generator from the Solver's `shortestSolution`; display-only "perfect clear" target, never a fail condition — `docs/level-design.md` §1).
 - `scripts/validate-levels` runs over the full set: schema → rule sanity (bounds, start not on wall, goal reachable in *some* phase, no duplicate ids) → solver.
+- **Portal ends (RV-002 H-2, hard error):** both ends of every portal must be non-wall in **BOTH** phases and must not be covered by any door tile — the static, decidable form of "never a closed-door tile in either phase" (door openness depends on `switchesOn`, and every door is closed in at least one reachable phase-state, so door tiles are excluded outright). This mirrors the ADR-0008 rule-7 goal rule and removes the H-2 landing ambiguity at the data layer (§6.2 step 3). It strengthens the current validator check (wall in the portal's own `activePhase` only) — implementation handoff to Level AI + Solver.
 - Generator output that fails = **reject** (never auto-repair into the official set).
 
 ## 8. Solver & difficulty (Agent 4)
@@ -240,12 +255,17 @@ Deliberately **excluded**: `moveCount`, `history`, `status` — gameplay bookkee
   "deadEndRatio": 0.31,
   "maxSearchDepth": 4,
   "forcedMoveRatio": 0.18,
+  "dualPhaseTiles": 0,
+  "refusedThenEnteredTiles": 3,
   "difficultyScore": 46.2
 }
 ```
 
-- `par` (LevelDef, §5) is stamped from `shortestSolution` by the generator pipeline — the level file carries it; the Solver only reports the metric.
-- **Option B consequence (GATE C, 2026-10-14):** the V0.2–V0.3 **union property no longer holds** — a phase-wall tile is enterable from the opposite phase, and the flip may leave the player standing inside a wall. Route availability therefore depends on move **parity** (which phase a cell is reached in), and plain phase walls can open and close routes by themselves. Difficulty analysis must not treat phase walls as static obstacles; `deadEndRatio` and lookahead-style signals (e.g. how often the only legal moves flip into a worse board) now carry real meaning and should be weighted accordingly in `difficultyScore`.
+- `par` (Level, §5) is stamped from `shortestSolution` by the generator pipeline — the level file carries it; the Solver only reports the metric.
+- **Board-parity invariant (2026-10-14, RV-002 — replaces a false V0.4 premise).** Every legal move changes `x + y` by exactly ±1 and flips the phase, so `phase = startPhase ⊕ parity((x + y) − (sx + sy))` is an **invariant**: the phase in which any cell can be entered is a function of the cell (and the start), never of the path or the move count. Proven by exhaustion: 0 dual-phase reachable cells over 400 random boards; 0 counterexamples over 880,640 enumerated configurations. Consequence: on M0-only boards the legal-move set of a reachable position depends **only on the position**. Option B's parity routing stands (a B-wall is still enterable only on A-steps — a real timing gate), but the V0.4 claim that M0 routing varies with move count — and that `deadEndRatio` / lookahead signals therefore gain meaning from it — was **wrong**: an M0 board is mechanically static, per cell.
+- **What actually creates dynamics:** only two constructions break position-only statics — **latched state** (M3 switches → doors) and **non-±1 displacement** (M2 portals whose ends sit on opposite checkerboard colors: the teleport shifts `x + y` parity relative to the move count and the invariant breaks). Measured over 200 generated boards per mechanism class: doors+switches produced refused-then-entered tiles in **74/200**; opposite-parity portals in **80/200**, always accompanied by dual-phase tiles; same-parity portals **0/200** — pure connectivity, no new timing structure, a dead difficulty mechanic the generator should not spend portal budget on.
+- **Required decidable metrics.** The per-level report MUST include `dualPhaseTiles` (cells visited in BOTH phases over the BFS) and `refusedThenEnteredTiles` (cells whose entry was illegal in some visited state and legal in another); both are computable directly from BFS visitation records. **`dualPhaseTiles = 0` marks a mechanically static level** (a pure timing-gate maze) and must flag it for difficulty review; `refusedThenEnteredTiles` measures history-dependence inside the static-parity envelope.
+- **Hash note.** Under the invariant, `phase` in `hashState` is today redundant — it is a function of `player`. It becomes payload the moment opposite-parity portals ship, so it **stays** in the hash (§6.3): one byte of forward compatibility, no re-keying of the visited-set later.
 - Solver runs in Node (Vitest / script), **never** in the browser game loop during play.
 
 ## 9. Rendering & adaptation
@@ -271,13 +291,16 @@ Deliberately **excluded**: `moveCount`, `history`, `status` — gameplay bookkee
 | Layer | Tool | Focus |
 |---|---|---|
 | Unit | Vitest | rules, phase flip, collision, illegal-move rule (no movement, **no flip consumed**, state structurally unchanged) |
+| Property | Vitest | `isLegalMove(s,m) ⟺ applyMove(s,m) ≢ s` at the **SearchState layer only** — the `GameState` win latch is a second identity case and is excluded (§6.2); hash canonicalization: sorted keys, falsy omission, length prefix (§6.3) |
 | Boundary | Vitest | import-boundary test (§12.1) — hard CI gate |
-| Solver | Vitest | known solvable/unsolvable fixtures, BFS optimality |
+| Solver | Vitest | known solvable/unsolvable fixtures, BFS optimality; per-level report carries `dualPhaseTiles` / `refusedThenEnteredTiles` (§8) |
 | Integration | Vitest | loader + validation + solver together |
 | E2E | Playwright | load → move → win → next; restart; undo; mobile viewport |
 | Regression | Vitest+Playwright | bug → reproduce → root cause → fix → regression test |
 
 Every bug record: `Reproduce → Root Cause → Fix → Regression Test`.
+
+> **Known gap (RV-002 H-5, 2026-10-14):** the §12.1 import-boundary test and the §6.2 property test are **specified but not yet implemented** — QA is delivering both in the current round (QA-001). Until they land, §4's dependency direction and the `isLegalMove`/`applyMove` pin are enforced by review only.
 
 ### 12.1 Import-boundary test (required, automated)
 
@@ -312,7 +335,7 @@ If a proposed design introduces a concept not in §3–§12, the burden of proof
 | Phaser coupling creeping into rules | Import-boundary test in CI (§12.1) |
 | Readability loss on mobile | screenshot review + fixed contrast tokens |
 | LLM produces invalid levels | zod + rules + solver gate; reject, don't repair |
-| `isLegalMove` / `applyMove` drift | property test pinning their equivalence (§6.2) |
+| `isLegalMove` / `applyMove` drift | property test pinning their equivalence at the SearchState layer (§6.2) |
 
 ## 15. Change log
 
@@ -322,3 +345,4 @@ If a proposed design introduces a concept not in §3–§12, the burden of proof
 | 2026-10-14 | V0.2 | Aligned §6 with locked illegal-move semantics (GD-001): explicit `isLegalMove` definition, 7-step `applyMove` order (revert-without-flip on player-on-wall), state-hash contract + finiteness proof; added import-boundary test requirement (§12.1); added anti-overengineering section (§13); supersedes V0.1 "wall suppression / never covered" rule | Agent 2 (Architect) |
 | 2026-10-14 | V0.3 | RV-001 reconciliation: added required `par` (int ≥ 1) to `LevelDef`, carried by the level file, with §7/§8 consistency notes; post-flip legality check now covers walls **and** closed doors — one rule for both phases (§6.1 c3 / §6.2 step 6); win condition made explicit and phase-independent (§6.2 step 7); `doorsOpen` / `switchesOn` / portal-trigger semantics pinned as canonical-by-construction for `hashState` (§5 / §6.2 / §6.3, ADR-architecture-0001 addendum); `[x, y]` coordinate labels + DoorDef/SwitchDef/PortalDef cross-reference to level-design.md §1 (§5); A* wording unified to "BFS only until profiled" (§3 / §8) | Agent 2 (Architect) |
 | 2026-10-14 | V0.4 | GATE C human decision — core rule changed to **Option B**: deleted the post-flip "solid under player" legality check (ADR-0006 condition 3 superseded; see ADR-architecture-0001 addendum 2026-10-14). `isLegalMove` now consults current-phase occupancy only (§6.1); `applyMove` reduced to 6 steps with no retrospective rollback (§6.2); standing inside a solid-in-current-phase cell is a legal, stable state and moving out of it is judged by the same current-phase destination rule (§6.1); §6.3 finiteness/determinism re-argued (hash contract unchanged; solid-standing states are normal BFS nodes); union property gone, routing is parity-dependent, `deadEndRatio`/lookahead metrics gain meaning (§8). Retained invariants: illegal move = identity (no movement, no flip); walls never suppressed; the player is never crushed, pushed, or randomly relocated | Agent 2 (Architect) |
+| 2026-10-14 | V0.5 | RV-002 reconciliation (AR-0004; core rule unchanged, GATE D = D3 mechanism-forward). **H-2** portal landing: ruling **(a)** adopted — teleport unconditional once entry is legal; far-end-solid ⇒ ordinary embedded state (§6.1 / ADR-0008 c3); landing never coincides with source, never chains; ambiguity moved to data-layer hard validation (both ends non-wall in BOTH phases + off every door tile, §7); alternative **(b)** (far-end check inside step 1) explicitly REJECTED — two rule paths for one object, the failure mode ADR-0008 Alternatives bans. **M-4** win latch written into §5/§6.2: `applyMoveToGameState` returns identity for ANY move once `status==="won"`; the `isLegalMove ⟺ applyMove ≢ s` property holds at the **SearchState layer only**. **M-2** `LevelDef` → `Level` everywhere; naming frozen to the code contract. **M-3** hash canonicalization completed: sorted keys + **falsy omission** (`{d1:false}` ≡ `{}`) + **length-prefixed keys** (§6.3, QA test targets). **§8 premise correction:** 4-dir grid + flip-per-move ⇒ `phase = startPhase ⊕ (x+y)` parity invariant (proven: 0 dual-phase cells / 400 random boards; 0 counterexamples / 880,640 configs) ⇒ M0 legal moves depend on position only; true dynamics = latched switch state + non-±1 opposite-parity portal displacement (measured 74/200, 80/200, same-parity 0/200); new required solver metrics `dualPhaseTiles` + `refusedThenEnteredTiles`; `phase` kept in hash (redundant today, payload once opposite-parity portals ship). §12: property-test layer pinned to SearchState; RV-002 H-5 known gap recorded (import-boundary + property tests specified, not yet implemented — QA same round) | Agent 2 (Architect) |
