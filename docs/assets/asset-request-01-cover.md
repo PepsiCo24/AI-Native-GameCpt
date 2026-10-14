@@ -1,5 +1,6 @@
 # Asset Request 01 — Cover / Hero Image
 
+- **Asset ID:** `A-01`
 - **Asset Name:** `cover_hero` — Phase Shift: Echo Grid key art
 - **用途:** Competition cover image, store/landing hero, README header. Sets the identity of the game in one glance.
 - **数量:** 1
@@ -23,3 +24,12 @@
 - **文件名:** `cover_hero_1920x1080.png`
 - **目标目录:** `assets/art/cover/`
 - **依赖与阻塞:** Blocks marketing/README art only. Does **not** block prototype coding (which waits on A-03/A-04/A-05 readability).
+- **验收标准 / Acceptance criteria:**
+  1. PNG, ≥ 1920 × 1080 px, exact 16:9; no transparency required.
+  2. **Zero text / letters / numbers / watermark / signature anywhere** in the image (logo is a separate asset, A-02).
+  3. Upper third is clean negative space where a logo can be placed without retouching.
+  4. Reads as a **flat top-down** grid board (no isometric, no perspective warp) with a clear left-Light / right-Shadow split.
+  5. Phase split is still obvious when the image is scaled down to **480 px wide** (competition thumbnail test).
+  6. Palette stays inside the licensed families: left = ivory / faint gold / sky blue; right = deep indigo / violet / moonlight.
+  7. Soft flat-vector illustration with gentle gradients; **no heavy black outlines, no 3D render, no photorealism**.
+  8. Delivered as `cover_hero_1920x1080.png` into `assets/art/cover/`.

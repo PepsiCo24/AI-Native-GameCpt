@@ -1,5 +1,6 @@
 # Asset Request 02 — Logo
 
+- **Asset ID:** `A-02`
 - **Asset Name:** `logo_primary` (wordmark) + `logo_mark` (icon)
 - **用途:** Game title on cover/landing, browser favicon, in-game top bar, app icon.
 - **数量:** 2 (primary wordmark, mark/icon)
@@ -20,3 +21,12 @@
 - **文件名:** `logo_primary.png`, `logo_mark.png`
 - **目标目录:** `assets/art/logo/`
 - **依赖与阻塞:** Blocks no core puzzle work.
+- **验收标准 / Acceptance criteria:**
+  1. Two separate PNG files with a **real alpha channel** (checkerboard test: no white box, no baked background, no fringe).
+  2. `logo_primary`: exactly **two** text lines, spelled precisely `PHASE SHIFT` and `ECHO GRID` — no misspelling, no extra letters, no third line, no CJK glyphs.
+  3. `logo_mark`: **no text at all**; still recognisable when downscaled to **32 × 32 px** (favicon test, screenshot required).
+  4. Colour intent honoured: `PHASE` warm gold, `SHIFT` moonlight blue; mark halves ivory-gold and indigo-moonlight.
+  5. Margins ≥ 8 % of the canvas on all sides; artwork optically centred.
+  6. No bevel / emboss / chrome / metallic / 3D extrusion / heavy drop shadow / grunge.
+  7. Delivered at ≥ 2048 × 2048 (primary) and ≥ 1024 × 1024 (mark).
+  8. Delivered as `logo_primary.png` and `logo_mark.png` into `assets/art/logo/`.
