@@ -1,0 +1,40 @@
+name: CI
+
+# The gates AGENTS.md §7 demands as evidence, and architecture.md §12.1 calls
+# "a hard CI gate, not a convention": the Phaser-free core boundary, the rule
+# property tests, and a real browser build. No secrets are used here — the
+# workflow needs no credentials, so nothing credential-shaped may be added to it.
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install (lockfile is the source of truth)
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit + property tests
+        run: npx vitest run --reporter=verbose
+
+      # Level data gate: a schema-invalid or invariant-breaking level file must
+      # fail the build rather than reach the Solver.
+      - name: Validate level dataset
+        run: npm run levels
+
+      - name: Build
+        run: npm run build
