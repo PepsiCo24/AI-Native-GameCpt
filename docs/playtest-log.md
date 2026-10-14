@@ -1,7 +1,23 @@
 # Playtest Log
 
 > Owners: **QA Engineer** and **Playtest Analyst**
-> Version: **V0.3** · Date: 2026-10-14
+> Version: **V0.4** · Date: 2026-10-14
+> **V0.4 (PA-003, Playtest Analyst):** §9 aligned to **ADR-0009** — the new truth source (GATE D
+> **decided** by the human 2026-10-14: D3, mechanics forward). Three factual defects fixed; no protocol
+> added and **no threshold moved** (T6 not engaged — no BUT table has ever been committed):
+> **(1)** hypothesis alphabet re-based to ADR-0009 decision 8's **(a′)/(b)/(c′)/(d′)** — V0.3's interim
+> (a1)/(a2)/(c) withdrawn, mapping kept in §9.1 so the raw-data sheets stay reconcilable; V0.3's
+> absorption of ADR-0008 (b) into (a1) is **reversed** ((b) is standalone, load-bearing earlier, L4–L5).
+> **(2)** GATE-D status corrected: (a′)/(c′) remain `NOT TESTABLE ON THIS BUILD` but now block on the
+> **D3 level set shipping + Solver proof** (L6–L10 door+switch; L11+ opposite-colour portals), not on a
+> pending human decision; **(d′)** — retention of the M0-only opening — is **runnable now** (L1–L5
+> shipped; `scripts/solve-levels.ts` 5/5 PASS, `par` 4/5/6/6/6); **(b) is runnable now** — program
+> check (BFS over the shipped `explore`/`applyMove`/`solidAt`, 2026-10-14): shipped `l005` has **no
+> embed-free route**, so V0.3's "l004/l005 permit but do not force" was false for l005
+> (`project-status.md` item 12 still carries that premise — flagged to the Orchestrator, not edited
+> here). **(3)** number provenance unified: §9 cites only ADR-0009's decision-bearing-board counts
+> (latch 74/200 · opposite-colour portal 80/200 · same-colour 0/200); LV-001R's dynamic-board shares
+> (231/500 · 233/500) measure a different quantity and were removed.
 > **V0.3 (PA-002, Playtest Analyst):** ADR-0008 ships with a *mandatory Stage 2 verification gate*, yet this
 > log contained **zero** occurrences of `ADR-0008` / `Option B` / `parity` / `embedded` / `GATE C` — a
 > human-approved core-rule reversal was hanging on an empty log. V0.3 adds the **pre-registered
@@ -47,7 +63,9 @@ window) are in the coding manual: `docs/playtest-analysis/stage2-adr0008-gated-p
 
 **Dropped from V0.2 as separate rows:** "Mistake Rate" (now M4 + M4b + Δmoves in M3) and "Retry Rate"
 (now M5 + M6). They were the *stated* test for assumption A2 in `game-design.md` §13 and were too vague
-to falsify — §9.6 replaces them with the hypothesis-(c) metric set.
+to falsify — §9.6 replaces them with the hypothesis-(d′) metric set (V0.3: "(c)"; renumbered per
+ADR-0009 decision 8 — the A2 question itself, re-based on latch/portal depth in `game-design.md` V0.5
+§13, is now carried by (a′)/(c′)).
 
 
 ## 2. The single most important question
@@ -142,11 +160,13 @@ For each finding, record: raw data → AI diagnosis → parameter change → sol
 
 ---
 
-## 9. Stage 2 verification protocol — ADR-0008 (Option B) + GATE D
+## 9. Stage 2 verification protocol — ADR-0008 (Option B, rules 1–7) + ADR-0009 (GATE D / D3)
 
-> **Owner:** Playtest Analyst · **Authority:** ADR-0008 Consequences, last bullet ("Mandatory Stage 2
-> playtest verification … If Stage 2 data contradicts (a)–(c), re-escalate to the human with the playtest
-> evidence; **do not silently revert**") and `project-status.md` GATE C row.
+> **Owner:** Playtest Analyst · **Authority:** **ADR-0009 decision 8** (Stage-2 hypotheses re-based to
+> **(a′)/(b)/(c′)/(d′)**; "If data contradicts these, re-escalate to the human with the evidence; **do
+> not silently revert**"), together with ADR-0008 Consequences, last bullet ("Mandatory Stage 2
+> playtest verification … do not silently revert" — its (a)/(c) superseded, its (b) **stands
+> unchanged**) and `project-status.md` GATE C/GATE D rows.
 > **Status: PRE-REGISTERED · NOT RUN · n = 0.** Nothing in §9 contains a result. §9 exists so that the
 > thresholds are fixed *before* any human touches the build.
 > Companion files (subordinate to §9): `docs/playtest-analysis/stage2-adr0008-gated-protocol-notes.md`
@@ -155,9 +175,12 @@ For each finding, record: raw data → AI diagnosis → parameter change → sol
 
 ### 9.0 Scope, and the one question that still dominates
 
-§9 verifies the human-approved core-rule reversal **and** the Prototype Definition of Done. Both are
-gates; the DoD dominates. No amount of readability success compensates for a cohort that does not want
-Level 6 (§2). Order of reporting: **DoD → (a1) → (c) → (a2)**.
+§9 verifies the human-approved core rule (ADR-0008 rules 1–7 — **unchanged** by GATE D / D3, ADR-0009
+decision 3), the re-based Stage-2 hypotheses (ADR-0009 decision 8: **a′ / b / c′ / d′**) **and** the
+Prototype Definition of Done. Both are gates; the DoD dominates. No amount of readability success
+compensates for a cohort that does not want Level 6 (§2). Order of reporting:
+**DoD → (d′) → (b) → (a′) → (c′)** — runnable-on-this-build first, then the D3-blocked hypotheses in
+schedule order (latch L6–L10, portals L11+).
 
 ### 9.1 Build Under Test (BUT) — precondition, filled and committed **before** session 1
 
@@ -165,33 +188,54 @@ Level 6 (§2). Order of reporting: **DoD → (a1) → (c) → (a2)**.
 |---|---|
 | Commit / build id · art status (**must be `placeholder art`**) | |
 | Levels present (ids) | |
-| Solver proof status for every level (solvability + `par` + zero dead states) — **manual `par` hypotheses are NOT acceptable here** | |
-| First level containing a **forced embed** (mandated by `level-design.md` §2 L6) · in which phases | |
-| First level containing a **switch + door pair** (D3) | |
-| First level containing an **opposite-colour-end portal** (D3) | |
+| Solver proof status for every level (solvability + `par` + zero dead states) — **manual `par` hypotheses are NOT acceptable here** (gate: `scripts/solve-levels.ts`, shipped — 5/5 PASS on l001–l005, `par` 4/5/6/6/6, as of 2026-10-14) | |
+| First level containing a **forced embed** (mandated by `level-design.md` V0.4 §2 **L5** — shipped `l005`, forced per the §9.1 program check) · in which phases | |
+| First level containing a **switch + door pair** (ADR-0009 decision 4 — L6–L10; the **(a′)** release condition) | |
+| First level containing an **opposite-colour-end portal** (ADR-0009 decision 5 — L11+; the **(c′)** release condition; same-colour pairs validator-rejected) | |
 | Designated **key ghost tiles** per level (for M13b) | |
 | Pre-marked **P-probe** board state + the 4 tiles (2 legal / 2 solid) | |
 | Frozen screenshot set for Cohort V (levels × phases × conditions, with the Table E sampling worksheet) | |
 
-**GATE D dependency — read before scheduling anything.** ADR-0008 clause 8 ("parity genuinely rewires
-feasible routes from L1 onward") was **proved false for M0-only content** three independent ways
-(`project-status.md` GATE D; 880,640-configuration exhaustive check behind RV-002; Orchestrator BFS
-driving the shipped `applyMove` on 400 boards → **0 dual-phase tiles**). On a 4-connected grid where every
-legal move flips the phase and a refusal costs no move, the phase in which a tile is entered is a function
-of the tile alone, so an M0 wall is either permanently blocking or permanently passable decoration and
-**no tile is ever "refused first, then entered later."**
+**GATE D — DECIDED (2026-10-14, D3 "mechanics forward"). Read before scheduling anything.** ADR-0008
+clause 8 ("parity genuinely rewires feasible routes from L1 onward") was **proved false for M0-only
+content** three independent ways (`project-status.md` GATE D; 880,640-configuration exhaustive check
+behind RV-002; Orchestrator BFS driving the shipped `applyMove` on 400 boards → **0 dual-phase
+tiles**). On a 4-connected grid where every legal move flips the phase and a refusal costs no move, the
+phase in which a tile is entered is a function of the tile alone (the **checkerboard invariant**,
+ADR-0009 decision 1), so an M0 wall is either permanently blocking or permanently passable decoration
+and **no tile is ever "refused first, then entered later"** without latch state (M1+M3) or an
+opposite-colour portal (M2).
 
 Therefore the original hypothesis **(a)** — "players discover *parity opens walls* within L3–L5 without
-text" — **has no discoverable object on M0-only content and is untestable as written.** Running it would
-produce a guaranteed FAIL caused by the level plan, not by Option B, and would invite the wrong remedy
-(reverting a human-approved rule). **(a) is withdrawn as a playtest hypothesis, re-filed as the GATE D
-authoring/Solver question it actually is, and replaced by (a1) + (a2)** (full rationale: notes §1).
+text" — **has no discoverable object on M0-only content and is untestable as written.** Running it
+would produce a guaranteed FAIL caused by the level plan, not by Option B, and would invite the wrong
+remedy (reverting a human-approved rule). **(a) was withdrawn as a playtest hypothesis and re-filed as
+the GATE D authoring/Solver question it actually was** (full rationale: notes §1). **The human answered
+that question at GATE D on 2026-10-14: D3 — mechanics forward, core rule unchanged (ADR-0009, merged to
+`develop`).** ADR-0009 decision 8 re-bases the Stage-2 hypothesis set to **(a′) / (b) / (c′) / (d′)**;
+V0.3's interim letters (a1)/(a2)/(c) are withdrawn. Mapping — kept in place so the raw-data sheets and
+any V0.3-era notes stay reconcilable, **do not delete**:
 
-| Hypothesis | Object being measured | Runnable on the **current** M0-only build (l001–l005)? |
+| V0.3 letter (PA-002) | Object | V0.4 letter — canonical per **ADR-0009 decision 8** |
 |---|---|---|
-| **(a1)** Embedded-state readability (absorbs **(b)**) | the *embedded player* — Option B's only genuinely new **perceptible** beat (ADR-0008 clause 3/4; `ui-ux` R-C13 + §3.3 test 8). Reachable today: e.g. `l004`'s `phaseBWalls [[2,0]]` is entered on an odd (Phase-A) move and solidifies at the flip. | **YES** — provided the BUT contains a level where the par route *forces* the embed (`level-design.md` §2 L6). `l004`/`l005` permit it but do not force it; if no level forces it, (a1) is `NOT TESTABLE` on that build and must not be scored. |
-| **(a2)** Decision readability under the **D3 schedule** (switch+door pairs moved forward; opposite-colour-end portals next) | whether the player can *state* "the thing I stepped on changed that door" / "which side I came in from decides whether this tile accepts me" — the "depth" feeling (a) was reaching for, now with a mechanical object (LV-001R: M0 → 0 dynamism, M1 doors alone → 0, **M3 switch+door → 231/500**, **M2 opposite-colour portal → 233/500**) | **NO** — requires the post-GATE-D level set. Until the human decides GATE D and Level AI ships it, record **(a2) = `NOT TESTABLE ON THIS BUILD`**. Never a pass, never a fail. |
-| **(c)** Planning reads as depth, not chaos / memory test (assumption A2) | planning behaviour and its self-report | **YES**, but with one caveat recorded in the report: on an M0-only build the *planning* object is thin (GATE D), so a (c) pass on l001–l005 is weak evidence and must be re-run on the D3 build before it closes A2. |
+| **(a1)** embedded readability *(had "absorbed" ADR-0008 (b))* | the embedded player | **(b)** — the absorption is **reversed**: (b) is a standalone ADR-0009 hypothesis (ADR-0008 (b), unchanged) and is now load-bearing **earlier, at L4–L5** (decisions 7–8). Sub-metrics a1-1…a1-6 → **b-1…b-6**, values untouched. |
+| **(a2)** decision readability (door+switch **and** portal probes bundled) | latch + portal | **split:** **(a′)** latch readability without text by L8 — a2-1 CM-D → a′-1, a2-2 CM-GL → a′-2, a2-4 P-probe → a′-3, a2-5 C7+C8 → a′-4 · **(c′)** portal reads as "space folded" — a2-3 CM-P → c′-1. |
+| **(c)** planning reads as depth (operationalised ADR-0008 (c) / assumption A2) | planning behaviour | **superseded as a standalone hypothesis** (ADR-0009 decision 8 supersedes ADR-0008 (a)+(c); the A2 depth question — `game-design.md` V0.5 §13, re-based on latch/portal objects — is carried by **(a′)/(c′)**). Its metric battery c-1…c-10 survives **unchanged** as **(d′)**'s failure-mode instruments, renumbered **d′-1…d′-10**. |
+| — | retention of the M0-only opening | **(d′)** — new in ADR-0009 decision 8; the hypothesis §2's question has always pointed at. |
+
+**Numbers-provenance rule (V0.4):** §9 cites **only** ADR-0009's decision-bearing-board counts (GATE D
+scan, BFS over the shipped rules): latch **74/200** decision-bearing boards (0 dual-phase tiles),
+opposite-colour portals **80/200** (81/200 dual-phase tiles), same-colour portal pairs **0/200**. V0.3
+quoted LV-001R's *dynamic-board share* (`M3 switch+door → 231/500`, `M2 portal → 233/500`) in the same
+breath — a **different quantity on a different sample**; the two must never be mixed in one line (for
+mechanic-mix dynamism see ADR-0009 decisions 4/5 and Context item 4).
+
+| Hypothesis (ADR-0009 decision 8) | Object being measured | Runnable on the **current** build (l001–l005, M0-only)? |
+|---|---|---|
+| **(d′)** the M0-only opening (L1–L5) retains players to L6 **without a mechanical Aha** | retention and its failure modes: CI (M11), Quit (M12), ahead-vs-memory reading (D1/C5), friction battery (M4/M4b/M5/M6/Δmoves/GAR/V-CL) | **YES — the one retention hypothesis runnable immediately.** L1–L5 are shipped and Solver-proved (`scripts/solve-levels.ts`: 5/5 PASS, `par` 4/5/6/6/6, zero dead states, 2026-10-14). ADR-0009's honest cost is explicit: no mechanical Aha exists before L6, so the hook rests on cadence — (d′) measures exactly that claim. Instruments and verdict: §9.6. |
+| **(b)** embedded states read as "safe — walk out", not a bug (load-bearing earlier: **L4–L5**) | the *embedded player* — Option B's only genuinely new **perceptible** beat (ADR-0008 clauses 3/4; `ui-ux` R-C13 + §3.3 test 8), and M0's honest teaching value (ADR-0009 decision 7): `l004`'s echo `(2,0)` is entered on an odd (phase-A) move and solidifies at the flip — **offered**; `l005`'s echo `(4,2)` is the goal's only enterable neighbour — **forced**. | **YES** — the precondition ("the BUT contains a level whose every solution forces the embed", `level-design.md` V0.4 §2 L5) is **met by the shipped `l005`**. Program check (2026-10-14, BFS over the shipped `explore`/`applyMove`/`solidAt`): `l005` → **no embed-free route exists** (embed forced on every solution); `l004` → an embed-free route exists at par (offered, never scored as the forced instance). ⚠ V0.3 wrote "l004/l005 permit but do not force" — **false for l005**, corrected by this program check; `project-status.md` item 12 (LV-004's premise) still carries the old claim — flagged to the Orchestrator, not edited here. The rule stands for any other build: no forced embed ⇒ (b) = `NOT TESTABLE`, never scored. |
+| **(a′)** players read the **latch** — step on the switch, the door changes and *stays* changed — **without text by L8** (Aha #1) | whether the player can *state* "the thing I stepped on changed that door" — the depth feeling (a) was reaching for, now with a real mechanical object (ADR-0009 decision 4: latch → **74/200 decision-bearing boards**, 0 dual-phase tiles — the latch, not parity, carries them; M1 doors alone measured static) | **NO — `NOT TESTABLE ON THIS BUILD`.** Blocked **not** on any pending human decision (GATE D is decided: D3) but on content: released when the **D3-scheduled level set ships — door+switch levels L6–L10, Aha #1 engineered at L8 (`level-design.md` V0.4 §2–§3) — and passes the Solver gate** (`scripts/solve-levels.ts` PASS + the §3 latch conditions). Never a pass, never a fail, until then. |
+| **(c′)** portal travel reads as **"space folded"**, not disorientation (Aha #2) | whether the player can *state* "which side I came in from decides whether this tile accepts me" (ADR-0009 decision 5: opposite-colour portals → **80/200 decision-bearing boards**, 81/200 dual-phase tiles; same-colour pairs inert **0/200**, validator-rejected) | **NO — `NOT TESTABLE ON THIS BUILD`.** Released when the **opposite-colour-end portal levels (L11+) ship, the validator's opposite-colour rule is in force, and the Solver gate passes**. Never a pass, never a fail, until then. |
 | **DoD** | ≥ 5 non-developers · ≥ 4/5 understand without explanation · ≥ 3/5 want Level 6 | **YES** |
 
 **Paper-prototype validity (a session can be run before RENDER-001).** Paper = printed grids, coins for
@@ -199,10 +243,10 @@ player/wall/ghost, a two-sided phase card the moderator flips after every legal 
 
 | Hypothesis | Paper-valid? | Why |
 |---|---|---|
-| (a2) decision readability, CM-D / CM-P / P-probe | **YES** | it measures a causal *model*, which paper carries faithfully |
-| (c) planning vs memory, D1, Δmoves | **YES** | same |
+| (a′)/(c′) latch & portal readability, CM-D / CM-P / P-probe | **YES** | it measures a causal *model*, which paper carries faithfully |
+| (d′) retention battery — planning vs memory, D1, Δmoves | **YES** | same |
 | DoD understand (CM1/CM2) | **partly** — record as `paper`, and the DoD verdict stays **open** until a build run | comprehension of the *rule* transfers; comprehension of the *feel* does not |
-| **(a1) embedded readability** | **NO** | it is precisely a rendering + motion property (R-C13, `obj.wallOccupied`, one-shot `fx.phaseRing`, 140–220 ms). A paper coin on a wall square cannot falsify "reads as a clip-through bug". |
+| **(b) embedded readability** | **NO** | it is precisely a rendering + motion property (R-C13, `obj.wallOccupied`, one-shot `fx.phaseRing`, 140–220 ms). A paper coin on a wall square cannot falsify "reads as a clip-through bug". |
 | M14/M15 dwell & flail, V-CL / Variant CL, M13 GAR | **NO** | latencies, motion causality and touch behaviour need the real build |
 
 ### 9.2 Threshold and tie-break conventions (binding on every hypothesis)
@@ -213,7 +257,7 @@ player/wall/ghost, a two-sided phase card the moderator flips after every legal 
 | **T2** | For every ceiling (`≤ k/n`, `≤ x s`, `≤ x %`), **exactly at the ceiling ⇒ PASS, flagged `MARGINAL`**. |
 | **T3** | For every median/p90, **exactly equal ⇒ PASS, flagged `MARGINAL`**. |
 | **T4** | Any value strictly on the wrong side ⇒ that sub-metric **FAILS**, and a hypothesis fails if **any** of its sub-metrics fails. There is no averaging across sub-metrics and no "close enough". |
-| **T5** | **Marginal budget:** if ≥ 2 hypotheses pass only marginally — or the DoD passes marginally together with any marginal hypothesis — the round verdict is **`MARGINAL`**, which **does not close the ADR-0008 gate**. Re-run only the marginal sub-tests with a **fresh** cohort of 5 (never the same people: they are no longer fresh) before Stage 3. |
+| **T5** | **Marginal budget:** if ≥ 2 hypotheses pass only marginally — or the DoD passes marginally together with any marginal hypothesis — the round verdict is **`MARGINAL`**, which **does not close the ADR-0008/ADR-0009 gate**. Re-run only the marginal sub-tests with a **fresh** cohort of 5 (never the same people: they are no longer fresh) before Stage 3. |
 | **T6** | **No threshold, level index or probe wording in §9 may be edited after the §9.1 BUT table is committed.** A post-hoc edit is a protocol violation and voids the round. Corrections discovered mid-round are recorded in Table F, applied to the *next* round, and reported as a deviation. |
 | **T7** | **n must be ≥ 5 VALID sessions.** An invalid session (interrupted > 5 min · build/device crash · script deviation on a scored item · prior exposure found later) is **replaced by a fresh participant** — never dropped to n = 4, which would silently tighten 4/5 into 4/4 = 100 %. Replacement cap **3**; beyond it, stop and report `BUILD NOT TESTABLE`. |
 | **T8** | Times are read from the screen recording at 0.1 s. Without a recording, M14/M15 degrade to ±1 s live stopwatch and every affected row carries `live-timed`; those two metrics are then reported as **weaker evidence**, not as equivalent. |
@@ -227,8 +271,8 @@ player/wall/ghost, a two-sided phase card the moderator flips after every legal 
 | **Observer / timekeeper** | A second person (may be the same human on a second pass over the recording) | Tallies Table B live; owns the stopwatch; says nothing to the participant. |
 | **Protocol owner + first coder** | **Playtest Analyst** | Codes 100 % of sessions from the recording, computes Table D, writes §10 Findings and the verdict. |
 | **Second coder** | **QA Engineer** or **Reviewer** | Independently codes ≥ 2 of 5 sessions from the coding manual alone; agreement per code, **< 70 % ⇒ that code is DISCARDED and reported `NOT MEASURED`** (notes §2.5). Never averaged, never adjudicated by the first coder alone. |
-| **Recusal** | — | The sole author of a level may not be the only coder of that level's (a2) verdict. A disagreement resolved in the direction that helps a threshold is logged `DISPUTED`. |
-| **Verdict recipient** | **Human (GATE C/GATE D authority)**, via the Orchestrator | Only the human may revert or re-scope ADR-0008 (§9.9). |
+| **Recusal** | — | The sole author of a level may not be the only coder of that level's (a′)/(c′) verdict. A disagreement resolved in the direction that helps a threshold is logged `DISPUTED`. |
+| **Verdict recipient** | **Human (GATE C/GATE D authority)**, via the Orchestrator | Only the human may revert or re-scope ADR-0008/ADR-0009 (§9.9). |
 
 ### 9.4 Recruitment (被试招募口径)
 
@@ -251,58 +295,101 @@ player/wall/ghost, a two-sided phase card the moderator flips after every legal 
   face; recordings deleted after coding unless the human chooses to keep them; consent recorded in Table A.
 - Duration ≈ 25 min per P session, ≈ 8 min per V session.
 
-### 9.5 Hypothesis (a1) — embedded-state readability *(absorbs ADR-0008 (b))*
+### 9.5 Hypothesis (b) — embedded-state readability *(ADR-0008 (b), stands unchanged; ADR-0009 decision 8 — load-bearing earlier, at L4–L5)*
 
 **Claim under test:** walking onto a ghost and having it solidify underfoot reads as *"I am standing
 inside a wall and I can still walk out"* — **part of the game**, not a clip-through/trapped bug.
+(V0.3 ran this as "(a1)" with ADR-0008's (b) absorbed into it; ADR-0009 keeps **(b) standalone** — the
+absorption is reversed. Rows a1-1…a1-6 are renumbered **b-1…b-6**; **no threshold changed**.)
+
+**Runnable on the current build:** yes — the forced-embed precondition is met by the shipped
+`l005`/L5 (no embed-free route exists; §9.1 program check). `l004`/L4 **offers** the same beat without
+forcing it (an embed-free par route exists) and is coded as offered exposure, never as the forced
+instance.
 
 | # | Metric | Threshold | n | Fails when |
 |---|---|---|---|---|
-| a1-1 | **V8a** (§3.3 test 8a): locate the player on the embed frame | **< 1 s, 5/5**, both phases | V = 5 | any viewer > 1 s, or the phase-B frame fails (Phase B is the harder case: player body vs `obj.wallOccupied`) |
-| a1-2 | **V8b** (§3.3 test 8b): "Is the player inside that wall a **bug**, or **part of the game**?" | **≥ 4/5 "part of the game"**, both phases | V = 5 | ≤ 3/5, or any "bug" answer on the Phase-B frame cluster |
-| a1-3 | **M14 Embedded Dwell** (flip resolution → next legal move) | median **≤ 3.0 s**, p90 **≤ 8.0 s** | ≥ 1 embed event per P participant, forced by the level | median or p90 over |
-| a1-4 | **M15 Embed Flail** (≥ 2 refusal/repeat taps, or restart/undo < 3 s after landing, or C3) | **≤ 1/5 of embed events** | all embed events in cohort P | > 1/5 |
-| a1-5 | **C3** "am I stuck / trapped / is this broken?" | **≤ 1/5 participants**, anywhere in L1–L6 | P = 5 | ≥ 2/5 |
-| a1-6 | **M13b Key-Ghost Coverage** on the embed level: the winning attempt actually crossed a formerly-refusing / ghost tile | **≥ 4/5** without H2/H3 | P = 5 | ≤ 3/5 — a pure walk-around teaches nothing (`level-design.md` §3 req. 3) |
+| b-1 | **V8a** (§3.3 test 8a): locate the player on the embed frame | **< 1 s, 5/5**, both phases | V = 5 | any viewer > 1 s, or the phase-B frame fails (Phase B is the harder case: player body vs `obj.wallOccupied`) |
+| b-2 | **V8b** (§3.3 test 8b): "Is the player inside that wall a **bug**, or **part of the game**?" | **≥ 4/5 "part of the game"**, both phases | V = 5 | ≤ 3/5, or any "bug" answer on the Phase-B frame cluster |
+| b-3 | **M14 Embedded Dwell** (flip resolution → next legal move) | median **≤ 3.0 s**, p90 **≤ 8.0 s** | ≥ 1 embed event per P participant, forced by the level (`l005` guarantees it) | median or p90 over |
+| b-4 | **M15 Embed Flail** (≥ 2 refusal/repeat taps, or restart/undo < 3 s after landing, or C3) | **≤ 1/5 of embed events** | all embed events in cohort P | > 1/5 |
+| b-5 | **C3** "am I stuck / trapped / is this broken?" | **≤ 1/5 participants**, anywhere in L1–L6 | P = 5 | ≥ 2/5 |
+| b-6 | **M13b Key-Ghost Coverage** on the embed level: the winning attempt actually crossed a formerly-refusing / ghost tile | **≥ 4/5** without H2/H3 | P = 5 | ≤ 3/5 — a pure walk-around teaches nothing (`level-design.md` V0.4 §2 L4–L5). On the shipped `l005` this is satisfied structurally (every win crosses the echo `(4,2)`); the row guards any build where a walk-around exists. |
 
-**Verdict:** (a1) **PASSES only if a1-1 … a1-6 all pass.** A still-image pass (V8) with a live fail
+**Verdict:** (b) **PASSES only if b-1 … b-6 all pass.** A still-image pass (V8) with a live fail
 (M14/M15) is a **FAIL** — the ring/occupied-interior beat is a motion property and §3.3 cannot see it.
 Tie rule: exactly 4/5 or exactly 1/5 ⇒ `MARGINAL` (T1/T2). **Escalation: E1 (§9.9).**
 
-### 9.6 Hypotheses (a2) and (c)
+### 9.6 Hypotheses (a′) and (c′) — D3 schedule only · and (d′) — current build
 
-**(a2) Decision readability — D3 schedule only.** Run only if the §9.1 BUT names a switch+door level and
-an opposite-colour-portal level inside L1–L6; otherwise record `NOT TESTABLE ON THIS BUILD`.
-
-| # | Metric | Threshold | n | Fails when |
-|---|---|---|---|---|
-| a2-1 | **CM-D** (verbatim, right after the door level): "What made that door open / close?" | **≥ 3/5** answer with the *switch/step* causality — not "proximity", "random", "timer", "don't know" | P = 5 | ≤ 2/5 |
-| a2-2 | **CM-GL Causal Glance**: within 3 s of first stepping on a switch, the participant looks at / points at / mentions the door | **≥ 3/5**, unprompted | P = 5 | ≤ 2/5 |
-| a2-3 | **CM-P** (right after the portal level): "Why did you end up there?" | **≥ 3/5** mention the portal / entry side, and **≤ 1/5** call it random | P = 5 | either bound broken |
-| a2-4 | **P-probe** (paused mid-level, no explanation): "Can you step onto this tile? Why?" × 4 tiles (2 legal / 2 solid) | **≥ 80 % per participant**, and **≥ 4/5** participants reach 80 % | P = 5 | ≤ 3/5 — this is the *live* twin of §3.3 test 5 |
-| a2-5 | **C7 + C8** per participant | **≤ 1**, and **no participant ≥ 3** | P = 5 | ceiling broken |
-
-**Verdict:** (a2) PASSES iff a2-1 … a2-5 all pass. Exactly 3/5 ⇒ `MARGINAL`. **Escalation: E2.**
-**Interpretation guard:** an (a2) failure is a **level-arrangement / D3-scheduling** failure, *not*
-evidence against Option B's legality rule, and must not be reported as such.
-
-**(c) Planning reads as depth, not chaos or a memory test** (operationalises `game-design.md` §13 A2,
-whose stated test "Mistake Rate + Retry Rate" was too vague to falsify).
+**(a′) Latch readability — door+switch levels (L6–L10), without text by L8 (Aha #1).** Run only if the
+§9.1 BUT names a Solver-proved door+switch level (release condition: the D3-scheduled set has shipped —
+**not** a pending decision; GATE D is decided, D3 / ADR-0009). Otherwise record
+`NOT TESTABLE ON THIS BUILD`.
 
 | # | Metric | Threshold | n | Fails when |
 |---|---|---|---|---|
-| c-1 | **D1** (verbatim, after L5): "Did the game feel like it was asking you to **think ahead**, to **remember things**, or **neither**?" | **≥ 3/5** "think ahead" | P = 5 | ≤ 2/5, or ≥ 2/5 say "remember" |
-| c-2 | **C5** "I have to remember / count my steps" | **≤ 1/5** | P = 5 | ≥ 2/5 |
-| c-3 | **M4b distribution**: refusals followed by **R2** (looks at / names the cause) or **R3** (different legal move) | **≥ 60 %** of all refusals | pooled over P | < 60 % — the refusal is not being used as information |
-| c-4 | **M4b R6** ("it's broken" / "it didn't register" / taps chrome) | **≤ 1 event per participant** | P = 5 | ≥ 2 for any participant — a §6.5 bug, not a polish item |
-| c-5 | **M5 Restarts** | mean **≤ 1.0** per level per participant, and no level with ≥ 3 restarts from ≥ 2 participants | P = 5 | ceiling broken |
-| c-6 | **M6 Undos** | mean **≤ 2.0** per level; flag the tail if mean > 6 (thrash) *or* ≈ 0 with M14 dwell > 8 s (fear) | P = 5 | mean > 6 |
-| c-7 | **M4 Refusals** | mean **≤ 3** per level per participant | P = 5 | mean > 3 |
-| c-8 | **Δmoves vs Solver `par`**, L3–L6 | median **≤ +3** | P = 5 | median > +3 |
-| c-9 | **M13 GAR** pooled (ghost avoidance = readability failure) | **≤ 20 %**, and **≤ 1/5** participants with GAR ≥ 50 % | pooled GOs / P = 5 | either bound broken |
-| c-10 | **V-CL** (§6.2a trigger, after L2): "Why did the world change?" | **≥ 4/5** "because I moved" | P = 5 | ≤ 3/5 ⇒ **switch to Variant CL** (pre-committed UI action, one timing table — not a design debate) |
+| a′-1 | **CM-D** (verbatim, right after the door level): "What made that door open / close?" | **≥ 3/5** answer with the *switch/step* causality — not "proximity", "random", "timer", "don't know" | P = 5 | ≤ 2/5 |
+| a′-2 | **CM-GL Causal Glance**: within 3 s of first stepping on a switch, the participant looks at / points at / mentions the door | **≥ 3/5**, unprompted | P = 5 | ≤ 2/5 |
+| a′-3 | **P-probe** (paused mid-level, no explanation): "Can you step onto this tile? Why?" × 4 tiles (2 legal / 2 solid) | **≥ 80 % per participant**, and **≥ 4/5** participants reach 80 % | P = 5 | ≤ 3/5 — this is the *live* twin of §3.3 test 5 |
+| a′-4 | **C7 + C8** per participant | **≤ 1**, and **no participant ≥ 3** | P = 5 | ceiling broken |
 
-**Verdict:** (c) PASSES iff c-1 … c-10 all pass. **Escalation: E3.**
+*(a′-4 note: **C8** — "that teleport was random" — can only fire when a portal level is in the BUT; on
+a doors-only BUT it is structurally 0 and the ceiling binds C7. When (c′) becomes runnable, the same
+events are reported under (c′) as context — one measurement, one threshold, never two.)*
+
+**Verdict:** (a′) PASSES iff a′-1 … a′-4 all pass. Exactly 3/5 ⇒ `MARGINAL`. **Escalation: E2.**
+**Interpretation guard:** an (a′) failure is a **level-arrangement / authoring** failure — ADR-0009's
+honest cost states M3 was promoted on *scan* evidence, not yet on playtest evidence — *not* evidence
+against Option B's legality rule, and it must never be reported as grounds to reopen the core rule
+(ADR-0009 decision 3; §9.9).
+
+**(c′) Portal readability — opposite-colour portals (L11+), "space folded", not disorientation (Aha
+#2).** Run only if the §9.1 BUT names an opposite-colour-end portal level (validator colour rule in
+force) with Solver proof; otherwise record `NOT TESTABLE ON THIS BUILD`.
+
+| # | Metric | Threshold | n | Fails when |
+|---|---|---|---|---|
+| c′-1 | **CM-P** (right after the portal level): "Why did you end up there?" | **≥ 3/5** mention the portal / entry side, and **≤ 1/5** call it random | P = 5 | either bound broken |
+
+**Verdict:** (c′) PASSES iff c′-1 passes (a′-4's C8 events reported alongside as context, no separate
+threshold). Exactly 3/5 ⇒ `MARGINAL`. **Escalation: E2.** Same interpretation guard as (a′).
+
+**(d′) M0-only opening retention — RUNNABLE ON THE CURRENT BUILD.** Claim under test: L1–L5 (literacy,
+refusal, phantom walk — **no mechanical Aha exists before L6**, ADR-0009's honest cost) **retain
+players to L6**: after the L5 win the player actively seeks Level 6 (§2), and the opening reads as
+*designed* — think-ahead, not chaos, not a memory test. (V0.3 ran this battery as hypothesis "(c)",
+operationalising ADR-0008 (c) / assumption A2; ADR-0009 decision 8 supersedes (c) as a standalone
+hypothesis and re-files the question as (d′). Rows c-1…c-10 are renumbered **d′-1…d′-10**; **no
+threshold changed**. V0.3's caveat — "on an M0-only build the planning object is thin" — is now
+structural, not a caveat: the A2 depth question (`game-design.md` V0.5 §13, re-based on latch/portal
+objects) is carried by (a′)/(c′) on the D3 build; (d′) measures what the M0 opening actually claims —
+cadence and retention, no dynamism claim.)
+
+| # | Metric | Threshold | n | Fails when |
+|---|---|---|---|---|
+| d′-1 | **D1** (verbatim, after L5): "Did the game feel like it was asking you to **think ahead**, to **remember things**, or **neither**?" | **≥ 3/5** "think ahead" | P = 5 | ≤ 2/5, or ≥ 2/5 say "remember" |
+| d′-2 | **C5** "I have to remember / count my steps" | **≤ 1/5** | P = 5 | ≥ 2/5 |
+| d′-3 | **M4b distribution**: refusals followed by **R2** (looks at / names the cause) or **R3** (different legal move) | **≥ 60 %** of all refusals | pooled over P | < 60 % — the refusal is not being used as information |
+| d′-4 | **M4b R6** ("it's broken" / "it didn't register" / taps chrome) | **≤ 1 event per participant** | P = 5 | ≥ 2 for any participant — a §6.5 bug, not a polish item |
+| d′-5 | **M5 Restarts** | mean **≤ 1.0** per level per participant, and no level with ≥ 3 restarts from ≥ 2 participants | P = 5 | ceiling broken |
+| d′-6 | **M6 Undos** | mean **≤ 2.0** per level; flag the tail if mean > 6 (thrash) *or* ≈ 0 with M14 dwell > 8 s (fear) | P = 5 | mean > 6 |
+| d′-7 | **M4 Refusals** | mean **≤ 3** per level per participant | P = 5 | mean > 3 |
+| d′-8 | **Δmoves vs Solver `par`**, L3–L5 — the M0 stretch (V0.3 wrote "L3–L6" under the old ladder, where L6 was its last M0 lesson; ADR-0009's M0-only opening ends at **L5**) | median **≤ +3** | P = 5 | median > +3 |
+| d′-9 | **M13 GAR** pooled (ghost avoidance = readability failure) | **≤ 20 %**, and **≤ 1/5** participants with GAR ≥ 50 % | pooled GOs / P = 5 | either bound broken |
+| d′-10 | **V-CL** (§6.2a trigger, after L2): "Why did the world change?" | **≥ 4/5** "because I moved" | P = 5 | ≤ 3/5 ⇒ **switch to Variant CL** (pre-committed UI action, one timing table — not a design debate) |
+
+**Retention outcome rows (shared with the DoD — one measurement, never two thresholds):** (d′)'s
+verdict includes **D-2** (M11: CI-self ≥ 4 **and** CI-beh sought inside the 15 s no-prompt window,
+≥ 3/5) and **D-3** (M12: quit before L5, ≤ 1/5) exactly as thresholded in §9.7. Marginal bookkeeping:
+a D-2/D-3 marginal counts **once**, under the DoD (T5) — (d′) inherits the flag but adds no second
+marginal.
+
+**Verdict:** (d′) PASSES iff d′-1 … d′-10 **and** D-2 **and** D-3 all pass. **Escalation: E3** for a
+battery failure; a D-2/D-3 failure is simultaneously a DoD failure (**V5 / E4 hard stop**) *and* the
+case ADR-0009's honest-cost clause names — "if Stage 2 shows L1–L5 bleeding players (hypothesis d′),
+re-escalate to the human with data; never silently re-tighten the rule" — so the retention evidence
+goes to the human either way.
 Report the **error direction split** of M13 (G2/G3/G5 = ghost read as blocking vs G4 = solid read as
 ghost): the two directions have opposite fixes (`ui-ux` R9), and one pooled number hides which one broke.
 
@@ -328,10 +415,10 @@ text may be added to L1–L5 to lift these numbers** (text budget ≤ 1 hint lin
 | **H0** | default | *(silence)* | — |
 | **H1** | 20 s with no input, or 3 consecutive refusals | "Take your time — you can restart or undo whenever you want." | stall event recorded, **0 hints** |
 | **H2** | a further 30 s, or an explicit request for help | "Look at what changes when you move." | **1 hint** ⇒ the level is excluded from D-1 |
-| **H3** | the participant says they want to stop, or 90 s total stall on one level | "Do you want me to show you one move?" — if yes, demonstrate **exactly one** move | session marked **assisted**; the level is excluded from D-1 and from (a1)/(a2)/(c) thresholds for that participant |
+| **H3** | the participant says they want to stop, or 90 s total stall on one level | "Do you want me to show you one move?" — if yes, demonstrate **exactly one** move | session marked **assisted**; the level is excluded from D-1 and from (b)/(a′)/(c′)/(d′) thresholds for that participant |
 | **H4** | the participant quits | *(thank them, stop the recording)* | M12 Quit Level recorded; **no persuasion** |
 
-### 9.8 Minimal executable test script (5 non-developers · L1–L6 · paper + mobile browser · no server, no telemetry, no instrumentation)
+### 9.8 Minimal executable test script (5 non-developers · L1–L5 on the current build, + the D3 levels when the BUT contains them · paper + mobile browser · no server, no telemetry, no instrumentation)
 
 **YAGNI boundary:** nothing may be added to the build for this test — no analytics, no event bus, no
 server, no logging code. All data comes from a phone screen recording + a stopwatch + the printed
@@ -363,12 +450,15 @@ Table A–F sheets. The only build-side requirement is the §9.1 BUT itself.
 5. **Mid-level P-probe** at the BUT's pre-marked state: pause, point, ask the 4 tile questions, resume.
 6. **After the L5 win** → **show no Next control.** Start **Tw** (15 s). Observe and code CI-beh.
    Then ask **CM1, CM2, CM3, D1, CI-self** — verbatim strings are canonical in **Table C**.
-7. **L6 (the forced-embed level)** → when the embed event happens, **do not intervene**; code Te0/Te1,
-   M15, C3. Only after the level is finished may you ask **V8b**: *"Is the player inside that wall a bug,
-   or part of the game?"* — and note that a P-cohort answer is **not** the §3.3 fresh-viewer test
-   (notes §3 cohort rule).
-8. **D3 levels only** (switch+door, then portal) → **CM-D, CM-GL** right after the door level; **CM-P**
-   right after the portal level.
+7. **Embed events — inside the L1→L5 window on the current build (`l004` offered, `l005` forced)** →
+   when the embed event happens, **do not intervene**; code Te0/Te1, M15, C3. Only after the level is
+   finished may you ask **V8b**: *"Is the player inside that wall a bug, or part of the game?"* — and
+   note that a P-cohort answer is **not** the §3.3 fresh-viewer test (notes §3 cohort rule). *(V0.3
+   placed this step at "L6": under the old ladder L6 was to be the forced-embed level; ADR-0009 /
+   `level-design.md` V0.4 put the forced phantom walk at **L5**, already shipped as `l005`.)*
+8. **D3 levels, only when the BUT contains them** (door+switch L6–L10 → **CM-D, CM-GL** right after the
+   door level; opposite-colour portal L11+ → **CM-P** right after the portal level). On the current
+   M0-only build this step does not exist — record **(a′)/(c′) = `NOT TESTABLE ON THIS BUILD`**.
 9. Thank them, stop recording, complete Table A's footer (Aha Moment, Quit Level, script deviations).
 
 **Run sheet — Cohort V (≈ 8 min each, different people, screenshots only, no interaction):**
@@ -381,21 +471,22 @@ frame: point at the cause, and "did the phase flip?" · **V8a/V8b** on the embed
 **Paper-prototype variant (only for the paper-valid rows of §9.1):** print each level's grid at ~48 px
 cells, one coin = player, filled blocks = current-phase walls, hollow outlines = ghosts, a two-sided
 A/B card = phase. The moderator flips the card **after every legal move** and never explains why.
-Label every resulting row `paper`; leave M13/M14/M15/V-CL/(a1) cells as `—` with the reason
+Label every resulting row `paper`; leave M13/M14/M15/V-CL/(b) cells as `—` with the reason
 `not paper-valid`.
 
-### 9.9 Verdicts and escalation paths (ADR-0008: **no silent revert — bring evidence to the human**)
+### 9.9 Verdicts and escalation paths (ADR-0008 / ADR-0009: **no silent revert — bring evidence to the human**)
 
 | Verdict | Meaning | Action |
 |---|---|---|
-| **V1 PASS** | DoD + (a1) + (c) pass; (a2) passes on the D3 build | ADR-0008's Stage-2 gate **closes**; Playtest Analyst signs §10; proceed to Stage 3. The §3.3 **art** gate stays open until GATE A art lands and §3.3 is re-run (R-P7). |
+| **V1 PASS** | DoD + (b) + (d′) pass on the current build; (a′) passes on the D3 build [(c′) once portal levels are in a BUT] | ADR-0008/ADR-0009's Stage-2 gate **closes**; Playtest Analyst signs §10; proceed to Stage 3. The §3.3 **art** gate stays open until GATE A art lands and §3.3 is re-run (R-P7). |
 | **V2 PARTIAL / MARGINAL** | ≥ 2 marginal hypotheses, or DoD marginal + one marginal hypothesis (T5) | Gate **does not close**. Re-run only the marginal sub-tests with a **fresh** cohort of 5, then re-report. |
-| **V3 FAIL (a1)** | the embedded state cannot be made to read | **E1** → UI / Art Director with the failing sub-metric. The fix must live **inside** the R-E / R-E2a bands (`ui-ux` §6.5) — never a bigger nudge, flash, sting or text. Re-run §3.3 test 8 + M14/M15 with a fresh cohort. **If it fails twice**, the Analyst writes an escalation to the **human** stating that Option B's clause 3 has no readable presentation, with the tables attached — **the human**, not any agent, decides whether that means a presentation exception or a rule revisit. |
-| **V4 FAIL (a2)** | the causal model does not form on the D3 build | **E2** → Game Designer + Level AI + Solver with per-level data. This is an **authoring/arrangement** defect. If (a2) also fails on the re-scheduled build, escalate to the **human at GATE D** with the player evidence: no M0/M1/M2 arrangement produced readable depth. |
-| **V5 FAIL DoD** | < 4/5 understand, or < 3/5 want L6, or ≥ 2/5 quit | **E4 hard stop.** Stage 3 blocked. Orchestrator escalates to the human with Table D + all verbatims. No level-count increase, no text additions and no threshold edits as a remedy. |
-| **(c) FAIL** | planning reads as chaos or as a memory test | **E3** → Game Designer: difficulty model / dip rule (`game-design.md` §11, `level-design.md` §6). First resort is level *arrangement*, not explanation; if the only fix would exceed the ≤ 1-hint-line text budget, that is itself an escalation to the human. |
+| **V3 FAIL (b)** | the embedded state cannot be made to read | **E1** → UI / Art Director with the failing sub-metric. The fix must live **inside** the R-E / R-E2a bands (`ui-ux` §6.5) — never a bigger nudge, flash, sting or text. Re-run §3.3 test 8 + M14/M15 with a fresh cohort. **If it fails twice**, the Analyst writes an escalation to the **human** stating that Option B's clause 3 has no readable presentation, with the tables attached — **the human**, not any agent, decides whether that means a presentation exception or a rule revisit. |
+| **V4 FAIL (a′)/(c′)** | the causal model does not form on the D3 build | **E2** → Game Designer + Level AI + Solver with per-level data. This is an **authoring/arrangement** defect (ADR-0009's honest cost: M3 was promoted on scan evidence, not yet on playtest evidence). If it also fails on the re-scheduled build, escalate to the **human** with the player evidence — ADR-0009 decision 8: re-escalate, **do not silently revert**. |
+| **V5 FAIL DoD** | < 4/5 understand, or < 3/5 want L6, or ≥ 2/5 quit | **E4 hard stop.** Stage 3 blocked. Orchestrator escalates to the human with Table D + all verbatims. No level-count increase, no text additions and no threshold edits as a remedy. A D-2/D-3 failure is also a **(d′)** failure — report it as such (ADR-0009's honest-cost clause: the human sees the L1–L5 retention evidence). |
+| **(d′) FAIL** | the M0-only opening reads as chaos or as a memory test (battery d′-1…d′-10) | **E3** → Game Designer: cadence / difficulty model / dip rule (`game-design.md` §11, `level-design.md` §6). First resort is level *arrangement* and cadence — ADR-0009's honest cost puts the hook burden there — not explanation; if the only fix would exceed the ≤ 1-hint-line text budget, that is itself an escalation to the human. Never silently re-tighten the rule (ADR-0009 decision 8). |
 
-**Absolute:** no agent reverts, softens or re-scopes ADR-0008 on the strength of this data. Every
+**Absolute:** no agent reverts, softens or re-scopes ADR-0008 or ADR-0009 on the strength of this data
+(both carry the same clause: re-escalate to the human with the evidence). Every
 escalation carries the raw tables (A–F) and the verbatim quotes. **A verdict without its tables is void.**
 
 ### 9.10 Anti-fabrication rules (this section is the reason §9 exists)
@@ -404,8 +495,11 @@ escalation carries the raw tables (A–F) and the verbatim quotes. **A verdict w
    until then — an empty log is honest; a filled one is not.
 2. **Never back-fill from memory.** Unfilled cells stay `—` and are reported as missing (T9).
 3. **A threshold may not be moved after the BUT table is committed** (T6).
-4. **`NOT TESTABLE` is a legal, reportable outcome** — used for (a2) until GATE D lands, for (a1) if no
-   level forces the embed, and for §3.3 if no fresh Cohort V exists. It is never silently upgraded to PASS.
+4. **`NOT TESTABLE` is a legal, reportable outcome** — used for (a′)/(c′) until their **D3 release
+   conditions** are met (the scheduled level set has shipped **and** passed the Solver gate — *not*
+   "until GATE D lands"; GATE D landed 2026-10-14, D3/ADR-0009), for (b) on any build with no
+   forced-embed level (the current build has one — `l005`, §9.1 program check), and for §3.3 if no
+   fresh Cohort V exists. It is never silently upgraded to PASS.
 5. **Every screenshot-derived conclusion carries the `placeholder art` label** (R-P7); no claim about the
    final art's readability may be made from this round.
 6. **The Analyst may not substitute their own reading of "this level is fun" for cohort data.** Opinion
@@ -415,11 +509,11 @@ escalation carries the raw tables (A–F) and the verbatim quotes. **A verdict w
 
 | §3.3 | Cohort **V** static probe | Cohort **P** live twin | Precedence |
 |---|---|---|---|
-| **test 5** wall/path parse ≥ 90 % | **V5** | **M13 GAR** + **P-probe** (a2-4) | both required; test 5 proves the axis is *perceivable*, GAR proves it is *used under motion*. Test 5 can pass while GAR fails ⇒ R9 stays **open**. |
+| **test 5** wall/path parse ≥ 90 % | **V5** | **M13 GAR** + **P-probe** (a′-3) | both required; test 5 proves the axis is *perceivable*, GAR proves it is *used under motion*. Test 5 can pass while GAR fails ⇒ R9 stays **open**. |
 | **test 6** ghost vs solid ≥ 8/10 (desat + CVD) | **V6** | **M4b R1/R6** + **GAR G2/G3/G5** | both required, error **direction** reported separately (opposite fixes). |
-| **test 7** refusal feedback (a)+(b) | **V7a / V7b** | **M4 / M4b / C4** | V7 gates §3.3; the live distribution gates (c). A V7 pass with R6 ≥ 2 still **fails `ui-ux` §6.5**. |
-| **test 8** player-in-wall (a)+(b) | **V8a / V8b** | **M14 / M15 / C3** | **(a1) requires both sides** — test 8 is a still image and cannot see the 140–220 ms occupied-resolution beat or a looping-ring violation (R-C13.4). |
-| §6.2a **Variant CL** trigger | — | **V-CL** after L2 (c-10) | < 4/5 "because I moved" ⇒ switch to Variant CL; recording duty is the Playtest Analyst's (`ui-ux.md:452`). |
+| **test 7** refusal feedback (a)+(b) | **V7a / V7b** | **M4 / M4b / C4** | V7 gates §3.3; the live distribution gates (d′). A V7 pass with R6 ≥ 2 still **fails `ui-ux` §6.5**. |
+| **test 8** player-in-wall (a)+(b) | **V8a / V8b** | **M14 / M15 / C3** | **(b) requires both sides** — test 8 is a still image and cannot see the 140–220 ms occupied-resolution beat or a looping-ring violation (R-C13.4). |
+| §6.2a **Variant CL** trigger | — | **V-CL** after L2 (d′-10) | < 4/5 "because I moved" ⇒ switch to Variant CL; recording duty is the Playtest Analyst's (`ui-ux.md:452`). |
 
 **test 6 sampling trap — normative rule in notes §3.1** (9 mandatory conditions). Summary: "sort 10 wall
 tiles" passes **trivially** if all 10 are the same class, and *spuriously* if hue, ground or source level
@@ -440,9 +534,10 @@ opened → attached table paths. A verdict recorded before its tables exist is v
 | Round · date · BUT commit | — |
 | Valid sessions (P / V) | — |
 | DoD verdict | — |
-| (a1) verdict | — |
-| (c) verdict | — |
-| (a2) verdict | — |
+| (d′) verdict | — |
+| (b) verdict | — |
+| (a′) verdict | — |
+| (c′) verdict | — |
 | Round verdict (V1–V5) | — |
 | Escalations opened | — |
 | Tables attached | — |

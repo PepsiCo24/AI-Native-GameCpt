@@ -183,11 +183,17 @@ not create, mock or fork it** — it imports it or reports BLOCKED.
 11. **chore(format) sweep (defer to the RENDER-001 boundary):** `.prettierrc` (`printWidth: 80`) is not satisfied by pre-existing `src/core/rules/solid.ts`,
     `src/core/rules/applyMove.ts`, `src/core/state/types.ts` — LV-002A conformed its own new lines and deliberately did not reformat outside its scope.
     Run `prettier --write` over `src tests scripts` only (docs are ignored; README/submission must not be swept while DG-005 edits them), as one isolated commit.
-12. **LV-004 (queued, Level AI + Solver — unblocks playtest hypothesis b):** no shipped level **forces** the phantom-walk embed. `l004`/`l005` *permit* walking
-    through a ghost tile but an embed-free route of equal `par` exists, so PA's protocol must record **b = `NOT TESTABLE`** on this build. Author one L4/L5-shaped
-    level whose **shortest solution must cross a tile that is a wall in the arrival phase** (BFS-decidable: the walking-only subgraph has no embed-free par route),
-    and add that as a positive Solver check for any level documented as teaching the phantom walk. Without it, Option B's only genuinely new *perceptible* beat
-    cannot be tested at all — the stage-2 gate would go in blind on exactly the thing GATE D kept the rule for.
+12. **LV-004 (re-scoped, Level AI + Solver — the blocking premise was WRONG, mine not PA's):** I had queued this as "author a level that forces the phantom-walk
+    embed, because nothing shipped forces it". **Measured: `l005` already forces it.** Enumerating *every* `par`-length solution of every shipped level and testing
+    arrival solidity (`solidAt(level, newPhase, doorsOpen, arrival)`):
+    `l001` 1 route / 0 embed · `l002` 10 / 0 · **`l003` 6 / 0** (its only wall is parity-dead = permanent obstacle, never entered — the honest L3 lesson) ·
+    **`l004` 6 routes, 3 embed and 3 embed-free** (offered, not forced) · **`l005` 3 routes, 3 embed — FORCED on every shortest solution.**
+    So the ladder already reads *permanent refusal → optional phantom walk → forced phantom walk*, which is exactly what ADR-0009 and `level-design` V0.4 claim, and
+    **playtest hypothesis (b) is runnable on the current build**. LV-004 shrinks to hygiene: expose `embedRoutes / parRoutes / embedForced` from the solver, print it in
+    `scripts/solve-levels.ts`, and assert that any level documented as teaching the phantom walk **forces** it (l005 passes today; l004 must be documented as *offering*).
+    Do **not** re-author l003–l005 — a false premise nearly produced that work.
+12b. **PA-004 (tiny, queued):** `docs/playtest-analysis/stage2-adr0008-gated-protocol-notes.md` still uses the withdrawn (a1)/(a2)/(c) labels — outside PA-003's file
+    grant. Reconcile it against the §9.1 mapping table so the field sheets and the protocol cannot disagree mid-session.
 13. **PA-003 (dispatched):** §9's hypothesis alphabet collides with ADR-0009 (V0.3 used a1/a2/c; ADR-0009 mandates a′/b/c′/d′ after the human decision) and
     still described GATE D as undecided. Two metric provenances were also mixed (LV-001R's 231/500 board-share vs the 74/200 decision-tile count) — different
     quantities, same sentence.

@@ -1,6 +1,10 @@
 # Stage 2 — raw data sheets (printable templates)
 
-> Owner: **Playtest Analyst** · V0.1 · 2026-10-14 · **ALL TEMPLATES EMPTY — NO DATA EXISTS.**
+> Owner: **Playtest Analyst** · V0.2 · 2026-10-14 · **ALL TEMPLATES EMPTY — NO DATA EXISTS.**
+> V0.2 (PA-003): label-only alignment with `playtest-log.md` V0.4 / ADR-0009 decision 8 — Table F's
+> hypothesis letters are now **(a′) / (b) / (c′) / (d′)** (V0.3 used (a1)/(a2)/(c); reconcile via the
+> §9.1 mapping table in `playtest-log.md`), and Table D's Δmoves row names the M0 stretch. **No cell,
+> threshold or verdict value changed.**
 > Canonical templates. `docs/playtest-log.md` §9 references them by ID; the coding manual is
 > `stage2-adr0008-gated-protocol-notes.md` §2. Print one Table A + B + C per participant,
 > one Table D per session, one Table E per §3.3 sheet, one Table F per round.
@@ -101,7 +105,7 @@
 | R6 events | | | | | | max per participant | ≤ 1 | |
 | Restarts per level | | | | | | mean | ≤ 1.0 | |
 | Undo per level | | | | | | mean (flag > 6) | ≤ 2.0 | |
-| Δmoves vs par, L3–L6 | | | | | | median | ≤ +3 | |
+| Δmoves vs par (M0 stretch — L3–L5 on the current build; V0.3 wrote "L3–L6") | | | | | | median | ≤ +3 | |
 | C5 "remember/count" | | | | | | count /5 | ≤ 1/5 | |
 | P-probe accuracy | | | | | | ≥ 80 % per participant | ≥ 4/5 | |
 | CM-D door causality | | | | | | count /5 | ≥ 3/5 | |
@@ -137,11 +141,11 @@
 | Round id · date · BUT commit | |
 | Valid sessions (P / V) | |
 | Replacements used (cap 3) | |
-| Per-hypothesis verdict: (a1) / (a2) / (c) / DoD — PASS · PASS-MARGINAL · FAIL · NOT TESTABLE | |
+| Per-hypothesis verdict: **(a′) / (b) / (c′) / (d′)** / DoD — PASS · PASS-MARGINAL · FAIL · NOT TESTABLE *(V0.3 sheets used (a1)/(a2)/(c) — mapping: (a1)→(b), (a2)→(a′)+(c′), (c) battery→(d′); see `playtest-log.md` §9.1)* | |
 | Count of MARGINAL sub-metrics (≥ 2 ⇒ round verdict MARGINAL) | |
 | Overall Stage-2 verdict (V1…V5 per §9.9) | |
 | Tables attached (A–F) — **a verdict without tables is void** | |
-| Escalation opened? (E1 UI / E2 level-design+GATE D / E3 design difficulty / E4 DoD hard stop) | |
+| Escalation opened? (E1 UI (b) / E2 authoring+schedule (a′)/(c′) / E3 design difficulty+cadence (d′) / E4 DoD hard stop) | |
 | Evidence handed to the human (paths) | |
-| Silent revert performed? (**must be NO — ADR-0008 forbids it**) | |
+| Silent revert performed? (**must be NO — ADR-0008 and ADR-0009 forbid it**) | |
 | §3.3 art gate status (open until GATE A art + re-run) | |
