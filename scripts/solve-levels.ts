@@ -3,7 +3,10 @@
  *
  * What it does:
  *   1. loads every `src/levels/*.json`, parses it with the **frozen zod schema**
- *      (`@/core/level`) — a schema failure is a REJECT, never a repair (ADR-0004);
+ *      (`@/core/level`) and then runs the **rule gate** `validateLevel` on the
+ *      raw candidate — a schema failure *or* a rule failure is a REJECT, never a
+ *      repair (ADR-0004). The solver gate therefore cannot pass a level the
+ *      validator rejects (e.g. a door tile that is also a phase wall, LV-005);
  *   2. runs the mandated BFS solver (`@/core/solver/bfs`, `docs/architecture.md`
  *      §8) over the shipped `applyMove` and prints **every** required field per
  *      level, including the two §8 dynamism metrics (`dualPhaseTiles`,
@@ -30,8 +33,10 @@
  *   npx tsx scripts/solve-levels.ts --audit <dir>
  *
  * Ownership note: this script and `src/core/solver/**` are Level AI + Solver's.
- * It never touches the validator (`scripts/validate-levels.ts`, in-flight in
- * another task) and never edits a level: a failing level is reported, not fixed.
+ * It calls `validateLevel` (the level layer's rule gate) but never edits the
+ * validator script (`scripts/validate-levels.ts`, another task's file: that one
+ * also picks this gate up automatically, it calls the same function) and never
+ * edits a level: a failing level is reported, not fixed.
  */
 
 import { readdirSync, readFileSync } from "node:fs";
@@ -40,7 +45,7 @@ import { fileURLToPath } from "node:url";
 import process from "node:process";
 
 import type { Coord, DoorDef, Level } from "@/core/level";
-import { LevelSchema } from "@/core/level";
+import { LevelSchema, validateLevel } from "@/core/level";
 import { resolveDoorsOpen, solidAt } from "@/core/rules";
 import { DIRECTIONS, step } from "@/core/state/move";
 import type { Vec } from "@/core/state/types";
@@ -183,6 +188,23 @@ for (const file of files) {
   }
 
   const level: Level = parsed.data;
+
+  // Rule gate — the same `validateLevel` (`@/core/level`) the level-set gate
+  // calls: one truth source, so a candidate the validator rejects can never be
+  // BFS-proven "solvable" here (ADR-0004: reject, never repair). This is where
+  // LV-005's door ∩ phase-wall hard error enters the solver gate.
+  const verdict = validateLevel(raw);
+  if (!verdict.ok) {
+    console.log(
+      `  FAIL ${file} — rule gate (validateLevel) rejected the candidate (reject, never repair: ADR-0004)`,
+    );
+    for (const error of verdict.errors) {
+      console.log(`       rule: ${error}`);
+      failures.push(`${file}: rule ${error}`);
+    }
+    continue;
+  }
+
   const report = reportLevel(file, level);
   if (report === null) continue;
   const { result } = report;
