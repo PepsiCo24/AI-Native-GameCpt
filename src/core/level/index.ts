@@ -17,8 +17,10 @@
  * - parity-dead walls — every legal move changes `x + y` parity and the phase
  *   together, so the phase an entry happens in is fixed by the tile's Manhattan
  *   parity from the start; a wall solid in its own entry phase is therefore
- *   never enterable on any move count (ADR-0008 clause 8). Hard error in
- *   teaching levels, warning afterwards;
+ *   never enterable on any move count and is exactly an ordinary permanent wall
+ *   — legal geometry, not a defect, and never misleading on the board.
+ *   **Warning for every `id`, teaching levels included** (portal case caveated):
+ *   ADR-0009 / `docs/level-design.md` V0.4 §0 + §2;
  * - `docs/ui-ux.md` R-L2 — hard grid cap 7 × 7 (`width`/`height` ∈ 3..7);
  * - `AGENTS.md` §3 — `src/core/**` is pure TypeScript: never import Phaser here.
  *
@@ -223,13 +225,6 @@ function flip(phase: Phase): Phase {
 }
 
 /**
- * Teaching-block ceiling: L1–L20 are the M0 literacy/fluency block and carry
- * `portals: []` by design (docs/level-design.md §5, `PortalDef` doc comment) —
- * they must teach live parity gates, not permanent obstacles.
- */
-const TEACHING_MAX_ID = 20;
-
-/**
  * The phase an entry into `tile` always happens in — the heart of the
  * parity-dead-wall check.
  *
@@ -272,13 +267,13 @@ export interface ValidationResult {
  *   (ADR-0008 rule 7 for the goal); dangling switch `targets`; portal ends
  *   identical / out of bounds / solid in **either** phase / covered by a door
  *   tile / a pair whose two ends share one `(x + y)` parity (architecture V0.5
- *   §7); a wall that can never be entered on any move count in a portal-free
- *   teaching level (`id ≤ 20`, `portals: []`), where the parity argument is
- *   exact.
+ *   §7).
  * - Warnings: a tile solid in BOTH phases (never enterable — deliberate design
  *   only, flag for review); a wall that can never be entered on any move count
- *   in a non-teaching level; door tiles on a phase wall, or on the player/goal;
- *   a switch that can never fire; a switch with no targets.
+ *   (an ordinary permanent wall — legal geometry, warning for **every** `id`,
+ *   teaching levels included: ADR-0009 / V0.4 §0 + §2); door tiles on a phase
+ *   wall, or on the player/goal; a switch that can never fire; a switch with no
+ *   targets.
  *
  * Parity-dead walls, precisely: every legal move changes `x + y` parity and the
  * phase together, so the player can only stand next to a tile `T` after
@@ -289,11 +284,18 @@ export interface ValidationResult {
  * `phase{entryPhase(T)}Walls` therefore refuses *every* entry attempt on *every*
  * move count. Verified against the real rules engine by exhaustive BFS over
  * `applyMove` (L3 `(3,1)`: entry phase A, never entered; L4 `(2,0)`: entry
- * phase A, entered in A). A portal pair of opposite parity breaks that link
- * (`applyMove` BFS: same-parity pairs leave every tile reachable in exactly one
- * phase, opposite-parity pairs make tiles reachable in both), so with portals
- * present the claim is not decidable at the data layer and the check degrades to
- * a warning that says so.
+ * phase A, entered in A). **This is legal geometry, not a defect:** under
+ * ADR-0009 / `docs/level-design.md` V0.4 §0 a parity-mismatched phase wall *is*
+ * an ordinary permanent wall, and L3 teaches it on purpose ("permanent
+ * refusal"). Nor is it misleading: a click on such a tile requires the player to
+ * stand on a neighbour, and standing on a neighbour forces the current phase to
+ * `entryPhase(T)` — the tile's own solid phase — so the tile is never rendered
+ * hollow at a moment when it can be clicked. Hence a warning for **every** `id`
+ * (`docs/decisions/0009-checkerboard-invariant-mechanics-forward.md`). A portal
+ * pair of opposite parity breaks that link (`applyMove` BFS: same-parity pairs
+ * leave every tile reachable in exactly one phase, opposite-parity pairs make
+ * tiles reachable in both), so with portals present the claim is not decidable
+ * at the data layer and the warning says exactly that.
  *
  * This function proves nothing about **solvability** or about `par` — that is
  * SOLVER-001's BFS job (`docs/architecture.md` §8, ADR-0004 pipeline).
@@ -405,14 +407,16 @@ export function validateLevel(raw: unknown): ValidationResult {
     list.forEach((tile, i) => {
       if (outOfBounds(tile, width, height) !== null) return; // already an error above
       if (entryPhaseOf(tile, player, level.startPhase) === ownPhase) {
-        const message = `${label}[${i}] ${formatCoord(tile)}: this wall can never be entered on any move count — it is decoration, not a mechanic. Entry into ${formatCoord(tile)} always happens in phase ${ownPhase}, which is exactly this wall's own solid phase: every legal move changes x + y parity and the phase together, so the phase at entry is fixed by the tile's Manhattan-distance parity from the start (odd distance ⇒ startPhase "${level.startPhase}", even distance ⇒ "${flip(level.startPhase)}"), and extra moves cannot change that parity (wandering moves come in pairs)${portalCaveat}`;
-        if (level.id <= TEACHING_MAX_ID && level.portals.length === 0) {
-          errors.push(
-            `${message} — teaching levels (id ≤ ${TEACHING_MAX_ID}) must carry live parity gates, not permanent obstacles (ADR-0004: reject, never auto-repair)`,
-          );
-        } else {
-          warnings.push(message);
-        }
+        // WARNING for every `id` — teaching levels included, deliberately. A
+        // parity-dead wall is *exactly* an ordinary permanent wall (ADR-0009 /
+        // `docs/level-design.md` V0.4 §0: a parity-mismatched phase wall is
+        // permanent geometry, and L3's lesson *is* "permanent refusal"), so it is
+        // legal design and must not be rejected — only ever handed to manual
+        // review, and only for the one thing that is actually wrong: an authoring
+        // *intent* that treats it as a phase gate / timing mechanism.
+        warnings.push(
+          `${label}[${i}] ${formatCoord(tile)}: this wall can never be entered on any move count — it is equivalent to an ordinary permanent wall (legal geometry, not a defect). Entry into ${formatCoord(tile)} always happens in phase ${ownPhase}, which is exactly this wall's own solid phase: every legal move changes x + y parity and the phase together, so the phase at entry is fixed by the tile's Manhattan-distance parity from the start (odd distance ⇒ startPhase "${level.startPhase}", even distance ⇒ "${flip(level.startPhase)}"), and extra moves cannot change that parity (wandering moves come in pairs). It does not mislead the player: clicking this tile requires standing on a neighbour, and on any neighbour that same invariant puts the current phase at ${ownPhase} — this tile's solid phase — so it only ever reads solid when it can be clicked. Manual review is warranted only if the level's intent uses it as a phase gate / timing mechanic, which is wrong by construction (it answers identically on every move count) — docs/decisions/0009-checkerboard-invariant-mechanics-forward.md, docs/level-design.md V0.4 §0 + §2${portalCaveat}`,
+        );
       }
     });
   }
