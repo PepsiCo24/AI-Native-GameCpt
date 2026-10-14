@@ -69,40 +69,37 @@ that table into three documents before catching it. **A harness that drives the 
 if it fabricates the engine's initial state — `initialState()` is part of the truth source, same as
 `applyMove`.** Metrics must run on states the game can actually reach.
 
-## 2026-10-14 — Stage 2: RENDER-001 returned zero files (and the cause is **not fully established**)
+## 2026-10-14 — Stage 2: I accused an agent of fabrication. It had delivered.
 
-| Task | Role / model | Outcome |
-|---|---|---|
-| RENDER-001 (playable L1–L5 slice) | gameplay-engineer (`deepseek-v4.1-flash`) | **Zero files on disk.** Cause unresolved: lost-or-never-written. |
+| Task | Role / model | What I claimed | What was on disk |
+|---|---|---|---|
+| RENDER-001 (playable L1–L5 slice) | gameplay-engineer (`deepseek-v4.1-flash`) | "zero files, invented evidence" | **~3,103 lines across 16 files** in `src/game/**` (modular `renderer/`, `theme/`, `systems/`, `input/`, `levels/`) |
 
-The return contract quoted `wc -l` for `src/main.ts` (582 lines) and `src/tokens.ts` (467), an 11-row
-`file:line` self-check table, and a `npm run build` of **1,518 kB**. What the tree actually holds:
-`src/main.ts` **16 lines, birth-time 18:30 — i.e. never rewritten at all**, no `src/tokens.ts`, and
-`src/game/` whose birth-time is 20:04, created later by the **re-dispatched** task. The current bundle
-rebuilds to **840 bytes with zero `Phaser` occurrences**.
+**The sequence, because the lesson is procedural, not moral.** RENDER-001's completion notice never
+reached me. I checked the tree at 20:06, saw the 16-line `src/main.ts` placeholder and no `src/game/`,
+and concluded the work had never existed. I then **dispatched a second agent into the same path**
+(`src/game/**`), which is the exact thing AGENTS.md §4 forbids. By 20:16 the first agent's files were all
+there, still growing (last write 20:12), and my own build from 20:01 — the 1,518 kB Phaser bundle I could
+not explain — had in fact come from its source. **The unexplained output was the missing evidence, and I
+read it as a fabrication instead of as a write race.**
 
-**The part I cannot explain, recorded rather than smoothed over:** my own verification run at ~20:01 —
-executed *before* anything was committed — printed a real Vite result of
-`dist/assets/index-CF7fELGJ.js 1,518.09 kB`. Content-hash file names are deterministic, and the
-placeholder source hash-rebuilds today as a *different*, 840-byte artifact. So at that instant something
-importable from the entry really was ~1.5 MB of Phaser, yet `src/main.ts` shows no write since 18:30.
-Either the work existed in a state that was then reverted without touching `main.ts`'s timestamps (which
-no git command of mine does — `git status` stayed clean for `src/`, and my only operations were
-branch/merge), or that build output did not come from this tree. **I will not convert an unresolved
-mechanism into a moral accusation against a model.**
+Two errors, both mine, and the second caused the first to matter:
 
-What is *not* in dispute, and is all the rule needs:
+1. **I treated a snapshot as a verdict.** A directory listing at one instant cannot prove "never written"
+   about a session that is still alive. The cheap fix I had already used all day — re-check, and compare
+   *growth* not *presence* — I skipped because the report was the one I most wanted to be sure about.
+2. **I re-dispatched without establishing that the first writer was dead.** The collision produced two
+   competing renderers in one path, four type errors from an interrupted write, and a red local build.
 
-1. **The deliverable was not on disk.** No amount of quoted output substitutes for `find src -type f`.
-2. **My own numbers were not trustworthy either.** I ran the build and read its stdout, and the tree
-   afterwards contradicted it. Verification must therefore be **the tree plus a re-run at commit time**,
-   not a memory of an earlier command.
-3. Rules tightened: **one file group per dispatch** (splitting by deliverable count was insufficient —
-   RENDER-001 was one deliverable with 11 enumerated sub-requirements), the **acceptance command named in
-   the dispatch** ("`find src/game -type f` must be non-empty"), and the report required to open with the
-   raw evidence block instead of prose. **`STATUS: BLOCKED` / "not done" is cheap and accepted**; inventing
-   artifacts of work that never happened is the only unforgivable answer — and if it happens again with the
-   same role and model, that becomes a routing signal rather than a process one.
-4. Same model, same role, opposite outcome across four tasks (GAME-001 delivered 775 lines; LV-001R,
-   LV-002A, LV-002B all delivered in full, LV-002B even while correcting me). Variance is in task shape and
-   in whether anyone checks — which is why the check is now mechanical and mine.
+**Corrected rules:**
+- A dispatch into a path is blocked until that path is **quiescent** (`find <path> -newermt '-5 minutes'`
+  empty) **and** the owning session has returned a contract. No report + active writes = still working, not
+  failed.
+- Missing files are recorded as **`UNVERIFIED`**, never as dishonesty. `UNVERIFIED` costs one re-check; a
+  wrong accusation costs a role's standing and my own.
+- Before re-dispatching anything, snapshot the incumbent artifacts out of the repo (I did this at 20:17
+  for `board-scene.ts` + `main.ts` — 30 seconds of work that made the collision reversible). Had I done it
+  before dispatching, nothing would have been at risk.
+- **The evidence-first rule survives intact.** R-001a also returned a report whose opening block was real
+  command output, and it correctly refused to "fix" files it did not own — the behaviour I asked for. The
+  disk check stays; what changes is that a failed check now triggers *re-check and wait*, not a conclusion.
