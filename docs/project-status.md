@@ -8,56 +8,97 @@
 ## Current milestone
 
 **Stage 0 (Design Lock) + Stage 1 (Asset Requirements) — COMPLETE.**
-Next milestone: **Stage 2 — 5-level Prototype** (see the Prototype Definition of Done). Currently **paused at the human gate**.
+**GATE C is decided and documented: the core rule is now Option B (ADR-0008). Docs baseline is V0.4.**
+**Stage 2 (5-level Prototype) — STARTED, in flight.**
+
+The key correction made this session: **Stage 2 code is NOT blocked on art.** Walls, ghosts,
+phase feedback and the player's in-wall state are all **program-drawn vector tokens**
+(`docs/ui-ux.md` §9.1), so core rules, the Solver and level data can be built now. Only the
+**final visual polish and the §3.3 screenshot readability review** still wait on GATE A.
 
 ## Completed
 
-- **Recovery:** the working tree had every tracked doc deleted; restored non-destructively from `HEAD`. Nothing lost.
-- **Model routing:** 5-model smoke test + vision probe → `docs/ai-model-matrix.md` (only `qwen3.8-max` is vision-capable).
+- **Recovery:** working tree had every tracked doc deleted; restored non-destructively from `HEAD`. Nothing lost.
+- **Model routing:** 5-model smoke test + vision probe → `docs/ai-model-matrix.md` (only `qwen3.8-max` takes image input).
 - **Multi-agent studio:** `AGENTS.md`, `opencode.json`, `.opencode/agents/` (10 roles). Verified loaded live.
-- **Design set:** `game-design.md` V0.3, `level-design.md` V0.2, `architecture.md` V0.3, `ui-ux.md` V0.3.
-- **Decisions:** ADR 0001–0007 + `architecture-0001`.
-- **Assets:** `asset-request-01..07` (all 15 required fields), `first-batch-prompts.md`, `asset-manifest.md` V0.3.
-- **Review:** RV-001 (1 BLOCKER / 5 HIGH / 8 MEDIUM) + reconciliation round → V0.3 baseline.
-- **Docs:** `iteration-log.md` ITER-0003/0004, `submission/design-thinking.md`, `submission/iteration-optimization.md`, `ai-usage-log.md`.
+- **GATE C / Option B rule change (the big one):** 8 locked clauses in **ADR-0008**, propagated to
+  `game-design.md` **V0.4**, `level-design.md` **V0.3**, `architecture.md` **V0.4**, `ui-ux.md` **V0.4**,
+  plus supersession/revision banners on **ADR-0006 / ADR-0007** and an addendum on `architecture-0001`.
+  **OQ-1 is RESOLVED**: parity-dependent entry makes M0 walls real gates, so L1–L20 stop being static mazes.
+- **Toolchain scaffold (Orchestrator-owned, single writer):** Vite + TypeScript + Vitest + zod, `@/*` alias,
+  mobile-first `index.html`, `.gitignore` that blocks `.env`/credentials. Evidence: `typecheck` clean,
+  `vite build` succeeds, `vitest` runs (no test files yet).
+- **Codex art prompts:** `docs/assets/codex-generation-brief.md` (per-task) + `docs/assets/codex-master-prompt.md`
+  (single paste block) — 11 files with paths, sizes, alpha, negatives, acceptance criteria.
+- **Review:** RV-001 (1 BLOCKER / 5 HIGH / 8 MEDIUM) + reconciliation → V0.3 baseline.
+- **Docs:** `iteration-log.md` ITER-0001…0004, `submission/*`, `ai-usage-log.md`.
 
-## In progress
+## In progress (background agents)
 
-- None. Work is intentionally paused at the asset gate.
+| Task | Role | Scope | Files owned |
+|---|---|---|---|
+| **LV-001** | Level AI + Solver | zod `Level` contract + validator invariants + `l001–l005.json` + `scripts/validate-levels.ts` | `src/core/level/**`, `src/levels/**`, `scripts/**` |
+| **GAME-001** | Gameplay Engineer | pure-TS `src/core/state/**` + `src/core/rules/**` (`solidAt` / `isLegalMove` / 6-step `applyMove`, Option B) | `src/core/state/**`, `src/core/rules/**` |
+
+Seam rule enforced by dispatch: **Level type lives in `src/core/level` (Level AI owns it); GAME-001 must
+not create, mock or fork it** — it imports it or reports BLOCKED.
 
 ## Blocked
 
 | Blocked work | Blocked by |
 |---|---|
-| All gameplay/engineer/solver/UI coding | **GATE A** — user must deliver the first asset batch |
-| Level generation for L1–L50 | **GATE C** — core-rule escalation OQ-1 not yet decided |
-| Readability validation / screenshot review | GATE A assets (A-03/A-04/A-05/A-06 minimum) |
+| ~~All gameplay/solver/UI coding~~ | **UNBLOCKED** — core/solver/levels are code-only (see milestone note) |
+| Final art integration, §3.3 readability + screenshot review, in-app token re-verify | **GATE A** — P0 assets (`echo_spirit_a/b`, `bg_phase_a/b`, `goal`) |
+| SOLVER-001 (BFS + difficulty + `par` backfill) | needs `src/core/rules` + `src/core/level` to exist |
+| QA-001 (rule unit tests, import-boundary test) | needs GAME-001's exported API surface |
+| RENDER-001 (Phaser board scene) | needs core rules + `ui-ux.md` V0.4 tokens (V0.4 is now done) |
+| Any level beyond L10 | must be Solver-proved first; L1–L5 must pass the prototype gate |
 
 ## Human gates
 
-- **GATE A — Initial visual assets:** `WAITING_FOR_USER_ASSETS`. Copy-paste prompts in `docs/assets/first-batch-prompts.md` (P0 = A-03, A-04, A-05, A-06 goal).
-- **GATE C — Core-mechanic decision (OQ-1):** under ADR-0006's union property, a tile that is a wall in *either* phase is never enterable, so M0-only levels (L1–L20) are mechanically static mazes and the phase flip changes no legal move until doors/portals arrive. Decision needed before any level past L10 is generated.
+- **GATE A — Initial visual assets:** **`GENERATING` via the user's own Codex channel.**
+  ASSET GATE compliance: final art is **not** generated by any Studio Agent; the human authorised and
+  operates the generation channel personally. Agents only supply prompts, then validate / rename / register.
+  Minimum unblocking set = **T04, T05, T06, T07, T08**.
+- **GATE C — Core-mechanic decision (OQ-1):** **RESOLVED — Option B chosen by the human (2026-10-14)**,
+  recorded as ADR-0008, propagated across all four design docs.
+  **Its verification obligations are still open:** Stage 2 playtest must confirm (a) players discover
+  parity-entry without text by L3–L5, (b) the embedded state reads as safe not buggy, (c) parity planning
+  reads as depth not chaos. Plus **every level must be re-Solver-verified — all pre-ADR-0008 results are void.**
 
-## Active worktrees
+## Frozen facts (do not re-derive)
 
-- None. The probe `agent/_probe/worktree-smoke` was created and removed cleanly. Native worktrees verified working (`strategy: git`); they will be used in the parallel code phase.
+- Dependency pins: **phaser 3.90.0 · zod 4.6.7 · typescript 5.9.3 · vite 7.3.7 · vitest 5.0.4 · jsdom 26 · node 24**.
+  ⚠ `phaser`'s npm `latest` tag is **4.2.1** — the stack is locked to Phaser 3, so it must stay pinned `^3.90.0`.
+- Board size hard cap **7×7** (`ui-ux.md` R-L2, 44 px touch floor at 320 px). 8×8 requires explicit
+  Orchestrator approval; agents may not widen it themselves.
+- `src/core/**` never imports Phaser. Gameplay and Solver call the **same** `applyMove`. One truth source.
 
 ## Relevant commits / branches
 
-- Pre-recovery local `main`: `0345c52` (7 commits, never pushed).
-- Baseline V0.3 committed on `develop` in this session; tag `stage0-baseline`.
-- Branch model: `main` (stable) ← `develop` (integration) ← `agent/<role>/<task>`.
+- Branch model: `main` (stable) ← `develop` (integration) ← `agent/<role>/<task>`. Only the Orchestrator merges/pushes.
+- `develop` (pushed): `e69d1bf` docs(ui) V0.4 · `c2f878c` docs(architecture) V0.4 · `e9b9e9d` docs(design) ADR-0008 ·
+  `41999be` + `5551bae` toolchain scaffold · `6976506` + `06ac909` Codex prompts · `4212100` stage-0 V0.3 baseline.
+- `main` = tag `stage0-baseline` (`3a94d4c`, V0.3). **Held** until the Option B doc set passes review RV-002,
+  then merged + tagged `stage0-v0.4-gate-c`.
+- Pre-recovery local `main`: `0345c52` (7 commits, never pushed) — historical only.
 
 ## Next tasks (in order)
 
-1. **User → assets.** On delivery: UI/Art intake (inspect → validate → rename → register `DELIVERED`).
-2. **Orchestrator → Stage-2 DAG.** Parallel worktrees: `agent/gameplay/core-rules`, `agent/solver/bfs-v1`, `agent/qa/core-tests`, `agent/ui/board-shell`.
-3. **Build the shared core** (`applyMove` truth source) before solver/UI bind to it.
-4. **Author + solver-prove Levels 1–5.**
-5. **Prototype playtest gate:** ≥ 5 non-developers; ≥ 4/5 understand without explanation; ≥ 3/5 want level 6.
+1. **LV-001 + GAME-001 return** → Orchestrator verifies typecheck + validator evidence, commits `feat(core)` / `feat(level)`.
+2. **RV-002:** read-only Reviewer over the changed rule set (docs) and the new core code.
+3. **SOLVER-001** (BFS: solvability, shortest solution, `par` backfill, difficulty metrics) + **QA-001** (unit + property + import-boundary tests).
+4. **RENDER-001** (Phaser shell, token vectors, dev placeholder art — no final art).
+5. **GATE A intake:** Agent 5 validates the delivered images → register `DELIVERED` → `feat(assets)`.
+6. **DG-004:** `ITER-0005` + fix `submission/design-thinking.md` and `submission/iteration-optimization.md`,
+   both of which still state the withdrawn **union property** as current truth (found by grep this session:
+   `design-thinking.md:125`, `iteration-optimization.md:29`).
+7. **Prototype playtest gate:** ≥ 5 non-developers; ≥ 4/5 understand without explanation; ≥ 3/5 want level 6.
 
-## Guardrails while resuming
+## Guardrails
 
 - Never edit `src/core/**` from a Phaser-importing file; the Solver never depends on Phaser.
 - One writer per file. Agents never `git push`; only the Orchestrator merges.
-- Never place final art without an `asset-request-*.md` and user-supplied files.
+- Never place final art without an `asset-request-*.md` and a human-authorised generation channel.
+- LLM opinion never replaces the program Solver. "Should work" is not evidence.
+- Two agents may not touch `GameState`, the level schema, core rules, `package.json`, `opencode.json` or `AGENTS.md` at once.
