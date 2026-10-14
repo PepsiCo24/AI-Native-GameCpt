@@ -1,6 +1,19 @@
 # ADR-0007 — Other-phase walls rendered during play as a low-emphasis "wall echo"
 
-- **Status:** Accepted — resolves review blocker B-1 (RV-001); locked for prototype together with the UA-002 UI contract
+- **Status:** **Semantics revised by ADR-0008** (GATE C, human decision, 2026-10-14) — see banner below. Originally Accepted; resolves review blocker B-1 (RV-001); locked for prototype together with the UA-002 UI contract (now amended by UA-0003).
+
+> [!IMPORTANT]
+> **Revision banner (2026-10-14, Orchestrator).** GATE C selected **Option B**, so the premise of
+> this ADR no longer holds. An other-phase wall is **not** a permanent obstacle: it is a
+> **passable ghost** in the current phase — the player may step onto it, and after the flip it
+> becomes solid *underneath them*. The "invisible permanent obstacle ⇒ reads as an input failure"
+> argument and the **union property** it rests on are withdrawn.
+> **Still required:** the low-emphasis "echo" presentation itself, because the player must still be
+> able to tell *ghost (can enter now)* from *solid (blocks entry)* at a glance. The hard acceptance
+> constraints survive unchanged: **≥3:1 contrast**, **colour-vision-deficiency safe** (never hue
+> alone), and **distinguishable in greyscale**.
+> The rewritten rendering contract is `docs/ui-ux.md` §3.1a (V0.4, UA-0003), plus the new rule for a
+> player standing inside a solid cell. Current truth source: ADR-0008.
 - **Date:** 2026-10-14
 - **Deciders:** Game Designer (Agent 1) + UI / UX / Art Director (Agent 5, owns the visual contract); Orchestrator sign-off at merge
 
