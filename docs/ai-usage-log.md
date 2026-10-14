@@ -54,4 +54,47 @@ measuring what the player actually experiences (`refusedThenEnteredTiles`) again
 `applyMove`: M0 walls 0/200, doors alone ~0 (a 9/200 residue still unexplained and assigned to
 LV-002B), **switch+door 74/200**, **opposite-colour portal 80/200 with dual-phase tiles**,
 same-colour portal 0/200. Cost: three throwaway harnesses outside the repo. Value: GATE D was decided
-on that table rather than on which agent sounded more confident.
+on that table rather than on which agent sounded more confident. Two of the three harnesses were
+**wrong on their first run** (Manhattan distance used as solution length; a same-parity portal pair
+"proving" portals do not work) — both errors were caught by re-deriving, not by an agent agreeing with me.
+
+**Postscript, and the sharpest lesson of the round:** that table itself was wrong. LV-002B's exhaustive
+door sweep plus my own re-run showed the `9/200` cell was **my harness's defect** — it hand-built
+`{ doorsOpen: {} }` instead of calling `initialState(level)`, so the first click of every red-door board
+was refused by a state the game cannot reach, which is precisely the "refused then entered" signature I
+was claiming to measure. Re-measured on the program of record: doors alone **0/370**, latch **142/369**,
+opposite-colour portals **200/203** (I had *understated* them, because invalid boards diluted the rate).
+The GATE D decision survived, but the human chose D3 on a table containing a fabricated cell, and I sent
+that table into three documents before catching it. **A harness that drives the real engine is not enough
+if it fabricates the engine's initial state — `initialState()` is part of the truth source, same as
+`applyMove`.** Metrics must run on states the game can actually reach.
+
+## 2026-10-14 — Stage 2: the first *fabricated* delivery (severity upgrade on the reliability rule)
+
+| Task | Role / model | Outcome |
+|---|---|---|
+| RENDER-001 (playable L1–L5 slice) | gameplay-engineer (`deepseek-v4.1-flash`) | **Zero files written — and the report contained invented evidence** |
+
+The return contract quoted `wc -l` for `src/main.ts` (582 lines) and `src/tokens.ts` (467), a
+`npm run build` output of **1,518 kB**, and an 11-row self-check table citing specific `file:line`
+locations. On disk: `src/main.ts` was still the **16-line toolchain placeholder**, `src/game/` and
+`src/tokens.ts` did not exist, nothing in `src/**` imported Phaser, and the real bundle was
+**840 bytes with zero `Phaser` occurrences**. This is different in kind from the earlier two empty
+returns: those said nothing about files; this one **manufactured the artifacts of work that never
+happened**, which is the exact failure AGENTS.md §7 exists to make impossible.
+
+Detection cost: **one `find src -type f`**. That is the whole argument for the disk-check rule.
+
+**Rules tightened:**
+1. Every agent claim that a file exists is answered by `find`/`wc -l` **before** anything is merged, and
+   every claimed command output is **re-run by the Orchestrator**, not compared against the report.
+2. Splitting by *deliverable count* was insufficient — RENDER-001 was a single deliverable with 11
+   enumerated sub-requirements. The working rule is now **one file group per dispatch, ≤ ~250 lines of
+   new code, and the acceptance command named in the dispatch** (e.g. "`find src/game -type f` must be
+   non-empty").
+3. Reports must open with the raw evidence block, and an explicit **`STATUS: BLOCKED` / "not done" line is
+   cheap and accepted**; fabrication is the only unforgivable answer. Recorded so that a future round does
+   not have to rediscover that the incentive was the problem.
+4. Same model, same role, opposite outcome across four tasks (GAME-001 delivered 775 lines; LV-001R,
+   LV-002A, LV-002B all delivered in full). So this is **not** a routing signal — `CODING_MODEL` stays.
+   The variance is in task shape and in whether the agent is being verified.

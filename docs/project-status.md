@@ -50,6 +50,33 @@ the code's conformance.
 
 **Human decision required (GATE D)** — options are analysed in the escalation message; no agent may pick one.
 
+**GATE D RESOLVED (2026-10-14, human chose D3 — mechanics forward, core rule unchanged).** Recorded as
+**ADR-0009**; `game-design.md` V0.5 + `level-design.md` V0.4 propagated (`e189145`). M3 promoted OPTIONAL→CORE,
+M1 never ships alone, door+switch unit at L6–L10 with **Aha #1 (latch) at L8**, M2 portals at L11 under the
+**opposite-colour law**.
+
+**Verified design law (found + then refuted by measurement, both useful).** I hypothesised that a permanently
+unenterable wall would render as a **hollow "passable" ghost** while still refusing the tap — reproducing the
+exact "reads as broken input" failure ADR-0007 exists to prevent. **Refuted by program**: 5 shipped levels →
+0 such tiles; 400 random boards with **1,581** permanently-unenterable wall tiles → **0** lying tiles. Cause: the
+phase current while the player stands on any neighbour of `T` **is** `entryPhase(T)`, so a parity-dead wall is
+only ever seen solid at the moment it can be tapped. **Consequence: `ui-ux.md`'s filled-blocks / hollow-passes
+axis can never be violated by level data — an executable guarantee, and a QA test to pin.**
+Terminology corrected: a wall solid in the tile's *other* phase is not "decoration", it **is** the phantom-walk
+vehicle (enter → solidify underfoot → walk out). Parity-dead walls are ordinary permanent geometry.
+
+**Corollary found by LV-002A (sharp, and it collapses an old assumption).** In Option B, under the invariant,
+**any single-phase wall that ever refuses a tap is necessarily a permanent obstacle** — a wall blocks only in its
+own phase, and the entry phase of a fixed tile is forced, so "it refused me" and "I can never enter it" are the
+*same event*. Therefore **refusal never means "wrong timing"** anywhere in M0: the L3 "refusal is a free tutorial"
+lesson is a tutorial about *permanent* geometry, and the phantom walk (L4–L5) is the only wall-related beat that
+can ever surprise a player. Validator severity was corrected accordingly (parity-dead wall = **warning** for all
+ids, never an error; portal data violations stay hard errors) — the original error-level instruction was an
+Orchestrator dispatch mistake, caught by the agent refusing to soften a check that contradicted the engine.
+**Open design ruling (matters when L11 is authored, not before):** should a *same-colour* portal pair be a hard
+error? It is provably inert for parity but is a legitimate shortcut. Owner: Game Designer + Architect.
+
+
 ---
 
 ## Current milestone
@@ -141,6 +168,60 @@ not create, mock or fork it** — it imports it or reports BLOCKED.
    both of which still state the withdrawn **union property** as current truth (found by grep this session:
    `design-thinking.md:125`, `iteration-optimization.md:29`).
 7. **Prototype playtest gate:** ≥ 5 non-developers; ≥ 4/5 understand without explanation; ≥ 3/5 want level 6.
+8. **LV-003 (queued, Level AI + Solver):** two small doc-in-code corrections found by QA-001 — `src/levels/README.md` §3 attributes the position→phase break to M3
+   switches (a switch never relocates the player, so `dualPhaseTiles` stays 0; M3 breaks *door enterability*, i.e. `refusedThenEnteredTiles`), and the headers of
+   `src/core/level/index.ts` + `scripts/validate-levels.ts` still claim "no `tsx` / no build step" now that `npm run levels` uses tsx.
+9. **RENDER-001 cleanup:** `src/core/rules/applyMove.ts:140-150`'s NOTE comment predates AR-0004's portal ruling — the code is correct, the prose is stale.
+10. **LV-003 (severity correction, must apply after LV-002A lands):** I dispatched LV-002A to make a parity-dead wall an **error** for `id ≤ 20`. That instruction is now
+    **known wrong** — a parity-dead wall is honest, permanent geometry (measured: 0 lying tiles in 400 boards), so erroring on it would reject legitimate levels
+    including the re-labelled L4/L5. Correct policy: **warning** "this tile can never be entered on any move count — permanent geometry, fine, but never sell it as
+    a mechanic"; **hard errors only for provably inert or illegal data** (same-colour portal pair; portal end on a wall tile or door tile per `architecture.md` V0.5 §7).
+    Add the complementary positive check instead: for a level whose documented lesson is the phantom walk, the **shortest solution must cross at least one
+    other-phase wall tile** (BFS-decidable), and for the latch levels the ADR-0009 formula "no solution with all switches off + shortest solution presses the switch
+    and passes the door that refused the greedy approach\". Also pin the new guarantee as a test: **a wall is never rendered as a hollow ghost while refusing entry.**
+    → **LANDED** (`776e387`, gate green again: 5/5 ok, l003/l004/l005 carry 1–2 warnings, exit 0).
+11. **chore(format) sweep (defer to the RENDER-001 boundary):** `.prettierrc` (`printWidth: 80`) is not satisfied by pre-existing `src/core/rules/solid.ts`,
+    `src/core/rules/applyMove.ts`, `src/core/state/types.ts` — LV-002A conformed its own new lines and deliberately did not reformat outside its scope.
+    Run `prettier --write` over `src tests scripts` only (docs are ignored; README/submission must not be swept while DG-005 edits them), as one isolated commit.
+12. **LV-004 (queued, Level AI + Solver — unblocks playtest hypothesis b):** no shipped level **forces** the phantom-walk embed. `l004`/`l005` *permit* walking
+    through a ghost tile but an embed-free route of equal `par` exists, so PA's protocol must record **b = `NOT TESTABLE`** on this build. Author one L4/L5-shaped
+    level whose **shortest solution must cross a tile that is a wall in the arrival phase** (BFS-decidable: the walking-only subgraph has no embed-free par route),
+    and add that as a positive Solver check for any level documented as teaching the phantom walk. Without it, Option B's only genuinely new *perceptible* beat
+    cannot be tested at all — the stage-2 gate would go in blind on exactly the thing GATE D kept the rule for.
+13. **PA-003 (dispatched):** §9's hypothesis alphabet collides with ADR-0009 (V0.3 used a1/a2/c; ADR-0009 mandates a′/b/c′/d′ after the human decision) and
+    still described GATE D as undecided. Two metric provenances were also mixed (LV-001R's 231/500 board-share vs the 74/200 decision-tile count) — different
+    quantities, same sentence.
+14. **LV-005 (queued, Level AI + Solver):** hard-error **door ∩ wall overlap on the same tile**. This is the *only* lying-tile construction I can build (see the
+    legibility law below): an A-wall that also carries a red door refuses entry in phase B (door closed) while the wall visual says hollow = "passable now".
+    Measured: 3 reachable states on a 5×5 probe. Doors already provide full solidity on their own, so banning the overlap costs no puzzle value and deletes the hazard.
+    Shipped content has zero doors, so nothing currently fails — this must land **before L6 authoring**, not after.
+15. **UA-0005 (queued, UI/Art Director):** `ui-ux.md` must state the **per-tile visual precedence** when a tile carries more than one obstacle source
+    (closed door > ghost wall > floor). Today the spec defines each object's appearance but not the arbitration, which is what lets case E above read as a lie.
+    Fold into the V0.5 pass; no dependency on RENDER-001 (shipped levels have no doors).
+16. **GD-007 (tiny, batched with the L6 authoring pass):** `docs/level-design.md` §1 lines ~43/46 still cite the withdrawn "0/200" figure and describe the
+    same-colour-portal rejection as a "validator rule to be added" — that rule has since **landed** (`npm run levels` rejects every same-colour pair, 0/400 legal).
+    GD-006 correctly stayed out of scope and flagged it instead of widening the edit.
+
+**The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
+1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
+root cause in **my own** out-of-repo harness: it fabricated the initial state as `{ doorsOpen: {} }` instead of calling `initialState(level)`. Door openness is
+**derived** from `(color, currentPhase, switchesOn)` (`baseDoorOpen`: **red open in A, blue open in B**), so the harness believed a red door was closed at move 0
+when the game has it open — the first click of every such board was refused by a state that does not exist in the game. Re-running my generator against the
+shipped solver: **15 boards, my metric fires on 15, the shipped metric on 0.**
+
+Re-measured on the program of record (`src/core/solver/bfs.ts`, valid generator, 400 boards/class — sent to GD-006 to replace the cited table):
+M0 walls 0/374 · **M1 doors alone 0/370** (9/200 withdrawn) · **M1+M3 142/369 ≈ 38 %** (74/200 was right in magnitude) ·
+**M2 opposite-colour 200/203 solvable boards with a decision tile and 203/203 with dual-phase tiles** — my earlier 80/200 *understated* portals because invalid
+boards diluted the rate · M2 same-colour **0/400 boards even pass validation** (LV-002A's check makes ADR-0009's opposite-colour law machine-enforced).
+
+**Sharper mechanism statement (this is better than the number):** a door is *already* phase-conditional solidity — it is not inert without a switch. It is static
+alone because derived solidity meets fixed entry parity. **M3's contribution is turning a tile's solidity from a function of the phase into a function of history.**
+That is the real reason doors must ship paired with switches, and it does not depend on any scan.
+
+**Legibility law, scoped by measurement (answers DG-005's open question (a)).** `filled = blocks / hollow = passes` is never violated by: pure M0 boards
+(0/400), or **portal-bearing** boards — an opposite-colour portal does not create lies, it *removes* deadness: the tile that was permanently unenterable becomes
+enterable from a portal-arrived phase-B state, which is exactly Aha #2's construction. The guarantee therefore holds for everything the player can meet today, and
+breaks **only** for door ∩ wall overlap (item 14/15).
 
 ## Guardrails
 
