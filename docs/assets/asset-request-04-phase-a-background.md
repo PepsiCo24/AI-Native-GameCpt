@@ -1,5 +1,6 @@
 # Asset Request 04 — Phase A Background (Light / 白昼)
 
+- **Asset ID:** `A-04`
 - **Asset Name:** `bg_phase_a`
 - **用途:** Full-screen background behind the play board while in Phase A. Must not compete with board readability.
 - **数量:** 1
@@ -20,3 +21,12 @@
 - **文件名:** `bg_phase_a_1920x1080.png`
 - **目标目录:** `assets/art/background/`
 - **依赖与阻塞:** **Blocks Stage 2 prototype visual integration** (readability test).
+- **验收标准 / Acceptance criteria:**
+  1. PNG or JPG, ≥ 1920 × 1080 px, exact 16:9; no alpha required.
+  2. **Central 60 % is quiet and even**: no distinct object, no hard edge, no pattern with a local contrast above roughly **1.6:1** inside that region (the board plate sits there at ≥ 0.92 opacity, but the background must not fight it).
+  3. Survives a **9:16 centre crop** without losing its identity or introducing a hard shape behind the board.
+  4. Clearly **daytime / Light World**: ivory, faint gold, sky blue, soft morning haze. Greyscale-converted it must read as the *bright* member of the A/B pair (measured phase ground separation is 14.04:1 — this inversion must not be weakened).
+  5. **No** text, characters, creatures, board, grid, tiles, walls, doors, props or UI.
+  6. No strong vignette, no lens flare, no photorealistic landscape, no detailed foliage, no busy texture.
+  7. Shares its composition language with A-05 so the pair reads as one world at two times of day.
+  8. Delivered as `bg_phase_a_1920x1080.png` into `assets/art/background/`.
