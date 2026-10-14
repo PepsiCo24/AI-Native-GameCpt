@@ -3,11 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <!-- Mobile-first: the prototype must be playable by touch on a phone browser. -->
+    <!--
+      RV-002 M-8: pinch-zoom must NOT be blocked. The whole pitch is fine-grained cell
+      legibility on a 320 px viewport, and WCAG 2.1 SC 1.4.4 (Resize Text) is the same
+      conformance level ui-ux.md §7.4/R-C3 already claims. Zoom stays available; the
+      game swallows gestures only on its own canvas (below), never on the document.
+    -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#1b1f3b" />
+    <!-- RV-002 M-7: boot uses the Phase-A ground (ui-ux.md §1), not the Phase-B plate. -->
+    <meta name="theme-color" content="#f7f1e3" />
     <title>Phase Shift: Echo Grid</title>
     <style>
       html,
@@ -15,16 +22,20 @@
         margin: 0;
         padding: 0;
         height: 100%;
-        background: #1b1f3b;
+        background: #f7f1e3;
         overflow: hidden;
         overscroll-behavior: none;
-        touch-action: none;
         -webkit-tap-highlight-color: transparent;
         font-family: system-ui, -apple-system, sans-serif;
       }
       #app {
         width: 100%;
         height: 100%;
+      }
+      /* touch-action is scoped to the board surface only, so page zoom still works */
+      #app canvas {
+        touch-action: none;
+        display: block;
       }
     </style>
   </head>
