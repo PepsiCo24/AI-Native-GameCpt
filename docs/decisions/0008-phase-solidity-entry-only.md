@@ -1,6 +1,16 @@
 # ADR-0008 — Phase solidity blocks entry only; standing inside a wall is legal (Option B, GATE C)
 
 - **Status:** Accepted — **human-approved core-rule change at GATE C**; locked in `docs/game-design.md` V0.4 §3.1; **Stage 2 playtest verification is a mandatory gate** before full level-set production
+
+> [!IMPORTANT]
+> **Correction banner (2026-10-14, GATE D / ADR-0009 — human decision).** The **checkerboard invariant** — a 4-connected grid is bipartite, every legal move flips the phase, and a refusal consumes no move, so the phase in which a tile can be *entered* is fixed by the tile alone (a detour adds 2 moves, never 1) — **proves clause 8 of this ADR false**, three times independently (GAME-001 analytic + 200-board sweep; LV-001R 4,000-level scan; Orchestrator BFS over the shipped `applyMove`). Withdrawn as measured-false:
+> - **Decision, clause 8:** "Phase genuinely rewires feasible routes from L1 onward … M0 is no longer a static maze" — **false for M0-only content, and for M1 doors without switches.** M0 walls are permanent obstacles (parity-mismatched) or permanent decoration (parity-matched); "refused first, entered later" is unconstructible. **OQ-1 was NOT resolved by Option B.**
+> - **Consequences, first (+) bullet:** "OQ-1 resolved mechanically … the first Aha is produced by M0 itself" — withdrawn with clause 8.
+> - **Alternatives, Option A rationale:** the premise that Option B delivers the route dynamism Option A lacks is withdrawn; under the invariant, A and B never differed on M0 routing.
+>
+> **What stands — rules 1–7, unchanged:** entry-only legality in the current phase; flip bound to every legal move; standing inside a wall is legal (never crushed / pushed / moved); exit by the same entry rule; doors share wall semantics; portals trigger on entry once; phase-independent win with a dual-phase-safe goal. Option B's *delivered* value is the **embedded / phantom-walk beat** and the single rule path — not route dynamism.
+> **Resolution:** GATE D chose **D3 — mechanics forward, core rule unchanged** (ADR-0009): M3 promoted to CORE, M1+M3 taught as one unit from L6, M2 portals from L11 under the opposite-colour law; Aha #1 re-defined as the latch beat. The Stage-2 hypotheses (a) and (c) in Consequences below are superseded by ADR-0009 Decision 8; hypothesis (b) stands. Current truth source: `docs/decisions/0009-checkerboard-invariant-mechanics-forward.md` + `docs/game-design.md` V0.5 + `docs/level-design.md` V0.4.
+
 - **Date:** 2026-10-14
 - **Deciders:** **Human (final authority, GATE C)**; proposal and consequence analysis prepared by Game Designer (Agent 1); Orchestrator sign-off at merge; Playtest Analyst confirmation pending Stage 2
 - **Supersedes:** ADR-0006 (partially — the post-flip standing-check legality condition, and with it the union-property consequence)
