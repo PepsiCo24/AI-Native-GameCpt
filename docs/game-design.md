@@ -1,7 +1,7 @@
 # Game Design — Phase Shift: Echo Grid / 双相棋盘：昼夜回响
 
 > Owner: **Agent 1 — Game Designer**
-> Version: **V0.3**
+> Version: **V0.4**
 > Date: 2026-10-14
 > Status: **LOCKED for prototype** (changes require Product Lead + Game Designer double confirmation)
 
@@ -14,7 +14,7 @@ A grid puzzle where **the world flips between Light and Shadow every time you mo
 中文：
 > 每走一步，世界就在白昼与夜晚之间翻转。两个相位是不同的地图。你不能按“切换”键，因为切换就藏在你的每一步里。
 
-> **Rules truth (ADR-0006):** a wall tile is never enterable in *either* phase — the flip changes which walls the world shows as solid, not which tiles you may enter. Routes truly open only via doors / portals / switches (M1–M3). See §5 and `docs/level-design.md` §0.
+> **Rules truth (ADR-0008 — GATE C, human-approved):** a phase wall blocks entry **only while its own phase is active**. Every wall is enterable on exactly one parity of the move count, so the flip **really rewires routes from L1 onward** — the first Aha comes from M0 itself. The flip may leave you standing inside a wall: legal, safe, never crushed or moved. See §3.1, §5 and `docs/level-design.md` §0.
 
 ## 2. Why this is different
 
@@ -46,33 +46,40 @@ Player observes the new world and plans the next move
 - The phase flip happens **after every legal move**.
 - Phase is a property of world state, not of player charge/energy.
 - **There is no standalone phase-switch button.** This is the protected core innovation.
+- After the flip, the player may be standing on a tile that is solid in the new phase. **That is legal** — the player is never crushed, pushed, or relocated (ADR-0008).
 - Rule changes must be recorded as: `Original Hypothesis → Problem → Change → Evidence → Result`.
 
-### 3.1 Illegal move & resolution order (LOCKED — V0.2)
+### 3.1 Illegal move & resolution order (LOCKED — V0.4, supersedes V0.2 per ADR-0008)
 
-**Resolution order (unchanged from V0.1):** a move resolves in the CURRENT phase's map → the phase flips (A↔B) → the new phase's map becomes active.
+**Resolution order:** legality is judged **at entry, against the CURRENT phase only** → the move resolves → the phase flips (A↔B) → the new phase's map becomes active.
 
-**The locked illegal-move rule:** a move is **ILLEGAL** if either
-- the destination tile is solid in the current phase, **or**
-- after the move resolves and the phase flips, the tile the player would be standing on is a wall in the new phase.
+**The locked illegal-move rule (Option B, human-approved at GATE C):** a move is **ILLEGAL** iff
+- the destination is out of bounds, **or**
+- the destination tile is solid **in the current phase** (a current-phase wall, or a door closed in the current phase).
 
-An illegal move is refused **entirely: no movement and NO phase flip.** The world state does not change; the player stays put and the board shows blocked-move feedback.
+There is **no post-flip standing check**. An illegal move is refused **entirely: no movement and NO phase flip.** The world state does not change; the player stays put and the board shows blocked-move feedback. (Refusal semantics unchanged from V0.2.)
 
-> **REJECTED alternative (V0.1):** "the player is never covered — incoming walls are suppressed on the player's tile." Rejected because it creates **two rule paths** for the same object and weakens puzzle determinism (player model and Solver can disagree about board state). One rule, one path: *if the resolution would put you on a wall, the move does not happen.*
+**Standing inside a wall is legal.** If the flip makes the player's tile solid in the new phase, the player simply stands inside the wall — **never crushed, never pushed, never randomly moved.** A player standing on a solid tile moves normally: each outward step is judged by the same entry rule (destination non-solid in the then-current phase). You can step out of a wall into the open; you cannot step from one solid tile into another tile that is solid now.
 
-**Goal evaluation timing (unchanged from V0.1):** the goal is checked after a legal move fully resolves (post-flip): **standing on the goal tile after a fully-resolved legal move wins the level, regardless of phase.** A phase-gated goal would need its own schema field and its own ADR; it is not part of this design.
+**Doors share the wall semantics:** entry is judged by current-phase solidity only; a flip never retroactively ejects an occupant. **Portals** trigger only on the entering step — no chaining, and standing on a portal never retriggers it.
 
-**Worked example (the V0.2 rule in action):**
+> **REJECTED alternative (V0.1):** "incoming walls are suppressed on the player's tile." Still rejected. Option B is **not** suppression: the flipped-in wall stays fully real — it blocks entry while its phase is active. The rule simply never re-judges the tile the player already occupies. One rule path is preserved: legality at entry, against the current phase, and nowhere else.
+
+**Goal evaluation (unchanged outcome, validation hardened):** the goal is checked at the end of a fully-resolved legal move (post-flip): **standing on the goal tile then wins the level, regardless of phase.** The goal tile must additionally be a non-wall in **both** phases — enforced by level validation (`docs/level-design.md` §1), so the goal is enterable on both parities and a win never happens from inside a wall. A phase-gated goal would still need its own schema field and its own ADR.
+
+**Key corollary (resolves OQ-1):** a Phase-B wall is enterable exactly during Phase-A steps, and vice versa — enterability depends on the **parity of the move count**. Phase therefore rewires real routes from **L1** onward; M0 is no longer a static maze. Authoring consequences: `docs/level-design.md` §0.
+
+**Worked example (the V0.4 rule in action):**
 
 ```
 Phase A (current)            Phase B (after the flip)
   0 1 2                        0 1 2
 0 . . .                      0 . . .
-1 P . .          flip →      1 . # .      # = Phase-B wall at [1,1]
+1 P . .          flip →      1 P # .      # = Phase-B wall at [1,1]
 2 . . G                      2 . . G
 ```
 
-Player at `[0,1]` taps RIGHT toward `[1,1]`. The destination is empty in Phase A, but resolving the move would flip the world and leave the player standing on a Phase-B wall at `[1,1]`. **The move is refused: no movement, no flip — the player stays at `[0,1]` and the phase stays A.** Every landing tile must be clear in both the departure phase and the arrival phase.
+Player at `[0,1]` taps RIGHT toward `[1,1]`. The destination is empty in Phase A — the only phase that judges entry — so the move is **legal**. The player lands on `[1,1]`; the world flips; a Phase-B wall materializes on the player's tile, and the player now **stands inside the wall**: safe, unmoved. The next move may exit to any adjacent tile that is non-solid in Phase B (e.g. LEFT back to `[0,1]`, or DOWN toward the goal if `[1,2]` is clear in B) — but never into another B-solid tile. Under the superseded V0.2 rule this same tap was refused; V0.4 lets the route through on this parity.
 
 ## 4. Core loop
 
@@ -106,13 +113,13 @@ Each mechanic is "a different expression of one rule", not a new rule. That keep
 
 | ID | Mechanic | Phase A | Phase B | First introduced |
 |---|---|---|---|---|
-| **M0** | Phase Wall | A-Walls solid, B-Walls gone | A-Walls gone, B-Walls solid | L1 |
+| **M0** | Phase Wall | A-walls solid; B-walls passable (echo) | B-walls solid; A-walls passable (echo) | L1 |
 | **M1** | Phase Door (Red/Blue) | Red door open, Blue closed | Red closed, Blue open | L21 |
 | **M2** | Phase Portal | Portal pair 1 active | Portal pair 2 active | L36 |
 | **M3** | Phase Switch (optional) | Switch tile only triggers in one phase | Trigger in the other phase | L26 (extension) |
 | **M4** | Composite | any combination above | any combination above | L26+ |
 
-> **M0 note — union property (ADR-0006):** a tile that is a wall in EITHER phase is never enterable under either parity, so M0 phase walls are **permanent obstacles with phase-skinned visibility** — never gates that open. Genuine route dynamism comes from M1 (doors), M2 (portals), M3 (switches). Other-phase walls are still rendered as a low-emphasis "wall echo" (ADR-0007). Authoring consequences: `docs/level-design.md` §0.
+> **M0 note — parity-dependent entry (ADR-0008):** phase solidity only blocks **entry**. A B-wall tile is a legal destination during any Phase-A step and blocks only while Phase B is active, so every M0 wall is enterable on exactly **one parity of the move count** — M0 walls are real, parity-gated passages, not permanent obstacles. A move may end with the player standing inside a wall of the new phase (never crushed / pushed / moved), and the player can step out on a later move. Other-phase walls are rendered as a low-emphasis "wall echo" whose meaning is now "passable NOW, solid on the other parity" (ADR-0007, semantics revised by ADR-0008). Authoring consequences: `docs/level-design.md` §0.
 
 **M3 (Phase Switch) is OPTIONAL** and only ships if Stage 2–4 playtest proves it adds decisions without adding explanation. Default plan: deliver M0 → M1 → M2 and keep M3 as a reserve mechanism.
 
@@ -140,9 +147,9 @@ Two worlds, one board logic.
 | Range | Goal | Primary mechanic |
 |---|---|---|
 | **L1–L3** | Understand movement with almost no text | M0 (walls only) |
-| **L4–L6** | First feel that "my move changes the next board" | M0 |
-| **L7–L10** | First complete **Aha Moment** | M0 |
-| **L11–L20** | Deepen phase walls: path planning, false routes, 2-step lookahead | M0 |
+| **L4–L6** | First **Aha**: my move count opens and closes walls (parity) | M0 |
+| **L7–L10** | Turn the Aha into fluency: parity planning, false routes | M0 |
+| **L11–L20** | Deepen phase walls: path planning, 2-step lookahead, embedded positions | M0 |
 | **L21–L25** | Introduce **Phase Door**; difficulty intentionally dips | M1 |
 | **L26–L35** | Combine Phase Wall + Phase Door | M0 + M1 |
 | **L36–L40** | Introduce **Phase Portal** | M2 |
@@ -155,16 +162,17 @@ The curve is intentionally **non-monotonic**: every new-mechanic block starts wi
 ## 9. Teaching plan (Show, don't tell)
 
 - **L1–L3:** no walls, or a single clearly-relevant wall. The player learns `tap → move → world flips` purely from watching. ≤ 1 short hint line total.
-- **L4–L6:** introduce a wall that only exists in one phase, so the flip visibly creates/removes a blockage.
-- **Aha engineering for L3–L5:** build the first "oh, it can do *that*" moment as a small chain:
+- **L4–L6:** introduce a wall that only exists in one phase, so the flip **literally opens and closes that tile to entry** — not just visually.
+- **Aha engineering for L3–L5:** build the first "oh, it can do *that*" moment as a small chain — now produced by **M0 itself** (ADR-0008), no doors required:
   ```
   player acts
-    → world changes (the visible wall set swaps)
-    → the greedy line is refused; the side corridor the player already saw
-      becomes the plan — walls never "open" (for M0 the change is
-      perceptual, ADR-0006; doors/portals open literally, M1/M2)
+    → world changes (the active wall set swaps)
+    → the greedy line is refused; one visible side step flips the parity,
+      and the tile that just said "no" is now enterable — M0 walls open
+      and close with the move count (ADR-0008)
     → next move flips again
-    → the detour delivers a clean, legal entry to the goal
+    → the player steps THROUGH the former wall; the route delivers a clean,
+      legal entry to the goal
     → goal reached
   ```
   The player should *realize it themselves*, never be shown a "you discovered the mechanic!" popup.
@@ -232,3 +240,4 @@ Priority: **Fun > Readable > Expandable > Pretty.**
 | 2026-10-14 | V0.1 | Initial design lock from competition research report; core rule and 50-level rhythm defined | Agent 1 (proposed) / Orchestrator (confirmed) |
 | 2026-10-14 | V0.2 | Lock illegal-move rule (supersedes wall suppression); add level design doc | Agent 1 / Orchestrator |
 | 2026-10-14 | V0.3 | RV-001 reconciliation: win condition made unambiguous (standing on goal post-resolution wins, any phase); M0 union-property note (§1, §5); Aha chain wording made ADR-0006-accurate; ADR-0007 wall echo; level grid cap 3–7 moved to `docs/level-design.md` citing ui-ux R-L2 | Agent 1 |
+| 2026-10-14 | V0.4 | **GATE C (human decision): core rule → Option B (ADR-0008).** Phase solidity blocks entry only; the post-flip standing check is removed; standing inside a flipped-in wall is legal (never crushed / pushed / moved); union property removed (§1, §5); Aha chain re-based on M0 parity routing (§8, §9); goal must be non-wall in both phases. Partially supersedes ADR-0006; revises ADR-0007 echo semantics. **Requires Stage 2 playtest verification + full Solver re-verification of the level set** | Agent 1 / Human at GATE C |
