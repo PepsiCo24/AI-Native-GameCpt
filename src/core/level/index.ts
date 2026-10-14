@@ -10,6 +10,17 @@
  * - `docs/architecture.md` §5 (state model) + §7 (level schema & validation);
  * - `ADR-0004` — invalid candidates are REJECTED, never auto-repaired;
  * - `ADR-0008` rule 7 — the goal must be non-wall in BOTH phases (hard error);
+ * - `docs/architecture.md` V0.5 §7 (RV-002 H-2) — both ends of every portal must
+ *   be non-wall in BOTH phases and must not be door tiles (hard error), and a
+ *   same-parity portal pair can never break the position↔phase parity link
+ *   (hard error, they are mechanically inert);
+ * - parity-dead walls — every legal move changes `x + y` parity and the phase
+ *   together, so the phase an entry happens in is fixed by the tile's Manhattan
+ *   parity from the start; a wall solid in its own entry phase is therefore
+ *   never enterable on any move count and is exactly an ordinary permanent wall
+ *   — legal geometry, not a defect, and never misleading on the board.
+ *   **Warning for every `id`, teaching levels included** (portal case caveated):
+ *   ADR-0009 / `docs/level-design.md` V0.4 §0 + §2;
  * - `docs/ui-ux.md` R-L2 — hard grid cap 7 × 7 (`width`/`height` ∈ 3..7);
  * - `AGENTS.md` §3 — `src/core/**` is pure TypeScript: never import Phaser here.
  *
@@ -195,6 +206,41 @@ export function formatCoord(c: Coord): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 3b. Phase + entry-parity helpers
+//
+// Deliberately level-local (`flip` mirrors `flipPhase`, `PHASES` mirrors the
+// state-layer constant) rather than imported from `@/core/state/**`: this module
+// stays importable by both `tsc` and bare Node with `zod` as its only dependency
+// (see the header note), and a runtime `level → state` edge would point the
+// dependency arrow backwards — `src/core/state/types.ts` already imports *from*
+// `src/core/level`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Canonical phase order (A = Light / 白昼, B = Shadow / 夜晚). */
+const PHASES = ["A", "B"] as const satisfies readonly Phase[];
+
+/** The other phase, in the validator's own words. */
+function flip(phase: Phase): Phase {
+  return phase === "A" ? "B" : "A";
+}
+
+/**
+ * The phase an entry into `tile` always happens in — the heart of the
+ * parity-dead-wall check.
+ *
+ * `entryPhase(T) = (ManhattanDistance(start, T) odd) ? startPhase : flip(startPhase)`.
+ *
+ * Direction matters and is easy to invert: the entry is decided **before** that
+ * move's flip, so an ODD distance means the phase at entry is `startPhase` (the
+ * player stands on a neighbour after `d - 1` moves, an even count, and the phase
+ * is `startPhase` flipped an even number of times). Verified against `applyMove`.
+ */
+function entryPhaseOf(tile: Coord, start: Coord, startPhase: Phase): Phase {
+  const manhattanParity = (tile[0] + tile[1] - start[0] - start[1]) % 2;
+  return manhattanParity !== 0 ? startPhase : flip(startPhase);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 4. Validator
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -219,10 +265,37 @@ export interface ValidationResult {
  *   within one list; duplicate ids within one collection; `player`/`goal`
  *   overlapping each other; `player` or `goal` solid in either phase
  *   (ADR-0008 rule 7 for the goal); dangling switch `targets`; portal ends
- *   identical / out of bounds / solid in the portal's own `activePhase`.
+ *   identical / out of bounds / solid in **either** phase / covered by a door
+ *   tile / a pair whose two ends share one `(x + y)` parity (architecture V0.5
+ *   §7).
  * - Warnings: a tile solid in BOTH phases (never enterable — deliberate design
- *   only, flag for review); door tiles on a phase wall, or on the player/goal;
- *   a switch that can never fire; a switch with no targets.
+ *   only, flag for review); a wall that can never be entered on any move count
+ *   (an ordinary permanent wall — legal geometry, warning for **every** `id`,
+ *   teaching levels included: ADR-0009 / V0.4 §0 + §2); door tiles on a phase
+ *   wall, or on the player/goal; a switch that can never fire; a switch with no
+ *   targets.
+ *
+ * Parity-dead walls, precisely: every legal move changes `x + y` parity and the
+ * phase together, so the player can only stand next to a tile `T` after
+ * `n ≡ d(T) - 1 (mod 2)` moves (`d` = Manhattan distance from the start; extra
+ * "wandering" moves come in pairs and cannot change the parity), and the phase
+ * current at that moment is `startPhase` flipped `n` times, i.e.
+ * `entryPhase(T) = (d(T) odd) ? startPhase : flip(startPhase)`. A wall listed in
+ * `phase{entryPhase(T)}Walls` therefore refuses *every* entry attempt on *every*
+ * move count. Verified against the real rules engine by exhaustive BFS over
+ * `applyMove` (L3 `(3,1)`: entry phase A, never entered; L4 `(2,0)`: entry
+ * phase A, entered in A). **This is legal geometry, not a defect:** under
+ * ADR-0009 / `docs/level-design.md` V0.4 §0 a parity-mismatched phase wall *is*
+ * an ordinary permanent wall, and L3 teaches it on purpose ("permanent
+ * refusal"). Nor is it misleading: a click on such a tile requires the player to
+ * stand on a neighbour, and standing on a neighbour forces the current phase to
+ * `entryPhase(T)` — the tile's own solid phase — so the tile is never rendered
+ * hollow at a moment when it can be clicked. Hence a warning for **every** `id`
+ * (`docs/decisions/0009-checkerboard-invariant-mechanics-forward.md`). A portal
+ * pair of opposite parity breaks that link (`applyMove` BFS: same-parity pairs
+ * leave every tile reachable in exactly one phase, opposite-parity pairs make
+ * tiles reachable in both), so with portals present the claim is not decidable
+ * at the data layer and the warning says exactly that.
  *
  * This function proves nothing about **solvability** or about `par` — that is
  * SOLVER-001's BFS job (`docs/architecture.md` §8, ADR-0004 pipeline).
@@ -311,6 +384,43 @@ export function validateLevel(raw: unknown): ValidationResult {
     );
   }
 
+  // ── parity-dead walls ─────────────────────────────────────────────────────
+  // Every legal move is ±1 on one axis, which changes `x + y` parity and the
+  // phase *together*; a tile's parity relative to the start therefore fixes the
+  // phase its entry can happen in (see the `validateLevel` contract note).
+  //   entryPhase(T) = (d(T) odd) ? startPhase : flip(startPhase)
+  // Note the direction, it is easy to invert: the entry happens *before* the
+  // n-th move's flip, so an ODD distance means the entry phase is `startPhase`.
+  // A wall listed in its own entry phase is then never enterable — with one
+  // exception: a portal pair of opposite parity breaks the position↔phase link,
+  // so the claim is only decidable at the data layer when no portals exist.
+  const wallLists: ReadonlyArray<readonly [string, readonly Coord[], Phase]> = [
+    ["phaseAWalls", level.phaseAWalls, "A"],
+    ["phaseBWalls", level.phaseBWalls, "B"],
+  ];
+  const portalCaveat =
+    level.portals.length > 0
+      ? ` — NOT PROVEN for this candidate: it carries ${String(level.portals.length)} portal(s), and a teleport between tiles of opposite (x + y) parity breaks the parity link above, so this wall may still be enterable from a portal landing (manual review / needs the solver)`
+      : "";
+
+  for (const [label, list, ownPhase] of wallLists) {
+    list.forEach((tile, i) => {
+      if (outOfBounds(tile, width, height) !== null) return; // already an error above
+      if (entryPhaseOf(tile, player, level.startPhase) === ownPhase) {
+        // WARNING for every `id` — teaching levels included, deliberately. A
+        // parity-dead wall is *exactly* an ordinary permanent wall (ADR-0009 /
+        // `docs/level-design.md` V0.4 §0: a parity-mismatched phase wall is
+        // permanent geometry, and L3's lesson *is* "permanent refusal"), so it is
+        // legal design and must not be rejected — only ever handed to manual
+        // review, and only for the one thing that is actually wrong: an authoring
+        // *intent* that treats it as a phase gate / timing mechanism.
+        warnings.push(
+          `${label}[${i}] ${formatCoord(tile)}: this wall can never be entered on any move count — it is equivalent to an ordinary permanent wall (legal geometry, not a defect). Entry into ${formatCoord(tile)} always happens in phase ${ownPhase}, which is exactly this wall's own solid phase: every legal move changes x + y parity and the phase together, so the phase at entry is fixed by the tile's Manhattan-distance parity from the start (odd distance ⇒ startPhase "${level.startPhase}", even distance ⇒ "${flip(level.startPhase)}"), and extra moves cannot change that parity (wandering moves come in pairs). It does not mislead the player: clicking this tile requires standing on a neighbour, and on any neighbour that same invariant puts the current phase at ${ownPhase} — this tile's solid phase — so it only ever reads solid when it can be clicked. Manual review is warranted only if the level's intent uses it as a phase gate / timing mechanic, which is wrong by construction (it answers identically on every move count) — docs/decisions/0009-checkerboard-invariant-mechanics-forward.md, docs/level-design.md V0.4 §0 + §2${portalCaveat}`,
+        );
+      }
+    });
+  }
+
   // ── doors (M1) ────────────────────────────────────────────────────────────
   errors.push(...duplicateIdMessages("doors", level.doors.map((d) => d.id)));
   level.doors.forEach((door, i) => {
@@ -369,24 +479,53 @@ export function validateLevel(raw: unknown): ValidationResult {
 
   // ── portals (M2) ──────────────────────────────────────────────────────────
   errors.push(...duplicateIdMessages("portals", level.portals.map((p) => p.id)));
+  const isWallIn = (phase: Phase, key: string): boolean =>
+    (phase === "A" ? wallA : wallB).has(key);
+
   level.portals.forEach((portal, i) => {
     const [endA, endB] = portal.pair;
-    const ownWall = portal.activePhase === "A" ? wallA : wallB;
+    const label = `portals[${i}] "${portal.id}"`;
 
     portal.pair.forEach((end, j) => {
       const problem = outOfBounds(end, width, height);
-      if (problem !== null) errors.push(`portals[${i}] "${portal.id}".pair[${j}] ${formatCoord(end)}: ${problem}`);
+      if (problem !== null) errors.push(`${label}.pair[${j}] ${formatCoord(end)}: ${problem}`);
+      if (problem !== null) return; // a coordinate outside the grid has no wall/door question
 
-      if (ownWall.has(coordKey(end))) {
+      // docs/architecture.md V0.5 §7 (RV-002 H-2): both ends must be non-wall in
+      // BOTH phases — this strengthens the older own-`activePhase`-only check.
+      // `solidAt` is `(level, phase, doorsOpen)`-dependent, and every door is
+      // closed in at least one reachable phase-state, so the door case is
+      // excluded outright rather than reasoned about per state.
+      for (const phase of PHASES) {
+        const key = coordKey(end);
+        if (!isWallIn(phase, key)) continue;
+        const explanation =
+          portal.activePhase === phase
+            ? `the end is solid while its own activePhase "${portal.activePhase}" is current, so it could never be entered while the portal is active`
+            : `a teleport landing there while phase ${phase} is current would drop the player inside a wall — exactly the §6.2 step-3 landing ambiguity RV-002 H-2 removes at the data layer`;
         errors.push(
-          `portals[${i}] "${portal.id}".pair[${j}] ${formatCoord(end)} is a wall in the portal's own activePhase "${portal.activePhase}" — the portal end could never be entered while the portal is active`,
+          `${label}.pair[${j}] ${formatCoord(end)} is a wall in phase ${phase} (phase${phase}Walls) — a portal end must be non-wall in BOTH phases (docs/architecture.md V0.5 §7 / RV-002 H-2): ${explanation}`,
+        );
+      }
+
+      const doorIndex = level.doors.findIndex((d) => d.tiles.some((tile) => sameCoord(tile, end)));
+      if (doorIndex !== -1) {
+        const door = level.doors[doorIndex];
+        errors.push(
+          `${label}.pair[${j}] ${formatCoord(end)} is also a tile of doors[${doorIndex}] "${door?.id ?? ""}" — a portal end must not be a door tile (docs/architecture.md V0.5 §7 / RV-002 H-2): a door is closed in at least one reachable phase-state, so a landing there is never statically safe`,
         );
       }
     });
 
     if (sameCoord(endA, endB)) {
       errors.push(
-        `portals[${i}] "${portal.id}" has both ends on ${formatCoord(endA)} — the two ends of a portal pair must be different tiles`,
+        `${label} has both ends on ${formatCoord(endA)} — the two ends of a portal pair must be different tiles`,
+      );
+    } else if ((endA[0] + endA[1]) % 2 === (endB[0] + endB[1]) % 2) {
+      // Same parity ⇒ the pair cannot break the position↔phase link, so the
+      // portal is inert as a phase mechanic (docs/architecture.md V0.5 §7).
+      errors.push(
+        `${label}: both ends ${formatCoord(endA)} and ${formatCoord(endB)} have the same (x + y) parity — every legal move changes x + y parity and the phase together, so this teleport preserves that link and can never break the parity invariant: the phase at every tile stays a function of that tile's (x + y) parity, i.e. the phase behaves as if the portal did not exist. M2's purpose is to break exactly that invariant. Verified by exhaustive BFS over applyMove (5 × 5 sample: same-parity pairs leave every tile reachable in exactly one phase; opposite-parity pairs make tiles reachable in both). Rejected per docs/architecture.md V0.5 §7 / ADR-0004: re-author the pair with ends of opposite (x + y) parity`,
       );
     }
   });
