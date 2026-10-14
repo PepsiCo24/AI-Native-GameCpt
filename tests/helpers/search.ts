@@ -1,134 +1,118 @@
 /**
- * QA test helpers — the *smallest correct* BFS over the locked rule engine.
+ * QA test helpers — thin **wrappers over the production solver**
+ * (`@/core/solver/bfs`, SOLVER-001) plus two genuinely test-only predicates.
  *
- * ⚠ These helpers deliberately call the production `applyMove` / `isLegalMove`
- * (`@/core/rules`) and `initialState` (`@/core/state`). AGENTS.md §3: one truth
- * source — a test must never re-implement the movement rule, or it would prove
- * only that the test agrees with itself.
+ * ── WHY THIS FILE NO LONGER CONTAINS A SEARCH (QA-002) ───────────────────────
+ * Until QA-002 this file carried its own BFS ("the smallest correct BFS") because
+ * `src/core/solver/**` did not exist yet. That was a **second truth source**: the
+ * GATE D board invariants and the dataset gate were then proven against a test
+ * search instead of against the program of record. `src/core/solver/bfs.ts` has
+ * shipped, so the duplication is deleted here.
  *
- * REFACTOR DEBT (flagged, tracked): SOLVER-001 will eventually own BFS +
- * difficulty metrics under `src/core/solver/**` (`docs/architecture.md` §8,
- * `docs/ai-native-pipeline.md`). That module does not exist yet, so QA keeps the
- * minimal reachability search here to make the GATE D board invariants and the
- * dataset gates executable today. When the solver lands, this file should
- * re-point at it instead of growing a second implementation.
+ * Every search-shaped export below is now a projection of the solver:
+ *
+ *   reachableStates      → `explore(level).nodes` keyed by `hashState`
+ *   deadStates           → `analyse(level, graph).deadStateList`
+ *   shortestSolution     → `solve(level).shortestSolution`
+ *   dualPhaseTiles       → `dualPhaseTiles(graph)` (production metric)
+ *   legalMoves           → `isLegalMove` (`@/core/rules`) — the same predicate the
+ *                          solver's edge loop calls; no search at all
+ *   phaseFormulaViolations → a test-only assertion predicate over the solver's
+ *                          reachable node set (the parity formula is a *design*
+ *                          claim, not a §8 metric, so it has no production home)
+ *
+ * The solver itself calls the production `isLegalMove` / `applyMove` (one truth
+ * source, AGENTS.md §3), so everything reachable from here is the shipped rule.
  *
  * Pure data in / pure data out: no DOM, no Phaser (`tests/**` runs under the
  * default `node` environment).
  */
 
 import type { Level } from "@/core/level";
-import { applyMove, isLegalMove } from "@/core/rules";
+import { isLegalMove } from "@/core/rules";
+import {
+  analyse,
+  dualPhaseTiles as solverDualPhaseTiles,
+  explore,
+  solve,
+} from "@/core/solver/bfs";
 import { hashState } from "@/core/state/hash";
 import type { Move } from "@/core/state/move";
 import { DIRECTIONS, move } from "@/core/state/move";
 import type { Phase } from "@/core/state/phase";
-import { initialState, isGoal, toSearchState } from "@/core/state/transitions";
 import type { SearchState } from "@/core/state/types";
 
-/** Four canonical directions, as `Move` values. */
+/** Four canonical directions, as `Move` values (solver direction order). */
 export const ALL_MOVES: readonly Move[] = DIRECTIONS.map((dir) => move(dir));
-
-/** Guard against a runaway search — a level this large is already a bug. */
-const MAX_STATES = 2_000_000;
 
 /**
  * The full reachable `SearchState` graph from the level start, keyed by
- * `hashState`. Embedded states (player inside a current-phase-solid cell) are
- * ordinary nodes here, exactly as `docs/architecture.md` §6.3 requires.
+ * `hashState` — the solver's node set, re-keyed for callers that want a map.
+ * Embedded states (player inside a current-phase-solid cell) are ordinary nodes,
+ * exactly as `docs/architecture.md` §6.3 requires.
  */
 export function reachableStates(level: Level): Map<string, SearchState> {
-  const start = toSearchState(initialState(level));
-  const seen = new Map<string, SearchState>();
-  seen.set(hashState(start), start);
-
-  const queue: SearchState[] = [start];
-  for (let i = 0; i < queue.length; i += 1) {
-    const state = queue[i] as SearchState;
-    for (const m of ALL_MOVES) {
-      // Reference equality is the documented illegal-move contract (applyMove
-      // returns its input for an illegal move). isLegalMove is the derived
-      // predicate; the property suite pins the two together.
-      if (!isLegalMove(level, state, m)) continue;
-      const next = applyMove(level, state, m);
-      const h = hashState(next);
-      if (seen.has(h)) continue;
-      seen.set(h, next);
-      queue.push(next);
-    }
-    if (seen.size > MAX_STATES) {
-      throw new Error(`state explosion (>${MAX_STATES}) in level ${level.id}`);
-    }
-  }
-  return seen;
+  const graph = explore(level);
+  const out = new Map<string, SearchState>();
+  for (const node of graph.nodes) out.set(hashState(node), node);
+  return out;
 }
 
-/** All legal moves from one state (never mutates the state). */
+/** All legal moves from one state (never mutates the state) — the shipped predicate, filtered. */
 export function legalMoves(level: Level, s: SearchState): Move[] {
   return ALL_MOVES.filter((m) => isLegalMove(level, s, m));
 }
 
 /**
- * Shortest solution length in moves, or `null` if the goal is unreachable.
- * BFS is the mandated algorithm (`docs/architecture.md` §8) — unit edge cost,
- * so the first time the goal is generated is the shortest solution.
+ * Shortest solution length in moves, or `null` if the goal is unreachable —
+ * read straight off the production solver (`docs/architecture.md` §8: BFS, unit
+ * edge cost).
  */
 export function shortestSolution(level: Level): number | null {
-  const start = toSearchState(initialState(level));
-  if (isGoal(level, start)) return 0;
-
-  const seen = new Set<string>([hashState(start)]);
-  let frontier: SearchState[] = [start];
-  let depth = 0;
-
-  while (frontier.length > 0) {
-    depth += 1;
-    const next: SearchState[] = [];
-    for (const state of frontier) {
-      for (const m of ALL_MOVES) {
-        const ns = applyMove(level, state, m);
-        if (ns === state) continue;
-        if (isGoal(level, ns)) return depth;
-        const h = hashState(ns);
-        if (!seen.has(h)) {
-          seen.add(h);
-          next.push(ns);
-        }
-      }
-    }
-    frontier = next;
-  }
-  return null;
+  return solve(level).shortestSolution;
 }
 
 /**
  * `docs/level-design.md` §4 fail condition: a reachable non-goal state with
- * **zero legal moves** is unrecoverable by construction. (There is no waiting
- * and no manual flip — the phase only changes when you move.)
+ * **zero legal moves** is unrecoverable by construction. Returned as states (the
+ * solver reports hashes), reconstructed from the same graph — no second search,
+ * no second deadness rule.
  */
 export function deadStates(level: Level): SearchState[] {
+  const graph = explore(level);
+  const result = analyse(level, graph);
+  const byHash = new Map<string, SearchState>();
+  for (const node of graph.nodes) byHash.set(hashState(node), node);
   const out: SearchState[] = [];
-  for (const state of reachableStates(level).values()) {
-    if (isGoal(level, state)) continue;
-    if (legalMoves(level, state).length === 0) out.push(state);
+  for (const hash of result.deadStateList) {
+    const node = byHash.get(hash);
+    if (node !== undefined) out.push(node);
   }
   return out;
 }
 
-/** Tiles that are reachable in more than one phase (GATE D: M0 ⇒ must be 0). */
-export function dualPhaseTiles(level: Level): Array<{ tile: string; phases: Phase[] }> {
-  const byTile = new Map<string, Set<Phase>>();
-  for (const state of reachableStates(level).values()) {
-    const key = tileKey(state.player.x, state.player.y);
-    const set = byTile.get(key) ?? new Set<Phase>();
-    set.add(state.phase);
-    byTile.set(key, set);
+/**
+ * Tiles reachable in more than one phase (GATE D / ADR-0009: M0 and M1-alone
+ * content ⇒ must be 0), with the phases observed at each tile. The tile list is
+ * the production metric (`dualPhaseTiles`); only the per-tile phase detail is
+ * assembled here from the same node set.
+ */
+export function dualPhaseTiles(
+  level: Level,
+): Array<{ tile: string; phases: Phase[] }> {
+  const graph = explore(level);
+  const phasesByTile = new Map<string, Set<Phase>>();
+  for (const node of graph.nodes) {
+    const key = `${node.player.x},${node.player.y}`;
+    const phases = phasesByTile.get(key) ?? new Set<Phase>();
+    phases.add(node.phase);
+    phasesByTile.set(key, phases);
   }
   const out: Array<{ tile: string; phases: Phase[] }> = [];
-  for (const [tile, phases] of byTile) {
-    if (phases.size > 1) out.push({ tile, phases: [...phases].sort() });
+  for (const tile of solverDualPhaseTiles(graph)) {
+    out.push({ tile, phases: [...(phasesByTile.get(tile) ?? [])].sort() });
   }
-  return out.sort((a, b) => a.tile.localeCompare(b.tile));
+  return out;
 }
 
 /**
@@ -139,7 +123,10 @@ export function dualPhaseTiles(level: Level): Array<{ tile: string; phases: Phas
  *
  * i.e. with no portal (or only same-colour portal ends) the arrival phase is a
  * function of the tile's chessboard parity — the phase is *not* free. Returns
- * every state that breaks the formula (empty ⇒ invariant holds).
+ * every solver node that breaks the formula (empty ⇒ invariant holds).
+ *
+ * Test-only by design: it is a design-law assertion, not one of the §8 metrics
+ * the solver is required to report.
  */
 export function phaseFormulaViolations(level: Level): SearchState[] {
   const startParity = (level.player[0] + level.player[1]) & 1;
