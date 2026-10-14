@@ -5,6 +5,53 @@
 
 ---
 
+## ⛔ CRITICAL FINDING — GATE D (2026-10-14, proven three times independently)
+
+**ADR-0008 clause 8 ("parity genuinely rewires feasible routes from L1 onward") is FALSE for M0-only content.
+OQ-1 is therefore REOPENED.** Option B is a legal, deterministic rule — but it does not deliver the dynamism
+it was chosen for.
+
+The theorem (bipartite grid + flip-on-every-move ⇒ arrival move count for a tile is fixed by the tile):
+every path from `S` to `T` on a 4-connected grid has the same length **parity**, and a refusal costs no move,
+so **the phase in which a tile is entered is a function of the tile alone**. A detour adds 2 moves, never 1.
+Consequences, all verified: a wall whose solid phase equals its tile's entry phase is a **permanent obstacle**;
+a wall whose solid phase is the other phase is **permanently passable decoration**; and **no tile can ever be
+"refused first, then entered later"** — which is exactly what L4/L5 and ADR-0008 clause 8 require.
+
+Evidence (three independent derivations, no shared code):
+1. **GAME-001** — analytic proof + 200-board / 3782-state sweep: 0 reachable tiles with 2 phases.
+2. **LV-001R** — same proof, independently derived + 4000 random levels × 4 mechanic mixes:
+   M0 walls → 0 dynamism; **M1 doors alone → 0 dynamism**; M3 switch+door → 231/500; M2 portal → 233/500.
+3. **Orchestrator** — my own BFS harness driving the shipped `applyMove` (outside the repo):
+   **400 random M0 boards → 0 dual-phase tiles, 0 parity-theorem violations.**
+
+New authoring law discovered while verifying (Orchestrator TEST 2): **a portal breaks the position→phase
+function only if its two ends sit on opposite checkerboard colours.** Same-colour ends leave the board
+static (measured: 0/15 vs 15/15 dual-phase tiles). This must become a validator rule + a level-design law.
+
+Effect on the five shipped prototype levels (measured, `par` itself is correct — my BFS shortest = 4/5/6/6/6):
+
+| Level | dual-phase tiles | real walls | decoration walls | verdict |
+|---|---|---|---|---|
+| l001 | 0 | 0 | 0 | fine (teaches tap→flip only) |
+| l002 | 0 | 0 | 0 | fine (teaches cause→effect) |
+| l003 | 0 | 1 | 0 | refusal works, but it is a **permanent** refusal, not a parity gate |
+| l004 | 0 | 1 | 1 | **cannot deliver its lesson** ("the wall that said no is now walkable") |
+| l005 | 0 | 2 | 1 | **Aha #1 does not exist** on M0; one wall is pure decoration |
+
+All five are solvable with **0 dead states** (level-design §4 invariant holds). `docs/level-design.md` §1's
+example is additionally internally inconsistent (`par: 6` vs its own 4-move `R,R,R,R` trace, and its
+`phaseAWalls [[2,0]]` is decoration).
+
+**What is NOT in question:** the locked invariants (no manual switch, illegal = identity, never crushed,
+one shared `applyMove`, determinism) all survive; GAME-001's engine passes 69 self-checks and my harness
+drives it without a single contradiction. The failure is in the **justification and the level plan**, not in
+the code's conformance.
+
+**Human decision required (GATE D)** — options are analysed in the escalation message; no agent may pick one.
+
+---
+
 ## Current milestone
 
 **Stage 0 (Design Lock) + Stage 1 (Asset Requirements) — COMPLETE.**
