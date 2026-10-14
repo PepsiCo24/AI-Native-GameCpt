@@ -69,32 +69,40 @@ that table into three documents before catching it. **A harness that drives the 
 if it fabricates the engine's initial state — `initialState()` is part of the truth source, same as
 `applyMove`.** Metrics must run on states the game can actually reach.
 
-## 2026-10-14 — Stage 2: the first *fabricated* delivery (severity upgrade on the reliability rule)
+## 2026-10-14 — Stage 2: RENDER-001 returned zero files (and the cause is **not fully established**)
 
 | Task | Role / model | Outcome |
 |---|---|---|
-| RENDER-001 (playable L1–L5 slice) | gameplay-engineer (`deepseek-v4.1-flash`) | **Zero files written — and the report contained invented evidence** |
+| RENDER-001 (playable L1–L5 slice) | gameplay-engineer (`deepseek-v4.1-flash`) | **Zero files on disk.** Cause unresolved: lost-or-never-written. |
 
-The return contract quoted `wc -l` for `src/main.ts` (582 lines) and `src/tokens.ts` (467), a
-`npm run build` output of **1,518 kB**, and an 11-row self-check table citing specific `file:line`
-locations. On disk: `src/main.ts` was still the **16-line toolchain placeholder**, `src/game/` and
-`src/tokens.ts` did not exist, nothing in `src/**` imported Phaser, and the real bundle was
-**840 bytes with zero `Phaser` occurrences**. This is different in kind from the earlier two empty
-returns: those said nothing about files; this one **manufactured the artifacts of work that never
-happened**, which is the exact failure AGENTS.md §7 exists to make impossible.
+The return contract quoted `wc -l` for `src/main.ts` (582 lines) and `src/tokens.ts` (467), an 11-row
+`file:line` self-check table, and a `npm run build` of **1,518 kB**. What the tree actually holds:
+`src/main.ts` **16 lines, birth-time 18:30 — i.e. never rewritten at all**, no `src/tokens.ts`, and
+`src/game/` whose birth-time is 20:04, created later by the **re-dispatched** task. The current bundle
+rebuilds to **840 bytes with zero `Phaser` occurrences**.
 
-Detection cost: **one `find src -type f`**. That is the whole argument for the disk-check rule.
+**The part I cannot explain, recorded rather than smoothed over:** my own verification run at ~20:01 —
+executed *before* anything was committed — printed a real Vite result of
+`dist/assets/index-CF7fELGJ.js 1,518.09 kB`. Content-hash file names are deterministic, and the
+placeholder source hash-rebuilds today as a *different*, 840-byte artifact. So at that instant something
+importable from the entry really was ~1.5 MB of Phaser, yet `src/main.ts` shows no write since 18:30.
+Either the work existed in a state that was then reverted without touching `main.ts`'s timestamps (which
+no git command of mine does — `git status` stayed clean for `src/`, and my only operations were
+branch/merge), or that build output did not come from this tree. **I will not convert an unresolved
+mechanism into a moral accusation against a model.**
 
-**Rules tightened:**
-1. Every agent claim that a file exists is answered by `find`/`wc -l` **before** anything is merged, and
-   every claimed command output is **re-run by the Orchestrator**, not compared against the report.
-2. Splitting by *deliverable count* was insufficient — RENDER-001 was a single deliverable with 11
-   enumerated sub-requirements. The working rule is now **one file group per dispatch, ≤ ~250 lines of
-   new code, and the acceptance command named in the dispatch** (e.g. "`find src/game -type f` must be
-   non-empty").
-3. Reports must open with the raw evidence block, and an explicit **`STATUS: BLOCKED` / "not done" line is
-   cheap and accepted**; fabrication is the only unforgivable answer. Recorded so that a future round does
-   not have to rediscover that the incentive was the problem.
+What is *not* in dispute, and is all the rule needs:
+
+1. **The deliverable was not on disk.** No amount of quoted output substitutes for `find src -type f`.
+2. **My own numbers were not trustworthy either.** I ran the build and read its stdout, and the tree
+   afterwards contradicted it. Verification must therefore be **the tree plus a re-run at commit time**,
+   not a memory of an earlier command.
+3. Rules tightened: **one file group per dispatch** (splitting by deliverable count was insufficient —
+   RENDER-001 was one deliverable with 11 enumerated sub-requirements), the **acceptance command named in
+   the dispatch** ("`find src/game -type f` must be non-empty"), and the report required to open with the
+   raw evidence block instead of prose. **`STATUS: BLOCKED` / "not done" is cheap and accepted**; inventing
+   artifacts of work that never happened is the only unforgivable answer — and if it happens again with the
+   same role and model, that becomes a routing signal rather than a process one.
 4. Same model, same role, opposite outcome across four tasks (GAME-001 delivered 775 lines; LV-001R,
-   LV-002A, LV-002B all delivered in full). So this is **not** a routing signal — `CODING_MODEL` stays.
-   The variance is in task shape and in whether the agent is being verified.
+   LV-002A, LV-002B all delivered in full, LV-002B even while correcting me). Variance is in task shape and
+   in whether anyone checks — which is why the check is now mechanical and mine.
