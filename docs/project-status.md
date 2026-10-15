@@ -811,6 +811,37 @@ and a path must be quiescent before dispatch.**
     sha256 provenance manifest, user-facing 10-cohort runbook. Cohort itself stays the user's lane; this ticket is
     the human-free half of G4. **Queue**: DG-004 (PRE-MILESTONE GATE), UA-0009, GD ticket (level-design:115 +
     par-HUD OQ1 + L11 block-ruling after LV-008), R-003 → after LV-008, LV-007D/E → after LV-008, demo video (user/DG).
+52. **LV-008 MERGED — L11 ACCEPTED, clause-by-clause against the frozen law (`5127600` → merge `aaab35d`).** Law
+    immobility verified on disk first: exactly one commit touched `level-design.md` since `c68afac` (GD-009 citation
+    corrigendum) and the §6 pre-registered clause (line 184) shows **zero diff** — the acceptance numbers predate
+    every candidate and never moved. Clauses, all machine-checked: `D_exec 8.5732 < 13.64` (the bound itself is the
+    2-dp published form of L10's 13.642857 — strictly harder than "beat L10"); `par 4` holds the cap; exactly ONE
+    opposite-colour pair — validator-enforced, `errors=0`; `T=0` false routes; below-OFFERED debut grade with
+    `switchRequired:"exempt"` recorded on the L6 precedent. **Filtered, never fitted**: 54 seeded candidates
+    (`SEED 20261015`, committed `author-l11-candidates.ts`) → 1 accept = shipped `MATCH`; histogram 49×
+    gate-shortest / 4× par-cap; both "差一点" probes rejected by name (same-colour pair = hard validator error;
+    bypassable portal = gate (ii) trip). L1–L10 numbers unmovable and unmoved: solver dump blocks 10/10
+    byte-identical, difficulty rows byte-identical, `l001–l010.json` untouched. Gate (iv) satisfiable for the FIRST
+    time (`dualPhaseTiles 21`) — this RESOLVES the standing escalation without weakening it (whitelist still exactly
+    one gate, still only l008). The §8.5 ordered/unordered promotion trigger was tested at the first L11+ candidate
+    and **did not fire** (`[5,0]` equal on both readers) → block ruling needed no movement. Merged-tree battery, my
+    own re-run: tsc 0 · vitest **23 files / 448 passed / 3 skipped** (only-up) · solver **11/11 + exactly 1
+    escalation** · validator **11/11 + 10/10 negatives by name** · build ✓ · CI pending. Honest risks accepted
+    (seam control is boundary-not-surgical, documented; pair-count control coupling recorded in test comment).
+    **Still invisible in-game**: registry pins `l001–l010` — R-003 dispatched (item 53).
+53. **R-003 DISPATCHED + QUEUE REALIGNED (live 3/3).** **R-003 → Gameplay Engineer** (branch
+    `agent/gameplay/r-003-l11-unlock`): the two registry data lines + `renderer-level-unlock.test.ts` re-pin — the
+    minimal, auditable unlock path (LV-008 was right to refuse this edit itself; author ≠ unlocker). No e2e
+    expectation edits allowed (new count/failures are data-driven signals to report, not to smooth). Landing L11 in
+    the playable registry opens the **Entry-3 portal-pair capture** on `:5199` (my lane) → UA Entry-3 review — the
+    visual-evidence gate for the portal painter. **Unblocked by acceptance**: GD ticket (level-design:115 stale tail
+    + par-HUD OQ1 + a BLOCK-RULGING RECORD that §8.5 promotion trigger was tested 2026-10-15 and did not fire);
+    LV-007D/E (pipeline §8.5 remainder now that l011's generator is shipped; metrics sidecar incl. L11 row; R5
+    multi-switch-door validator warning); **DG-004 scope grows**: evidence-in-repo + live-URL lines + ITER-0012
+    mirror (LV-008's AGENTS §6 obligation is Docs' pen) + the demo-video gap note; QA-005b portal e2e after R-003;
+    **LV-009 L12–L15** per G1 stretch — OQ2 first (per-level seeded script vs bulk generator). LV-008 worktree
+    pruned post-merge (the clause-by-clause record above is the review). Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+    PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
