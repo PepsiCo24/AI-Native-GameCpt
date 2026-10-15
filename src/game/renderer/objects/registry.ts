@@ -36,24 +36,52 @@
  * itself (solid / ghost / occupied) is in `renderer/cell-state.ts`, which is the
  * `tileType` answer for a wall tile.
  *
- * Deliberately **not implemented** in this slice (structure without function):
- * - `door`   — M1, first authored at L6 (`docs/game-design.md` §5, §8); a spec
- *              entry here + a painter in `objects/` is the whole addition. No
- *              door/switch pairing visuals are drawn by this task (V0.5 of the
- *              pairing spec is owned by the UI / Art Director).
- * - `switch` — M3, ships with M1 as one unit.
- * - `portal` — M2, L11; `*Echo` portal tokens stay RESERVED (§3.1).
- * Each will also need its manifest row, which does not exist yet — nothing here
- * assumes an `assets/` path (AGENTS.md §8, `docs/assets/asset-manifest.md`).
+ * ── The per-tile transition a painter is handed (V0.7) ───────────────────────
+ * Every non-wall class is painted **statelessly** from `(level, gs, transition)`:
+ * a painter re-reads the object at its own tile (via `cell-state.ts`, which reads
+ * the *resolved* `doorsOpen` / `switchesOn` records, never a rule of its own) and
+ * mixes the *previous* state's value into the current one. That is the R-E6/R-D8
+ * pattern generalised: no per-class view object, no sprite created or destroyed by
+ * a flip, and one scalar recomputed from §6.2's timing table per frame. §6.2 gives
+ * three rows these classes ride:
+ *
+ * | row | window | carries |
+ * |---|---|---|
+ * | `walls` (eased, staggered ≤ 15 ms by distance) | 80–200 ms | door bar retract/extend (R-D3), portal token + swirl swap (R-E6 pattern), switch on/off dot |
+ * | `occupied` (raw progress) | 140–220 ms | R-D7's occupied-door interior drop; the M3 press beat (`objects/switch.ts`, extension 2) |
+ *
+ * There is deliberately **no `swapRow` field** on the spec: the door is one class
+ * whose §6.2 timing needs *two* rows at once (its bars ride `walls` while the
+ * `*Occupied` drop rides `occupied` — R-D3 vs R-D7), so a per-spec row indirection
+ * could not express it. The row is documented per painter instead, and both mixes
+ * are cheap scalars the board computes once per tile.
+ *
+ * Deliberately **not implemented** in this slice: nothing at L4. `goal`, `door`,
+ * `switch` and `portal` all have a painter now; `player` is L5, not L4.
  */
 
 import type { Level } from "@/core/level";
+import { doorAt } from "@/core/rules/solid";
 import type { GameState, Vec } from "@/core/state/types";
+import {
+  doorIsOpenNow,
+  isPlayerAt,
+  portalIsActive,
+  switchDefAt,
+  doorTilesOf,
+  portalTilesOf,
+  switchTilesOf,
+} from "@/game/renderer/cell-state";
 import type { Rect } from "@/game/renderer/grid-mapping";
-import { paintGoal, goalPulseScale } from "@/game/renderer/objects/goal";
+import { easeOutQuad } from "@/game/renderer/objects/actor";
+import { doorLook, paintDoor } from "@/game/renderer/objects/door";
+import { goalPulseScale, paintGoal } from "@/game/renderer/objects/goal";
+import type { Graphics2D } from "@/game/renderer/objects/graphics2d";
+import { paintPortal, portalLook } from "@/game/renderer/objects/portal";
+import { paintSwitch, switchLook, switchPressEmphasis } from "@/game/renderer/objects/switch";
 import type { ThemeTokens } from "@/game/theme/tokens";
 
-export type TileObjectKind = "goal";
+export type TileObjectKind = "goal" | "door" | "switch" | "portal";
 
 /**
  * `docs/ui-ux.md` §3.1d — the single-cell appearance precedence within L4,
@@ -87,14 +115,41 @@ export const L4_SLOT = {
 
 export type L4Slot = (typeof L4_SLOT)[L4Class];
 
+/**
+ * §6.2's per-tile transition, resolved by `board-view.ts` for the frame being
+ * painted. Both mixes are 1 on a settled board, so a painter's formula needs no
+ * "is a flip running?" branch: `mix(from, to, 1) === to`.
+ */
+export interface TileObjectTransition {
+  /**
+   * The state shown **before** the running flip, or `null` when the board is
+   * settled. A painter reads its own object's previous value from here (door
+   * openness, switch latch, portal activity) — the view keeps no per-class state.
+   */
+  readonly prev: GameState | null;
+  /** §6.2 `walls` row (80–200 ms, 120 ms, stagger ≤ 15 ms by distance), eased. */
+  readonly objectMix: number;
+  /** §6.2 `occupied` row (140–220 ms, 80 ms), **raw** progress 0→1. */
+  readonly occupied: number;
+}
+
 export interface TileObjectPaintContext {
-  readonly g: Phaser.GameObjects.Graphics;
+  readonly g: Graphics2D;
   readonly rect: Rect;
+  /** R-L3 cell corner radius (device px) — the same value the wall painter gets. */
+  readonly radius: number;
   readonly tile: Vec;
   readonly cssScale: number;
   readonly theme: ThemeTokens;
-  /** Scene time in ms — only the goal uses it (R-C8 pulse). */
+  /** Scene time in ms — **only** the goal uses it (R-C8 pulse; the one idle animation). */
   readonly timeMs: number;
+  /** The level, so a painter can look up which door/switch/portal its tile is. */
+  readonly level: Level;
+  /** The committed state being shown (the animation target, never a predicted one). */
+  readonly gs: GameState;
+  readonly transition: TileObjectTransition;
+  /** The tile's own cell ground — the target of every glyph knockout (R-D3). */
+  readonly knockout: number;
 }
 
 export interface TileObjectSpec {
@@ -105,11 +160,23 @@ export interface TileObjectSpec {
    * (R-Z4) — they land in the same container, in {@link TILE_OBJECTS} order.
    */
   readonly layer: L4Slot;
-  /** `docs/assets/asset-manifest.md` Asset ID this class is waiting on. */
-  readonly placeholder: string;
-  /** Tiles of this class in the level, in the current state. */
+  /**
+   * `docs/assets/asset-manifest.md` Asset ID this class is waiting on.
+   *
+   * **Absent = vector-by-design, not "forgotten"**: §9.1 makes the door (all three
+   * states), the switch and every occupied treatment vector-by-design with *no*
+   * asset requested, so they must **not** carry a placeholder id — a placeholder
+   * here would claim art the manifest never asked for (`PLACEHOLDER_TO_ASSET`).
+   */
+  readonly placeholder?: string;
+  /** Tiles of this class in the level, in level-data declaration order (R-Z4). */
   readonly tilesOf: (level: Level, gs: GameState) => readonly Vec[];
   readonly paint: (ctx: TileObjectPaintContext) => void;
+}
+
+/** `mix(from, to, t)` — the §6.2 cross-fade, in one place. */
+function mix(from: number, to: number, t: number): number {
+  return from + (to - from) * t;
 }
 
 const GOAL: TileObjectSpec = {
@@ -131,8 +198,126 @@ const GOAL: TileObjectSpec = {
 };
 
 /**
+ * Doors (§3.1b) — vector-by-design, no Asset ID (§9.1).
+ *
+ * Two §6.2 rows at once, which is why the spec carries no `swapRow`:
+ * - `retract` (bar mass, R-D2/R-D3) rides the `walls` row, **staggered** by
+ *   distance like every other state swap;
+ * - `occupant` (R-D7's `*Occupied` interior drop) rides the `occupied` row — the
+ *   flip's *resolution* beat, the same one that fires the phase ring, because it
+ *   describes the player's own tile.
+ *
+ * Both ends come from resolved state (`doorsOpen` — a literal `true` means open) and
+ * the previous state, never from a re-derivation of the door rule.
+ */
+const DOOR: TileObjectSpec = {
+  kind: "door",
+  layer: L4_SLOT.door,
+  tilesOf: (level) => doorTilesOf(level).map((entry) => entry.tile),
+  paint: (ctx) => {
+    const door = doorAt(ctx.level, ctx.tile);
+    if (door === undefined) return; // unreachable: the tile list comes from the same data
+
+    const openNow = doorIsOpenNow(ctx.level, ctx.gs, ctx.tile);
+    const prev = ctx.transition.prev;
+    const openBefore = prev !== null && doorIsOpenNow(ctx.level, prev, ctx.tile);
+
+    const occupiedNow = isPlayerAt(ctx.gs, ctx.tile) && !openNow;
+    // "occupied" in the previous state means the player stood there *and* the door
+    // blocked entry then — the same derived flag, read from the previous state
+    // (R-C13.7: one code path, computed from `GameState`, never carried).
+    const occupiedBefore = prev !== null && isPlayerAt(prev, ctx.tile) && !openBefore;
+
+    paintDoor({
+      g: ctx.g,
+      rect: ctx.rect,
+      radius: ctx.radius,
+      cell: Math.min(ctx.rect.w, ctx.rect.h),
+      cssScale: ctx.cssScale,
+      knockout: ctx.knockout,
+      look: doorLook(
+        ctx.theme,
+        door.color,
+        mix(openBefore ? 1 : 0, openNow ? 1 : 0, ctx.transition.objectMix),
+        mix(occupiedBefore ? 1 : 0, occupiedNow ? 1 : 0, easeOutQuad(ctx.transition.occupied)),
+      ),
+    });
+  },
+};
+
+/**
+ * Switches (M3) — vector-by-design, no Asset ID (§9.1).
+ *
+ * The on/off dot cross-fades on the `walls` row (a state swap, R-E6's row); the
+ * press beat is a **one-shot** on the `occupied` row and only when this very move
+ * toggled the latch, so a settled board can never show it (R-C8: the goal is the
+ * only idle animation). See `objects/switch.ts` for the two spec-silent extensions.
+ */
+const SWITCH: TileObjectSpec = {
+  kind: "switch",
+  layer: L4_SLOT.switch,
+  tilesOf: (level) => switchTilesOf(level).map((entry) => entry.tile),
+  paint: (ctx) => {
+    const sw = switchDefAt(ctx.level, ctx.tile);
+    if (sw === undefined) return; // unreachable, as above
+
+    const onNow = ctx.gs.levelState.switchesOn[sw.id] === true;
+    const prev = ctx.transition.prev;
+    const onBefore = prev !== null && prev.levelState.switchesOn[sw.id] === true;
+    const toggled = prev !== null && onNow !== onBefore;
+
+    paintSwitch({
+      g: ctx.g,
+      rect: ctx.rect,
+      cell: Math.min(ctx.rect.w, ctx.rect.h),
+      cssScale: ctx.cssScale,
+      knockout: ctx.knockout,
+      look: switchLook(
+        ctx.theme,
+        sw.activePhase,
+        mix(onBefore ? 1 : 0, onNow ? 1 : 0, ctx.transition.objectMix),
+        toggled ? switchPressEmphasis(ctx.transition.occupied) : 0,
+      ),
+    });
+  },
+};
+
+/**
+ * Portals (M2 / L36) — no shipped level carries one yet (`L6–L10 portals: []`).
+ * Registered anyway so the class has **one** place it is enumerated (§3.1c's
+ * reserved row, and the completeness test's reason to fail if a painter is
+ * missing). §3.1c's primary channel is swirl presence/absence, which is why the
+ * mix feeds the swirl's alpha and not just the token.
+ */
+const PORTAL: TileObjectSpec = {
+  kind: "portal",
+  layer: L4_SLOT.portal,
+  tilesOf: (level) => portalTilesOf(level).map((entry) => entry.tile),
+  paint: (ctx) => {
+    const prev = ctx.transition.prev;
+    const activeNow = portalIsActive(ctx.level, ctx.gs, ctx.tile);
+    const activeBefore = prev !== null && portalIsActive(ctx.level, prev, ctx.tile);
+    paintPortal({
+      g: ctx.g,
+      rect: ctx.rect,
+      cell: Math.min(ctx.rect.w, ctx.rect.h),
+      cssScale: ctx.cssScale,
+      look: portalLook(
+        ctx.theme,
+        mix(activeBefore ? 1 : 0, activeNow ? 1 : 0, ctx.transition.objectMix),
+      ),
+    });
+  },
+};
+
+/**
  * Every non-wall tile-object class the board can draw. Add an entry, not a branch.
  * Declaration order is the R-Z4 tie-break **within** one slot; across slots the
  * order is §3.1d's and comes from `layer`, not from this list's order.
+ *
+ * The list is complete by construction: `TileObjectKind` has four members, each has
+ * exactly one spec here, and `L4_ORDER` minus `wall` is exactly these four — so the
+ * registry-completeness test is a real gate on a future fifth class, not a
+ * restatement of this file.
  */
-export const TILE_OBJECTS: readonly TileObjectSpec[] = [GOAL];
+export const TILE_OBJECTS: readonly TileObjectSpec[] = [PORTAL, SWITCH, GOAL, DOOR];

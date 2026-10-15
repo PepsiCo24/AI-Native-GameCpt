@@ -2,10 +2,10 @@
  * Board view — the whole Canvas side of `docs/ui-ux.md` §7.1.
  *
  * Owns: page/background, board plate, cell plates + grid, L4 objects
- * (walls + ghosts + occupied walls, then the registry classes — today the goal),
- * L5 actor, L6 cell feedback (hover ring), L7 win tint. Owns **no text, no button,
- * no dialog** — every one of those is DOM (`src/game/hud/**`), so canvas text at
- * mobile DPR never exists.
+ * (walls + ghosts + occupied walls, then every registry class — portal, switch,
+ * goal, door), L5 actor, L6 cell feedback (hover ring), L7 win tint. Owns **no
+ * text, no button, no dialog** — every one of those is DOM (`src/game/hud/**`), so
+ * canvas text at mobile DPR never exists.
  *
  * Fixed layer stack, §5.2 (`L1` is left empty today: background art is not
  * delivered, so the page ground is painted flat — see `paintGround`):
@@ -44,16 +44,19 @@
  * |---|---|---|
  * | 0–130 ms | `hop` | `paintActor` (arc + landing squash) |
  * | 60–200 ms | `tokens` | `tokenMix()` → ground, plate, grid, goal, hover, win tint |
- * | 80–200 ms | `walls` | `WallTileView.transitionTo` (staggered ≤ 15 ms) |
+ * | 80–200 ms | `walls` | `WallTileView.transitionTo` (staggered ≤ 15 ms), and `objectMixFor()` — the door bars, switch dot and portal swirl cross-fade on the **same** row |
  * | 100–220 ms | `background` | `paintGround` (placeholder: the page ground) |
- * | 140–220 ms | `occupied` (+ `ring`) | the player's own tile: `obj.wallOccupied` + `fx.phaseRing` |
+ * | 140–220 ms | `occupied` (+ `ring`) | the player's own tile: `obj.wallOccupied` / the R-D7 occupied door, `fx.phaseRing`, and M3's press beat |
  * | 140–220 ms | `chip` | DOM (`hud.ts`, CSS vars from the same table) |
  *
  * The `occupied` row is why the player's tile is scheduled **separately** from
  * the other walls: R-C13.2's interior drop and the one-shot `fx.phaseRing` are
  * the flip's *resolution* beat (land → the wall closes around me), not part of
  * the bulk state swap. Both live inside the ≤ 220 ms budget with 0 ms input lock
- * (R-C13.5).
+ * (R-C13.5). R-D7 keeps that beat meaningful for doors: standing inside a closed
+ * door is a legal state, so `isPlayerEmbedded` covers both classes and the same
+ * one-shot ring fires (`flip.ring`) — **no new layer**, the ring is drawn behind
+ * the body inside the existing actor container (R-Z7/V0.7).
  */
 
 import Phaser from "phaser";
@@ -87,31 +90,34 @@ import {
   paintActor,
 } from "@/game/renderer/objects/actor";
 import { L4_SLOT, TILE_OBJECTS } from "@/game/renderer/objects/registry";
-import type { L4Slot, TileObjectSpec } from "@/game/renderer/objects/registry";
-import { assertLayerOrder, l4Depth } from "@/game/renderer/layers";
+import type { L4Slot, TileObjectSpec, TileObjectTransition } from "@/game/renderer/objects/registry";
+import {
+  assertLayerOrder,
+  assertLayerStack,
+  L4_DEPTH_BASE,
+  l4Depth,
+  LAYER_DEPTH,
+} from "@/game/renderer/layers";
+import type { ObservedLayer } from "@/game/renderer/layers";
 import { mixTheme } from "@/game/renderer/theme-mix";
 import { WallTileView, staggerFor } from "@/game/renderer/wall-tiles";
 import { flipTimings, theme, toInt } from "@/game/theme/tokens";
 import type { FlipTimings, ThemeTokens } from "@/game/theme/tokens";
 
 /**
- * §5.2 cross-layer depths (bottom → top). `backgroundImage` (5) is reserved for
- * the A-04/A-05 art.
+ * §5.2 cross-layer depths (bottom → top), **read from the one stack table in
+ * `renderer/layers.ts`** — never re-typed here. `backgroundImage` (5) is reserved
+ * for the A-04/A-05 art and has no object yet; `boardPlate` (20) and `cellPlate`
+ * (20) share one container (the plate is filled first, then the grid and the cell
+ * plates — `paintGround`), which is why the table groups them.
  *
  * **The cross-layer order is fixed by §5.2; the order *within* L4 is §3.1d's** —
  * and it is data, not a literal here: `l4Depth(slot)` with `slot` from the
  * registry's `L4_SLOT`, so the picture order can only ever be the one §3.1d
  * table (R-Z1: one ordered table, no per-tile / per-frame z-sorting). The
- * arithmetic and the boot guard live in `renderer/layers.ts` as a pure module.
+ * arithmetic and the boot guards live in `renderer/layers.ts` as a pure module.
  */
-const DEPTH = {
-  page: 0,
-  backgroundImage: 5,
-  plate: 20,
-  actor: 50,
-  cellFeedback: 60,
-  plateTint: 70,
-} as const;
+const DEPTH = LAYER_DEPTH;
 
 /** An L4 container plus the §3.1d slot it was created for. */
 interface L4Container {
@@ -198,6 +204,13 @@ export class BoardView {
   private shown: ShownState;
   /** Last committed state — the goal's `tilesOf` seam and the wall views read it. */
   private lastState: GameState;
+  /**
+   * The state shown **before** the running flip, or `null` on a settled board —
+   * the `prev` of §6.2's per-tile cross-fade (`TileObjectTransition`). Without it
+   * the doors, switches and portals would pop at the phase change instead of
+   * swapping in place (R-E6/R-D8's "never created or destroyed by a flip").
+   */
+  private prevState: GameState | null = null;
 
   private flip: FlipAnimation | null = null;
   private deny: DenyAnimation | null = null;
@@ -221,8 +234,8 @@ export class BoardView {
     this.onLayout = onLayout;
 
     const s = this.scene;
-    this.pageGfx = s.add.graphics().setDepth(DEPTH.page);
-    this.plateGfx = s.add.graphics().setDepth(DEPTH.plate);
+    this.pageGfx = s.add.graphics().setDepth(DEPTH.pageGround);
+    this.plateGfx = s.add.graphics().setDepth(DEPTH.boardPlate);
 
     // L4 — one container per registry painter, each at the depth of the §3.1d
     // slot its `layer` declares, plus the wall class's own container. There is no
@@ -260,6 +273,23 @@ export class BoardView {
       })),
       this.actorGfx.depth,
     );
+
+    // §5.2 — the same discipline one level up: the observed depths of the real
+    // objects must be the spec's layer stack, checked against the one table in
+    // `renderer/layers.ts` (L2/L3 share the plate's container on purpose). The
+    // per-slot order *inside* L4 stays `assertLayerOrder`'s job above, which is
+    // where the §3.1d arithmetic lives. `backgroundImage` is absent because no art
+    // exists yet — the guard checks what was created, never what is merely reserved.
+    const observed: readonly ObservedLayer[] = [
+      { name: "pageGround", depth: this.pageGfx.depth },
+      { name: "boardPlate", depth: this.plateGfx.depth },
+      { name: "cellPlate", depth: this.plateGfx.depth },
+      { name: "objects", depth: L4_DEPTH_BASE },
+      { name: "actor", depth: this.actorGfx.depth },
+      { name: "cellFeedback", depth: this.feedbackGfx.depth },
+      { name: "plateTint", depth: this.tintGfx.depth },
+    ];
+    assertLayerStack(observed);
 
     this.layout = computeLayout(this.level, viewport);
     this.wallTiles = wallTilesOf(this.level);
@@ -334,6 +364,9 @@ export class BoardView {
     this.flip = null;
     this.deny = null;
     this.winAt = null;
+    // No flip ⇒ nothing to cross-fade from: every painter takes its "settled"
+    // branch (`mix(from, to, 1) === to`), so undo/restart repaint exactly.
+    this.prevState = null;
     this.shown = { phase: gs.phase, player: gs.playerPosition };
     const css = cellSizeCss(this.layout);
     const t = theme(gs.phase);
@@ -359,6 +392,13 @@ export class BoardView {
    */
   animateTo(gs: GameState, time: number): void {
     const from = this.shown;
+    // §6.2's per-tile cross-fade needs the state shown **before** this flip, so it
+    // is captured before `lastState` advances. Note it is the previous flip's
+    // *target* (not a progress-sampled value): §6.4's snap-to-target rule means a
+    // move arriving mid-flip starts from the committed state, never from a
+    // mid-animation hybrid — a painter's `prev` therefore always names a real
+    // `GameState`, and `mix(from, to, 1) === to` holds on every settle.
+    this.prevState = this.lastState;
     this.lastState = gs;
     this.shown = { phase: gs.phase, player: gs.playerPosition };
 
@@ -460,11 +500,44 @@ export class BoardView {
     return { tokens: mixTheme(theme(flip.fromPhase), to, t), t };
   }
 
+  /**
+   * §6.2's `walls` row for **one tile**, eased and staggered by distance from the
+   * move — the row every stateful object's swap rides (door bars R-D2/R-D3, the
+   * switch dot, the portal swirl). One scalar recomputed per frame, never a tween
+   * queue, so a move arriving mid-flip cannot desync (§6.4). `1` on a settled board.
+   */
+  private objectMixFor(tile: Vec, time: number): number {
+    const flip = this.flip;
+    if (flip === null) return 1;
+    const startAt =
+      flip.startAt +
+      flip.timings.walls.start +
+      staggerFor(tile, this.shown.player, flip.timings.walls.stagger);
+    return easeOutQuad(progress(time, startAt, flip.timings.walls.dur));
+  }
+
+  /**
+   * §6.2's `occupied` row — **raw** progress, deliberately not eased here: R-D7's
+   * interior drop applies its own `easeOutQuad`, and M3's press beat is a
+   * `sin(πp)` one-shot that needs the linear progress to peak exactly once. `1` on
+   * a settled board (so `sin(π·1)` — the beat's own zero — is the only value a
+   * resting board can produce).
+   */
+  private occupiedProgress(time: number): number {
+    const flip = this.flip;
+    if (flip === null) return 1;
+    return progress(time, flip.startAt + flip.timings.occupied.start, flip.timings.occupied.dur);
+  }
+
   update(time: number): void {
     const timings = flipTimings(this.reducedMotion);
     if (this.flip !== null && time >= this.flip.startAt + this.flip.timings.total) {
       // Settle on the exact target values, then stop repainting the static layers.
+      // `prevState` drops with the flip: the cross-fade is over, so every painter
+      // reads its "settled" branch (and the switch's press beat cannot re-fire on a
+      // resting board — `sin(π·0)` over a stale `prev` is exactly the R-C8 bug).
       this.flip = null;
+      this.prevState = null;
       this.groundDirty = true;
       this.wallsDirty = true;
     }
@@ -564,28 +637,50 @@ export class BoardView {
 
   /**
    * L4 — every non-wall registry class, each into the container of its §3.1d
-   * slot. One `TILE_OBJECTS` sweep, no class named here: a future door entry
-   * lands at the door slot automatically (depth from its `layer`), it can never
-   * be painted into the goal's container by accident. Today that is the goal and
-   * its single R-C8 idle pulse (2 shapes per frame).
+   * slot. One `TILE_OBJECTS` sweep, no class named here: a class added to the
+   * registry lands at its own `layer` slot automatically and can never be painted
+   * into another class's container by accident. Today: portal, switch, goal and
+   * door — the goal keeps its single R-C8 idle pulse, every other class is
+   * statelessly re-derived per frame from `(level, state, transition)`.
    *
    * Clear-then-paint in two passes so two specs sharing a slot keep declaration
    * order in their shared container (R-Z4).
    */
   private paintTileObjects(time: number): void {
     const { tokens } = this.tokenMix(time);
+    // Two passes so two specs sharing a §3.1d slot keep declaration order in their
+    // shared container (R-Z4): clear every container first, then paint in order.
     for (const painter of this.l4Painters) painter.gfx.clear();
     for (const { spec, gfx } of this.l4Painters) {
       for (const tile of spec.tilesOf(this.level, this.lastState)) {
+        // `prevState` is `null` exactly when no flip runs, and both mixes are `1`
+        // then — so a painter's `mix(prev, now, mix)` collapses to `now` and undo,
+        // restart and resize all repaint the committed state bit-exactly.
+        const transition: TileObjectTransition = {
+          prev: this.prevState,
+          objectMix: this.objectMixFor(tile, time),
+          occupied: this.occupiedProgress(time),
+        };
         spec.paint({
           g: gfx,
           rect: cellRect(this.layout, tile.x, tile.y),
+          radius: this.layout.radius,
           tile,
           cssScale: this.renderScale,
           theme: tokens,
           // R-C8 — the idle pulse is wall-clock, deliberately NOT the flip clock:
           // the goal's slow 2.4 s breathing must not restart on every move.
           timeMs: this.scene.time.now,
+          // The rules-of-record for this tile: the painter reads its own object out
+          // of the **committed** state (`doorsOpen` / `switchesOn` / `portalAt`
+          // via `cell-state.ts`) and never re-derives solidity or legality.
+          level: this.level,
+          gs: this.lastState,
+          transition,
+          // §3.1b/R-D3 — the glyph knockout is the tile's own cell ground, read
+          // from the same mixed map `paintGround` filled it with, so the punch is
+          // exact at every frame of the `tokens` cross-fade.
+          knockout: this.knockoutFor(tile.x, tile.y, tokens),
         });
       }
     }
