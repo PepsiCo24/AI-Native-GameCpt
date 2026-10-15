@@ -42,3 +42,18 @@ Three figures circulate for the same quantity (boards where `refusedThenEnteredT
 - Architect-owned files carry their own corrigenda in this sweep: `docs/architecture.md` §8.1 依据 (iii) annotation and the ADR-architecture-0002 corrigendum section (both landed with AR-0006).
 
 **Countersign:** requested from LV on execution, per item 40's "Architect+LV countersign" — the execution is wording-only; no number is re-derived.
+
+## Ruling 2 — `graphics2d.ts` keeps the interface and its compile-time probe **co-located** (terminal; no split, no engineer ticket)
+
+**Question (R-002b OQ4):** `src/game/renderer/objects/graphics2d.ts` is documented as the painters' narrow *type* seam, yet it physically carries a runtime value — the compatibility probe `export const PHASER_GRAPHICS_IS_GRAPHICS2D: Phaser.GameObjects.Graphics extends Graphics2D ? true : never = true` (graphics2d.ts:73-75). Keep type + probe in one module, or split the probe into a `types-probe.ts`?
+
+**Facts (verified on `4d9dde9`):**
+
+- Every consumer imports the interface as a **type** — 9 import sites (`wall-tiles.ts`, `objects/{goal,door,switch,wall,registry,portal,glyph}.ts`, `tests/helpers/graphics-recorder.ts`), all `import type`.
+- `tsconfig.json:16` sets `verbatimModuleSyntax: true`, so type-only imports are erased statically: **the module never enters any import graph at runtime, and the probe's shipped footprint is zero.** The "pure interface module" property holds at the consumption boundary, which is the only place it matters.
+- The probe is a *value* on purpose, and the file header documents the proof: the earlier type-alias version was shown vacuous by making the interface unsatisfiable and watching `tsc --noEmit` exit 0; R-002b (m-1) re-proved the value probe fails `tsc` in **both** directions. The probe is exported only so `noUnusedLocals` cannot delete the evidence; nothing imports it.
+- The probe has exactly one referent — the `Graphics2D` interface in the same file. Co-location is the guard's visibility: any edit to the interface shows the probe in the same diff and fails `tsc` naming the seam (graphics2d.ts:19-25), instead of failing somewhere inside a painter.
+
+**裁决 (one-line terminal ruling):** the module stays as-is — interface and its compile-time proof of fit are one seam artifact; splitting them adds a one-const module, buys zero decoupling, and separates the guard from the guarded, which is how guards rot (§13: no measured problem, no move).
+
+**Rejected:** `types-probe.ts` split (churn; the purity it buys is aesthetic — erased at the boundary anyway). **No engineer ticket is issued.** If a future change ever value-imports the module, the probe rides the bundle as `export const … = true` — harmless, and still not a reason to split.
