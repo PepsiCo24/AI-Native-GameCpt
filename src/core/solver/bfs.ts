@@ -57,7 +57,14 @@
  *   move) in at least one other reachable state. This is the history-dependence
  *   measure: on M0-only and M1-without-switches boards it is provably `0`
  *   (arrival phase is a function of the tile, ADR-0009), so `> 0` requires
- *   latched switch state or a parity-breaking portal.
+ *   latched switch state or a parity-breaking portal. **Canonical** metric #7
+ *   (`docs/architecture.md` §8.1 / ADR-architecture-0002): the acceptance law and
+ *   gate (iii) read *this* one.
+ * - `refusedBeforeEnteredTiles` — the **ordered companion** (LV-007B item 2):
+ *   tiles where a refusal is reachable *before* an acceptance (`r →* a`, same tile
+ *   at both ends). A strict subset of the metric above; the difference is the
+ *   *trapped refusals* — history-dependence the player can never act on. Reported,
+ *   never gated.
  * - `deadStates` — reachable non-goal states with **zero** legal out-edges
  *   (unrecoverable: there is no wait and no manual flip, `docs/level-design.md`
  *   §4). Their hashes are listed so a failure is reproducible.
@@ -281,9 +288,71 @@ export interface ClickRecord {
 }
 
 /**
+ * Every tile that is *ever clicked* from a reachable state, split by what happened
+ * — the shared primitive behind {@link clickLedger} (unordered) and
+ * {@link refusedBeforeEnteredTiles} (ordered).
+ *
+ * Derived from the graph alone — no rule call, no second legality path: bit `d`
+ * of `legalMask[i]` already *is* `isLegalMove` for `MOVE(DIRECTIONS[d])`. The map
+ * keeps **first-click order**, which is the order {@link clickLedger} has always
+ * reported. Out-of-bounds clicked tiles are recorded too (they can only ever be
+ * refused, so they can never satisfy either metric).
+ */
+function clickSourcesByTile(
+  graph: ReachableGraph,
+): ReadonlyMap<string, { readonly refusedNodes: readonly number[]; readonly acceptedNodes: readonly number[] }> {
+  const map = new Map<
+    string,
+    { refusedNodes: number[]; acceptedNodes: number[] }
+  >();
+  for (let i = 0; i < graph.nodes.length; i += 1) {
+    const state = graph.nodes[i] as SearchState;
+    const mask = graph.legalMask[i] ?? 0;
+    for (let d = 0; d < DIRECTIONS.length; d += 1) {
+      const clicked = step(state.player, DIRECTIONS[d] as Direction);
+      const key = tileKey(clicked);
+      let entry = map.get(key);
+      if (entry === undefined) {
+        entry = { refusedNodes: [], acceptedNodes: [] };
+        map.set(key, entry);
+      }
+      // One node cannot appear twice in one bucket: the four clicked tiles of a
+      // state are four distinct tiles, so `i` is pushed at most once per bucket.
+      if ((mask & (1 << d)) !== 0) entry.acceptedNodes.push(i);
+      else entry.refusedNodes.push(i);
+    }
+  }
+  return map;
+}
+
+/** Is any node of `targets` reachable from the multi-source set `sources` (inclusive)? */
+function reachesAnyOf(
+  graph: ReachableGraph,
+  sources: readonly number[],
+  targets: ReadonlySet<number>,
+): boolean {
+  const seen = new Uint8Array(graph.nodes.length);
+  const queue: number[] = [];
+  for (const node of sources) {
+    if (seen[node] === 1) continue;
+    seen[node] = 1;
+    queue.push(node);
+  }
+  for (let head = 0; head < queue.length; head += 1) {
+    const node = queue[head] as number;
+    if (targets.has(node)) return true;
+    for (const next of graph.edgesOut[node] as readonly number[]) {
+      if (seen[next] === 1) continue;
+      seen[next] = 1;
+      queue.push(next);
+    }
+  }
+  return false;
+}
+
+/**
  * Every tile that is *ever clicked* from a reachable state, with the observed
- * outcomes. Out-of-bounds clicked tiles are recorded too (they can only ever be
- * refused, so they can never appear in `refusedThenEnteredTiles`).
+ * outcomes.
  *
  * Derived from the graph alone — no rule call, no second legality path: bit `d`
  * of `legalMask[i]` already *is* `isLegalMove` for `MOVE(DIRECTIONS[d])`.
@@ -292,23 +361,12 @@ export function clickLedger(
   graph: ReachableGraph,
 ): ReadonlyMap<string, ClickRecord> {
   const ledger = new Map<string, ClickRecord>();
-  const note = (key: string, accepted: boolean): void => {
-    const previous = ledger.get(key);
+  for (const [key, sources] of clickSourcesByTile(graph)) {
     ledger.set(key, {
-      refused: (previous?.refused ?? false) || !accepted,
-      accepted: (previous?.accepted ?? false) || accepted,
+      refused: sources.refusedNodes.length > 0,
+      accepted: sources.acceptedNodes.length > 0,
     });
-  };
-
-  for (let i = 0; i < graph.nodes.length; i += 1) {
-    const state = graph.nodes[i] as SearchState;
-    const mask = graph.legalMask[i] ?? 0;
-    for (let d = 0; d < DIRECTIONS.length; d += 1) {
-      const clicked = step(state.player, DIRECTIONS[d] as Direction);
-      note(tileKey(clicked), (mask & (1 << d)) !== 0);
-    }
   }
-
   return ledger;
 }
 
@@ -319,6 +377,46 @@ export function refusedThenEnteredTiles(
   const out: string[] = [];
   for (const [key, record] of clickLedger(graph)) {
     if (record.refused && record.accepted) out.push(key);
+  }
+  return out.sort();
+}
+
+/**
+ * The **ordered companion** of {@link refusedThenEnteredTiles} (`ADR-architecture-0002`,
+ * LV-007B item 2): tiles where a refusal is reachable **before** an acceptance —
+ * i.e. there is a reachable state `r` whose click on the tile is refused, and a
+ * reachable state `a` whose click on the tile is accepted, with `r →* a` in the
+ * reachable transition graph (same tile, both ends).
+ *
+ * Why it exists: the unordered metric answers "has this tile ever answered
+ * differently?", which a *trapped refusal* also satisfies — a pocket where the
+ * refusal can never precede the acceptance (the canonical case is a latch that
+ * closes over its own press tile) is history-dependence in the metric but not a
+ * decision the player can ever make. The ordered metric is therefore a **strict
+ * refinement**: `refusedBeforeEnteredTiles ⊆ refusedThenEnteredTiles` always, and
+ * the difference is exactly the trapped-refusal set. It is a **companion**, not a
+ * replacement: `docs/architecture.md` §8.1 pins the *unordered* state-set as
+ * metric #7 (it is the one ADR-0009 measured: 142/369 latch boards), and the
+ * acceptance law of `docs/ai-native-pipeline.md` §8.5, gate (iii) included, stays
+ * on that canonical metric until GD-008 re-words the lessons.
+ *
+ * Direction of the walk: the predicate is "∃ r ∈ Refused(t), a ∈ Accepted(t):
+ * `r →* a`", and this computes it from the *source* side — a forward closure from
+ * `Refused(t)` tested against `Accepted(t)`. That is the same relation the ADR
+ * states as reverse reachability from the accented set; traversing it the other
+ * way would give the identical verdict at the same cost, because a refusal is
+ * **identity** (no movement, no phase flip), so refused states are ordinary
+ * reachable nodes and no duplicated "try the click" edges are involved.
+ */
+export function refusedBeforeEnteredTiles(
+  graph: ReachableGraph,
+): readonly string[] {
+  const out: string[] = [];
+  for (const [key, sources] of clickSourcesByTile(graph)) {
+    if (sources.refusedNodes.length === 0 || sources.acceptedNodes.length === 0)
+      continue;
+    if (reachesAnyOf(graph, sources.refusedNodes, new Set(sources.acceptedNodes)))
+      out.push(key);
   }
   return out.sort();
 }
@@ -354,6 +452,15 @@ export interface SolveResult {
   /** §8 required metric — history-dependence of entry refusals. */
   readonly refusedThenEnteredTiles: number;
   readonly refusedThenEnteredTileList: readonly string[];
+  /**
+   * Ordered companion of the two fields above (LV-007B item 2): refusals a player
+   * can really meet *before* the tile accepts them. Always a subset
+   * (`≤ refusedThenEnteredTiles`); the difference is the trapped-refusal set. It is
+   * reported, not gated: `docs/architecture.md` §8.1 keeps the unordered metric
+   * canonical, and gate (iii) of `docs/level-design.md` §3 still reads it.
+   */
+  readonly refusedBeforeEnteredTiles: number;
+  readonly refusedBeforeEnteredTileList: readonly string[];
   readonly deadStates: number;
   /** `hashState` of each dead state, for reproduction. */
   readonly deadStateList: readonly string[];
@@ -420,6 +527,7 @@ export function analyse(level: Level, graph: ReachableGraph): SolveResult {
 
   const dual = dualPhaseTiles(graph);
   const refused = refusedThenEnteredTiles(graph);
+  const refusedBefore = refusedBeforeEnteredTiles(graph);
 
   return {
     levelId: level.id,
@@ -431,6 +539,8 @@ export function analyse(level: Level, graph: ReachableGraph): SolveResult {
     dualPhaseTileList: dual,
     refusedThenEnteredTiles: refused.length,
     refusedThenEnteredTileList: refused,
+    refusedBeforeEnteredTiles: refusedBefore.length,
+    refusedBeforeEnteredTileList: refusedBefore,
     deadStates: deadStateList.length,
     deadStateList,
     noUnrecoverableOk: reachableGoalCount === nodeCount,

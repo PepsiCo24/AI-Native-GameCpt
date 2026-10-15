@@ -187,6 +187,13 @@ function reportLevel(
   console.log(
     `       refusedThenEnteredTiles=${result.refusedThenEnteredTiles} tiles=${formatTiles(result.refusedThenEnteredTileList)}`,
   );
+  // LV-007B item 2: the *ordered* companion of the line above — a subset, and the
+  // difference is the trapped refusals (history-dependence the player cannot act
+  // on). The canonical metric stays the unordered one (architecture §8.1 /
+  // ADR-architecture-0002), so this line is reported, never substituted.
+  console.log(
+    `       refusedBeforeEnteredTiles=${result.refusedBeforeEnteredTiles} tiles=${formatTiles(result.refusedBeforeEnteredTileList)}`,
+  );
   // LV-004 hygiene: the phantom-walk plumbing PA-004 derived by hand.
   console.log(
     `       parRoutes=${audit.embeds.parRoutes} embedRoutes=${audit.embeds.embedRoutes} embedForced=${String(audit.embeds.embedForced)}`,
