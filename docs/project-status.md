@@ -144,10 +144,13 @@ numbers preserved in item 31). Its fix batch went back to the R-002 session as *
 
 **UA-0008 — CLOSED & MERGED (`36a3b06`)**: ui-ux V0.8 + manifest V0.5.2, all four rulings landed (see item 30).
 
-**UA-0008b** (UI / Art Director, background, fresh session) — §3.3b **Entry 2** on the Playwright dynamic frames
-(`…/orch-smoke-2026-10-15/dyn/`: refusal arc, press beat, standing-on-open-door, night vocabulary, victory dialog,
-+ new `mobile_390_l{8,9,10}.png`) + stale "M2 (L36)" portal-milestone refs synced to ADR-0009 D3 (L11). Worktree
-`…/ua-0008b-entry2` (base `36a3b06`), docs-owned only.
+**UA-0008b — CLOSED & MERGED (`e744834`)**: ui-ux V0.8.1, §3.3b Entry 2 landed (see item 33).
+
+**UA-0008c** (UI / Art Director, background) — the LAST R-002 merge gate: R7/R-Z6 M3-integration ruling
+(re-tune `obj.switch` vs documented exemption with playtest-watch + content-loss clauses) + m-10 graphics-count
+7→10 + retained-ink definition pin + "from L21 on" pre-D3 schedule sweep + Entry-2 board-size typo. Worktree
+`…/ua-0008c-r7-gate` (base `e744834`), docs/ui-ux.md only. If it rules re-tune, an engineer micro-ticket
+(tokens.ts + parity pin) lands with/immediately after the R-002 merge per architecture §9.1 change flow.
 
 **LV-007A — MERGED (`1225b35`) & disk-verified** (tsc 0, vitest 14 files / 211 passed / 3 skipped, solver 10/10,
 validate 10/10+10, generator 5/5+3/3, zero id-exemption hardcodes). **LV-007B** (B/T/R to D, n-11 route pruning +
@@ -490,6 +493,21 @@ and a path must be quiescent before dispatch.**
     batches of ≤4, Entry 2 composed once, single atomic commit). Watcher note for future dispatches: after any
     multi-hundred-KB context turn, cool the quota window before launching a vision-heavy batch. **CI spot-check
     (all green through `79c83aa`): the @playwright/test devDep did not break the CI install/test path.**
+33. **UA-0008b — RETURNED & MERGED (`e744834`): ui-ux V0.8.1, §3.3b Entry 2 on the dyn/ frames.** Eight-item table:
+    stacking order **PASS as a picture** (player>door + player>switch seen, not just asserted — no new fixture
+    commissioned), night vocabulary **PASS**, victory dialog **PASS**, 390px mobile door vocabulary **PASS** (78/65px
+    CSS cells) — and two honest CONDITIONALs that REFUSED to gold-plate my own captures: (i) refusal arc — the locked
+    contract is fully readable at state level (moves frozen, phase unchanged, cause at full emphasis) but a pixel
+    probe proved the 90 ms arc is byte-absent from my +120 ms sample (my capture window missed it; QA-005 protocol
+    named: +30/+60 ms re-samples + pixel-diff assertion); (ii) press beat — at a settled sample the 0.70 body covers
+    the 0.40 outline, so the 2→3 px widening is structurally invisible (protocol: multi-sample 40–100 ms mid-step).
+    Portal **DEFERRED structurally**, bound to first L11 board (LV-008, Entry 3) — evidence gap not spec gap; the
+    40px picture condition **re-scoped out as vacuous on cssScale-2 hardware** (numeric floor guard 1.589≥1.55 stays),
+    killing a permanently-dangling fake condition. L36→L11 wording synced (×7 live refs; historical quotes kept).
+    Its OQ flags routed: "from L21 on" door-schedule staleness + Entry-2 board-size typo → UA-0008c (dispatched, wording fixes bundled);
+    QA-005 scope now also carries: arc re-sampling protocol, beat multi-sample, 320px viewport
+    run, flip mid-swap note, 42–44 CSS standing note. **Merge-gate math**: R-002 = R-002b (M-1 fix, in flight) +
+    UA-0008c R7 ruling; nothing else outstanding.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
