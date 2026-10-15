@@ -53,17 +53,25 @@ import type { SearchState, Vec } from "@/core/state/types";
 import { sameVec } from "@/core/state/types";
 
 /**
- * R-002 tree + R-003 (`f484e23`): L1–L11 reach the board — L11 (M2 portal debut)
- * is the registry's last level, so L10 is no longer the dataset's end.
+ * R-002 tree + R-003 (`f484e23`): L1–L11 reached the board — L11 (M2 portal debut)
+ * was the registry's last level, so L10 stopped being the dataset's end.
+ * **LV-009-B re-pinned 11 → 15** when the L12–L15 block entered the dataset
+ * (`src/levels/l012.json … l015.json`, ADR-design-0003 §8 item 5: the validator
+ * gate went 15/15 ok · 0 errors · 28 warnings).
  *
  * **This is the one deliberately hand-typed dataset pin** (QA-005c, OQ2 ruling at
- * project-status item 58): it names what `src/game/levels/level-registry.ts`
- * ships, so a dataset change cannot silently re-baseline the suite. Everything
- * else about the inventory is derived — see {@link datasetIds},
- * {@link doorLevelIds} and {@link inventoryViolation}. QA-005b re-pinned 10 → 11
- * when R-003 unlocked L11.
+ * project-status item 58): a dataset change cannot silently re-baseline the suite.
+ * Everything else about the inventory is derived — see {@link datasetIds},
+ * {@link doorLevelIds} and {@link inventoryViolation}.
+ *
+ * ⚠ The pin names the **dataset**, and the dataset is what it is checked against.
+ * The *playable* registry (`src/game/levels/level-registry.ts`) is a second,
+ * independent list that still ships 11 levels as of this commit, so the specs that
+ * walk levels through the UI (playthrough rows for L12–L15, the L1→L15 unlock
+ * chain) stay RED until the Gameplay Engineer's registry unlock (R-003) lands —
+ * see this task's `OPEN_QUESTIONS`, named handoff, not a quiet pin.
  */
-export const EXPECTED_LEVEL_COUNT = 11;
+export const EXPECTED_LEVEL_COUNT = 15;
 
 const LEVELS_DIR = fileURLToPath(new URL("../../../src/levels/", import.meta.url));
 
