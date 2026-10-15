@@ -138,10 +138,9 @@ come from CDP/Playwright events, never from dispatched synthetic events.**
 
 ## In progress (background agents)
 
-**RV-005** (Reviewer, background) — read-only merge-gate review of the R-002 painters (`5624558..d69ed41`,
-worktree `~/.local/share/opencode/worktree/f9a5d9/r-002-painters`). Teeth: Graphics2D-vs-real-Phaser adapter on the
-production path, `cell-state` divergence, acceptance-list wiring (R-Z7 / deny cause (i) / hover ring), transition
-invariants, negative-control authenticity, independent re-derivation of the 1.589@40 contrast figure.
+**RV-005 — RETURNED** (verdict: merge-after-correction, NO BLOCKER; full report in Orchestrator session, key
+numbers preserved in item 31). Its fix batch went back to the R-002 session as **R-002b** (background): M-1
+`obj.*` cross-fade regression + m-3/m-5/m-6/m-7/m-8/m-1/m-9 quality items; tokens untouched (M-2 is UA turf).
 
 **UA-0008 — CLOSED & MERGED (`36a3b06`)**: ui-ux V0.8 + manifest V0.5.2, all four rulings landed (see item 30).
 
@@ -457,6 +456,33 @@ and a path must be quiescent before dispatch.**
     contradict ADR-0009 D3 (portals L11) — wording fix dispatched to **UA-0008b** together with §3.3b Entry 2 on the
     now-existing dyn/ frames (OQ-UA8-2 satisfied ahead of QA-005; portal-frame + §3.1d-picture + any remaining 40 px
     conditions stay open with named fixtures).
+31. **RV-005 landed: MERGE-AFTER-CORRECTION, no BLOCKER.** Method: 21 real source mutations on a byte-identical
+    copy, a fully independent rasterizer cross-check of R-002's sweep, Phaser 3.90 d.ts + Graphics.js semantics
+    audit, WCAG/Lab math. Q1–Q7 all answered; the seam, the cell-state divergence (renderer draws definitions, core
+    judges legality — §3 single truth intact, M12 proves no second implementation), the three acceptance-list wirings
+    (R-Z7 ring / deny cause-(i) / hover open-doors-only) and the unlock/rollback chain all PASS inspection.
+    **MAJORs**: M-1 = `theme-mix.ts` interpolates only `obj.goal` → door/switch/portal hard-pop every flip
+    (ΔL* 26–38 vs declared step floor 12; goal, same magnitude, IS faded — asymmetric regression introduced by this
+    slice; fix routed to R-002b, tests were blind (M21 survived)); M-2 = unlocking L6–L10 **fires the R7/R-Z6 M3-
+    integration precondition** (obj.switch vs obj.wall 1.18:1 A / 1.14:1 B < 3:1; spec: "re-tune before integration —
+    tracked so it cannot be forgotten"; every shipped door-board carries switches). Mitigations RV verified: shape
+    axes separate them (88 % solid vs 40 % hollow + new phase glyph = non-color channel), and `switch∩wall = ∅` on
+    all five boards (R-Z6's same-cell failure mode cannot occur in shipped content). **Routing: UA-0008c** (continue
+    after Entry 2) rules re-tune vs documented-exemption; my authority note: merge holds for that ruling, no
+    unilateral exemption — the gate exists precisely to stop this being waved through.
+    **Adjudications I made on the spot**: (a) UA's ±0.01 re-opener on the republished 1.589 — RV's independent
+    rasterizer read 1.5987, delta 0.0097 **within tolerance, row holds**; (b) RV's worse-untested corners
+    (blue-door@40 css1 = 1.5813, dpr2 = 1.5874) still clear the V0.8 two-tier floor ≥1.55 — m-5 re-measurement (all
+    corners, engineer-run) will feed UA-0008c's appendix; the retained-ink definition UA republished (= RV's
+    "def A": frame in, glyph knockout out) is hereby pinned explicitly; (c) m-4 (switch extensions "unratified") and
+    Q6 (definition) were already resolved by UA-0008's V0.8 before RV's request — no extra round; (d) RV's
+    procedural note on the test asserting ≥1.55 was pre-"threshold weakening" — retroactively ratified by the spec-
+    owner re-band, numbers honestly disclosed in-test; closed finding.
+    **Follow-up routing**: m-2 (board-view jsdom/headless smoke guarding M4/M5/M19 — rule-tested, wiring-untested)
+    → **QA-005 scope**; m-10's `ui-ux.md:303` graphics-count 7→10 → UA-0008c; iteration-log + status milestone entry
+    → Docs+GitHub at merge; backlog n-1..n-6 → QA-005/GD absorb round, **n-6** (`isPlayerEmbedded` imported gameplay←renderer,
+    direction reversed, semantics changed by R-002) → **AR-0006 queue** (Architect: lift to core/neutral module);
+    m-3/m-5/m-6/m-7/m-8/m-1/m-9 → R-002b (in flight). Merge gate now = R-002b green + UA-0008c M-2 ruling.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
