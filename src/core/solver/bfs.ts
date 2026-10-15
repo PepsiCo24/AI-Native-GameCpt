@@ -18,9 +18,14 @@
  * - `@/core/level` is imported **type-only** (`import type { Level }`): the
  *   level layer is a data layer and this module must not depend on its code.
  *   The JSON/validation side lives in `scripts/**` (also Level AI + Solver).
- * - No second "is the tile under me solid?" check exists anywhere in this file:
- *   an embedded state (player standing inside a current-phase-solid cell) is an
- *   ordinary search node (ADR-0008 clause 3, `docs/architecture.md` §6.3).
+ * - No second "is the tile under me solid?" check exists anywhere in this file
+ *   **as a search decision**: an embedded state (player standing inside a
+ *   current-phase-solid cell) is an ordinary search node (ADR-0008 clause 3,
+ *   `docs/architecture.md` §6.3), and legality is decided by `isLegalMove` alone.
+ *   The only extra rule call is `solidAt` inside the **embed metric**
+ *   ({@link embedMetrics}, LV-004): it asks the shipped predicate whether an
+ *   arrival left the player inside a phase-solid tile. No search decision depends
+ *   on it — the metric is a read-out, not a second legality path.
  *
  * ── THE SEARCH (why it is finite and why it is optimal) ──────────────────────
  * A node is `SearchState` (`player`, `phase`, `doorsOpen`, `switchesOn`) and the
@@ -62,7 +67,7 @@
  */
 
 import type { Level } from "@/core/level";
-import { applyMove, isLegalMove } from "@/core/rules";
+import { applyMove, isLegalMove, solidAt } from "@/core/rules";
 import { hashState } from "@/core/state/hash";
 import type { Direction } from "@/core/state/move";
 import { DIRECTIONS, move, step } from "@/core/state/move";
@@ -418,4 +423,212 @@ export function solve(
   options: SolverOptions = {},
 ): SolveResult {
   return analyse(level, explore(level, initial, options));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shortest-route enumeration + the embed metrics (LV-004)
+//
+// Why this is not a second search: it walks the *same* `isLegalMove` /
+// `applyMove` rule functions over *move sequences of a fixed length*, and it is
+// only ever called with `par = shortestSolution` (or `level.par` when the level
+// is unsolvable). It exists because PA-004 asked a question `solve()` cannot
+// answer: **do shortest solutions cross a passable echo and end up embedded?**
+// That is a property of the routes, not of the reachable set — L4 and L5 differ
+// exactly there (offered vs forced, `docs/level-design.md` §2).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Absolute cap on the number of DFS nodes a route enumeration may visit
+ * (`≈ 4^(par+1)/3`). Exceeding it raises instead of reporting a partial count —
+ * the same honesty rule as {@link StateSpaceExplosionError}. `par ≤ 10` levels
+ * stay far below (4^11/3 ≈ 1.4 M).
+ */
+export const PAR_ROUTE_VISIT_CAP = 2_000_000;
+
+/** Raised instead of silently reporting a partial route count. */
+export class RouteEnumerationError extends Error {
+  constructor(level: Level, par: number, cap: number) {
+    super(
+      `route enumeration for level ${level.id} at par=${par} exceeded the visit budget (${cap}) — ` +
+        `refusing to report partial parRoutes/embedRoutes counts`,
+    );
+    this.name = "RouteEnumerationError";
+  }
+}
+
+/** One arrival on an enumerated route (the start state is not an arrival). */
+export interface ArrivalRecord {
+  /** The fully resolved post-move state (phase flipped, door state recomputed). */
+  readonly state: SearchState;
+  readonly direction: Direction;
+  /**
+   * The player stands inside a phase-solid tile in `state` — the ADR-0008
+   * clause-3 embedded state, i.e. the phantom-walk arrival. Decided by the
+   * shipped `solidAt`, never re-derived here.
+   */
+  readonly embedded: boolean;
+  /** Switch ids whose latch turned ON / OFF on this arrival (sorted by level order). */
+  readonly toggledOn: readonly string[];
+  readonly toggledOff: readonly string[];
+}
+
+/**
+ * Visitor for {@link forEachParRoute}. **The array is reused between visits** —
+ * copy it if the records must outlive the callback.
+ */
+export type ParRouteVisitor = (route: readonly ArrivalRecord[]) => void;
+
+/**
+ * Enumerate every distinct legal move sequence of exactly `par` moves that ends
+ * on the goal, in depth-first order, and hand each one to `visit`.
+ * Returns the number of routes.
+ *
+ * A "route" is a direction sequence (= a path; the direction sequence determines
+ * the visited tiles). `par` is not checked against the solver's shortest
+ * solution here — callers pass `SolveResult.shortestSolution` so the routes are
+ * the shortest ones by construction.
+ */
+export function forEachParRoute(
+  level: Level,
+  par: number,
+  visit: ParRouteVisitor,
+  options: SolverOptions = {},
+): number {
+  const cap = options.maxStates ?? PAR_ROUTE_VISIT_CAP;
+  const start = toSearchState(initialState(level));
+  const path: ArrivalRecord[] = [];
+  let visited = 0;
+  let routes = 0;
+
+  const walk = (state: SearchState, depth: number): void => {
+    visited += 1;
+    if (visited > cap) throw new RouteEnumerationError(level, par, cap);
+    if (depth === par) {
+      if (isGoal(level, state)) {
+        routes += 1;
+        visit(path);
+      }
+      return;
+    }
+    for (const direction of DIRECTIONS) {
+      const action = move(direction);
+      if (!isLegalMove(level, state, action)) continue;
+      const next = applyMove(level, state, action);
+      path.push(arrivalRecord(level, state, next, direction));
+      walk(next, depth + 1);
+      path.pop();
+    }
+  };
+
+  walk(start, 0);
+  return routes;
+}
+
+function arrivalRecord(
+  level: Level,
+  before: SearchState,
+  after: SearchState,
+  direction: Direction,
+): ArrivalRecord {
+  const toggledOn: string[] = [];
+  const toggledOff: string[] = [];
+  for (const sw of level.switches) {
+    const was = before.switchesOn[sw.id] === true;
+    const now = after.switchesOn[sw.id] === true;
+    if (was === now) continue;
+    (now ? toggledOn : toggledOff).push(sw.id);
+  }
+  return {
+    state: after,
+    direction,
+    embedded: solidAt(level, after.phase, after.doorsOpen, after.player),
+    toggledOn,
+    toggledOff,
+  };
+}
+
+/**
+ * The LV-004 embed metrics, measured over **every shortest route**.
+ *
+ * - `parRoutes` — distinct legal move sequences of length `par` that reach the goal.
+ * - `embedRoutes` — of those, how many leave the player inside a phase-solid tile
+ *   at some arrival (the phantom walk, `docs/level-design.md` §2 L4/L5).
+ * - `embedForced` — `parRoutes > 0 && embedRoutes === parRoutes`: **every**
+ *   shortest solution crosses a passable echo and is embedded by the flip.
+ *
+ * Measured on the shipped set (PA-004 / LV-004): `l004` 6 routes, 3 embedded
+ * (OFFERED), `l005` 3 routes, 3 embedded (**FORCED**), `l001`–`l003` 0 embedded.
+ */
+export function embedMetrics(
+  level: Level,
+  par: number = level.par,
+  options: SolverOptions = {},
+): EmbedMetrics {
+  let parRoutes = 0;
+  let embedRoutes = 0;
+  forEachParRoute(
+    level,
+    par,
+    (route) => {
+      parRoutes += 1;
+      if (route.some((arrival) => arrival.embedded)) embedRoutes += 1;
+    },
+    options,
+  );
+  return {
+    parRoutes,
+    embedRoutes,
+    embedForced: parRoutes > 0 && embedRoutes === parRoutes,
+  };
+}
+
+export interface EmbedMetrics {
+  readonly parRoutes: number;
+  readonly embedRoutes: number;
+  /** Every shortest route embeds at least one arrival (`embedRoutes === parRoutes > 0`). */
+  readonly embedForced: boolean;
+}
+
+/**
+ * `docs/level-design.md` §3 Solver condition: "no solution exists with all
+ * `switchesOn` false". Decided as **subgraph reachability over the already
+ * explored graph** — no second search, no second rule, and no re-derivation of
+ * door openness: a path may only use nodes in which every switch is OFF.
+ *
+ * A route that steps on a switch while its `activePhase` is current leaves the
+ * all-OFF subgraph (the toggle is part of the state, `hashState`), so this is
+ * exactly "the level is winnable without ever pressing a switch".
+ */
+export function goalReachableWithAllSwitchesOff(
+  level: Level,
+  graph: ReachableGraph,
+): boolean {
+  const nodeCount = graph.nodes.length;
+  const seen = new Uint8Array(nodeCount);
+  const queue: number[] = [];
+  const start = graph.nodes[0];
+  if (start === undefined) return false;
+  if (!allSwitchesOff(level, start)) return false;
+  seen[0] = 1;
+  queue.push(0);
+
+  for (let q = 0; q < queue.length; q += 1) {
+    const i = queue[q] as number;
+    if (isGoal(level, graph.nodes[i] as SearchState)) return true;
+    for (const j of graph.edgesOut[i] as readonly number[]) {
+      if (seen[j] === 1) continue;
+      if (!allSwitchesOff(level, graph.nodes[j] as SearchState)) continue;
+      seen[j] = 1;
+      queue.push(j);
+    }
+  }
+  return false;
+}
+
+/** `true` iff every switch in `level` is OFF in `state`. */
+export function allSwitchesOff(level: Level, state: SearchState): boolean {
+  for (const sw of level.switches) {
+    if (state.switchesOn[sw.id] === true) return false;
+  }
+  return true;
 }

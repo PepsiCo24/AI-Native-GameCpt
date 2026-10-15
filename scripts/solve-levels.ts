@@ -21,7 +21,15 @@
  *   4. prints the mechanical-static conclusion: every level with
  *      `dualPhaseTiles == 0` is, by ADR-0009, a **mechanically static** board
  *      (a pure timing-gate maze) and is flagged for difficulty review;
- *   5. `--audit` additionally runs the ADR-0009 "9/200 M1-alone anomaly"
+ *   5. LV-004 hygiene: prints `parRoutes / embedRoutes / embedForced` (every
+ *      shortest route enumerated) and enforces the level policy — M1 never ships
+ *      alone (every door paired with a switch that can actually fire), a
+ *      documented lesson must be program-true (`@/core/solver/policy`), and the
+ *      documented Aha #1 (`l008`) must satisfy its named gates one by one. A gate
+ *      that is **unsatisfiable as written** (today: `dualPhaseTiles ≥ 1` on a
+ *      portal-free board, ADR-0009 schedules M2 at L11) is printed as an
+ *      ESCALATION, never counted as a pass and never softened;
+ *   6. `--audit` additionally runs the ADR-0009 "9/200 M1-alone anomaly"
  *      qualification obligation handed to SOLVER-001, with the checkerboard
  *      invariant, the artifact probes and minimal reproductions.
  *
@@ -58,6 +66,8 @@ import {
   solve,
   tileKey,
 } from "@/core/solver/bfs";
+import type { LevelAudit, NamedGate, PolicyViolation } from "@/core/solver/policy";
+import { auditLevel } from "@/core/solver/policy";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Inputs
@@ -72,6 +82,13 @@ const levelsDir =
   fileURLToPath(new URL("../src/levels/", import.meta.url));
 
 const failures: string[] = [];
+
+/**
+ * Non-failure escalations: a named gate that is *unsatisfiable as written*
+ * rather than failed by the level. Recorded and printed separately so it can
+ * never be mistaken for a pass and never silently softens a real gate.
+ */
+const escalations: string[] = [];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [1/2] Level files — schema → BFS → required metrics → PASS/FAIL
@@ -105,13 +122,33 @@ function verdictOf(
   return { pass: reasons.length === 0, reasons };
 }
 
+/** Gate lines are printed for every level that declares an Aha obligation. */
+function printGates(gates: readonly NamedGate[]): void {
+  for (const gate of gates) {
+    console.log(`       gate ${gate.status.padEnd(13)} ${gate.id}`);
+    console.log(`            ${gate.label}`);
+    console.log(`            ${gate.detail}`);
+    if (gate.status === "UNSATISFIABLE") {
+      escalations.push(
+        `${gate.id}: gate is UNSATISFIABLE as written — see the printed proof (NOT counted as a level failure; escalate)`,
+      );
+    }
+  }
+}
+
+function printViolations(violations: readonly PolicyViolation[]): void {
+  for (const violation of violations) {
+    console.log(`       policy ${violation.code}: ${violation.detail}`);
+  }
+}
+
 function reportLevel(
   file: string,
   level: Level,
 ): { result: SolveResult; pass: boolean } | null {
-  let result: SolveResult;
+  let audit: LevelAudit;
   try {
-    result = solve(level);
+    audit = auditLevel(level);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.log(
@@ -122,10 +159,17 @@ function reportLevel(
     return null;
   }
 
+  const result = audit.result;
   const { pass, reasons } = verdictOf(level, result);
+  const policyFail = audit.violations.length > 0;
+  const ok = pass && !policyFail;
   console.log(
-    `  ${pass ? "PASS" : "FAIL"} ${file}  id=${level.id} ${level.width}x${level.height} startPhase=${level.startPhase} par=${level.par}`,
+    `  ${ok ? "PASS" : "FAIL"} ${file}  id=${level.id} ${level.width}x${level.height} startPhase=${level.startPhase} par=${level.par}`,
   );
+  if (audit.lesson !== null) {
+    console.log(`       lesson: ${audit.lesson.lesson}`);
+    console.log(`            source: ${audit.lesson.evidence}`);
+  }
   console.log(
     `       solvable=${result.solvable} shortestSolution=${String(result.shortestSolution)} parMatch=${result.shortestSolution === level.par}`,
   );
@@ -138,15 +182,24 @@ function reportLevel(
   console.log(
     `       refusedThenEnteredTiles=${result.refusedThenEnteredTiles} tiles=${formatTiles(result.refusedThenEnteredTileList)}`,
   );
+  // LV-004 hygiene: the phantom-walk plumbing PA-004 derived by hand.
+  console.log(
+    `       parRoutes=${audit.embeds.parRoutes} embedRoutes=${audit.embeds.embedRoutes} embedForced=${String(audit.embeds.embedForced)}`,
+  );
   console.log(
     `       deadStates=${result.deadStates} states=${formatTiles(result.deadStateList)}`,
   );
   console.log(
     `       noUnrecoverableOk=${result.noUnrecoverableOk} unrecoverableStates=${result.unrecoverableStates}`,
   );
+  printGates(audit.gates);
+  printViolations(audit.violations);
   for (const reason of reasons) console.log(`       reason: ${reason}`);
   for (const reason of reasons) failures.push(`${file}: ${reason}`);
-  return { result, pass };
+  for (const violation of audit.violations) {
+    failures.push(`${file}: policy ${violation.code}: ${violation.detail}`);
+  }
+  return { result, pass: ok };
 }
 
 console.log("Phase Shift: Echo Grid — BFS solver gate (SOLVER-001)");
@@ -167,6 +220,7 @@ if (files.length === 0)
 
 const staticLevels: string[] = [];
 const dynamicLevels: string[] = [];
+const latchLevels: string[] = [];
 let passLevels = 0;
 let parVerified = 0;
 
@@ -212,6 +266,7 @@ for (const file of files) {
   if (report.pass) passLevels += 1;
   if (result.dualPhaseTiles === 0) staticLevels.push(file);
   else dynamicLevels.push(file);
+  if (result.refusedThenEnteredTiles > 0) latchLevels.push(file);
   if (result.shortestSolution === level.par) parVerified += 1;
 }
 
@@ -230,10 +285,25 @@ if (dynamicLevels.length > 0) {
     `  dualPhaseTiles > 0 on ${dynamicLevels.length}/${files.length} level(s) ⇒ parity-breaking portal displacement present: ${dynamicLevels.join(", ")}`,
   );
 }
-if (staticLevels.length === files.length && files.length > 0) {
+if (latchLevels.length > 0) {
   console.log(
-    "  ⇒ the whole shipped set is static: every solution is reachable without any latched state (no M3 latch, no M2 parity break).",
+    `  refusedThenEnteredTiles > 0 on ${latchLevels.length}/${files.length} level(s) ⇒ M3 latch state is load-bearing (a tile answers differently because of history, ADR-0009 decision 4): ${latchLevels.join(", ")}`,
   );
+}
+const parityStatic = files.filter((file) => !dynamicLevels.includes(file));
+if (parityStatic.length === files.length && files.length > 0) {
+  console.log(
+    `  ⇒ no portal in the shipped set: the position→phase link is intact everywhere (dualPhaseTiles ≡ 0 by the checkerboard invariant).`,
+  );
+  if (latchLevels.length === 0) {
+    console.log(
+      `    …and no latched state either: every shipped solution is reachable without M3/M2 state — the whole set is static.`,
+    );
+  } else {
+    console.log(
+      `    …but ${latchLevels.length} level(s) DO carry latch state, so "static" here means only "parity not broken" — read refusedThenEnteredTiles.`,
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -244,6 +314,11 @@ console.log("");
 console.log(
   `summary: ${passLevels}/${files.length} level file(s) PASS · par verified from the solver on ${parVerified}/${files.length} · refusals are reported, never repaired`,
 );
+if (escalations.length > 0) {
+  console.log("");
+  console.log(`ESCALATIONS (${escalations.length}) — not level failures, not silently dropped:`);
+  for (const escalation of escalations) console.log(`  - ${escalation}`);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // [2/2] --audit — ADR-0009: qualify the "M1 doors alone → 9/200" residue
