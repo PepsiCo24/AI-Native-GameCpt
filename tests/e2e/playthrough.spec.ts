@@ -181,6 +181,11 @@ test.describe("par route → win → HUD contract", () => {
       const won = await hud(page);
       expect(won.dialogTitle).toBe("原型结束 / Prototype over");
       expect(won.dialogBody).not.toContain("L1–L5");
+      // MINOR-2 (RV-007, QA-005c): close the composition-root chain end-to-end. The
+      // panel's range comes from the registry's own list (`ladderLabelOf`) and the
+      // dataset pins the same count, so the shipped string must name the ladder the
+      // suite actually drives — derived from the one pin, never re-typed as a list.
+      expect(won.dialogBody).toContain(`L1–L${String(EXPECTED_LEVEL_COUNT)}`);
       expect(won.dialogBody).toContain(`moves ${String(refOf(REFS, EXPECTED_LEVEL_COUNT).par)}`);
     },
   );
