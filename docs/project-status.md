@@ -742,6 +742,21 @@ and a path must be quiescent before dispatch.**
     by design (`level-registry.ts:10-30` comment: no Vite glob, tsconfig has no `vite/client` types) → the ticket is
     two data lines (`import l011` + entry) + the unlock test's registry-contents re-pin; deliberately held until the
     accepted `l011.json` exists.
+47. **DEFINITION OF DONE — Orchestrator's completion checklist (standing order: drive autonomously until
+    finished).** Competition-ready = ALL of: **[G1] Gameplay** L1–L11 shipped and proven (L11 under the frozen
+    pre-registered law; LV-008 in flight), L12–L15 authored if the loop sustains. **[G2] Rules/quality machine**
+    permanent e2e (QA-005 in flight) + per-level solver proofs + sidecar report LV-007E + validator multi-switch
+    warning (R5-half) + R-004 predicate relocation + LV-007D citation labels — all queued behind current trio.
+    **[G3] Visual vocabulary** Entry-3 portal pair-frames on the accepted L11 (capture after R-003; :5199 + `?level=`
+    ready) + UA ruling; revision-art INTEGRATION is USER-BLOCKED (Codex channel: req-08 spirit pair, req-11
+    background P0) — shipping with disclosed placeholder state is the accepted fallback, Asset Gate unchanged.
+    **[G4] Playtest evidence** Stage-2 protocol frozen BEFORE cohort (thresholds + GD-008 first-show friction clause
+    + R7 tri-signal coding; frozen-frame provenance landed in item 46); a cohort of 10 non-developers is USER-BLOCKED
+    (recruitment); the deliverable without humans = frozen protocol + disclosure. **[G5] Facade/materials** README +
+    submission canonized (DG-003 in flight) + iteration-log current + ADR chain clean. **[G6] Release** develop→main
+    milestone merge with CI green at tip, tag, submission pack (repo + hosted URL only if the user provides a hosting
+    target — deploy choice is a USER decision, no accounts touched by agents). Loop discipline: return → disk-verify
+    → merge → next queued ticket, ceiling 3 live, no per-step confirmation, every claim carries an artifact.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
