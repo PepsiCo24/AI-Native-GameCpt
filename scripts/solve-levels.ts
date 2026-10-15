@@ -187,9 +187,23 @@ function reportLevel(
   console.log(
     `       refusedThenEnteredTiles=${result.refusedThenEnteredTiles} tiles=${formatTiles(result.refusedThenEnteredTileList)}`,
   );
+  // LV-007B item 2: the *ordered* companion of the line above — a subset, and the
+  // difference is the trapped refusals (history-dependence the player cannot act
+  // on). The canonical metric stays the unordered one (architecture §8.1 /
+  // ADR-architecture-0002), so this line is reported, never substituted.
+  console.log(
+    `       refusedBeforeEnteredTiles=${result.refusedBeforeEnteredTiles} tiles=${formatTiles(result.refusedBeforeEnteredTileList)}`,
+  );
   // LV-004 hygiene: the phantom-walk plumbing PA-004 derived by hand.
   console.log(
     `       parRoutes=${audit.embeds.parRoutes} embedRoutes=${audit.embeds.embedRoutes} embedForced=${String(audit.embeds.embedForced)}`,
+  );
+  // LV-007B n-11: the *cost* of the walk above, on its own line. It used to be
+  // invisible — and that is how a long-par board came to die on a budget nobody had
+  // printed (the walk read the exploration key). `budget` is `maxRouteVisits`, i.e.
+  // this enumeration's own key; the two numbers are DFS nodes + lookahead probes.
+  console.log(
+    `       routeWalk=${audit.embeds.routeVisits} dfs + ${audit.embeds.routeLookaheadVisits} lookahead work units (budget=${audit.embeds.routeVisitBudget}) prunedChildren=${audit.embeds.routePrunedChildren}`,
   );
   // docs/level-design.md §3 condition, measured on every switch-bearing level.
   console.log(
@@ -201,6 +215,20 @@ function reportLevel(
   console.log(
     `       noUnrecoverableOk=${result.noUnrecoverableOk} unrecoverableStates=${result.unrecoverableStates}`,
   );
+  // LV-007B item 3: the §2 difficulty model, D = w1·L + w2·B + w3·T + w4·R + w5·M.
+  // The weights are the doc's PROVISIONAL V0.1 hypothesis (not a calibration), so
+  // the line prints them next to the number: a stored D must never be read against
+  // weights it was not computed with.
+  {
+    const add = audit.difficulty;
+    const w = add.weights;
+    console.log(
+      `       difficulty D=${add.D === null ? "n/a (unsolvable)" : add.D.toFixed(2)} = ${w.L}·L(${String(add.L)}) + ${w.B}·B(${add.B.toFixed(4)}) + ${w.T}·T(${add.T}) + ${w.R}·R(${add.R.toFixed(4)}) + ${w.M}·M(${add.M}) · weights provisional V0.1 (docs/level-difficulty.md §2)`,
+    );
+    console.log(
+      `       difficultyDiagnostics BRaw=${add.bRaw.toFixed(4)} forcedMoveRatio=${add.forcedMoveRatio.toFixed(4)} lookaheadDepth=${add.lookaheadDepth} unrecoverableRatio=${add.unrecoverableRatio.toFixed(4)} reachableStates=${add.reachableStates}`,
+    );
+  }
   printGates(audit.gates);
   printViolations(audit.violations);
   for (const reason of reasons) console.log(`       reason: ${reason}`);

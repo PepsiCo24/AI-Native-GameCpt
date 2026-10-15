@@ -1,7 +1,7 @@
 # AI Native Pipeline — Phase Shift: Echo Grid
 
 > Owner: **Level AI + Solver** with **Orchestrator** (formatting maintenance by Docs + GitHub; content belongs to the owners)
-> Version: V0.3 · Date: 2026-10-14
+> Version: V0.6 · Date: 2026-10-15
 
 ---
 
@@ -95,20 +95,38 @@ Enforcement detail: the error names the door path, the coordinate and every wall
 
 ## 4. Difficulty metrics (per accepted level)
 
+What the **solver contract** carries (`SolveResult` / `EmbedMetrics`, `@/core/solver/bfs`):
+
 ```
-solvable
-shortestSolution          L
-numSolutions
-averageBranchingFactor    B
-deadEndRatio              R
-maxSearchDepth            T
-forcedMoveRatio
-difficultyScore           D = w1·L + w2·B + w3·T + w4·R + w5·M
-embedRoutes / parRoutes   (LV-004: how many shortest routes end embedded — the phantom walk)
-switchRequired            (LV-006: is the goal reachable with every switch OFF?)
+solvable · shortestSolution (L) · numSolutions
+reachableStates · maxSearchDepth · forcedMoveRatio (diagnostic — NOT `T`)
+deadStates / unrecoverableStates / noUnrecoverableOk
+refusedThenEnteredTiles      (#7 canonical, UNORDERED — the acceptance carrier)
+refusedBeforeEnteredTiles    (#7 ordered companion — reported, NEVER gated; §8.5)
+dualPhaseTiles               (#3)
+embedRoutes / parRoutes      (LV-004: how many shortest routes end embedded — the phantom walk)
+switchRequired               (LV-006: is the goal reachable with every switch OFF?)
 ```
 
-Weights are **calibrated from real playtest data**, never hard-frozen. See `docs/level-difficulty.md` §5.1 for which of these are measured today (`L`, `M`, `B_raw`, `R`, `parRoutes`, `embedRoutes`, `switchRequired`) and which are still **not** (`B` effective, `T`, and therefore `D`).
+What the **§2 difficulty model** adds (`@/core/solver/difficulty`, surfaced as
+`LevelAudit.difficulty` and printed as the per-level `difficulty` /
+`difficultyDiagnostics` lines — deliberately **not** part of `SolveResult`, so a
+playtest-driven re-calibration moves no solver contract):
+
+```
+L · B (effective) · T · R · M
+D = w1·L + w2·B + w3·T + w4·R + w5·M      (null iff the board is unsolvable)
+diagnostics: bRaw · forcedMoveRatio · lookaheadDepth · unrecoverableRatio · reachableStates
+```
+
+Weights are **calibrated from real playtest data**, never hard-frozen. As of **LV-007B
+item 3** every term is *measured* — the gap `docs/level-difficulty.md` §5.1 recorded as open
+(`B` effective, `T`, `R`, and therefore `D`) is closed by §5.2 there, with the definitions
+pinned in its §2a. Two facts from that measurement belong in the pipeline's own record:
+inside the `docs/level-design.md` §4 acceptance region `T ≡ 0` **and** `R ≡ 0` (so
+`D = L + 3·B + 5·M` for any shippable level and `w3`/`w4` are inert), and the L5→L6
+block-opening dip §3 asks for is measured **+8.53** on `D` instead of −2…−3 — a weight /
+definition question for the Game Designer, reported as-is, never tuned away here.
 
 ## 5. Model routing (roles abstract; the matrix is the single source of truth)
 
@@ -139,15 +157,20 @@ The final submission must show the chain, not a claim:
 
 ## 7. Reproducibility
 
-- Level generation is **seeded** and scripted (`scripts/generate-levels` for the bulk pipeline; `scripts/author-lv006-candidates.ts` for the L6–L10 doors+switch unit — fixed `SEED`, no clock / network / filesystem writes, byte-identical output on every run, see §8.6).
+- Level generation is **seeded** and scripted. The committed, re-runnable scripts are `scripts/validate-levels.ts` (schema/rule gate + 10 negative self-tests), `scripts/solve-levels.ts` (BFS proof, `par`, metrics, policy, gates) and `scripts/author-lv006-candidates.ts` (the L6–L10 doors+switch families, fixed `SEED`, no clock / network / filesystem writes, byte-identical output on every run — see §8.6). A **bulk** multi-block generator does not exist yet; the L11–L20 portals block is where it will be needed, and until it is written this section must not cite a script that is not in the repository (`scripts/generate-levels` was cited here and in `docs/architecture.md` — the latter is the Architect's file, so correcting it there is an OPEN_QUESTION in the LV-007B handoff, not an edit made by this role).
 - Every accepted level stores its generation metadata (model role, seed, prompt version, solver metrics).
 - Rejected candidates are archived too — the failures are part of the evidence. The LV-006 generator prints its rejects and **fails** if any of its three negative probes is accepted.
 
-## 8. LV-006 record — the L6–L10 doors + switch unit (2026-10-15)
+## 8. The level-pipeline record — LV-006 (the L6–L10 unit) → LV-007B (2026-10-15)
 
-The first level block in the game that carries **M1 (doors) + M3 (switches)**, and the
-first run of the full pipeline on content whose lesson is *not* a special case of
-"walls": schema → rules → BFS → metrics → policy/lesson audit → accept/reject.
+§8.1–§8.2 are the **LV-006** run. §8.3 onward is the running protocol record: each later
+task appends what it changed about *how levels are proved*, so the record cannot drift into
+"the pipeline works" without the evidence for saying so.
+
+The LV-006 block itself — the first level block in the game that carries **M1 (doors) + M3
+(switches)**, and the first run of the full pipeline on content whose lesson is *not* a
+special case of "walls": schema → rules → BFS → metrics → policy/lesson audit →
+accept/reject.
 
 ### 8.1 The proposal side (recorded templates, not trusted)
 
@@ -220,6 +243,15 @@ schema is a *shape* contract (`src/core/level/**` was not changed by LV-006):
 1. **M1 never ships alone** — every door is targeted by a switch, and that switch toggles
    somewhere in the reachable graph (exact: measured over the whole graph, not argued from
    parity). Enforced on every level, not just L6–L10.
+   **Its mirror is enforced here too** (LV-007B item 4, n-13): a `switches[]` entry with an
+   empty `targets` list is rejected as **`switch-without-targets`**. Such a switch *does*
+   fire (`applyMove` toggles `switchesOn` unconditionally), so no firing test can catch it;
+   what is wrong is that no door reads it — M3 content that changes nothing. The frozen
+   validator only **warns** about that shape (a shape contract, not a design policy), and a
+   warning is not a gate, so the rejection lives in the policy layer with its own negative
+   control. Whether the *warning* should be promoted to a data-layer error is an
+   Architect/Game-Designer question: doing so would change `src/core/level/**`, which the
+   solver role must not touch (OPEN_QUESTION in the LV-007B handoff).
 2. **A documented lesson must be program-true** — the ladder's lesson table
    (`@/core/solver/policy` `DOCUMENTED_LESSONS`, L1–L10) is checked against the metrics:
    phantom walk FORCED (l005) / OFFERED (l004), latch dynamism on L6–L10, the documented
@@ -254,6 +286,26 @@ ANOMALY** escalation instead of a routine pass. A suite pin asserts that `dual-p
 the **only** gate allowed to reach `UNSATISFIABLE` (the CLI's escalation channel is generic,
 so its single legitimate producer is pinned rather than trusted).
 
+**The acceptance law keeps reading the metric it was proved on (ADR-architecture-0002, LV-007B
+item 2).** `refusedThenEnteredTiles` is an **unordered state-set** property: it counts a tile
+if any reachable state refuses entry on it and another accepts it, in whatever order those
+states were discovered. A stronger, trace-ordered companion now exists —
+**`refusedBeforeEnteredTiles`**, computed by `@/core/solver/bfs` and printed per level by
+`scripts/solve-levels.ts` — which requires the *same tile* to be refused strictly before it is
+accepted **on one real path**. It is **reported and never gated**: gate (iii)
+(`gate-refused-then-entered`) and this section's pre-L11 acceptance law
+(`refusedThenEnteredTiles ≥ 1`) continue to read the **unordered** form, because that is the
+form ADR-0009 decision 4 was measured and proved on, and because the unordered form must keep
+firing for latch boards whose beat is real but trace-unwitnessable (a trapped refusal still
+proves entry legality is history-dependent). Divergence is real but rare — on the shipped ten
+both forms report identical tile lists (1 / 1 / 1 / 2 / 1 on L6–L10), and on 2000 seeded
+single-door-single-switch boards 46 diverge (44 of them because the door tile *is* the switch
+tile). The companion's **promotion trigger** is ADR-architecture-0002's: it MUST land as a gate
+before the first **L11+ portal candidate** is accepted (teleport edges make trapped refusals
+more likely), and SHOULD be promoted whenever a candidate first diverges. Until then, any
+change that makes this law read the ordered form is a re-definition of the acceptance
+criterion, not a documentation fix.
+
 **`switchRequired` is an obligation on the documented lesson (LV-007A · OQ4 ruling).** The
 `switchRequired = true` that L7–L10 carry (all four measure `true` on the shipped boards) is no
 longer shipped data only: `@/core/solver/policy` checks it, and a level documented as a latch
@@ -277,6 +329,31 @@ node_modules/.bin/tsx scripts/validate-levels.ts           # schema/rule gate + 
 node_modules/.bin/vitest run                               # incl. tests/solver/latch-gates.test.ts
 ```
 
+### 8.7 LV-007B — solver hardening + the measurement pass (2026-10-15)
+
+Four changes to the proving machinery itself, each landing as its own commit (probe scripts
+deleted, never committed; `tsc` + full suite + all three CLI gates re-run per item):
+
+1. **n-11 · route enumeration got exact pruning and its own budget key.** `forEachParRoute`
+   walks every shortest route (the phantom-walk / Aha-gate evidence). It now prunes a child
+   whose remaining budget can never finish, using an exact memoized finishability lookahead
+   over the shipped `isLegalMove` / `applyMove` (portal-safe; equivalence with exhaustive
+   enumeration is machine-checked on all ten shipped levels and three synthetic boards — one
+   M0, one latch, one portal). The real defect fixed here was the **budget key**: the walk
+   read the *exploration* cap, so "raise the state limit" silently changed route enumeration
+   and a long-par board could die on a budget nobody printed. The walk now has its own
+   independent cap (`maxRouteVisits`, default `PAR_ROUTE_VISIT_CAP = 2_000_000`), prints
+   `routeWalk=<dfs> + <lookahead> work units (budget=…) prunedChildren=…`, and **raises**
+   `RouteEnumerationError` on overrun rather than truncating (a truncated route set would
+   silently weaken every metric read from it). `maxStates` still caps the exploration only.
+2. **The ordered companion metric** `refusedBeforeEnteredTiles` — see §8.5 for what it
+   measures, why it is reported and **not** gated, and its promotion trigger.
+3. **The §2 difficulty model is measured** — `B` effective, `T`, `R` and `D`, with the two
+   structural findings and the untouched weights recorded in §4 above and in
+   `docs/level-difficulty.md` §2a / §5.2.
+4. **n-13 · a policy code for M3 content no door reads** — `switch-without-targets`, its own
+   negative control, and the validator-warning-vs-policy-rejection layering: §8.4 law 1.
+
 ## 9. Change log
 
 | Date | Version | Change | Author |
@@ -286,3 +363,4 @@ node_modules/.bin/vitest run                               # incl. tests/solver/
 | 2026-10-14 | V0.3 | **LV-005** — new **§3b Level Schema adjudications**: `doors[]` ∩ (`phaseAWalls` \| `phaseBWalls`) = **illegal, hard error** (never "the door swallows the wall"); §3's hard-reject list gains "a cell that is two objects at once". Reason recorded with measured BFS evidence and the explicit non-decision on appearance precedence (UI / Art Director's `docs/ui-ux.md`) | Level AI + Solver (LV-005) |
 | 2026-10-15 | V0.4 | **LV-006** — new **§8 record for the L6–L10 doors+switch unit**: the committed seeded generator and its candidate families, the accept/reject histogram, the shipped-file re-derivation check, the three negative probes, the two content laws now enforced in `@/core/solver/policy`, and the **§8.5 escalation** (`dualPhaseTiles ≥ 1` unsatisfiable before L11). §3's hard-reject list gains "M1 alone" and "a documented lesson the board does not deliver" | Level AI + Solver (LV-006) |
 | 2026-10-15 | V0.5 | **LV-007A (RV-004 backlog A)** — §8.3 gains the one-negative-control-per-code rule (`Record<PolicyViolationCode, …>` + source scan; the m-2 mutation that survived 176 green tests is now RED) and multi-code probe expectations; §8.4's law 2 names the §3 construction bullets as gates (v)/(vi); **§8.5 gains the corrected acceptance law restated for the record** (pre-L11 = `refusedThenEnteredTiles ≥ 1`, gate (iv) active from L11; m-5's two-fact guard + the single-producer whitelist) and the **OQ4 ruling** — `switchRequired` is an obligation on the L7–L10 lesson rows with L6's dip an explicit `"exempt"` row, no `id === 6` special case, new code `lesson-switch-required` | Level AI + Solver (LV-007A) |
+| 2026-10-15 | V0.6 | **LV-007B (m-8/m-9/m-10 reconciliation) + LV-007B items 1–4 recorded.** §4 **corrected**: the metric block now separates what `SolveResult` carries from what `@/core/solver/difficulty` adds, `maxSearchDepth` is labelled NOT `T`, and "still unmeasured" is replaced by the measured state (`B`/`T`/`R`/`D` landed, §5.2 of `docs/level-difficulty.md`; `D = L + 3·B + 5·M` inside the §4 acceptance region because `T ≡ R ≡ 0` there; the L5→L6 dip is measured **+8.53**, not −2…−3). §7 **stops citing a script that does not exist** (`scripts/generate-levels`) and names the three real gates, with the stale `docs/architecture.md` citation raised as an OPEN_QUESTION since that file is the Architect's. §8.4 law 1 gains the **mirror** law (n-13 `switch-without-targets`: a switch that fires but no door reads is M3 decoration; validator warning ≠ policy gate). §8.5 gains the **ADR-architecture-0002 split stated for the record**: gate (iii) and the pre-L11 acceptance law keep reading the **unordered** `refusedThenEnteredTiles`; the ordered companion `refusedBeforeEnteredTiles` is reported, never gated, with its L11 promotion trigger and the measured 0.9 %-class divergence. New **§8.7** records the n-11 route-walk fix (exact pruning + its **own** budget key `maxRouteVisits`; it used to read the exploration cap), item 2, item 3 and item 4 in one place. Header version resynced to the changelog (it had been left at V0.3 across V0.4/V0.5), and §8 retitled to the running pipeline record with §8.1–§8.2 declared to be the LV-006 block | Level AI + Solver (LV-007B) |
