@@ -1230,7 +1230,55 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    a green develop tip** — standing discipline: the e2e gate is REQUIRED, a surviving flake is a named
    ticket (this one named within minutes of its first firing, exactly as the rule intended), retries stay
    1, and no green is claimed from a docs-delta tree while its test-content sibling printed red.
-   Live 1/3 (QA-005e); user lanes unchanged: req-08/11 revision art, the frozen `df353a0` cohort, P9 video. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+   Live 1/3 (QA-005e); user lanes unchanged: req-08/11 revision art, the frozen `df353a0` cohort, P9 video.
+
+73. **The implication arm MET the cloud, the cloud MET the game, and the suite is now
+   measurement-honest end to end: PR #3 green, merged `3ddc2d6`, milestone gate = one
+   green develop round on this tip.** Chronicle: (1) QA-005e shipped the post-hoc arc
+   implication (mechanical closeout here `9eaf7fb`, README census addendum owned by this
+   office); PR #2's cloud round then fired the NEW fail-loudly branch `BEAT-REQUIRED-ABSENT`
+   TWICE - stamps said a frame was inside the window, pixels said no beat - and the
+   branch did exactly what it was designed to do: REFUSED to lie, and made a discovery.
+   (2) QA-005f adjudicated the three-way (a recorder miss / b game hole / c clock
+   attribution): **(c) NAMED, reproduced at the straddling grid, GAME EXONERATED** -
+   rAF stamps are vsync-NOMINAL while the step runs LATER and Chromium dispatches pending
+   input BEFORE frame callbacks, so a loaded runner compared keydown wall-time against a
+   frame that had not run, read a true 100 ms interval as 83.4 "fast", and demanded a
+   beat from a non-existent paint; the invariant (a step inside the window <=> BoardView
+   painted) held 8/8 on the game instance. (3) The fix is tests-side geometry - probe
+   records `ranAt` per frame + `frameIndex` per event, the arc window lives in STEP-INDEX
+   time, both arms assert `attributionHolds` BEFORE classifying - so the four red shapes
+   (attribution / game-absence / recorder / limit) are distinguishable BY MESSAGE, BY
+   NAME; the superseded nominal bracket is pinned as a WRONG-regression case. (4) **PR #3
+   run 38804134439: 88/0 zero-retry (13.1 m), and the cloud draw was the STRONGEST
+   possible one: natural arm `stampsInsideWindow=1, gap 83.4, onset OBSERVED ->
+   assert-shape ran the full pixel teeth ON CLOUD and passed**; fabricated arm
+   resolve-limit faithful; all oscillation + attribution unit cases green in verify.
+   Merged `3ddc2d6` (only from a fully green PR - discipline intact across three PRs).
+   (5) The ENOENT artifact-rot class is CLOSED as machine-healthy: QA-005e's detached
+   closer ran x2 CONSECUTIVE shipped-config greens with five foreign playwrights live,
+   differing only by an isolated `--output` dir, and RECONCILED with this office's
+   `--trace=off` control - the class needs BOTH a foreign process on the same outputDir
+   AND live trace staging; my "quiet" pair's rounds were themselves the concurrency
+   violation (the closer's detached loop was still alive - my preflight missed it because
+   it matched `playwright test` while the loop's playwright was mid-sleep). Standing
+   protocol: before any battery, kill-or-wait on ALL processes rooted in the tree (not
+   just playwright), and prune worktrees only after detached census loops are confirmed
+   DEAD. (6) That same detached closer, discovered post-prune, had committed a 46-line
+   README section to the pruned branch - orphaned `88b37ba`; this office salvage-ported
+   it VERBATIM (`patch -p1`, zero edits, provenance header above the block) because
+   record-not-erase cuts both ways: an agent's late honest evidence gets the same
+   respect as a green test line. (7) The survivor roster is FINAL: 7 -> 4 -> 3 -> 2 ->
+   1 (prediction-coupling) -> 0, every death by measurement, every resurrection with
+   MORE teeth; `--retries=1` retirement can now be negotiated from a position of three
+   cloud greens (PR #1, `fb751de`, PR #3) + this tip round. Live agents 0/3 (all three
+   QA tickets closed on disk); quota: the flash lane keeps delivering, premium models
+   still capped - no new dispatch unless the milestone needs it. **On the green tip
+   round THIS session merges develop -> main and Pages publishes the 11-level build**,
+   then DG-004c flips the five future-scoped hosting sentences + the 88-case inventory +
+   this roster's final chapter. LV-009-B (L12-L15 integration, law published and
+   countersigned) is the NEXT train after the milestone. User lanes unchanged: req-08/11
+   revision art, the frozen `df353a0` cohort, P9 video. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
