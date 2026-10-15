@@ -1,7 +1,28 @@
 # Playtest Log
 
 > Owners: **QA Engineer** and **Playtest Analyst**
-> Version: **V0.5** · Date: 2026-10-15
+> Version: **V0.6** · Date: 2026-10-15
+> **V0.6 (PA-006, Playtest Analyst):** **Stage-2 instrument RE-FROZEN against the shipped ladder
+> L1–L10 — re-freeze event RF-1, §11.0.** The V0.5 BUT (`41d5a4b`) predates the L6–L10 unlock
+> (`c6af636`) and the public Pages release (`3601935`, `https://pepsico24.github.io/AI-Native-GameCpt/`):
+> frozen as-is, V0.5 would test a five-level prototype that no longer exists. **No session ever ran
+> (n = 0 stands), so no datum is voided by the re-freeze.** §9's text is **unedited** (T6 respected) and
+> remains the frozen record of the M0-only round design; **§11 (new) is the V0.6 instrument**: scope
+> L1–L10 on the live build; per-level operational metrics incl. refusal-cause guesses (**M4c / RG-\***)
+> and the switch-vs-wall confusion tag (**SW-1…SW-4** — observation-only, mapped to the `ui-ux.md` §12
+> R7 tri-signal, never a verdict input); the two named decisive probes with thresholds pre-registered
+> before any cohort runs — **SEAM-1 (L5→L6, (d′) through the block-opening dip; PD-1…PD-4)** and
+> **SEAM-2 (L6→L8, (a′) latch readability; frozen a′-1…a′-4 ACTIVATED, P-probe pre-marked on the
+> shipped `l008`)**; **(c′) explicitly DEFERRED to cohort v3** upon an accepted `l011.json` (ruled with
+> grounds + re-activation condition, §11.7 — never silently dropped); build-defect neutrality for the
+> two known production defects under concurrent fix (ticket R-004b): **BD-1/BD-2** coding measures the
+> confusion, never assumes a bug's presence or absence (§11.1). Companions: `docs/playtest-analysis/
+> stage2-v06-cohort-runbook.md` (the user's recruiting + session runbook) and the sha256 freeze
+> provenance (`stage2-v06-freeze-note.md` + `stage2-v06-manifest.sha256`; method precedent: the
+> Orchestrator's `stage2-freeze-note` over the `dyn-merged/` frames, `project-status.md` item 46).
+> **V0.6 is FROZEN at this commit; any pre-cohort edit to an instrument file = a new re-freeze event
+> (§11.0). Still zero sessions, zero participants, zero results: n = 0** — §6/§7/§10 and Tables A–E
+> stay empty; the standing disclosure wording is §11.9.
 > **V0.5 (PA-005, Playtest Analyst):** **§9.1 BUT table FILLED AND COMMITTED — T6's freeze clock starts
 > at that commit.** Build **`41d5a4b`** · `placeholder art` · l001–l005 (game code byte-identical to the
 > `9c4b5a1` baseline — `git diff 9c4b5a1 41d5a4b -- src/ scripts/ package.json` is empty, docs-only delta;
@@ -596,3 +617,291 @@ opened → attached table paths. A verdict recorded before its tables exist is v
 | Escalations opened | — |
 | Tables attached | — |
 | Silent revert performed? (**must be NO**) | — |
+
+---
+
+## 11. Stage-2 instrument V0.6 — RE-FROZEN on the shipped ladder L1–L10 (PA-006)
+
+> **Owner:** Playtest Analyst · **Status: PRE-REGISTERED · NOT RUN · n = 0.** Nothing in §11 contains a
+> result. §11 is the operative instrument for the next round (**cohort v2**); §9 remains frozen and
+> unedited as the V0.5 record it is. Where §11 *carries* a §9 row, it cites it verbatim and moves no
+> number; where §11 *adds* a row, the addition is pre-registered here, before any human touches the
+> build (the L11 acceptance-law discipline: freeze first, measure second — `docs/level-design.md` §6,
+> `docs/level-difficulty.md` §3.3). Companion files: `docs/playtest-analysis/stage2-v06-cohort-runbook.md`
+> (field runbook + Table B2/C2 addenda), `docs/playtest-analysis/stage2-v06-freeze-note.md` (freeze
+> declaration + sha256 manifest). The frozen coding manual (C1–C9, R1–R6, G1–G5, M14/M15 windows,
+> inter-rater rule) stays in force unchanged: `docs/playtest-analysis/stage2-adr0008-gated-protocol-notes.md` §2.
+
+### 11.0 Re-freeze event RF-1 (why V0.5's freeze was superseded, and what "frozen" means from here)
+
+**RF-1 — 2026-10-15, PA-006.** Grounds, each a checkable repo fact:
+
+1. The V0.5 §9.1 BUT is build **`41d5a4b`** — levels `l001`–`l005` only. The ladder has since shipped:
+   **R-002/R-002b `c6af636` unlocked L6–L10 in the playable registry** (`src/game/levels/level-registry.ts`
+   imports `l006`…`l010`; `README.md` "Current status"), and the public build **`3601935`** serves
+   **L1–L10** at `https://pepsico24.github.io/AI-Native-GameCpt/` with `?level=N` deep links.
+2. A round run "as frozen" on V0.5 would therefore test **a five-level prototype that no longer exists**:
+   its (a′) release condition — "the D3 door+switch set L6–L10 ships and passes the Solver gate" (§9.1/§9.6) —
+   is **now met** (committed evidence: `src/levels/README.md` §0/§0b — `scripts/solve-levels.ts` **10/10 PASS**,
+   `par` == solver `shortestSolution` 10/10, 0 dead / 0 unrecoverable states, policy 0 violations; `l008`
+   Aha gates (i)(ii)(iii) PASS), and its D-2 probe ("wants Level 6") now faces a real Level 6.
+3. **No session ever ran under V0.5** (§6: "No session has been run"; n = 0). Re-freezing with zero data
+   voids nothing and moves no threshold against any observation — the only situation in which a re-freeze
+   is honest. Had a single session existed, this edit would have been forbidden and a *new round* required instead.
+4. **T6 is respected, not repealed:** §9's text is untouched; §9.1's BUT row stands as the historical
+   record of the M0-only round design. V0.6 *supersedes it as the basis of a round* by this declared
+   event, exactly as §9.10.4's discipline demands (never silently, always with grounds).
+
+**Freeze rule from RF-1 onward.** V0.6 = this §11 + the runbook + the hashed companions
+(`stage2-v06-manifest.sha256`). **Any edit to an instrument file before cohort-v2 session 1 is a new
+re-freeze event** (RF-2, RF-3, …): version bump, dated grounds in this section's style, fresh manifest,
+fresh freeze note. After session 1, no threshold, probe string, level index or coding rule in §11 may be
+edited at all (T6 semantics carried over verbatim); mid-round corrections go to Table F and apply to the
+next round only. The round's BUT-commit row (§11.1) is **appended** at round start — filling in a build id
+is not a threshold edit.
+
+### 11.1 Round definition, BUT rule, and build-defect neutrality
+
+| Field | Rule (frozen) |
+|---|---|
+| Round | **Cohort v2** — P = 5 players (L1–L10 sessions) + V = 5 fresh viewers, disjoint people (§9.4 carries over verbatim, incl. non-developer definition, ≥ 1/5 "I don't play puzzle games", individually run, no compliance pressure, consent, colour vision recorded-never-excluded). Total recruited humans: **10**. Device mix: **≥ 5 of the 10 sessions on a mobile browser** (Safari/Chrome, ≈ 390 px class), of which **≥ 3 are cohort-P sessions**. |
+| Entry | The **live public build** `https://pepsico24.github.io/AI-Native-GameCpt/`. A scored P session **starts at `?level=1`** (the deep link resolves to the identical L1 board state as a no-query start; the exact URL is recorded in Table A). Any other `?level=` use inside a scored session = script deviation on a scored item (T7 semantics carried). `?level=N` for N = 2…10 is a **setup entrance only** (pre-session verification below; never mid-session). |
+| Round BUT row (append before session 1) | The **`main` commit whose GitHub Pages deploy is live at session-1 start** — recorded from the Actions deploy run (commit sha + run URL), not guessed. Art status: **`placeholder art`** (program-drawn vector tokens, R-P7 — unchanged). **Same-BUT rule:** all 10 sessions of cohort v2 run on this one commit; a deploy landing mid-round **stops the round** — either finish every remaining session pinned to the old commit's deployed bundle or void the round and restart on the new one (a mid-round build change invalidates comparability; T7 class). |
+| Pre-session verification (moderator, unrecorded setup pass, once per round + once per device) | (1) `?level=1` … `?level=10` each render a playable board (spot-check all ten; record ✓/✗). (2) Play L10 to the win panel and **transcribe its title + body copy verbatim** into the BUT row (this is the stale-copy defect observation, BD-2 below — the protocol records the state, it does not assume it). (3) Play L5 to the win panel; transcribe title/body and record **panel state**: **N** (a Next control is visible) or **E** (no Next control). Both states are handled by §11.4's CI-beh rule; neither is assumed. |
+| Known production defects (ticket **R-004b**, in flight at V0.6 freeze) | Two defects are pinned as `test.fail()` in the standing e2e suite (QA-005): **(i)** the keyboard frame-window multi-move (`tests/e2e/input-replay.spec.ts` — one task-window burst applies extra moves) and **(ii)** the stale end-panel copy `L1–L5 cleared · …` (`tests/e2e/playthrough.spec.ts`). **V0.6 neither assumes their presence nor their absence.** The BUT row records the deployed commit and the verbatim copy observations; whether R-004b has landed is a property *of that commit*, disclosed in the round report. Sessions measure the player; defects are coded as build events (below), never as participant errors. |
+| **BD-1** (build-defect event: multi-move) | One user gesture (one tap, one swipe, one key press/hold) visibly produces **≥ 2 move-count increments or ≥ 2 tile steps**. Record `(level, move index, timestamp, gesture, moves observed)`. Any scored window containing a BD-1 event — M14/M15 window, Tr (post-refusal) window, a level's M2/M3 timing — is marked **CONTAMINATED** on that row and reported `NOT MEASURED` (T9 semantics; never imputed, never back-filled). |
+| **BD-2** (build-defect event: end-panel copy) | A participant verbalization or hesitation attributable to win-panel copy (e.g. "it's over?", "L1–L5?") — record verbatim, tagged BD-2, at `(level, panel state)`. BD-2 is **never coded C1–C9** (it is not a rule-comprehension signal) and is reported separately to the HUD's writer via the Orchestrator. **Contamination clause (pre-registered):** if BD-2 fires inside the Tw window for **≥ 2 participants**, D-2 for the round is reported `NOT MEASURED — build contamination` and the round re-runs on a fixed build. This is a build-defect clause, not a threshold move. |
+| Round-untestable rule | If BD-1 contamination leaves any scored row with **> 1/5** of its per-participant cells `NOT MEASURED`, the round verdict is **`BUILD NOT TESTABLE`** (T7's stop-language carried over); the fix ticket owns the remedy, the protocol owns the honesty. |
+
+### 11.2 Per-level metrics, L1–L10 — operational definitions
+
+The §1 vocabulary (M1–M16) carries over unchanged and is recorded **per level for all ten levels**
+(Table B covers L1–L6; the runbook's **Table B2** continuation sheet carries the identical field rows for
+L7–L10). Every cell is countable by a human with a stopwatch and a screen recording (T8: times read at
+0.1 s from the recording; `live-timed` degradation rule carried). Pars for Δmoves, cited from committed
+solver evidence (`src/levels/README.md` §0): **4/5/6/6/6 · 4/4/6/8/9**.
+
+| Metric | Operational definition (V0.6 scope) | Scored where |
+|---|---|---|
+| **M1 Understand Time** | T0 (board visible) → T1 (first intentional legal move), on **L1** | DoD D-4 (frozen §9.7) |
+| **M2 First Win Time** | per level: first input on that level → that level's first win frame; session-level: L1 T0 → L1 win | DoD D-5 on L1 (frozen); **PD-3** on the L5→L6 pair (§11.4); all ten recorded |
+| **M3 Level Completion Time** | T0 → T2 per level, plus moves-used vs solver `par` (Δmoves) | d′-8 on L3–L5 (frozen); L6–L10 recorded as context (no threshold — none was ever pre-registered for that span) |
+| **M4 Refusal count** | taps producing no movement and no phase flip | d′-7 on L1–L5 (frozen); **PD-4** at L6 (§11.4); L7–L10 context |
+| **M4b Post-refusal codes** | R1–R6, first action after each refusal (coding manual §2.2, unchanged) | d′-3/d′-4 (frozen) |
+| **M4c Refusal-cause guess** *(new V0.6)* | For each refusal, the **spontaneous** attribution within the Tr window (refusal frame → next input) — verbalization or point, **never prompted**: **RG-wall** (names/points at the blocking wall or closed door — correct) · **RG-door** (names the door specifically — correct from L6 on) · **RG-switch** (attributes the refusal to a switch tile — always a misattribution on this ladder: a switch tile is an ordinary enterable tile, and same-cell switch∩wall cannot ship, §11.3) · **RG-ghost** (attributes it to a hollow/echo tile — misattribution: ghosts never refuse, §5 bullet) · **RG-boundary** (names the board edge — correct for cause (ii), `ui-ux.md` §6.5) · **RG-input** ("broken"/"didn't register"/taps chrome — the R6 utterance; one measurement, two columns: RG-input tallies the *attribution*, R6 codes the *behaviour*; no second threshold) · **RG-none** (silence). Recorded per refusal as `RG-*` tally + verbatim. | No standalone threshold (a guess battery was never gated); **RG-switch feeds SW-3** (§11.3); the RG distribution is reported per level in §10 as the refusal-legibility picture behind d′-3 |
+| **M5/M6 Restarts · Undos** | per level, both tails reported | d′-5/d′-6 on L1–L5 (frozen); **PD-4** at L6; L7–L10 context |
+| **M7 Hints** | H0–H4 ladder verbatim (§9.7, unchanged; Table C zh/en lines frozen) | D-1 exclusion rules unchanged; H3 also excludes from PD-2 and SEAM-2 denominators (§9.7 ladder text) |
+| **M8 Misclick** | C9 events only — input, never comprehension (coding-manual rule carried) | context; report to UI/Art Director |
+| **M9 Confusion flags** | C1–C9 with `(level, move index)` + verbatim, §2.1 trigger rule unchanged; **plus the V0.6 SW tag and BD-2 tag** (§11.3/§11.1) — tags live *beside* the C-codes, never inside them | C5 → d′-2; C3 → b-5 (span ruling §11.6); C7 → a′-4; SW → observation only |
+| **M10 Aha Moment** | level + move index + verbatim (or "none observed"), recorded live by the observer; end-of-session neutral recall question (runbook Table C2) may add a participant-named moment | **no threshold, ever** — presence of an Aha is never gated; L8 is the engineered candidate (`level-design.md` §3) and any L8-centred report is labelled as such |
+| **M11 Continue Intent** | **CI-beh at the L5 seam** under the panel-state rule (§11.4, D-2 measurement — one measurement, one threshold); **CI-self** (1–5) right after Tw (Table C frozen string); **CI-self-end** after L10/quit (Table C2, new frozen string) — end item is **context, no threshold** | D-2 (frozen §9.7) |
+| **M12 Quit Level** | level at which the participant stops, recorded without persuasion | D-3 before L5 (frozen); **PD-1** at L6–L7 (§11.4) |
+| **M13/M13b GAR + key-ghost coverage** | GO/G1–G5 coding unchanged. Designated key ghosts: `l004 (2,0)` offered, `l005 (4,2)` forced-structural (both frozen §9.1), **plus `l010 (1,2)` — structural: all 36 par routes end embedded (`src/levels/README.md` §0b/§2b), pre-ticked Y, context only**. GAR is reported **twice**: GAR(L1–L5) scored under d′-9 (frozen), GAR(L6–L10) context (never thresholded) | d′-9 (frozen); b-6 (frozen) |
+| **M14/M15 Embed dwell · flail** | windows and codes unchanged (coding manual §2.4) | b-3/b-4 on the L1–L5 wall-echo span (§11.6 scope ruling); L6–L10 door-embed events recorded under **OB-DE** (context) |
+| **M16 Model probes** | V-CL, CM1/CM2/CM3, D1, OBS-6 — Table C frozen strings, administration pinned in §9.8 + §11.4/§11.5 (CM-D after L8; CM-GL at first switch step; P-probe = PP-A on `l008`) | d′-10, D-1, b-7, a′-1…a′-3 (all frozen) |
+
+### 11.3 Confusion markers — operational definition, and the switch-vs-wall tag (R7 tri-signal)
+
+**Trigger rule (unchanged, coding manual §2.1):** a confusion flag fires on an unprompted wrong-model
+verbalization, an audible "huh?"/"wait"/disorientation laugh, a freeze (≥ 5 s no input, eyes on board),
+or an explicit help request. Only tabled codes may be used; free text lives in `verbatim`; an uncodeable
+flag is discarded and the discard is counted.
+
+**SW — switch↔wall conflation tag (new V0.6; observation-only).** Why this tag exists: `ui-ux.md` §12 R7
+closed the switch-vs-wall value-gap risk by **documented exemption** (V0.8.2, UA-0008c), and its
+**observation clause** names Stage-2 confusion signals as the re-opener. The tag makes that clause
+countable. **SW fires** on any of, recorded as `(level, tile, move index, phase A/B, verbatim)`:
+
+- **SW-1** — the participant treats an enterable switch tile as blocking: avoids it as a legal
+  destination (a G2/G3-shaped detour whose avoided tile is the switch), or verbalizes it as a wall/blocker.
+- **SW-2** — surprise/disorientation on a **legal** entry onto a switch tile ("I thought that was a wall").
+- **SW-3** — **RG-switch** (§11.2 M4c): a refusal attributed to a switch tile — always a misattribution
+  on the shipped ladder.
+- **SW-4** *(cohort V only)* — a V5 sheet misclassifies a switch tile as blocking **and** the neutral
+  follow-up (runbook Table C2: "and this one — why?", asked on switch tiles only) yields a
+  filled/wall-like appearance attribution. PA judges the attribution from the verbatim; the follow-up
+  never suggests an answer.
+
+**Scoring: none. SW never fails a hypothesis, never passes one, never enters Table D's threshold
+columns.** It is tallied per participant/level/phase and reported in §10 Findings.
+
+**Mapping to R7's three named re-openers** (`ui-ux.md` §12 R7 observation clause, verbatim mapping):
+**(i)** §3.3 test-5 switch misclassification attributed to switch/wall class confusion = **SW-4 count ≥ 1**;
+**(ii)** hypothesis-a′ failure attributed to switch visibility rather than door-state reading = on an
+(a′) FAIL, **≥ 2 failing participants** carry an SW tag or a switch-visibility verbatim ("couldn't see
+it", "looked like a wall") in CM-D/C7 — PA writes the attribution explicitly, with quotes, in §10;
+**(iii)** any PA-coded signal of players conflating switches with walls in Phase B = **any SW event with
+phase = B** (P or V cohort).
+
+**On trigger:** the Playtest Analyst **reports** to the UI / Art Director (spec authority) with the field
+attribution attached. The re-tune path is **pre-specified by R7, not by this protocol**: replacement
+values for **both phases**, full §4.6-class sweep published first, then a Gameplay-Engineer micro-ticket
+landing `src/game/theme/tokens.ts` + the parity pin **in the same batch** (`architecture.md` §9.1 rule 3 —
+spec row AND code AND pin, one change; never a spec↔code divergence window). **This section changes no
+ruling: observation only.** PA has no authority to order, design or approve a re-tune.
+
+**Same-cell context (recorded with every SW event):** the shipped ladder has **switch ∩ wall = ∅ on all
+five door boards** (per-level verified, `ui-ux.md` §12 R7 ground ③, `l006..l010.json`), and the R7
+**content clause** voids the exemption automatically for any future board placing a switch on a phase-wall
+tile (same cell, solid or ghost) — such a board may not ship until OQ6's data-layer ban lands or the
+re-tune path completes. Consequence for cohort v2: **a same-cell SW reading is structurally impossible
+on this ladder**; every SW event must therefore be attributed to the adjacent-cell or class-appearance
+reading, and the coder records whether a wall was 4-adjacent to the conflated switch (the shipped case:
+`l009` s2 `(3,1)` adjacent to A-wall `(3,0)` — inside the passing Entry-1/2 frames).
+
+### 11.4 Decisive probe SEAM-1 — L5→L6: does the M0-only opening retain players through the block-opening dip? ((d′), extended)
+
+**Claim under test** (ADR-0009 decision 8 (d′) + `level-design.md` §6's felt-half handoff to PA): L1–L5
+(literacy, refusal, phantom walk — no mechanical Aha before L6) retain players **into and through** the
+L6 debut dip, and the debut *feels* like the measured valley, not like a wall. Measured anchors (context,
+never thresholds — `docs/level-difficulty.md` §5.2): `D_exec` L5 **10.33** → L6 **8.86** → L7 **7.75**
+(the valley; both par 4) → L8 **10.50**. The battery d′-1…d′-10 (§9.6) is scored **verbatim as frozen**,
+on the L1–L5 span; SEAM-1 adds the through-the-dip rows:
+
+| # | Metric | Threshold (pre-registered, before any cohort runs) | n | Fails when |
+|---|---|---|---|---|
+| PD-1 | **Quit inside the dip:** M12 ∈ {L6, L7} | **≤ 1/5** (exactly 1/5 ⇒ MARGINAL, T2) | P = 5 | ≥ 2/5 |
+| PD-2 | **Progression:** participants who entered L6 reach L8's T0 **without H3** | **≥ 4/5 of L6-enterers** (exactly 4/5 ⇒ MARGINAL, T1). Denominator = participants with an L6 entry; **< 4 denominators ⇒ PD-2 = NOT MEASURED ⇒ SEAM-1 = INCOMPLETE** (T9 semantics, b-7's denominator discipline) — never PASS | P = 5 | ≤ 3/5 |
+| PD-3 | **First-win-time seam:** median M2(L6) vs median M2(L5) | median M2(L6) ≤ median M2(L5) **+ 20 s** — *analyst-set provisional margin, no prior data exists anywhere (n = 0); pre-registered so it cannot be moved post hoc; flagged for re-calibration only via a future re-freeze* (the D-5 precedent, verbatim discipline). Exactly equal ⇒ MARGINAL (T3) | P = 5 | median over |
+| PD-4 | **Debut friction battery** (the `level-design.md` §6 felt-half clause, pinned): mean per participant at L6 vs L5 | M5: mean(L6) ≤ min(mean(L5) + 0.5, **1.0**) · M6: mean(L6) ≤ min(mean(L5) + 0.5, **2.0**) · M4: mean(L6) ≤ min(mean(L5) + **1.0**, **3.0**) — the refusal margin is the larger one on purpose: a door is a new full-emphasis refusal cause (`ui-ux.md` §6.5 cause (i)) and exploratory refusals at a debut are the mechanic being learned, not friction failing. *Provisional margins, D-5 discipline as PD-3.* Each bound: exactly at ⇒ MARGINAL (T2/T3); over ⇒ that sub-row FAILS | P = 5 | any bound broken |
+| shared | **D-2** (CI at the L5 seam) and **D-3** (quit before L5) | scored **once**, under the DoD (§9.7 verbatim); SEAM-1 inherits the verdict, and a marginal counts once under the DoD (T5 bookkeeping, §9.6's d′ rule carried) | P = 5 | per §9.7 |
+
+**CI-beh panel-state rule (D-2's V0.6 administration — the measurement is unchanged, the build grew a
+button).** The pre-session check (§11.1) records panel state **N** (Next visible at the L5 win) or **E**
+(no Next control). **State N:** Tw = 15 s from the win panel appearing; CI-beh = `sought` iff the
+participant presses Next **inside Tw with no moderator word**; latency to press recorded; a press after
+> 5 s hesitation is additionally tagged `CI-hesitant` (context). **State E:** the V0.5 definition runs
+verbatim (§9.8 step 6: no prompt shown; `sought` = looks for / taps around / asks "is there more?" /
+reaches for the device inside Tw). In **both** states the moderator is silent during Tw, and the battery
+(OBS-6 → CM1 → CM2 → CM3 → D1 → CI-self; OBS-6 before CM1, §9.8 step 6 pinning) is administered **after
+Tw closes**; under state N the participant is stopped before continuing only by the frozen bridging line
+(runbook Table C2 — session administration, not a hint, not mechanic vocabulary). **L6's T0 = the moment
+the battery ends and the moderator falls silent** (declared so M3(L6) is not inflated by the interview;
+M2(L6) starts at first input and is unaffected).
+
+**Verdict:** SEAM-1 **PASSES** iff PD-1…PD-4 all pass (with D-2/D-3 passing as DoD rows). A PD failure ⇒
+**E3** → Game Designer, with per-level tables: cadence / dip rule / felt-half (`level-design.md` §6,
+`game-design.md` §11) — first resort level arrangement, never explanation, never a silent rule
+re-tightening (ADR-0009 decision 8 carried). The PD rows are also the **first real input** to
+`level-difficulty.md` §4's calibration loop and to ADR-design-0001's labelled felt-half hypothesis —
+reported as data with the anchors above beside them; **PA never re-tunes weights** (§4 of that doc:
+regression from playtest data is the only legal path, and it belongs to Level AI + Solver). A D-2/D-3
+failure is simultaneously a DoD failure (**V5 / E4 hard stop**) exactly as §9.6 rules.
+
+### 11.5 Decisive probe SEAM-2 — L6→L8: does the latch read without any text? ((a′), ACTIVATED)
+
+**Activation ruling.** §9.6's run-only-if condition — "the §9.1 BUT names a Solver-proved door+switch
+level" — is **satisfiable for the first time** on the shipped ladder: L6–L10 are in the playable registry
+(`c6af636`) and Solver-proved (`src/levels/README.md` §0/§0b: 10/10 PASS; `l008` gates (i)(ii)(iii) PASS,
+`switchRequired = true`, all 6 par routes press `s1` at move 3 and cross `d1` at move 5;
+`refusedBeforeEnteredTiles` = `[3,1]`). **(a′) is scored in cohort v2** — the frozen rows a′-1…a′-4
+(§9.6) run **verbatim, no threshold moved**; V0.6 pins their administration, which §9.1 left to the BUT row:
+
+| Row (frozen §9.6) | V0.6 administration pin |
+|---|---|
+| **a′-1 CM-D** ≥ 3/5 switch/step causality | Asked **right after the L8 win**, before anything else at that panel (L8 = the engineered Aha #1, `level-design.md` §3; "the door level" in Table C's trigger = **L8** on this ladder). Table C's frozen zh/en string; no paraphrase. |
+| **a′-2 CM-GL** ≥ 3/5 causal glance | Coded at the participant's **first switch step in the session** — expected L6 `s1 (1,1)` at move 1 (the latch on the natural path, `src/levels/README.md` §2b); level + move of the firing recorded. Unprompted look/point/mention of the door within 3 s. |
+| **a′-3 P-probe** ≥ 80 % per participant, ≥ 4/5 participants | **Pre-marked state PP-A (this row is the §9.1-mandated pre-mark):** level **`l008`** (5 × 4), player at **(3,2)** — 4th column from the left, 3rd row down, **directly below the door tile (3,1)** — **phase A**, **`s1` OFF**, reached legally (e.g. `(0,1)→(1,1)→(2,1)→(2,2)→(3,2)` — verified against the shipped `l008.json`: `phaseAWalls (4,0),(4,2)`, blue door `d1 (3,1)`, `s1 (2,0)` activePhase A). Pause with the frozen line (runbook Table C2), then Table C's frozen P-probe string × **4 tiles**: **(3,1) closed blue door → solid** · **(4,2) phase-A wall → solid** · **(2,2) → legal** · **(3,3) → legal** (2 legal / 2 solid, as a′-3 requires). **Invalidation:** if `s1` is already ON when the participant sits at (3,2) in phase A (door latched open ⇒ 1-solid/3-legal composition), or the state is never reached, the probe is **NOT RUN** for that participant (reason recorded). **Denominator = participants with the probe run; < 5 run ⇒ a′-3 = NOT MEASURED ⇒ (a′) = INCOMPLETE (T9) — never PASS.** |
+| **a′-4 C7+C8** ≤ 1 per participant, none ≥ 3 | Coded over the **L6–L10 span**; **C8 is structurally 0** (no portal on the shipped ladder — `portals = []` in `l001`–`l010`, `src/levels/README.md` §0), so the ceiling binds C7 alone (§9.6's a′-4 note carried). |
+
+**Witness context row (no threshold — the a′ twin of b-6's guard):** did the participant's winning L8
+attempt cross door `(3,1)` **after** refusing there, without H2/H3? On the shipped `l008` this is
+**structural** (the goal's only non-solid neighbour is the door; `switchRequired = true`; 6/6 par routes
+press-then-cross) — pre-ticked Y, recorded per participant anyway; the row guards any future build where
+a walk-around exists. **M10 Aha** is recorded with level + move + verbatim; an L8-centred Aha is reported
+as the engineered beat landing — never as a threshold pass.
+
+**Verdict, escalation, interpretation guard: §9.6 carried verbatim.** (a′) PASSES iff a′-1…a′-4 all
+pass; exactly 3/5 ⇒ MARGINAL; FAIL ⇒ **E2** → Game Designer + Level AI/Solver with per-level data; an
+(a′) failure is an **authoring/arrangement** finding (ADR-0009's honest cost: M3 promoted on scan
+evidence, not yet on playtest evidence) — **never** evidence against Option B's legality rule, never
+grounds to reopen the core rule. On an (a′) FAIL, the SW attribution analysis of §11.3-(ii) is mandatory
+branch evidence (switch-visibility vs door-state reading), exactly as b-7's split is for (b).
+
+### 11.6 Hypothesis (b) — scope ruling for the ten-level span (no threshold moved)
+
+(b) is scored **exactly as frozen** (§9.5 b-1…b-7) on its frozen objects: the **wall-echo** construction
+at L4 (offered, `l004 (2,0)`) and L5 (forced, `l005 (4,2)`), b-7 on L5 only, administered per §9.8
+(OBS-6 after Tw, before CM1; V8b only after level end). b-5's frozen span text ("anywhere in L1–L6") is
+**not widened**: C3 events during L6–L10 are recorded under the same code and reported **as context
+rows**, never entering the b-5 ceiling — widening a frozen ceiling's span post-freeze would be a threshold
+move in disguise.
+
+**V0.6 context additions (no thresholds — none were ever pre-registered for these objects):**
+
+- **OB-DE — door-embed observation.** On L6–L10 the player is routinely embedded **in a door tile** (a
+  door latched/phase-closed under the occupant after the flip; `embedRoutes = parRoutes` on all five,
+  `src/levels/README.md` §0b — and §3's note: *"embedded" has two constructions and the metric does not
+  distinguish them*). Per event record: level, tile, dwell, flail-shaped behaviour (M15's code list reused
+  descriptively), C3 verbatim tagged `OB-DE`. This is **first-show data** for the Game Designer and
+  UI / Art Director (the R-D7 occupied-door read has never met a human); it is reported in §10 beside —
+  never inside — the (b) verdict.
+- **`l010 (1,2)` wall-echo:** all 36 par routes end embedded (§0b) — M13b structural-Y context row;
+  GAR(L6–L10) reported as context per §11.2.
+- **Cohort V frames:** §9.1's capture list stands (it was **never captured** — V0.5's `NOT CAPTURED`
+  state persists; frames must be frozen **from the round BUT**, fresh viewers, §9.4 disjointness). V0.6
+  addendum to the capture list: **L6 and L8 boards, both phases** — closed blue door (phase A), switch
+  tile with glyph + latch dot (unpressed/pressed), latched-open door, occupied-door standing state —
+  serving (i) V5's door-inclusive answer key (`ui-ux.md` §3.3 test 5 as updated: blocking = currently-solid
+  walls ∪ closed doors; **switches and ghosts never block**) and (ii) SW-4 coding. Capture is a round-setup
+  task (runbook §3); every frame carries the `placeholder art` label (R-P7).
+
+### 11.7 Hypothesis (c′) — DEFERRAL RULING (explicit, with grounds and a re-activation condition)
+
+**Ruling: (c′) — portal travel reads as "space folded" — is NOT scored in cohort v2. It is deferred,
+with grounds, to cohort v3. It is not dropped, not downgraded, and not silently forgotten** (§9.10.4:
+`NOT TESTABLE` is a legal, reportable outcome — never a pass, never a fail, never blank, never `0`).
+
+**Grounds (each a checkable repo fact):**
+
+1. **No portal object exists in any shipped level:** `portals = []` across `l001`–`l010`
+   (`src/levels/README.md` §0 header: "still use **no portals** (ADR-0009 schedules M2 at L11)").
+   CM-P would ask "why did you end up there?" about a teleport that cannot occur.
+2. **L11 is in authoring under a pre-registered acceptance law, not yet a board:** `D_exec(L11) < 13.64`
+   (⇔ `D(L11) < 33.64`), par ≤ 4, exactly one opposite-colour portal pair, no false routes,
+   below-OFFERED teaching grade — frozen **before any candidate existed** (`docs/level-design.md` §6,
+   `docs/level-difficulty.md` §3.3; `README.md` still-open item 4). Running (c′) before that law is
+   adjudicated by the program gates would test an unaccepted board — the same falsification risk the L11
+   law exists to prevent, imported into the playtest.
+3. The registry does not contain `l011` (R-003's two-data-line unlock is **deliberately held until the
+   accepted file exists** — `docs/project-status.md` item 46③), so no participant could reach a portal
+   even by `?level=11` (out-of-range falls back to L1).
+
+**Re-activation condition (all three, then (c′) scores in cohort v3 — a new round with its own BUT row):**
+**(1)** `l011.json` **accepted** by the standing program gates — `scripts/validate-levels.ts` (incl. the
+opposite-colour hard rule) + `scripts/solve-levels.ts` PASS + policy clean + the pre-registered L11 law
+PASS; **(2)** playable-registry unlock landed (R-003); **(3)** Entry-3 portal pair-frames captured for
+cohort V (`project-status.md` item 46①'s append-only rule). Scoring is §9.6's frozen c′-1 (CM-P ≥ 3/5
+portal/entry-side, ≤ 1/5 "random") **verbatim** — Table C's CM-P string stays frozen until then. Cohort
+v2's Table F carries the fixed string `NOT TESTABLE ON THIS BUILD — DEFERRED TO COHORT v3 (§11.7)`.
+
+### 11.8 Round verdict roll-up (cohort v2)
+
+DoD rows **D-1…D-5 carry over verbatim** (§9.7) with two administration notes, no threshold moved:
+**(i)** D-1's span stays **L1–L5** (the core-comprehension gate was pre-registered on that span; H2/H3
+events during L6–L10 are recorded and H3 excludes the participant from PD-2 and a′ denominators per the
+§9.7 ladder text — D-1 is not silently widened, which would tighten it); **(ii)** D-2 runs under §11.4's
+panel-state rule. Intervention ladder H0–H4, roles/recusal (§9.3), tie-breaks T1–T9 (§9.2), verdicts
+V1–V5 and escalations E1–E4 (§9.9) all carry over unchanged; §9.9's V1 requirement reads as written —
+**(c′) deferred under §11.7 does not block a V1 round verdict** (V1 never required (c′) until a portal
+level is in a BUT); cohort v3 closes the (c′) line as a scheduled extension.
+
+**Reporting order (frozen): DoD → SEAM-1 (d′) → (b) → SEAM-2 (a′) → (c′) deferral line → build-defect
+disclosure (BD-1/BD-2 counts, R-004b status of the round BUT).** The round verdict record is §10's table
++ Table F (cohort v2 instance, runbook §6). Marginal budget T5 applies across {DoD, (b), (d′)+SEAM-1,
+(a′)} as §9.2 froze it.
+
+### 11.9 Anti-fabrication and the standing disclosure (V0.6 wording, frozen)
+
+§9.10's six rules carry over verbatim and bind §11 identically. The standing disclosure sentence —
+true at this commit and to be **re-verified, never assumed, at every citation** until cohort-v2 session 1
+has run and its Table A exists:
+
+> **"Zero cohort sessions have been run to date: n = 0 — no participants, no recordings, no results.
+> Every threshold in this instrument is pre-registered. The Stage-2 human gate is open, and the missing
+> input is the cohort, not the protocol."**
+
+This matches `README.md`'s post-DG-003 still-open item (1) ("No human test cohort has run yet … the
+instrument is built and frozen … the missing input is the 10-person cohort") and `docs/project-status.md`
+item 47 G4's USER-BLOCKED lane. When sessions exist, §7/§10 and Tables A–F are filled **only** from coded
+recordings (§9.10.1–2); a finding without tables is void (§9.9).
