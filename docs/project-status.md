@@ -757,6 +757,21 @@ and a path must be quiescent before dispatch.**
     milestone merge with CI green at tip, tag, submission pack (repo + hosted URL only if the user provides a hosting
     target — deploy choice is a USER decision, no accounts touched by agents). Loop discipline: return → disk-verify
     → merge → next queued ticket, ceiling 3 live, no per-step confirmation, every claim carries an artifact.
+48. **G6 HOSTING — USER DECISION LANDED + LIVE.** User ruled: public GitHub Pages on
+    `https://github.com/PepsiCo24/AI-Native-GameCpt`. The first deploy attempt FAILED with an honest on-disk root
+    cause, not a guess: the repo was PRIVATE (free plan ⇒ no Pages; the REST enable said "plan does not support",
+    the deploy action said "ensure Pages enabled"). Three options put to the user with facts; user chose public.
+    Pre-flip gate run live in view before any exposure: tracked-file scan (no `.env`/credentials/keys ever
+    committed), credential-literal grep over the whole tracked tree (zero hits; sole match = AGENTS §9's own policy
+    sentence). Flip executed under that explicit choice; Pages enabled (`build_type: workflow`); rerun deployed.
+    **Live verification is a real browser walk, not a curl**: `?level=8` rendered (canvas 1), trusted keys R,R,R —
+    moves froze at 2, phase unchanged (the refusal triple holds on the public internet), zero page errors, zero
+    failed requests; homepage metadata set. Mechanics: `main` = the shipped artifact (the 162-commit lag closed by
+    release merge `3601935`, CI green on main); `deploy-pages.yml` builds the subpath-safe `dist/` (vite
+    `base: './'`, headless-simulated under a `/AI-Native-GameCpt/` path BEFORE shipping) on every main push —
+    future milestone merges auto-publish. The public build SHIPS WITH PLACEHOLDER ART DISCLOSED in-game (banner)
+    and in the workflow header comment — Asset Gate honored; revision art remains the user's lane; URL ≠ G6 done
+    (final release = milestone re-merge when G1–G5 land).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the

@@ -24,3 +24,6 @@ playwright-report/
 .vscode/
 .idea/
 *.local
+
+# vite local cache (build artifacts stay out of Git; dist/ is covered above)
+.vite/
