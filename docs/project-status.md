@@ -138,6 +138,10 @@ come from CDP/Playwright events, never from dispatched synthetic events.**
 
 ## In progress (background agents)
 
+**R-002** (Gameplay Engineer, background) — door/switch/portal painters + L6–L10 registry unlock, isolated worktree
+`~/.local/share/opencode/worktree/f9a5d9/r-002-painters` (base `5624558`, branch `agent/gameplay/r-002-painters`).
+Visual acceptance is NOT his call: Orchestrator smoke + UA vision review + §6 iteration-log entry gate before merge.
+
 **QA-004** (QA Engineer, background) — independent second-implementation reproduction of the ART-INTAKE audit
 numbers (`audit.json`) + suite regression, read-only, no commits. It can now only trigger a **corrigendum** to
 `docs/assets/art-acceptance-2026-10-15.md`, not reopen a ruling. Everything else has returned; the art intake docs are
