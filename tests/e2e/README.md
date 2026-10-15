@@ -481,15 +481,73 @@ describes drive the model on synthetic grids:
 The P1b budget (`P1_STRETCH_MS = 140`) is pinned by name in the same file, so the
 e2e pin and the table cannot drift apart.
 
-**Evidence (QA-005e; targeted and repeat runs against a QA-owned vite on `:5217`).**
+**Provenance (Orchestrator salvage-port):** the sections from this header through
+the `Reconciled with...` paragraph are the verbatim README content of commit
+`88b37ba` - QA-005e's detached follow-on run, which committed them to branch
+`agent/qa/qa-005e-p1-oscillation` AFTER the mechanical closeout (`9eaf7fb`) had
+already been pushed as PR #2's head. The branch prune at the QA-005f merge
+orphaned `88b37ba`; this office ported its README diff byte-for-byte
+(`git show 88b37ba -- tests/e2e/README.md | patch -p1`, zero edits) because it
+carries the strongest local battery of the round (x2 CONSECUTIVE shipped-config
+greens with five foreign playwrights live, only `--output` isolated) and the
+two-factor reconciliation of the ENOENT class. Its `(S7 census)` pointer refers
+to the Orchestrator full-round census at the foot of this section. Protocol
+lesson (recorded in project-status item 73): confirm detached census loops are
+DEAD before pruning a worktree/branch.
+
+**Evidence (QA-005e; full batteries against a QA-owned vite on `:5217`).**
 
 | check | result |
 |---|---|
 | `tsc --noEmit` | 0 errors |
-| `vitest run` | **30 files · 570 passed · 3 skipped** — +17 unit cases over QA-005d's 553, the implication table and the two cloud observations |
+| `vitest run` | **30 files · 570 passed · 3 skipped (573)** — +17 unit cases over QA-005d's 553, the implication table and the two cloud observations |
+| `npm run build` | ✓ built (chunk-size warning only) |
 | `npx playwright test --list` | **88 tests in 8 files** — the e2e inventory is unchanged (this ticket adds unit cases only) |
 | targeted `transient.spec.ts` | **7 passed**, zero retries; natural arm `implication=beat-required-observed handling=assert-shape … bracketingGapMs=16.7 stampsInsideWindow=5`; P1b `implication=limit-justified-absent handling=resolve-limit … gapMs=150.0 stampsInsideWindow=0` |
 | `transient.spec.ts --repeat-each=15 --retries=0` | **105 passed (7.0 m), zero retries** — census: natural `beat-required-observed → assert-shape` **15/15** (`gridMs 16.8–17.1`, `gapMs 16.6–16.7`, `stampsInsideWindow=5`, `onset` 38.4–122.6 ms); fabricated `limit-justified-absent → resolve-limit` **15/15** (`gapMs 149.9–166.7`, `stampsInsideWindow=0`, histogram `0-30:0 30-60:0 60-90:0 90-120:0 120-180:92 180-300:3 300-inf:0`) |
+| `npx playwright test --retries=0` | **88 passed · 0 failed, zero retries, × 2 consecutive** (`03:31:18 → 03:40:19`, one process, `--output` isolated — see below) |
+
+**Local-evidence hygiene: why those two runs used `--output`, and what was not
+changed.** The same command *without* an isolated output dir produced, in the same
+90-minute window, two runs of 85/3 and two aborts of 12/76 — and **not one of those
+reds was an assertion**. They were two distinct infrastructure events, both
+diagnosed from the log rather than papered over:
+
+- `net::ERR_CONNECTION_REFUSED at http://localhost:5217` with the server's log
+  ending cleanly at its ready banner: the QA-owned long-lived vite process was
+  killed externally (twice) between and during runs. Fixed by letting Playwright
+  own the server (`PS_E2E_PORT=5217`, no `PS_E2E_BASE_URL`), so its lifetime is the
+  run's.
+- `browserContext.close: ENOENT … test-results/.playwright-artifacts-0/traces/…`:
+  a **second process ran this suite concurrently in this same worktree** (observed
+  directly in `ps`: another `npx playwright test --retries=0` with this worktree as
+  its cwd), and a Playwright run deletes its `outputDir` at start — so it removed
+  the artifact directory out from under the test that happened to be closing its
+  context at that instant. One mechanism, cross-validated: the duplicate instance's
+  own logs showed the **identical** signature (3 failed, 6 `ENOENT`s, same
+  `.playwright-artifacts-0/traces/…` path) in two of its runs, and its other run was
+  88/0. It hit `controls.spec.ts` and `refusal.spec.ts` — files this ticket never
+  touched — so it is not attributable to QA-005e, and no test's own assertions were
+  involved.
+
+The decisive experiment was the fixing run: the two consecutive greens above were
+executed **while five foreign playwright processes were live**, with only
+`--output=/tmp/qa005e-out-{A,B}` changed. Same tree, same machine, same contention
+— green ×2. That isolates the cause to the shared artifact directory and falsifies
+the alternative (a defect in the change).
+
+**Reconciled with the Orchestrator's `--trace=off` control (§7 census).** That
+control removes the *victim* files and is green; this one removes the *shared
+directory* and is green with the traces still on. The two agree rather than
+compete: the class needs **both** a foreign process operating on the same
+`outputDir` **and** live trace staging inside `.playwright-artifacts-N`, and
+removing either factor makes it disappear. Neither factor is a property of this
+ticket — which is also why **`playwright.config.ts` was deliberately left
+untouched**: editing it after these batteries would invalidate the bytes that were
+verified, and `--output` is a per-invocation isolation the config does not need to
+know about. A permanent guard (an env-overridable `outputDir`, or simply lanes not
+sharing a worktree) is recorded as a follow-up for the Orchestrator, since the root
+cause is *coordination*, not configuration.
 
 **What a red now says.** Both non-shape handlings print a greppable line and attach
 JSON before asserting: `[QA-005e] RESOLVE-LIMIT transient.spec.ts P1 arm=… — no
