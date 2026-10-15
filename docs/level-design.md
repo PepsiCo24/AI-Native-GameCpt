@@ -1,10 +1,10 @@
 # Level Design — Phase Shift: Echo Grid / 双相棋盘：昼夜回响
 
 > Owner: **Agent 1 — Game Designer**
-> Version: **V0.8**
-> Date: 2026-10-15
+> Version: **V0.9**
+> Date: 2026-10-16
 > Status: **Draft for Stage 2 prototype** (all level content requires Solver verification per ADR-0004; mechanic schedule per GATE D / ADR-0009)
-> Governing docs: `docs/game-design.md` (core rule §3, mechanics §5, rhythm §8, difficulty §11), ADR-0002, ADR-0004, **ADR-0008 rules 1–7** (entry-only solidity; clause 8 withdrawn), **ADR-0009** (checkerboard invariant; GATE D mechanics-forward), **ADR-design-0001** (dip law on the execution axis `D_exec`), ADR-architecture-0002 (metric #7 canonicality; gate (iii) ordered reader)
+> Governing docs: `docs/game-design.md` (core rule §3, mechanics §5, rhythm §8, difficulty §11), ADR-0002, ADR-0004, **ADR-0008 rules 1–7** (entry-only solidity; clause 8 withdrawn), **ADR-0009** (checkerboard invariant; GATE D mechanics-forward), **ADR-design-0001** (dip law on the execution axis `D_exec`), **ADR-design-0003** (GD-011: the L12–L15 block law — par obligation, two-beat dip, latch grade), ADR-architecture-0002 (metric #7 canonicality; gate (iii) ordered reader)
 
 ---
 
@@ -187,6 +187,254 @@ Read-out: the L5→L6 seam is **−1.47 on `D_exec`** (−1.72 against the previ
 
 **Rationale (unchanged):** when a mechanic is new, the player's budget is spent on *understanding*; execution difficulty stacked on comprehension load reads as unfairness. This is the L1–L3 lesson applied recursively.
 
+## 6.1 GD-011 published law — the L12–L15 block (par obligation, dip shape, latch grade)
+
+> Owner: **Agent 1 — Game Designer** · Task **GD-011** · Date **2026-10-16** · Status: **PUBLISHED LAW**
+> Full record + per-board clause-by-clause verdict: `docs/decisions/design-0003-l1215-block-law.md`
+> Trigger: LV-009-A returned four solver-proven L12–L15 candidates and correctly STOPPED at three
+> design-owned gaps (its dossier §7 OQ-1/OQ-2/OQ-3). This section closes all three **as law, before
+> any integration**, so the four boards are MEASURED against it and never fitted to it.
+
+### 6.1.0 What this section does and does not publish (integrity statement, read first)
+
+`docs/level-difficulty.md` §3.5 deliberately publishes **no numeric `D`/`D_exec` target above L11**,
+and §6 above publishes none either. **That prohibition is untouched.** What is published here is a
+**par obligation** and two structural clauses. The distinction is not convenience, it is the reason
+the §3.5 discipline exists:
+
+| Quantity | Published here? | Why |
+|---|---|---|
+| `par` (construction floor) | **YES — as law** | Weightless. It is a schema field the level gate already enforces (`par == shortestSolution`), and §6 / `policy.ts:599` already carry par as law (`PORTAL_DEBUT_PAR_CAP = 4`). A par bound cannot be "fitted to the weights". |
+| `D` / `D_exec` targets | **NO** | Depends on the **provisional V0.1** weights `w1…w5 = 1,3,4,2,5` (§6, ADR-design-0001 option (d)). Inventing a fresh `D` band nobody has measured is exactly the error `docs/level-difficulty.md` §3.1 withdrew. |
+| The block-end clause | **already frozen** | "`D_exec` exceeds 13.64 by its end" (§6, V0.6, byte-preserved). GD-011 adds no new `D_exec` number; it only records that the frozen clause is now **DISCHARGED** (§6.1.5). |
+
+New numbers enter this document only by solver measurement or playtest regression of `w` (§3.5's two
+paths). Every number below is either (a) an intersection of already-written rules, or (b) a value
+**measured by the program** on the accepted candidates and cited with its source. No weight moved.
+
+### 6.1.1 LAW Q1 — the par obligation for L12–L15 (ruling on OQ-1)
+
+**Published shape: floor ∩ step ∩ ceiling ∩ coverage. The four numbers are the UNIQUE solution, not an approval.**
+
+| Clause | Law | Derivation pointer (audit trail) |
+|---|---|---|
+| **P1 · floor** | `par(L12) = 4` **exactly** | Intersection of two already-written constraints: §6 *Construction floor* caps the debut's **successor** at `par ≤ 4`; and 4 is the game's measured par floor — ADR-design-0001 Change ("par is already at the game floor"), `docs/level-difficulty.md` §5.2 L5→L6 paragraph ("par can only fall to the block's floor (4, the game's lowest)"). Shipped L1/L6/L7/L11 are all par 4. `≤4 ∧ ≥4 ⇒ =4`. Not a choice. |
+| **P2 · step** | `par` strictly increases within the block, **Δpar ≥ 2** between consecutive members | Inside the §4 acceptance region `T ≡ R ≡ 0` is a **measured theorem**, so `D_exec = L + 3·B` with `L = par` (`docs/level-difficulty.md` §5.2). `B` is measured in **[1.2500, 1.6875]** on **11/11** shipped levels (§5.2 rows) ⇒ `3·B ∈ [3.750, 5.0625]`, spread **1.3125**. §3.4's "ramp within the block" is a guarantee only if `Δpar > 1.3125`; the minimal such integer is **2**. `Δpar = 1` does **not** guarantee the ramp (a level can gain 1 par and lose 1.31 in `3·B`). |
+| **P3 · ceiling** | `par ≤ 10` for the whole teaching span L1–L15, reached only at the block's last member | Three independent supports: **(a) coverage** — all four accepted candidates measure `distinctPositions == width × height` (21/21, 24/24, 28/28, 35/35; dossier §2.1–2.4), i.e. the par route visits **every tile**; a par above the tile count forces revisits, and revisits in the teaching span are backtracking, not planning (`forcedMoveRatio = 0.0000` on L15 — no fake-hard padding). §1's hard cap `width/height ≤ 7` (ui-ux R-L2, 44 px touch floor at 320 px) bounds the tile count. **(b) searchability** — accepted share falls `0.5 % → 0.1 % → 0.06 % → 0.03 %` across par 4→10 (315 566 tried / 484 accepted, dossier §5); a stricter ceiling is **unsearchable**, and §3.5's ordering ("L16+ strictly above the previous block's peak") needs headroom. **(c) precedent** — max shipped par is 9 (L10); 10 is the smallest value above it that P1∧P2 can land on for a 4-member block. |
+| **P4 · coverage clause (new)** | A teaching-span member's par route must visit every board tile: `distinctPositions = width × height` | Measured 4/4 (dossier §2.1–2.4: 78/79/95/99 reachable states over 21/24/28/35 distinct positions). This is the clause that keeps `par` honest against board size, and it is what makes P3 a **measurement** rather than a taste call. |
+
+**Uniqueness (the honest answer to "why no other shape satisfies it").** `game-design.md` §8 fixes the
+block at **exactly four members** (L12–L15). `P1 ∧ P2 ∧ P3 ∧ 4 members ⇒ par = 4, 6, 8, 10` uniquely:
+`4 + 2·3 = 10`, so the minimal ramp lands exactly on the ceiling. `(4,6,8,11)` and `(4,7,9,11)` violate
+P3; `(4,6,7,9)` and `(4,5,7,9)` violate P2; `(5,…)` violates P1. **The proposal 4/6/8/10 is therefore
+ADOPTED AS DERIVED, not approved by taste** — it is the only admissible ramp, and had LV-009-A proposed
+anything else this section would have rejected it on P1/P2/P3.
+
+**Stable shape for L16+ (published so the law does not need re-inventing per block):**
+
+- At a **seam** (`ΔM > 0`): debut `par = 4`, successor `par = 4` (P1), then `Δpar ≥ 2` (P2) from the
+  third member, ceiling per span, coverage per P4. This reproduces the shipped L6 block (4,4,6,8,9).
+- At a **non-seam block** (L16–L25 latch fluency, L26–L35, L36–L45): no dip, no P1 pin; `Δpar ≥ 2`
+  within the block and the block-open must clear the previous peak **on `D_exec`** (§3.4/§3.5) — par is
+  the construction proxy, `D_exec` remains the law's primary quantity.
+- **Forward consequence, already forced (labelled derived, conditional):** §3.5's ordering requires
+  `D_exec(L16) > D_exec(L15) = 14.969697`, and `D_exec = par + 3·B`, so the measured `B` band bounds
+  `par(L16)` from **both** sides: **necessary** — best case `3·B = 5.0625` ⇒ `par(L16) ≥ 10` (par 9
+  tops out at `9 + 5.0625 = 14.0625 < 14.969697`, so par 9 cannot clear L15); **sufficient for any `B`
+  in the band** — worst case `3·B = 3.750` ⇒ `par(L16) ≥ 12`. So a par-10 or par-11 L16 is *admissible
+  only if it carries above-average branching* (`par 10` needs `B > 1.656566`, i.e. above L15's own
+  measured `B`; `par 11` needs `B > 1.323232`). Publish both bounds to the L16 author; do not read
+  `≥ 10` as "≥ 10 is enough". Conditional on L15 shipping at its measured value **and** on the V0.1
+  weights; a playtest re-calibration of `w1/w2` moves these consequences and nothing else in §6.1.1
+  (par itself is weightless and survives re-calibration).
+- **Self-correcting guard:** P2's guarantee holds only while `B` stays inside its measured band
+  [1.2500, 1.6875]. If a future board measures `B` outside it, `Δpar ≥ 2` no longer implies a
+  monotonic `D_exec` ramp and the ramp must be re-checked **on `D_exec` directly**. Report the
+  out-of-band `B` as a named finding; never silently widen the band.
+
+### 6.1.2 LAW Q2 — the dip shape is TWO BEATS (ruling on OQ-2)
+
+**RULING: two-beat breathing post-debut. L12 owns §6's successor slot. No re-author. Single-beat REJECTED.**
+
+The L11–L15 dip therefore spans **L11 (debut) + L12 (successor)**, and the ramp begins at the block's
+third member. The two shipped blocks are **isomorphic** on this axis:
+
+| Block shape | debut | successor (beat 2) | ramp 3 | ramp 4 | ramp 5 (block end) |
+|---|---|---|---|---|---|
+| **L6–L10** (shipped, measured) | 8.86 | **7.75** | 10.50 | 12.14 | **13.64** |
+| **L11–L15** (GD-011 law) | 8.573171 | **8.230769** | 10.898734 | 12.957895 | **14.969697** |
+
+Reasons, comprehension-first, in priority order (`AGENTS.md` §1: Fun > Comprehension > Depth):
+
+1. **The text's plain reading.** §6 *Construction floor* says "the debut level **and its successor
+   where the block allows**"; §3.4 restates it. A single-beat ruling would have to explain why the
+   successor clause exists at all. The shipped read-out already used the two-beat reading for L6 ("the
+   dip spans exactly the two par-4 levels … matching the construction floor's 'first 1–2 levels'").
+2. **What the player who just met portals actually needs at L12 is REST, not escalation.** Aha #2 is
+   the only idea in the game that **breaks the checkerboard invariant** (§0: proven law; portals are
+   the sole parity-breaker). The player has spent ten levels internalizing "a tile's answer is fixed by
+   its position". One exposure — L11, par 4, 82 reachable states, **1** par route — cannot turn an
+   invariant-break into a habit. L12's job is **consolidation at the same par on a different skeleton**
+   (dossier §5: L12's accepts come from `funnelFamily`, which keeps the debut's *plan shape*
+   channel → latch → door on a different board). Same cost, new surface: that is what consolidation is.
+3. **The escalation that follows is qualitative and FORCED, so it needs a run-up.** From L13 the
+   walk-only world is **UNSATISFIABLE** (`portalFree = false`, measured): the portal stops being a
+   re-pricing shortcut (L12: `portalFree true`, route 7 → 4) and becomes the **only door**. Demanding
+   that in the same breath as the debut, at a higher par, stacks execution load on comprehension load —
+   precisely the unfairness §6's *Rationale* forbids ("execution difficulty stacked on comprehension
+   load reads as unfairness"). Two beats buy exactly one rest level before the mandatory-channel step.
+4. **Single-beat buys nothing the law requires.** The block-end clause is satisfied either way
+   (14.969697 > 13.64). Single-beat would re-author one board to trade the block's only rest beat for a
+   marginally steeper ramp — comprehension (priority 2) sold for depth (priority 3). Under §1's
+   ordering that trade is wrong.
+5. **The margin is small, and it is labelled honestly.** L11 → L12 is **−0.342402** on `D_exec` with par
+   pinned flat at the floor 4: the second beat is carried **entirely by effective branching falling**
+   (`B` 1.5244 → 1.410256), not by shortening. So beat 2 is a **choice-narrowing rest**, not a shorter
+   level — a better rest than a shorter level would be, and it is measured. Honest label: on the felt
+   axis this is a **consolidation plateau**, not a valley. §6's ban on re-fitting applies in both
+   directions — the two-beat ruling is made on grounds 1–4, **not** because −0.34 is small; re-authoring
+   to gain +0.35 on a provisional weight vector would be curve-flattery.
+
+The felt half stays a **labelled hypothesis** (§6, PA handoff): first-win time / M5 restarts / M6 undos
+at L11-vs-L12-vs-L13, thresholds frozen before the cohort runs. GD-011 does not claim the plateau is
+*felt*; it rules that the construction is right and names who measures the rest.
+
+### 6.1.3 LAW Q3 — the latch grade for combo levels (ruling on OQ-3)
+
+**RULING: option (a) ACCEPTED AS DOCTRINE, hardened into a measurable obligation. Option (b) REJECTED.**
+
+> **The quotable sentence for future reviewers:**
+> **"From L12 up, the switch buys you *speed* and the sealed channel buys you *existence* — the latch
+> grades `par`, never solvability, and from L13 the portal IS the solvability-load."**
+
+Measured basis (dossier §5, §2.1–2.4): `switchRequired = false` on **0/484 accepted** candidates, and
+the all-OFF world solves **exactly 2 moves slower** everywhere (`allOffShortest` 6/8/10/12 vs par
+4/6/8/10). A filter that invalidates **484/484** is not a filter on authoring quality — it is a filter
+on **geometry class**, and on this evidence it is 0-accepts ⇒ full block restart with no reason to
+believe the class is findable inside §1's board caps.
+
+Why (a) is right against the locked core and the priority order:
+
+1. **It is the world the core rule already promises.** `AGENTS.md` §2 + ADR-0008 rules 1–7: entry-only
+   solidity, a closed door **refuses**, and nothing is ever crushed, pushed or relocated. §4: "every
+   refusal is information", restart-not-stuck. A latch worth 2 moves is exactly that world — doors
+   **re-price** routes, they do not gate existence.
+2. **The block already has one existence-gate, and one is a lesson; two is redundancy.** From L13 the
+   sealed line makes the portal mandatory (`portalFree = false`, measured). Adding all-OFF
+   unsatisfiability on top would put two existence-gates in the first block where parity itself breaks.
+3. **The block's lesson is Aha #2, not Aha #1.** L7–L10's `"required"` obligation belongs to the
+   **latch unit's own block**, whose lesson *is* the latch (Aha #1 at L8, gate (i)
+   `no-solution-with-switches-off`). Re-asserting it in the **portal** block would subordinate this
+   block's lesson to the previous block's. `policy.ts:246`'s own comment already says so: "a post-debut
+   portal level (L12+) must declare its own lesson/obligation, because the par cap and the
+   below-OFFERED grade are properties of the *debut*".
+4. **The witnessable beat survives — by a different measured gate.** Gate (iii) `refusedBeforeEnteredTiles
+   ≥ 1` holds on **4/4** (3 / 5 / 5 / 6), with ordered == unordered on 4/4 (so ADR-design-0002's
+   promotion trigger again does not fire and A3's legs stand). The player still witnesses
+   *refused-first-entered-later*; it is delivered by the ordered reader, not by all-OFF unsatisfiability.
+5. **Precedent is consistent, not convenient.** L6 and L11 are `switchRequired: "exempt"` in
+   `DOCUMENTED_LESSONS`, both recorded as deliberate concessions **never scored as FORCED** (§2 L6;
+   §6; `docs/ai-native-pipeline.md` §8.5 OQ4).
+
+**The hardening (what (a) does NOT license).** An exemption with no teeth is a shrug, so the grade is
+published as a **falsifiable obligation** for every L12+ combo level:
+
+| # | Obligation (program-checkable) | Measured on L12/L13/L14/L15 |
+|---|---|---|
+| **G1** | The latch must be **worth at least one move**: `allOffShortest − par ≥ 1`. A latch worth 0 moves is **inert** and is rejected (validator defect class, dossier §4 `classifyWarnings`). | 2 / 2 / 2 / 2 ✓ |
+| **G2** | Every par route must **press the switch** and **cross the door** (gate (ii)'s shape: the Aha is "the door opened", not "I walked around"). | L12 `parRoutes = 1`, trace `D1>3,2 R2*4,2 R3+5,2 R46,2` — presses `*` and crosses `+` ✓ |
+| **G3** | Gate (iii) ordered reader fires: `refusedBeforeEnteredTiles ≥ 1`. | 3 / 5 / 5 / 6 ✓ |
+| **G4** | `DOCUMENTED_LESSONS` must carry `switchRequired: "exempt"` — **not `null`** — because these boards *do* carry a latch lesson (`null` means "no latch lesson at all", `policy.ts:131`); the evidence string must name the measured `allOffShortest − par = 2`. | integration instruction, §6.1.6 |
+
+**Rejected option (b), recorded honestly:** pre-registering a `switchRequired` filter would invalidate
+**0/484** ⇒ full block restart, at a measured search cost already at 132 000 trials for L15's 44
+accepts — and it would **lengthen** the puzzle, not deepen it: the extra 2 moves are a detour to a
+switch the player must visit anyway, purchased by deleting the sealed-line construction that gives this
+block its real escalation (mandatory channel from L13). Depth here comes from the **portal becoming the
+only door**, which is a change of *kind*; (b) would trade that for a change of *move count*.
+
+### 6.1.4 LAW — two standing points (OQ-4, and the `l12TemplateFamily` artifact)
+
+**OQ-4 · `[multi-switch-door]` stays DORMANT for this block — CONFIRMED, no change.** §1's authoring
+rule (≤ 1 switch per door in L6–L35; XOR doors reserved for L36+, review-flagged) already governs, and
+0/4 candidates carry the warning (`13 warnings (0 multi-switch-door)`), so the flag was never exercised
+and never had to be presented as a design risk. Dormant is also **required**, not merely permitted: §6's
+construction floor says *single-concept (one new mechanic unit)*, and a two-switch door would add a
+state-space dimension to the first block in which the portal is already mandatory. If a later L12+ round
+wants the XOR door, that round's dossier must present the flag as a named design risk (OQ-4's own
+condition, accepted).
+
+**The `l12TemplateFamily` 0-accepts artifact — what it teaches for L16+ authoring.** 512 hand-enumerated
+candidates on the debut's own 7 × 3 skeleton, **0 accepts**, recorded not repaired (dossier §5). The
+lesson is that a shipped debut board is **not a template — it is a one-off fit**: L11 was filtered from
+54 candidates to 1 accept, and that single accept's geometry is jointly tuned to *its own* lesson
+(par 4 ∧ below-OFFERED ∧ no false routes ∧ one opposite-colour pair ∧ a specific refusal reader).
+Re-using the skeleton re-uses the geometry while the new board must satisfy a **new** lesson, so the
+conjunction collapses — which is exactly what `policy.ts:246`'s comment warns about. The reusable unit
+across a block is the **ordered plan shape** (what the player must realize, and in what order), never
+the board: L12's 351 accepts came from `funnelFamily`, the same plan shape (channel → latch → door) on
+a **different** skeleton. **Instruction for L16–L25 authoring: enumerate plan shapes and search
+skeletons under each; never clone a shipped board and perturb it.** And the honest scope of the
+artifact: 0/512 is a measurement **about that family**, not evidence the block was unauthorable — the
+same block found 484 accepts once the skeleton was released.
+
+### 6.1.5 The frozen block-end clause is now DISCHARGED
+
+§6's frozen prediction (V0.6, byte-preserved) carried two parts. GD-010's appended annotation recorded
+part 1 as **satisfied** (`D_exec(L11) = 8.5732 < 13.64`) and part 2 — *"the L11–L15 block's `D_exec`
+exceeds 13.64 by its end"* — as **PENDING (untested, not failed)**. On the solver-measured block:
+
+```
+D_exec(L15) = 14.969697  >  13.64        (published bound)      ⇒ +1.329697
+D_exec(L15) = 14.969697  >  13.642857    (L10's measured peak)  ⇒ +1.326840
+```
+
+**DISCHARGED, in the escalation direction** — the sawtooth closes *above* the previous block's peak, not
+merely at the published bound. This is the first time a §6 clause has fired **positive** at a block's
+tail (both prior firings were dip-direction rejections/confirmations at seams). It was **filtered, not
+fitted**: L15's own histogram shows **122 `block-floor` rejections** — candidates that solved but sat
+at/below 13.64 — so the clause operated as a gate during search, never as a target read off the result
+(dossier §5). Both of §6's `ΔM > 0` seams and the schedule's only block-end clause are now measured;
+§6's law stands unchanged for L16+ and GD-008's discipline is unchanged: a failed number is
+**withdrawn, never re-fit** (ADR-design-0001).
+
+### 6.1.6 Handoff — what LV-009-B encodes, in order
+
+Numbers approved for encoding, in the L11-seam style LV-008 used (`policy.ts:599/613`). **GD does not
+edit code**; the integrator encodes these, and the pre-registered acceptance law below must be enforced
+**BEFORE** the candidates merge.
+
+1. **Law constants (encode FIRST, so the gates exist before the data lands):** par law P1–P3 as named
+   constants — block par floor `4`, within-block step `≥ 2`, teaching-span ceiling `10`, and the derived
+   L12–L15 expectation `[4, 6, 8, 10]`; coverage clause P4 (`distinctPositions == width × height`);
+   latch-grade **G1** (`allOffShortest − par ≥ 1`, measured 2 on 4/4). Do **not** re-purpose
+   `PORTAL_DEBUT_PAR_CAP` / `PORTAL_DEBUT_EXEC_BUDGET` — those remain **L11 debut-only** obligations.
+2. **Dataset:** byte-copy `candidates/l012…l015.json` → `src/levels/` (dossier §6.1). **Never edit a
+   candidate JSON** — GD judges, the generator authors, the solver measures.
+3. **`DOCUMENTED_LESSONS`:** four rows (L12–L15) carrying the block's **own** lesson/obligation
+   (consolidation → mandatory channel), `switchRequired: "exempt"` (**not `null`**, per G4) with an
+   evidence string naming the measured `allOffShortest − par = 2` and this ADR.
+4. **Pins / mirror / sidecar:** `EXPECTED_LEVEL_COUNT` 11 → 15; four hand-typed `PINS` rows;
+   `npm run levels` then `solve-levels.ts --report` (regenerate the sidecar from **shipped** levels
+   only — never `--report` against `candidates/`); §5.2's four mirror rows by hand.
+5. **Pre-registered acceptance law (enforce before merge, all machine-checked):** 15/15 validator `ok`,
+   errors 0, warnings 28 (+13, all permanent-geometry class); 15/15 solver PASS with only the
+   pre-existing `l008` `dual-phase-tiles` escalation; `par == shortestSolution` 4/4; `D_exec` equal to
+   6 dp — **8.230769 / 10.898734 / 12.957895 / 14.969697**; `T ≡ R ≡ 0`, `deadStates 0`,
+   `noUnrecoverableOk true` 4/4; `dualPhaseTiles ≥ 1` 4/4; `refusedBeforeEnteredTiles ≥ 1` 4/4;
+   `portalFree true` on L12 **and `false` on L13–L15**; `allOffShortest − par == 2` 4/4 (reject if
+   `< 1`); `D_exec(l015) > 13.64`; coverage P4 4/4.
+   **STOP-and-route clause:** if ordered and unordered refusal readers **diverge** on any of the four,
+   do **not** merge — route to ADR-design-0002's pre-specified re-opener (a divergent candidate is the
+   one currency that re-opens it).
+6. **Registry LAST, R-003-gated (Gameplay Engineer + UI/Art):** `LEVEL_SOURCES` explicit imports plus
+   the door × portal painter seam, and the **UA capture-entry round** before any of the four is
+   registered as playable. Design-side legibility requirement, from the Entry-3 JUDGED facts
+   (`docs/ui-ux.md`: 51–65 px classes proven, board-width discipline): the **sealed line must read as a
+   wall column** and the **portal ends must read as a pair**. "A board whose channel is invisible
+   teaches nothing" (`src/levels/README.md` §4 R-003) — and from L13 the channel is the *only* door, so
+   an illegible channel makes L13–L15 unwinnable-by-comprehension, not merely unclear.
+
 ## 7. Change log
 
 | Date | Version | Change | Author |
@@ -198,3 +446,4 @@ Read-out: the L5→L6 seam is **−1.47 on `D_exec`** (−1.72 against the previ
 | 2026-10-15 | V0.6 | **GD-008 ruling 2 — §3 gate (iii) switches to the ordered reader.** Gate (iii) now reads `refusedBeforeEnteredTiles ≥ 1` (ADR-architecture-0002 Appendix A2 draft, updated to shipped reality: the companion metric is **already shipped report-only** at LV-007B and measured identical on l008 / all of L1–L10, so the switch changes no verdict on shipped content and closes the 0.9 % trapped-refusal class before portal boards arrive). The policy-code reader switch is a named LV follow-up ticket; `docs/ai-native-pipeline.md` §8.5's pre-L11 acceptance law keeps the **unordered** form (LV's file, deliberately untouched — the two legs of the ADR-architecture-0002 split are not re-merged). | Agent 1 (GD-008) |
 | 2026-10-15 | V0.7 | **Citation corrigendum (ADR-architecture-0003 Ruling 1) — no design content changes.** §3 gate (iii)'s live parenthetical now cites the single citable divergence figure — **46/2000 (2.3 %), pinned by `tests/solver/ordered-companion.test.ts` §5** — replacing the 18/2000 figure, which Ruling 1 demoted to a labelled historical measurement (AR-0005b-era out-of-repo mulberry32 harness at `b65e465`; generator never committed, not reproducible). No gate, threshold, verdict, or lesson changes. The V0.6 row above keeps its dated "0.9 %" phrasing as history, per Ruling 1's changelog carve-out. | Agent 1 (GD-009) |
 | 2026-10-15 | V0.8 | **GD-010 — outcome recording + staleness pass; no rule, threshold, gate or lesson changes.** §6: the frozen L11 prediction (byte-preserved — the paragraph itself shows zero diff) gains an appended **OUTCOME ANNOTATION**: LV-008's clause-by-clause verdict (merge `aaab35d`, `docs/project-status.md` item 52) — `D_exec 8.5732 < 13.64` ✓, par 4 ✓, one opposite-colour pair ✓ (`errors=0`), `T=0` ✓, below-OFFERED ✓; the L11–L15 **block-end clause stays PENDING** (L12–L15 unauthored, LV-009); law stands for L12+ with GD-008's withdrawn-not-refit ban unchanged. §3 gate (iii): the stale "until the policy-code reader lands" tail is replaced by the **landed** reality — LV-007C (merge `9dd92ce`) gates the ordered `refusedBeforeEnteredTiles ≥ 1` with the trapped-refusal flip control live, no shipped verdict moved. §3 gains the dated **L11+ block ruling** pointer: the §8.5 promotion trigger was tested at the first L11+ candidate and did **not** fire (`[5,0]` on both readers) — ADR-architecture-0002 A3's unordered legs stand; full record: `docs/decisions/design-0002-ordered-reader-block-ruling.md`. | Agent 1 (GD-010) |
+| 2026-10-16 | V0.9 | **GD-011 — new §6.1: the L12–L15 block law published BEFORE integration (three design-owned gaps closed).** LV-009-A returned four solver-proven L12–L15 candidates and correctly stopped at its own OQ-1/OQ-2/OQ-3; §6.1 answers all three as law so the boards are **measured** against it, never fitted to it. **§6.1.0** states the integrity boundary: `par` is published as law (weightless, schema-enforced, already law at §6 / `policy.ts:599`) while **no new `D`/`D_exec` target is published** — `docs/level-difficulty.md` §3.5's deliberate silence above L11 is untouched, and the only numeric `D_exec` obligation remains §6's frozen block-end clause. **§6.1.1 (Q1)** publishes the par obligation as **floor ∩ step ∩ ceiling ∩ coverage** with derivation pointers: **P1** `par(L12) = 4` by intersection (§6 successor slot `≤ 4` ∧ the game's measured par floor `4`); **P2** `Δpar ≥ 2` from `B`'s measured band [1.2500, 1.6875] on 11/11 shipped levels (`3·B` spread 1.3125 < 2) — the minimal integer that makes §3.4's within-block ramp a *guarantee*; **P3** ceiling `par ≤ 10` from the measured **coverage** invariant (`distinctPositions == width × height` on 4/4), §1's hard 7-cap, the measured searchability cliff (0.5 %→0.03 % accept share, 315 566 tried / 484 accepted) and shipped precedent (max par 9); **P4** the coverage clause itself. **Uniqueness proved**: 4 members (`game-design.md` §8) ∧ P1 ∧ P2 ∧ P3 ⇒ `4, 6, 8, 10` is the only admissible ramp — adopted as **derived**, not approved by taste. Stable shape for L16+ published, incl. the already-forced consequence `par(L16) ≥ 10` (labelled conditional on the V0.1 weights) and a self-correcting guard if `B` leaves its band. **§6.1.2 (Q2)** rules **two-beat** post-debut (L12 owns §6's successor slot; single-beat REJECTED, no re-author) on five comprehension-first reasons — the text's plain reading, the invariant-break needs a consolidation beat before the **mandatory-channel** step (`portalFree false` from L13, measured), and single-beat buys nothing the block-end clause requires; the L6 and L11 blocks are shown **isomorphic** on `D_exec`; the second beat is honestly labelled a **consolidation plateau** (par flat at 4, the −0.342402 carried entirely by `B` 1.5244→1.4103), and the felt half stays a PA hypothesis. **§6.1.3 (Q3)** accepts **option (a)** as doctrine with the quotable sentence — *"the switch buys you speed, the sealed channel buys you existence; from L13 the portal IS the solvability-load"* — on the measured 0/484 `switchRequired` universality, the locked core's entry-only refusal semantics, one-existence-gate-per-block, Aha #2 not Aha #1 being this block's lesson, and gate (iii) still firing 4/4 (3/5/5/6) so the witnessable beat survives; the exemption is **hardened** into falsifiable obligations **G1** `allOffShortest − par ≥ 1` (measured 2 on 4/4), **G2** switch-pressed-and-door-crossed on every par route, **G3** ordered reader, **G4** `"exempt"` not `null` in `DOCUMENTED_LESSONS`; option (b) rejected as invalidating 0/484 ⇒ full restart, and as *lengthening* the puzzle rather than deepening it. **§6.1.4** confirms `[multi-switch-door]` DORMANT (required by §6's single-concept floor, not merely permitted) and records the `l12TemplateFamily` 0/512 read — a shipped debut board is a **one-off fit, not a template**; author plan shapes, search skeletons, never clone-and-perturb. **§6.1.5** records §6's frozen block-end clause as **DISCHARGED** (`D_exec(L15) = 14.969697 > 13.64` and `> 13.642857`), the first **positive/escalation-direction** firing, filtered not fitted (122 `block-floor` rejections). **§6.1.6** is the LV-009-B handoff: exact numbers to encode, in order, plus the pre-registered acceptance law and a STOP-and-route clause on reader divergence. Per-board clause-by-clause ACCEPT verdicts (L12/L13/L14/L15 + the block as a set) live in `docs/decisions/design-0003-l1215-block-law.md`. **No code, gate, threshold, weight or lesson outside this section changed; no candidate JSON was edited.** | Agent 1 (GD-011) |
