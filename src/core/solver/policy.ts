@@ -278,7 +278,7 @@ export function latchAhaGates(
   embeds: EmbedMetrics,
 ): readonly NamedGate[] {
   const allOffReachable = goalReachableWithAllSwitchesOff(level, graph);
-  const allOffStates = countAllOffStates(level, graph);
+  const allOffStates = allOffStateCount(level, graph) ?? result.reachableStates;
 
   const par = result.shortestSolution ?? level.par;
   const verdict = routeVerdict(level, par, result.refusedThenEnteredTileList);
@@ -421,7 +421,20 @@ function dualPhaseGate(level: Level, result: SolveResult): NamedGate {
   };
 }
 
-function countAllOffStates(level: Level, graph: ReachableGraph): number {
+/**
+ * Number of reachable states in which **every** switch is OFF — the size of the
+ * §3 condition (i) subgraph — or `null` when the level carries no switches at all
+ * (`null` = the obligation does not apply; a measured `0` is a real value).
+ *
+ * Exposed as a **number** (LV-007A n-18) so the analyzer's `16/34` statement about
+ * `l008` is a pair of assertions in the suite and not a sentence inside a detail
+ * string: a metric that is only ever read as prose cannot be pinned.
+ */
+export function allOffStateCount(
+  level: Level,
+  graph: ReachableGraph,
+): number | null {
+  if (level.switches.length === 0) return null;
   let count = 0;
   for (const node of graph.nodes) {
     let allOff = true;
@@ -516,6 +529,12 @@ export interface LevelAudit {
    * no switches.
    */
   readonly allOffGoalReachable: boolean | null;
+  /**
+   * Size of that same all-OFF subgraph (LV-007A n-18): `16` of `l008`'s 34
+   * reachable states. `null` when the level has no switches. Exposed as a number so
+   * the `16/34` claim is pinned by an assertion instead of by a printed sentence.
+   */
+  readonly allOffReachableStates: number | null;
   /** Named gates — only for a level documented as Aha #1 (`latch-aha-1`). */
   readonly gates: readonly NamedGate[];
   /** Hard policy violations: the level must not ship while any is present. */
@@ -627,6 +646,7 @@ export function auditLevel(
       level.switches.length === 0
         ? null
         : goalReachableWithAllSwitchesOff(level, graph),
+    allOffReachableStates: allOffStateCount(level, graph),
     gates,
     violations,
   };
