@@ -311,13 +311,45 @@ async function touchSession(page: Page): Promise<CdpSession> {
  * Phaser's `pointer.wasTouch === true`, which R-T6 requires and which a synthetic
  * `pointerdown` cannot fake. Chromium-only, which is what this suite runs on.
  *
- * The whole gesture is dispatched **inside one frame window**: that is R-T4's own
- * precondition, not a shortcut. R-T4 accepts a swipe only within
- * `LAYOUT.swipeMaxMs` (500 ms) of game time, so pacing one event per frame would
- * put a slow runner over the limit and turn the rule into a lottery; keeping the
- * burst tight means `elapsed ≈ 0` on every machine. After `touchEnd` the helper
- * waits one animation frame so the game's input update has **consumed** the
- * sequence before the caller reads the HUD.
+ * ── Why the whole gesture goes out in ONE tick (QA-005d root cause) ──────────
+ * The sends used to be awaited one after another (start, four interpolated moves,
+ * end), and **every `Input.dispatchTouchEvent` acknowledgement is gated by the
+ * renderer's next animation frame**. On a 60 Hz machine that is invisible: the
+ * six-send burst spanned ~13 frames ≈ 217 ms of game time, well inside R-T4's
+ * `LAYOUT.swipeMaxMs = 500`. On the CI runner the same burst spans the runner's
+ * own, far coarser grid — and the *game clock is quantised to that grid*:
+ * `attachInput`'s `onPointerUp` computes `elapsed = scene.time.now - start.time`
+ * and `Clock.update` only moves `scene.time.now` once per frame, so a burst's
+ * game-clock duration is `frames_spanned × grid`, never its wall-clock span.
+ *
+ * Measured with the in-page observer (`helpers/probe.ts`), the shipped helper at
+ * three fabricated grids:
+ *
+ * | grid | six awaiting sends | game-clock elapsed | R-T4 verdict |
+ * |---|---|---|---|
+ * | 16.7 ms (local 60 Hz) | 13 frames | 217 ms | swipe ✓ |
+ * | 66.7 ms | 15 frames | 1001 ms | over 500 → **tap** |
+ * | 133.3 ms | 15 frames | 1999 ms | over 500 → **tap** |
+ *
+ * Over the limit the gesture falls to the tap branch, the 36 px travel ends
+ * inside the player's own cell (36 CSS px = exactly half of L3's 72 CSS px cell),
+ * `adjacentDirection(player, player)` is `null` and nothing happens — the cloud
+ * `Received: 0`. That is a failure of the *driver's* pacing, not of the game's
+ * rule, so it is fixed here, on the driver's side, and `src/**` is untouched.
+ *
+ * All three events are therefore issued in the same tick (`Promise.all`, in
+ * array order, so the wire order is the gesture order): the burst costs **zero
+ * game frames at any grid**, so `elapsed ≈ 0` on every runner. Measured span with
+ * this shape: **0 frames / 0 ms at 16.7, 66.7 and 133.3 ms grids, 12/12 runs**.
+ *
+ * The four interpolated `touchMove`s went with the `await`s that made them
+ * necessary: `onPointerUp` reads the pointer's *final* position only, so one move
+ * is the whole gesture. Nothing is assumed about delivery — the caller asserts
+ * counts, order and coordinates from the observer record
+ * ({@link import("./probe").expectGestureDelivered}) before it claims a move.
+ *
+ * After `touchEnd` the helper waits one animation frame so the game's input
+ * update has **consumed** the sequence before the caller reads the HUD.
  */
 export async function swipeTouch(
   page: Page,
@@ -325,24 +357,17 @@ export async function swipeTouch(
   to: { x: number; y: number },
 ): Promise<void> {
   const client = await touchSession(page);
-  const point = (p: { x: number; y: number }): Array<{ x: number; y: number }> => [
-    { x: p.x, y: p.y },
-  ];
-  await client.send("Input.dispatchTouchEvent", {
-    type: "touchStart",
-    touchPoints: point(from),
-  });
-  const steps = 4;
-  for (let i = 1; i <= steps; i += 1) {
-    await client.send("Input.dispatchTouchEvent", {
+  await Promise.all([
+    client.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: from.x, y: from.y }],
+    }),
+    client.send("Input.dispatchTouchEvent", {
       type: "touchMove",
-      touchPoints: point({
-        x: from.x + ((to.x - from.x) * i) / steps,
-        y: from.y + ((to.y - from.y) * i) / steps,
-      }),
-    });
-  }
-  await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      touchPoints: [{ x: to.x, y: to.y }],
+    }),
+    client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }),
+  ]);
   await waitForFrames(page, 1);
 }
 
