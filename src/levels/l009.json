@@ -1,0 +1,20 @@
+{
+  "id": 9,
+  "width": 5,
+  "height": 5,
+  "startPhase": "A",
+  "player": [0, 2],
+  "goal": [4, 0],
+  "phaseAWalls": [[2, 1], [2, 3], [3, 0]],
+  "phaseBWalls": [[2, 0], [2, 4]],
+  "doors": [
+    { "id": "d1", "color": "red", "tiles": [[2, 2]] },
+    { "id": "d2", "color": "blue", "tiles": [[4, 1]] }
+  ],
+  "switches": [
+    { "id": "s1", "tile": [0, 1], "activePhase": "A", "targets": ["d1"] },
+    { "id": "s2", "tile": [3, 1], "activePhase": "B", "targets": ["d2"] }
+  ],
+  "portals": [],
+  "par": 8
+}

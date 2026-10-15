@@ -75,6 +75,8 @@ Hard reject conditions:
 - Excessive dead-end ratio that punishes casual play.
 - Invalid schema / out-of-bounds / duplicate ids.
 - A cell that is **two objects at once** — today exactly one case exists, a door tile that is also a phase wall (§3b). The board must never promise a move it refuses.
+- **M1 alone**: a door no switch targets, or a door whose only switches can never fire anywhere in the reachable state space. Measured, not declared — see §8. (M1+M3 without either half is the mechanic ADR-0009 measured as static: `refusedThenEnteredTiles = 0`.)
+- A documented lesson the board does not deliver (a "forced" phantom walk that is optional, a latch level with `refusedThenEnteredTiles = 0`, a named Aha gate that FAILs). The documentation is checked against the program, never the other way round.
 
 ## 3b. Level Schema — the validator's own adjudications (door ∩ wall = illegal)
 
@@ -102,9 +104,11 @@ deadEndRatio              R
 maxSearchDepth            T
 forcedMoveRatio
 difficultyScore           D = w1·L + w2·B + w3·T + w4·R + w5·M
+embedRoutes / parRoutes   (LV-004: how many shortest routes end embedded — the phantom walk)
+switchRequired            (LV-006: is the goal reachable with every switch OFF?)
 ```
 
-Weights are **calibrated from real playtest data**, never hard-frozen. See `docs/level-difficulty.md`.
+Weights are **calibrated from real playtest data**, never hard-frozen. See `docs/level-difficulty.md` §5.1 for which of these are measured today (`L`, `M`, `B_raw`, `R`, `parRoutes`, `embedRoutes`, `switchRequired`) and which are still **not** (`B` effective, `T`, and therefore `D`).
 
 ## 5. Model routing (roles abstract; the matrix is the single source of truth)
 
@@ -135,14 +139,109 @@ The final submission must show the chain, not a claim:
 
 ## 7. Reproducibility
 
-- Level generation is **seeded** and scripted (`scripts/generate-levels`), so results are re-runnable.
+- Level generation is **seeded** and scripted (`scripts/generate-levels` for the bulk pipeline; `scripts/author-lv006-candidates.ts` for the L6–L10 doors+switch unit — fixed `SEED`, no clock / network / filesystem writes, byte-identical output on every run, see §8.6).
 - Every accepted level stores its generation metadata (model role, seed, prompt version, solver metrics).
-- Rejected candidates are archived too — the failures are part of the evidence.
+- Rejected candidates are archived too — the failures are part of the evidence. The LV-006 generator prints its rejects and **fails** if any of its three negative probes is accepted.
 
-## 8. Change log
+## 8. LV-006 record — the L6–L10 doors + switch unit (2026-10-15)
+
+The first level block in the game that carries **M1 (doors) + M3 (switches)**, and the
+first run of the full pipeline on content whose lesson is *not* a special case of
+"walls": schema → rules → BFS → metrics → policy/lesson audit → accept/reject.
+
+### 8.1 The proposal side (recorded templates, not trusted)
+
+`scripts/author-lv006-candidates.ts` commits the candidate **families** as data (seeded,
+`SEED = 20261015`, no clock / network / writes):
+
+| Family | Board | Proposal axes enumerated | Lesson the family is supposed to teach |
+|---|---|---|---|
+| L6 | 5×3 | switch tile ∈ {(1,1),(2,0),(0,0)} × door tile ∈ {(3,1),(2,1)} × colour ∈ {blue, red} | the latch on the natural path (block-opening dip) |
+| L7 | 3×3 | switch tile ∈ {(0,0),(0,2),(1,0)} | the detour: I leave the line to change the world |
+| L8 | 5×4 | switch tile ∈ {(2,0),(2,2),(1,0)}, funnel walls fixed | Aha #1: the door that refused the greedy line |
+| L9 | 5×5 | s2 tile ∈ {(3,1),(3,3)} × door2 tile ∈ {(4,1),(4,3)} | two doors + two switches, ordered plan (s2 sits behind door1) |
+| L10 | 6×4 | switch tile ∈ {(2,3),(1,3),(2,1)} × echo ∈ {(1,2), none} | mastery: permanent M0 geometry + the phantom walk + the latch |
+
+Plus a seeded decoration axis (1–3 extra **permanent** walls per family, placed only on
+tiles whose fixed entry phase equals the wall's solid phase, so a variant adds geometry
+and no validator warning).
+
+### 8.2 The proof side (the program, on every candidate)
+
+`zod` → `validateLevel` → `explore`/`analyse` (BFS) → **`par` set from the solver, never
+stated by the proposal** → `auditLevel` policy + lesson audit → accept/reject. A rejection
+is printed with a machine-readable reason and dropped (ADR-0004: reject, never repair).
+
+Result of the recorded run (re-runnable, byte-identical):
+
+```
+seed 20261015 · 43 candidates · 39 accepted, 4 rejected (reason: unsolvable)
+per family: l006 15/15 · l007 5/6 · l008 5/6 · l009 5/7 · l010 9/9 accepted
+rejection histogram: unsolvable: 4
+shipped file re-derived by the program: l006 YES · l007 YES · l008 YES · l009 YES · l010 YES
+negative probes: 3/3 rejected by name
+summary: l006–l010 each re-derived from the recorded template families (seed 20261015); 5/5 shipped files MATCH an accepted candidate; 3/3 negative probes rejected by name; rejections are named, never repaired.
+```
+
+`shipped=MATCH` in the run means the shipped JSON **is** an accepted candidate of the
+recorded family (canonical comparison, wall-list order normalised) — i.e. no level was
+hand-edited after it was proven. Which candidates were rejected, and why, matters as much
+as the accepts: L7 and L8 with the switch at `(1,0)` and two L9 seeded variants are
+**unsolvable** (the switch is placed where it cannot open the door in time), and the
+generator prints them rather than quietly narrowing the family.
+
+### 8.3 Gate self-test (negative probes — the run must fail if these pass)
+
+| Probe | Expected reason | Measured |
+|---|---|---|
+| inert switch (`activePhase` can never be current on its own tile) | `policy:switch-never-fires` | rejected by that name |
+| L8 board without the goal funnel (the door still refuses, the switch still fires — but the goal is reachable without pressing it) | `policy:gate-no-solution-with-switches-off` | rejected by that name |
+| door targeted by no switch (M1 alone) | `policy:door-without-switch` | rejected by that name |
+
+The probes mirror `scripts/validate-levels.ts`'s negative self-tests: an accept-only
+generator proves nothing about its own gate.
+
+### 8.4 What was enforced where (and why not in the schema)
+
+Two content laws are checked in the **analyzer/recording layer** (`@/core/solver/policy`),
+consumed by both `scripts/solve-levels.ts` and `tests/solver/**`, because the frozen level
+schema is a *shape* contract (`src/core/level/**` was not changed by LV-006):
+
+1. **M1 never ships alone** — every door is targeted by a switch, and that switch toggles
+   somewhere in the reachable graph (exact: measured over the whole graph, not argued from
+   parity). Enforced on every level, not just L6–L10.
+2. **A documented lesson must be program-true** — the ladder's lesson table
+   (`@/core/solver/policy` `DOCUMENTED_LESSONS`, L1–L10) is checked against the metrics:
+   phantom walk FORCED (l005) / OFFERED (l004), latch dynamism on L6–L10, and the named
+   Aha #1 gates on L8. The suite fails if a ladder level has no documented-lesson row, so
+   the table cannot drift from the dataset.
+
+### 8.5 Escalation — one named condition is unsatisfiable as written
+
+The Aha #1 condition list asks for four gates. Three PASS with measured numbers; the
+fourth, **`dualPhaseTiles ≥ 1`**, cannot be satisfied by *any* portal-free level
+(ADR-0009 decision 1, the checkerboard invariant: a switch never relocates the player, so
+the phase at a tile stays a function of the tile; the same fact is already pinned by
+`tests/solver/dynamism-metrics.test.ts`). ADR-0009 schedules M2 (portals) at L11 and no
+portal exists in `src/levels` before it. The gate is therefore **implemented and reported
+as `UNSATISFIABLE` with the proof printed**, `dualPhaseTiles === 0` is pinned as the proven
+value, and the CLI lists it under ESCALATIONS — never as a pass, never softened, and never
+"fixed" by adding a portal the schedule forbids.
+
+### 8.6 Reproducing this record
+
+```bash
+node_modules/.bin/tsx scripts/author-lv006-candidates.ts   # families → accept/reject + probes
+node_modules/.bin/tsx scripts/solve-levels.ts              # 10/10 PASS, per-level metrics + gates
+node_modules/.bin/tsx scripts/validate-levels.ts           # schema/rule gate + 10 negative cases
+node_modules/.bin/vitest run                               # incl. tests/solver/latch-gates.test.ts
+```
+
+## 9. Change log
 
 | Date | Version | Change | Author |
 |---|---|---|---|
 | 2026-10-14 | V0.1 | Pipeline, validation gate, model routing, evidence requirements | Agent 4 / Orchestrator |
 | 2026-10-14 | V0.2 | RV-001 **LOW-4** reconciliation: §5 rewritten — "vision-capable model, TBD" and the FAST=DeepSeek mapping were stale; routing now delegates to `docs/ai-model-matrix.md` §3 as single source of truth (REASONING `kimi-k3` · CODING `deepseek-v4.1-flash` · FAST `qwen3.8-flash` · REVIEW/VISION `qwen3.8-max`); Solver-decides-solvability invariant kept verbatim | Docs + GitHub (DG-002) |
 | 2026-10-14 | V0.3 | **LV-005** — new **§3b Level Schema adjudications**: `doors[]` ∩ (`phaseAWalls` \| `phaseBWalls`) = **illegal, hard error** (never "the door swallows the wall"); §3's hard-reject list gains "a cell that is two objects at once". Reason recorded with measured BFS evidence and the explicit non-decision on appearance precedence (UI / Art Director's `docs/ui-ux.md`) | Level AI + Solver (LV-005) |
+| 2026-10-15 | V0.4 | **LV-006** — new **§8 record for the L6–L10 doors+switch unit**: the committed seeded generator and its candidate families, the accept/reject histogram, the shipped-file re-derivation check, the three negative probes, the two content laws now enforced in `@/core/solver/policy`, and the **§8.5 escalation** (`dualPhaseTiles ≥ 1` unsatisfiable before L11). §3's hard-reject list gains "M1 alone" and "a documented lesson the board does not deliver" | Level AI + Solver (LV-006) |
