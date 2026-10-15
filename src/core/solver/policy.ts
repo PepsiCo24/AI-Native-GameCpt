@@ -72,6 +72,7 @@
 import type { Level } from "@/core/level";
 import { coordKey } from "@/core/level";
 import type { Phase } from "@/core/state/phase";
+import { isGoal } from "@/core/state/transitions";
 import type { Vec } from "@/core/state/types";
 import { step } from "@/core/state/move";
 import type {
@@ -81,6 +82,7 @@ import type {
   SolveResult,
 } from "./bfs";
 import {
+  allSwitchesOff,
   embedMetrics,
   explore,
   analyse,
@@ -105,7 +107,8 @@ export type LessonObligation =
   | "phantom-walk-offered"
   | "latch-dynamism"
   | "latch-aha-1"
-  | "portal-aha-2";
+  | "portal-aha-2"
+  | "block-l1215";
 
 export interface DocumentedLesson {
   readonly levelId: number;
@@ -262,6 +265,57 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
     evidence:
       "docs/level-design.md §2 L11 + §5 (L11–L15 block) + §6 (pre-registered seam law) · docs/level-difficulty.md §3.3/§3.4 · src/levels/README.md §0/§2c",
   },
+  // ── L12–L15 — the block's four members, on the law GD-011 published as §6.1 ──
+  //
+  // One obligation kind (`block-l1215`) for the four rows, because the law is a
+  // **block** law: the par ramp is a property of the set (P2's step), the dip is a
+  // property of its first member, and the tail clause is a property of its last.
+  // `blockL1215Gates` therefore reads `BLOCK_L1215_PAR_EXPECTATION` *by member
+  // index* and is the single implementation behind all four rows; the rows carry
+  // only the lesson text the player is meant to meet at that member.
+  //
+  // `switchRequired: "exempt"` on all four is **G4** (ADR §5 / §6.1.3) and is
+  // measured, not conceded: the all-OFF world still solves on 4/4, exactly 2 moves
+  // slower than par (`allOffShortest` 6/8/10/12 vs par 4/6/8/10), so the latch
+  // grades `par`, never solvability. It is `"exempt"` and **not `null`**: these
+  // boards *do* carry a latch lesson (`null` would mean "no latch lesson at all"),
+  // and G1 gives the exemption teeth.
+  {
+    levelId: 12,
+    lesson:
+      "block rest beat: the same plan shape (channel → latch → door) on a different skeleton — the channel re-prices the route (7 → 4) without being the only door, so the dip is a choice-narrowing rest, not a shorter level",
+    obligation: "block-l1215",
+    switchRequired: "exempt",
+    evidence:
+      "docs/level-design.md §6.1.2 (two-beat dip; L12 owns §6's successor slot — single-beat rejected) + §6.1.3 G4 · ADR-design-0003 §4/§6.1 · measured: par 4 at the P1 floor, D_exec 8.230769 < L11's 8.573171, portalFree true (walk-only solves in 7), allOffShortest − par = 2 · docs/level-difficulty.md §5.2 · src/levels/README.md §0b/§2c",
+  },
+  {
+    levelId: 13,
+    lesson:
+      "escalation begins: the sealed line makes the channel the ONLY door — the walk-only world is unsatisfiable, so from here the portal is the solvability load, not a shortcut (Aha #2's real step)",
+    obligation: "block-l1215",
+    switchRequired: "exempt",
+    evidence:
+      "docs/level-design.md §6.1.2 reason 3 (mandatory channel from L13) + §6.1.3 G4 · ADR-design-0003 §6.2 C14 · measured: par 6 (P2 step), D_exec 10.898734, portalFree FALSE (walk-only UNSATISFIABLE, the sealed line x = 4 entered only from the q-flipped side), allOffShortest − par = 2, refusedBeforeEnteredTiles 5 · docs/level-difficulty.md §5.2 · src/levels/README.md §0b/§2c",
+  },
+  {
+    levelId: 14,
+    lesson:
+      "the ramp's second step, same plan shape one row taller: escalation by board growth and route count (3 → 10 par routes), not by a new idea",
+    obligation: "block-l1215",
+    switchRequired: "exempt",
+    evidence:
+      "docs/level-design.md §6.1.2 (ramp without a new idea) + §6.1.3 G4 · ADR-design-0003 §6.3 · measured: par 8, D_exec 12.957895 (+2.059161, the Δpar step carrying the ramp), portalFree FALSE, allOffShortest − par = 2, parRoutes 10 · docs/level-difficulty.md §5.2 · src/levels/README.md §0b/§2c",
+  },
+  {
+    levelId: 15,
+    lesson:
+      "block end: the frozen §6 clause fires POSITIVE — the sawtooth closes above the previous block's peak; the hardest board is the least 'fake hard' (forcedMoveRatio 0.0000, 15 par routes) and the block's only B-phase channel",
+    obligation: "block-l1215",
+    switchRequired: "exempt",
+    evidence:
+      "docs/level-design.md §6 (block-end clause, frozen V0.6) + §6.1.2 + §6.1.3 G4 · ADR-design-0003 §6.4 (122 block-floor rejections: the clause was a filter, never a target) · measured: par 10 (exactly the P3 ceiling), D_exec 14.969697 > 13.64 AND > 13.642857, coverage 35/35 at par (every tile visited), portalFree FALSE, allOffShortest − par = 2 · docs/level-difficulty.md §5.2 · src/levels/README.md §0b/§2c",
+  },
 ];
 
 export function documentedLesson(levelId: number): DocumentedLesson | null {
@@ -304,8 +358,25 @@ export type PortalGateId =
   | "portal-teaching-grade-below-offered"
   | "portal-seam-law-execution-axis";
 
+/**
+ * The named gates the **L12–L15 block law** adds (ADR-design-0003 §5/§6/§8): the
+ * derived par ramp (P1/P2/P3), coverage (P4), the latch grade G1, the portal-load
+ * escalation C14, the dip beat C4 and the frozen block-end clause C5. A closed union
+ * for the same reason as the two above. G2 and G3 are deliberately **not** new ids:
+ * they are the existing `shortest-solution-presses-switch-and-crosses-door` and
+ * `refused-then-entered` readers, so the block is judged by the same implementations
+ * the latch and portal debuts are (one reader per rule, never a fork).
+ */
+export type BlockGateId =
+  | "block-par-ramp"
+  | "block-coverage"
+  | "block-latch-par-grade"
+  | "block-portal-load"
+  | "block-dip-ceiling"
+  | "block-tail-exec-budget";
+
 export interface NamedGate {
-  readonly id: AhaGateId | PortalGateId;
+  readonly id: AhaGateId | PortalGateId | BlockGateId;
   /** The condition in the words of the design doc / dispatch. */
   readonly label: string;
   readonly status: GateStatus;
@@ -612,6 +683,89 @@ export const PORTAL_DEBUT_PAR_CAP = 4;
  */
 export const PORTAL_DEBUT_EXEC_BUDGET = 13.64;
 
+/**
+ * ── The **L12–L15 block law** (ADR-design-0003; `docs/level-design.md` §6.1) ──
+ *
+ * Published by GD-011 **before** integration (task GD-011), so the L12–L15 numbers
+ * are law rather than precedent — the anti-post-hoc guarantee that made the L11
+ * clause credible. LV-009-B *encodes* these constants; it fits nothing: the ramp is
+ * the unique solution of floor ∩ step ∩ ceiling ∧ a four-member block (uniqueness
+ * proof: ADR §3 / §6.1.1), the latch grade is the §6.1.3 paragraph plus the four
+ * checkable obligations G1–G4 (ADR §5), and **no `D`/`D_exec` target is published
+ * anywhere above L11** — §3.5's deliberate silence stands, and the block's only
+ * numeric `D_exec` clause is §6's already-frozen block-end bound.
+ *
+ * Deliberately **separate** from {@link PORTAL_DEBUT_PAR_CAP} /
+ * {@link PORTAL_DEBUT_EXEC_BUDGET}: those are the **L11 debut's** obligations and
+ * must never be re-purposed (ADR §8 item 1). The reason is already written above the
+ * L11 lesson row — a post-debut portal level declares *its own* lesson, because the
+ * par cap and the below-OFFERED grade are properties of the **debut**.
+ */
+
+/** P1 — the block's par skeleton is pinned to the game's floor (ADR §3). */
+export const BLOCK_L1215_PAR_FLOOR = 4;
+
+/** P2 — the within-block par step: `Δpar = 1` would not guarantee §3.4's ramp. */
+export const BLOCK_L1215_PAR_STEP_MIN = 2;
+
+/** P3 — the teaching-span ceiling; L15 lands exactly on it (§6.1.1). */
+export const BLOCK_L1215_PAR_CEILING = 10;
+
+/**
+ * `P1 ∧ P2 ∧ P3 ∧ exactly four members ⇒ 4/6/8/10`, and no other ramp: `(4,6,8,11)`
+ * and `(4,7,9,11)` break P3, `(4,6,7,9)` and `(4,5,7,9)` break P2, and any
+ * `par(L12) ≠ 4` breaks P1. `4 + 2·3 = 10` lands **on** the ceiling, which is why
+ * the shape is derived rather than chosen (ADR §3).
+ */
+export const BLOCK_L1215_PAR_EXPECTATION: readonly number[] = [4, 6, 8, 10];
+
+/** The block's members, in order (`docs/game-design.md` §8: L11–L15; L11 is the debut). */
+export const BLOCK_L1215_IDS: readonly number[] = [12, 13, 14, 15];
+
+/**
+ * **G1** — the latch must be worth at least this many moves over the all-OFF world.
+ * "Worth 0" means the switch is **inert**, which is a validator defect class rather
+ * than a grade (ADR §5, §7): an unteethed `switchRequired: "exempt"` would invite the
+ * "the latch is decoration" drift this obligation exists to catch.
+ */
+export const BLOCK_LATCH_MIN_PAR_ADVANTAGE = 1;
+
+/**
+ * §6's **frozen** block-end clause as a bound: `D_exec` of the block's **last**
+ * member exceeds 13.64 (the published 2-dp form of L10's measured `D_exec`, and
+ * strictly below the measured 13.642857 it was read from, so the bound is harder to
+ * satisfy than "beat L10 exactly"). A separate constant on purpose: re-using
+ * {@link PORTAL_DEBUT_EXEC_BUDGET} here would read this clause as the *debut's*.
+ */
+export const BLOCK_L1215_TAIL_EXEC_FLOOR = 13.64;
+
+/**
+ * **C4**'s dip ceiling: the shipped L11's measured `D_exec` = 8.573171 (ADR §4,
+ * `docs/level-difficulty.md` §5.2 row L11, pinned by `tests/solver/difficulty.test.ts`).
+ * The block's **first** member must stay strictly below it — that is what makes L12
+ * the dip's second beat rather than another ramp member. Published at 6 dp, the
+ * precision the ADR table prints; the suite re-derives it from the shipped `l011.json`
+ * so a re-authored L11 cannot leave this constant silently stale.
+ */
+export const BLOCK_L1215_DIP_CEILING = 8.573171;
+
+/** The portal-load grade a member of the block is authored to (`§6.1.2` reason 3). */
+export type BlockPortalLoad = "shortcut" | "mandatory";
+
+/**
+ * **C14** — the block's teaching escalation, per level: the portal starts as a
+ * *re-pricing shortcut* (L12: the walking world still solves, 7 → 4) and becomes
+ * **the only door** from L13 up (walk-only world **UNSATISFIABLE**, measured). That
+ * this is a change of *kind* rather than of move count is the block's honest content
+ * (ADR §4 reason 3, §6.1.2).
+ */
+export const BLOCK_L1215_PORTAL_LOAD: Readonly<Record<number, BlockPortalLoad>> = {
+  12: "shortcut",
+  13: "mandatory",
+  14: "mandatory",
+  15: "mandatory",
+};
+
 /** What the portal needs to be measured off the shortest routes. */
 export interface PortalRouteTelemetry {
   /** Shortest routes enumerated (`par` moves, ending on the goal). */
@@ -820,6 +974,169 @@ export function portalAhaGates(
   ];
 }
 
+/**
+ * The **L12–L15 block's** named gates (ADR-design-0003 §5/§6/§8). Read by
+ * `auditLevel` for a level whose lesson row carries the `block-l1215` obligation —
+ * the four shipped rows, exactly as `portal-aha-2` routes L11 to `portalAhaGates`.
+ *
+ * Returned in a stable, documented order:
+ *
+ *   1. `block-par-ramp` — **C1 / P1·P2·P3**: `par` *is* the expectation entry for this
+ *      member of {@link BLOCK_L1215_IDS}, and the file's authored `par` equals it, so
+ *      the ramp cannot drift and neither the authored nor the measured value can move
+ *      quietly. The failure detail prints the whole derived ramp, so a future author
+ *      sees *why* the expected number is what it is (floor ∩ step ∩ ceiling ∧ 4).
+ *   2. `block-coverage` — **C2 / P4**: `distinctPositions == width × height`. Coverage
+ *      is how §1's board cap is honoured without padding: the board is sized to the
+ *      route, not the other way round (ADR §6.1 `l015TemplateFamily` note: 35/35 at
+ *      par 10 means every tile of a 7 × 5 board is visited).
+ *   3. `block-latch-par-grade` — **C7 / G1**: the all-OFF world still solves, but
+ *      **exactly `BLOCK_LATCH_MIN_PAR_ADVANTAGE` (or more) moves slower**. Grade
+ *      (a) of ADR §5: the latch grades `par`, never solvability, and the latch must
+ *      not be decoration. A board with no latch at all fails by name (the rows carry
+ *      a latch lesson — G4).
+ *   4. `block-portal-load` — **C14**: the per-level portal-load grade of
+ *      {@link BLOCK_L1215_PORTAL_LOAD}. `"shortcut"` (L12) requires the walking world
+ *      to still solve — the consolidation beat; `"mandatory"` (L13+) requires it to be
+ *      **unsatisfiable**, i.e. the sealed channel really is the only door.
+ *   5. `dual-phase-tiles` — gate (iv), **C10**, the existing reader (a portal board
+ *      with 0 is a loud FAIL, never an escalation).
+ *   6. `shortest-solution-presses-switch-and-crosses-door` — gate (ii)'s shape,
+ *      **C8 / G2**: every par route presses the switch *and* crosses the door, so the
+ *      Aha is "the door opened", not "I walked around it".
+ *   7. `refused-then-entered` — **C9 / G3**, the **ordered** reader: the player can
+ *      actually witness refused-first-entered-later. (The unordered companion is the
+ *      canonical metric and stays the one `lesson-latch-dynamism` reads; the two legs
+ *      are deliberately not re-stitched — ADR-architecture-0002 decision 4.)
+ *   8. `block-dip-ceiling` — **C4**, *only on the block's first member*: `D_exec`
+ *      strictly below {@link BLOCK_L1215_DIP_CEILING} (the shipped L11's measured
+ *      value), which is what makes that level the dip's second beat.
+ *   9. `block-tail-exec-budget` — **C5**, *only on the block's last member*: §6's
+ *      frozen block-end clause, `D_exec > `{@link BLOCK_L1215_TAIL_EXEC_FLOOR}.
+ *
+ * Deliberately **absent**: gate (i) `no-solution-with-switches-off`. Per ADR §5 that
+ * obligation belongs to the **latch unit's own block** (L7–L10, Aha #1), and
+ * re-asserting it here would subordinate this block's lesson (Aha #2) to the previous
+ * one — `policy.ts`'s L11 row already states the principle. G1/G2/G3 are the
+ * substitute teeth, and they are par-grade teeth only, which is stated rather than
+ * hidden.
+ */
+export function blockL1215Gates(
+  level: Level,
+  graph: ReachableGraph,
+  result: SolveResult,
+  embeds: EmbedMetrics,
+): readonly NamedGate[] {
+  const par = result.shortestSolution ?? level.par;
+  const index = BLOCK_L1215_IDS.indexOf(level.id);
+  const expected =
+    index === -1 ? null : (BLOCK_L1215_PAR_EXPECTATION[index] ?? null);
+  const hasLatch = level.switches.length > 0 && level.doors.length > 0;
+  const allOff = hasLatch ? allOffShortestSolution(level, graph) : null;
+  const advantage = allOff === null ? null : allOff - par;
+  // An unsatisfiable all-OFF world outranks G1: the latch then carries *existence*,
+  // which is stricter than `≥ 1`, so G1 passes on it. (No member of the block reads
+  // that way today — all four solve all-OFF, exactly 2 moves slower than par.)
+  const latchGrade =
+    hasLatch &&
+    (allOff === null ||
+      (advantage ?? 0) >= BLOCK_LATCH_MIN_PAR_ADVANTAGE);
+  const portalFree = portalFreeWorldVerdict(level);
+  const load = BLOCK_L1215_PORTAL_LOAD[level.id] ?? null;
+  const dexec = analyseDifficulty(level, graph).Dexec;
+  const verdict = routeVerdict(level, par, result.refusedThenEnteredTileList);
+
+  const gates: NamedGate[] = [
+    {
+      id: "block-par-ramp",
+      label:
+        "C1 — par is the unique P1∧P2∧P3 ramp 4/6/8/10 for the L11–L15 block (floor ∩ step ≥ 2 ∩ ceiling ≤ 10 ∧ four members; ADR-design-0003 §3 / docs/level-design.md §6.1.1)",
+      status:
+        expected !== null && level.par === expected && par === expected
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `par=${level.par} (solver shortest=${String(result.shortestSolution)}); this member expects ` +
+        `${expected === null ? "n/a (not a block member)" : String(expected)}; the derived ramp is ` +
+        `${BLOCK_L1215_PAR_EXPECTATION.join(" / ")} from BLOCK_L1215_IDS=[${BLOCK_L1215_IDS.join(", ")}] ` +
+        `(floor ${String(BLOCK_L1215_PAR_FLOOR)} + step ${String(BLOCK_L1215_PAR_STEP_MIN)} reaching exactly the ceiling ` +
+        `${String(BLOCK_L1215_PAR_CEILING)}). Both values are checked, so neither the authored nor the measured par can move past the law unnoticed.`,
+    },
+    {
+      id: "block-coverage",
+      label:
+        "C2 / P4 — coverage: distinctPositions == width × height (the board is sized to the route, not the other way round; ADR-design-0003 §6.1.1)",
+      status:
+        result.distinctPositions === level.width * level.height ? "PASS" : "FAIL",
+      detail:
+        `distinctPositions=${String(result.distinctPositions)} of ${String(level.width * level.height)} ` +
+        `(${level.width} × ${level.height}); measured 100 % on all four members of the block (21/21, 24/24, 28/28, 35/35) ` +
+        `and stated as P4 of the par derivation, because a ramp bought by padding the board would break §1's board cap instead.`,
+    },
+    {
+      id: "block-latch-par-grade",
+      label:
+        "C7 / G1 — the latch grades par, never solvability: the all-OFF world still solves, at least BLOCK_LATCH_MIN_PAR_ADVANTAGE moves slower (ADR-design-0003 §5 / docs/level-design.md §6.1.3)",
+      status: latchGrade ? "PASS" : "FAIL",
+      detail:
+        `switch(es)=${String(level.switches.length)} door(s)=${String(level.doors.length)}; ` +
+        `allOffGoalReachable=${String(goalReachableWithAllSwitchesOff(level, graph))} ` +
+        `allOffShortest=${allOff === null ? "null" : String(allOff)} par=${String(par)} ` +
+        `⇒ allOffShortest − par = ${advantage === null ? "n/a" : String(advantage)} ≥ ${String(BLOCK_LATCH_MIN_PAR_ADVANTAGE)} ` +
+        `required. allOffShortest is a **restricted** walk over the all-OFF subgraph (a depth read from the full graph may sit on a ` +
+        `path that presses a switch, so it would not be a distance in this world). Measured 2 on 4/4 — the latch buys speed, the ` +
+        `sealed channel buys existence (ADR §5, "the sentence future reviewers should quote"). A board with no latch fails here by name.`,
+    },
+    {
+      id: "block-portal-load",
+      label:
+        "C14 — portal load: 'shortcut' on L12 (the walking world still solves) and 'mandatory' from L13 up (walk-only UNSATISFIABLE, the channel is the only door; ADR-design-0003 §6.2 / §6.1.2 reason 3)",
+      status: load !== null && portalFree.solvable === (load === "shortcut") ? "PASS" : "FAIL",
+      detail:
+        `law for this member: ${load === null ? "n/a (not a block member)" : load}; ` +
+        `portal-free world (same board, portals: []): solvable=${String(portalFree.solvable)} ` +
+        `shortest=${portalFree.shortest === null ? "n/a" : String(portalFree.shortest)} vs par=${String(par)}. ` +
+        `The escalation is a change of kind, not of move count: L12 re-prices the route (7 → 4) while L13–L15 delete the walking ` +
+        `route entirely, which is the block's real content and the reason the debut's below-OFFERED grade is not re-used here.`,
+    },
+    dualPhaseGate(level, result),
+    pressThenCrossGate(par, embeds, verdict),
+    refusedBeforeEnteredGate(result),
+  ];
+
+  if (index === 0) {
+    gates.push({
+      id: "block-dip-ceiling",
+      label:
+        "C4 — the two-beat dip: the block's first member stays strictly below the shipped L11's measured D_exec (ADR-design-0003 §4 / §6.1.2)",
+      status: dexec !== null && dexec < BLOCK_L1215_DIP_CEILING ? "PASS" : "FAIL",
+      detail:
+        `Dexec=${dexec === null ? "n/a (unsolvable)" : dexec.toFixed(6)} < ${BLOCK_L1215_DIP_CEILING.toFixed(6)} ` +
+        `(the shipped L11's measured value, re-derived from src/levels/l011.json by the suite). Par is flat at the P1 floor 4, so the ` +
+        `whole beat is carried by effective branching falling — "a choice-narrowing rest, not a shorter level" (ADR §4 reason 5). ` +
+        `A single-beat dip was RULED OUT, so a member above this ceiling is not a steeper ramp, it is the wrong block shape.`,
+    });
+  }
+
+  if (index === BLOCK_L1215_IDS.length - 1) {
+    gates.push({
+      id: "block-tail-exec-budget",
+      label:
+        "C5 — §6's frozen block-end clause: the block's LAST member exceeds 13.64 on the execution axis (docs/level-design.md §6 V0.6; ADR-design-0003 §6.4)",
+      status:
+        dexec !== null && dexec > BLOCK_L1215_TAIL_EXEC_FLOOR ? "PASS" : "FAIL",
+      detail:
+        `Dexec=${dexec === null ? "n/a (unsolvable)" : dexec.toFixed(6)} > ${BLOCK_L1215_TAIL_EXEC_FLOOR.toFixed(2)} ` +
+        `(= the published 2-dp form of L10's measured 13.642857, so the bound is strictly below the shipped value it was read from) ` +
+        `AND > 13.642857 itself. Distinct from PORTAL_DEBUT_EXEC_BUDGET on purpose: that constant is the **debut's** obligation ` +
+        `(ADR §8 item 1 forbids re-purposing it). Pre-registered at V0.6, before any L12–L15 candidate existed, and applied as a ` +
+        `FILTER during the search — 122 block-floor rejections at this level (ADR §6.4).`,
+    });
+  }
+
+  return gates;
+}
+
 /** The portal-pair facts gate 4 reads, as data (so the verdict is not a sentence). */
 interface PortalPairVerdict {
   /** The two ends, `"x,y"` each, in the authored order. */
@@ -893,6 +1210,43 @@ export function allOffStateCount(
   return count;
 }
 
+/**
+ * The **all-OFF shortest solution** — the G1 measurement
+ * ({@link BLOCK_LATCH_MIN_PAR_ADVANTAGE}, ADR-design-0003 §5 / §6.1.3): the length of
+ * the shortest route that never presses a switch, or `null` when the goal cannot be
+ * reached in that world at all (the latch then carries *existence*, which is
+ * strictly stronger than "worth one move").
+ *
+ * Why a second walk and not `graph.depths`: a depth from the full-graph BFS may sit
+ * on a path that presses a switch, so it is not a distance inside the all-OFF world.
+ * This is a **restricted** BFS over the already-explored graph — no second search of
+ * the state space, no second rule, no re-derivation of door openness (the same
+ * discipline {@link goalReachableWithAllSwitchesOff} states).
+ */
+export function allOffShortestSolution(
+  level: Level,
+  graph: ReachableGraph,
+): number | null {
+  const start = graph.nodes[0];
+  if (start === undefined || !allSwitchesOff(level, start)) return null;
+  const depth = new Map<number, number>([[0, 0]]);
+  const queue: number[] = [0];
+  for (let q = 0; q < queue.length; q += 1) {
+    const i = queue[q] as number;
+    const node = graph.nodes[i];
+    if (node === undefined) continue;
+    if (isGoal(level, node)) return depth.get(i) ?? null;
+    for (const j of graph.edgesOut[i] as readonly number[]) {
+      const next = graph.nodes[j];
+      if (next === undefined || depth.has(j)) continue;
+      if (!allSwitchesOff(level, next)) continue;
+      depth.set(j, (depth.get(i) ?? 0) + 1);
+      queue.push(j);
+    }
+  }
+  return null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. Policy violations (hard, mechanical)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -922,7 +1276,8 @@ export type PolicyViolationCode =
   | "lesson-latch-dynamism"
   | "lesson-switch-required"
   | `gate-${AhaGateId}`
-  | `gate-${PortalGateId}`;
+  | `gate-${PortalGateId}`
+  | `gate-${BlockGateId}`;
 
 export const POLICY_VIOLATION_CODES: readonly PolicyViolationCode[] = [
   "door-without-switch",
@@ -943,6 +1298,12 @@ export const POLICY_VIOLATION_CODES: readonly PolicyViolationCode[] = [
   "gate-portal-par-cap",
   "gate-portal-teaching-grade-below-offered",
   "gate-portal-seam-law-execution-axis",
+  "gate-block-par-ramp",
+  "gate-block-coverage",
+  "gate-block-latch-par-grade",
+  "gate-block-portal-load",
+  "gate-block-dip-ceiling",
+  "gate-block-tail-exec-budget",
 ];
 
 /** Switch ids that actually toggle somewhere in the reachable graph. */
@@ -1122,6 +1483,14 @@ export function auditLevel(
         // documented reason as L6 (see the row), and the latch's role on this board
         // is measured by gate (ii) instead.
         break;
+      case "block-l1215":
+        // The L12–L15 block's own conditions are the named gates below
+        // (`blockL1215Gates`: P1–P4, G1, G2, G3, C14, and the block-end/ dip clauses
+        // on the members they bind). Deliberately **no** board-level code here, and
+        // deliberately **no** `switchRequired: "required"` promise — ADR-design-0003
+        // §5 rules that the latch grades `par`, not solvability, from L12 up, and G4
+        // records that decision on the row itself.
+        break;
       default:
         break;
     }
@@ -1155,7 +1524,9 @@ export function auditLevel(
       ? latchAhaGates(level, graph, result, embeds)
       : lesson?.obligation === "portal-aha-2"
         ? portalAhaGates(level, graph, result, embeds)
-        : [];
+        : lesson?.obligation === "block-l1215"
+          ? blockL1215Gates(level, graph, result, embeds)
+          : [];
   for (const gate of gates) {
     if (gate.status !== "FAIL") continue;
     violations.push({
