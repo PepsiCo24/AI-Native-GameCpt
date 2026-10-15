@@ -17,17 +17,19 @@
  * - `isLegalMove` / `applyMove` — the one movement truth source (AGENTS.md §3).
  *
  * ── Why the files are read from disk instead of importing the registry ───────
- * `src/game/levels/level-registry.ts` statically imports ten `*.json` files, and
- * Node's ESM loader refuses a JSON import without an import attribute (the
+ * `src/game/levels/level-registry.ts` statically imports eleven `*.json` files,
+ * and Node's ESM loader refuses a JSON import without an import attribute (the
  * registry is bundled by Vite, where that rule does not apply). Importing the
  * registry from a Playwright spec therefore throws
- * `needs an import attribute of "type: json"`. Reading the ten files with
+ * `needs an import attribute of "type: json"`. Reading the eleven files with
  * `node:fs` + `JSON.parse` keeps the *validation* on the production gate while
  * sidestepping a bundler-only import shape — and `tests/e2e/helpers/levels.ts`
  * is a **test** file, so this is not a second production path.
  *
- * The file list is discovered from the directory and cross-checked against
- * {@link EXPECTED_LEVEL_COUNT} ("the registry count is 10" — R-002 tree).
+ * The file list is discovered from the directory; the hand-pinned registry count
+ * is {@link EXPECTED_LEVEL_COUNT} ("the registry ships 11 levels" — R-002 tree
+ * plus R-003's L11 unlock at `f484e23`), which `playthrough.spec.ts` compares the
+ * discovered set against.
  */
 
 import { readFileSync, readdirSync } from "node:fs";
@@ -46,8 +48,20 @@ import { initialState, toSearchState } from "@/core/state/transitions";
 import type { SearchState, Vec } from "@/core/state/types";
 import { sameVec } from "@/core/state/types";
 
-/** R-002 tree: L1–L10 reach the board (`docs/level-design.md`, registry count 10). */
-export const EXPECTED_LEVEL_COUNT = 10;
+/**
+ * R-002 tree + R-003 (`f484e23`): L1–L11 reach the board — L11 (M2 portal debut)
+ * is the registry's last level, so L10 is no longer the dataset's end (that is
+ * what moved `playthrough.spec.ts` onto the "L 10 cleared" branch).
+ *
+ * Re-pinned 10 → 11 by QA-005b. Four Playwright failures at `f484e23` traced here;
+ * this constant alone resolves the two that are *derived* from it
+ * (`playthrough.spec.ts:97` — L10 is no longer last — and `:118` — the unlock
+ * chain now advances L10 → L11). The other two are hand-typed dataset-inventory
+ * literals that this constant cannot reach: `playthrough.spec.ts:47`
+ * (`toEqual([1..10])`) and `latch-door.spec.ts:60` (`toEqual([6..10])`). See
+ * `tests/e2e/README.md` §1.
+ */
+export const EXPECTED_LEVEL_COUNT = 11;
 
 const LEVELS_DIR = fileURLToPath(new URL("../../../src/levels/", import.meta.url));
 
@@ -306,7 +320,7 @@ export function cheapestDoorFixtures(ref: LevelRef): {
   return { occupancy: first("closed-door-occupancy"), refusedEntry: first("closed-door-entry-refused") };
 }
 
-/** Levels that ship at least one door — the dataset's latch levels (L6–L10). */
+/** Levels that ship at least one door — the dataset's latch levels (L6–L11). */
 export function levelsWithDoors(refs: readonly LevelRef[]): readonly LevelRef[] {
   return refs.filter((ref) => ref.level.doors.length > 0);
 }
