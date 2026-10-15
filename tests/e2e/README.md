@@ -28,7 +28,7 @@ server and points the suite at your instance (that is the parameterised `baseURL
 
 `workers: 1` / `fullyParallel: false` are deliberate: `transient.spec.ts` samples
 real animation frames, and a second worker stealing CPU would make the frame grid a
-lottery. The whole suite is ~3.5 minutes.
+lottery. The whole suite is ~3.3 minutes locally (16.9 min on the 2-core CI runner, §5).
 
 ### It is not part of `npm test` — and that is verified, not hoped
 
@@ -83,12 +83,12 @@ both. See the QA-005b return contract, BLOCKER-1.
 +    expect(DOOR_LEVELS.map((ref) => ref.id)).toEqual([6, 7, 8, 9, 10, 11]);
 ```
 
-**Known gap this exposes (QA-owned, next round).** These two assertions are typed
-lists, so the README's own promise that "adding a level needs no test edit" is not
-true for them — the count *and* the two inventories have to be re-pinned by hand.
-Deriving them from the discovered set (e.g. `refs.map((ref) => ref.id)`) would make
-the *arithmetic* self-maintaining while keeping the deliberate "this is the dataset"
-pin in one place.
+**Known gap this exposed — CLOSED by QA-005c (§1.3).** These two assertions were
+typed lists, so the README's own promise that "adding a level needs no test edit" was
+not true for them — the count *and* the two inventories had to be re-pinned by hand.
+QA-005c derived both inventories from the discovered dataset and left exactly one
+hand-typed pin (`EXPECTED_LEVEL_COUNT`), with a mutation probe that proves the alarm
+still fires when a level file is added, removed or renumbered.
 
 Evidence (QA-005b run, worktree `qa-005b-portal-e2e` @ `f484e23` + this branch):
 
@@ -101,13 +101,123 @@ Evidence (QA-005b run, worktree `qa-005b-portal-e2e` @ `f484e23` + this branch):
 | `playwright test` (own vite :5213) | **84 passed · 2 failed** — the two literals above, nothing else |
 | `test.fail()` pins | both ride as expected failures (green semantics): `input-replay.spec.ts:97`, `playthrough.spec.ts:147` |
 
-**KNOWN DEFER — `playthrough.spec.ts` header prose.** The file's doc-comment still
-describes itself as "**the L1–L10 par-route playthrough**" (lines 1–20: "ten levels
-reach the board", "L1 → L10 with the win dialog's own `Next`") and line 133's comment
-still says "Reaching L10's win … is the whole unlock claim". Both are prose, no
-assertions, and `playthrough.spec.ts` sat inside another agent's live edit boundary
-when this branch was cut — so QA-005b did **not** touch them. Recorded here so the
-next QA round re-words them alongside the two literal fixes above.
+**KNOWN DEFER — CLOSED by QA-005c.** `playthrough.spec.ts`'s header used to describe
+itself as "**the L1–L10 par-route playthrough**" while the registry shipped eleven
+levels; its line-133 comment said "Reaching L10's win … is the whole unlock claim".
+Both are re-worded now — the header names `L{EXPECTED_LEVEL_COUNT}` and the comment
+names the last shipped level — and the unlock-chain test title derives
+`L1 → L{EXPECTED_LEVEL_COUNT}` from the pin, so the prose cannot drift from the
+registry again. Recorded here as the closed half of the QA-005b defer.
+
+### 1.3 QA-005c — the flake's root cause, the derived inventories, the CI envelope
+
+R-004b's merge turned the two dataset literals into the *only* remaining reds, and
+the QA-005c tip was **86 / 0 × 3 consecutive runs, zero retries** once they landed.
+This subsection is the evidence trail for that run.
+
+**The flake (this was a measurement defect, not a rule defect).** The named sites
+were `latch-door.spec.ts` (L6/L10) and `refusal.spec.ts` (L3), failing as
+`actor tile should be … found []`. Root cause: `actorCell` reads the player's tile
+from **one presented frame at one instant**, and a legal move is not instant —
+§6.1's `hop` tween carries the disc from one cell centre to the next over 130 ms, and
+between the two centres the body covers **neither**, so a single-instant probe
+legitimately returns `cells: []`. Measured frame-by-frame after a press (QA-005c):
+desktop L1 → empty at frame 0, settled at frame 1; **mobile → empty frames 0–3**.
+`pressDirection` only waits two frames, so an assertion issued right after it could
+land inside that window.
+
+The fix is in `expectActorAt` (`helpers/game.ts`): it now **polls bounded** (2 s, one
+probe per frame) until the probe reads **exactly one** cell **and it is `expected`**,
+then fails honestly with the last probe and the elapsed time. `[]`, `[oldCell]` and
+two matches all keep polling and all fail if they persist, and the settled case costs
+one probe, so no sleep padding was added at any call site and a real timing
+regression cannot hide behind the window. The refusal nudge (90 ms) has the same
+shape and is covered by the same change.
+
+The flake's *other* presence was the touch path: `mobile.mobile.spec.ts` R-T4
+(`a ≥ 24 px swipe is a move`, `Expected: 1, Received: 0`). A pointer gesture is
+consumed by the game's input update on a later frame, so the post-gesture HUD read is
+now a bounded poll (`expectMoves`, 2 s, `toBe` — the counter must still reach the
+value) rather than a single read after a fixed `settle`; `swipeTouch` also keeps one
+cached CDP session per page instead of creating and detaching one per gesture, and
+waits a frame after `touchEnd` so the sequence is consumed before the caller reads.
+The gesture deliberately stays a single-frame burst: R-T4's own precondition is
+`swipeMaxMs = 500` of game time, and pacing one event per frame would put a slow
+runner over the limit and turn the rule into a lottery.
+
+**The inventories are derived; one pin is left.** `REFS.map(…id)` /
+`DOOR_LEVELS.map(…id)` typed literals are gone. `helpers/levels.ts` now exposes
+`discoveredFileIds()` (fs scan), `datasetIds()` / `doorLevelIds()` (from the parsed
+refs) and `inventoryViolation(ids, expected)` — the gate the specs assert. The one
+hand-typed number is `EXPECTED_LEVEL_COUNT`; the mutation probe
+(`tests/unit/level-inventory-derivation.test.ts`) clones the shipped `src/levels/`
+into a tmpdir and drives the **real loader** over it: pristine clone → no alarm,
+`+1` file → alarm (count), `−1` file → alarm (count), and a level whose own `id` is
+wrong (`l005.json` saying `id: 50`) → alarm (contiguity) even though the count is
+still the pinned one. The latch inventory keeps the design rule the old `[6..11]`
+literal carried, restated without a typed number: the latch levels are the dataset's
+**contiguous tail**.
+
+**MINOR-2 (RV-007).** The end-panel test now asserts
+`dialogBody` **contains** `` `L1–L${EXPECTED_LEVEL_COUNT}` `` (U+2013, the character
+`ladderLabelOf` emits) instead of only rejecting `L1–L5`, so the composition-root
+chain — registry → `ladderLabelOf` → panel copy — is closed end-to-end and derived
+from the one pin.
+
+**MINOR-3 (RV-007).** The layer-home scan in
+`tests/unit/player-embedded-home.test.ts` is now **recursive** (a one-level
+`readdirSync` stopped covering a layer the moment it grew a subdirectory) and its
+specifier reader knows the **bare/side-effect** form (`import "…";`) that a boundary
+violation would actually use, plus `require(…)`. A non-vacuity test proves both: the
+walk reaches `src/game/renderer/objects/`, and every pattern reads a
+`@/game/renderer/…` specifier in all five shapes.
+
+**`reuseExistingServer: false` (`playwright.config.ts`).** Playwright's local default
+is `true`, which silently tests whatever is already on the port — defeating
+`--strictPort` and letting a config run exercise *another worktree's* code with a
+green report. `false` is now explicit (with the reasoning in the config), so a busy
+port fails loudly; the deliberate "use the server I started" path stays
+`PS_E2E_BASE_URL`, which removes the managed server entirely. QA-005c ran its own
+vite on `PS_E2E_PORT=5214`.
+
+**The CI envelope (cloud sobering).** The pushed tip on the 2-core software-GL
+runner measured **7 failed / 79 passed (16.9 min)** with `--retries=1`:
+
+| CI failure | class | QA-005c answer |
+|---|---|---|
+| `playthrough.spec.ts:113` unlock chain, 30.9 s × 2 | **wall clock**, not an assertion | the walk now carries a documented 120 s CI budget (`test.setTimeout`) |
+| `refusal.spec.ts:48` L3/L4/L9, 30.8 s | **wall clock**, not an assertion | per-level walk carries a documented 90 s CI budget |
+| `refusal.spec.ts:48` (all params, on loaded machines) | the `cells: []` single-instant probe | the bounded poll above |
+| `transient.spec.ts:116` / `:257` (`frames > 15`, `gridMs < 60`) | local-calibrated constants | runner-aware: the idle frame grid is **measured first**, the recorder window is sized from it, and the `gridMs` ceiling is `max(60, 2 × idle)` |
+| `mobile.mobile.spec.ts:207` R-T4, `Expected: 1, Received: 0` | gesture commit vs HUD read | cached CDP session + a frame after `touchEnd` + the bounded `expectMoves` poll |
+
+The `frames > 15` tooth survives by construction: the window is `max(700 ms,
+24 × idle grid)`, so it spans ≥ ~24 of the *runner's own* frames on any machine
+(local: 700 ms; a 125 ms runner: 3 s). The `gridMs` guard's semantic stays "the
+recorder kept its own machine's frame grid", which is what makes the channel a rAF
+grid and not a 670 ms screenshot round trip — with `idle < 335 ms` as the separate
+"this machine renders frames at all" check, so a runner that only screenshots is
+still failed.
+
+Evidence (QA-005c, own vite on :5214):
+
+| check | result |
+|---|---|
+| `tsc --noEmit` | 0 errors |
+| `vitest run` | **29 files · 543 passed · 3 skipped** — the one new file is the mutation probe; nothing else changed |
+| `npm run levels` | `11/11 level files ok · 0 errors · 15 warnings(0 multi-switch-door) · 11/11 negative cases` → **PASS** |
+| `npx playwright test --list` | **86 tests in 8 files** (unchanged) |
+| `npx playwright test` | **86 passed · 0 failed, zero retries**, × 3 consecutive runs (`3.3 / 3.1 / 3.2 min`), plus a 4th on the committed bytes (3.2 min) |
+| targeted repeats | `latch-door` L6/L10 × 10 and `refusal` L3 × 10 on the reworked `expectActorAt`/`expectMoves` — **60/60 and 10/10** |
+| `npm run build` | ✓ built (chunk-size warning only) |
+
+### 1.4 What QA-005c did **not** do
+
+CI could not be re-run from this lane (no push authority). The cloud-shaped fixes
+above are built from the measured CI roster (wall-clock timeouts, the `cells: []`
+mechanism, local-calibrated constants, gesture commit) and proved locally; the next
+CI run on `develop` is the confirmation, and the orchestrator's item 66 roster is the
+baseline to compare against.
 
 ---
 
@@ -115,12 +225,12 @@ next QA round re-words them alongside the two literal fixes above.
 
 | file | cases | project | what it pins |
 |---|---:|---|---|
-| `playthrough.spec.ts` | 15 | desktop | L1–L11 par route → win dialog; the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the L1→L11 unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; **`test.fail()` pin** for the stale end-panel copy |
+| `playthrough.spec.ts` | 15 | desktop | L1–L11 par route → win dialog; the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the L1→L11 unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L11` |
 | `refusal.spec.ts` | 22 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one |
 | `latch-door.spec.ts` | 14 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all six latch levels, in-core and through the UI |
 | `portal.spec.ts` | 6 | desktop | M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
-| `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1: one press/release cycle in one frame window is exactly one move, two are **five** (**`test.fail()` pin**), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
+| `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
 | `transient.spec.ts` | 6 | desktop | the resampling channel is live; **P1** the 90 ms refusal arc; **P2** the press beat's occlusion proof (timing inequality + pixel-measured geometry) and the bounded arrival transient |
 | `mobile.mobile.spec.ts` | 11 | mobile | 56/72 px bars and the board filling the play area between them; whole-CSS-px square cells above the 40 px floor; ≥ 44×44 buttons with ≥ 8 px gaps; tap = move; distant tap = non-input; swipe ≥ 24 px = move on the dominant axis; R-T6 ring never under touch; R-T5 hint at a 280×600 viewport and the swipe fallback; a touch-only win + dialog `Next`; touch undo |
 
@@ -130,22 +240,24 @@ directions, door states, latch fixtures and portal crossings come from `solve()`
 `portalFixtures()` (`helpers/levels.ts`), the geometry from the renderer's own
 `computeLayout`, and colours from `theme(phase)` tokens. No route, tile, colour or
 pixel count is typed into a spec; a level edit that removes a behaviour fails the run
-instead of leaving a stale fixture behind. (Two dataset-inventory *literals* are the
-known exception — see §1.)
+instead of leaving a stale fixture behind. The **dataset inventories** are derived
+too (`datasetIds` / `doorLevelIds` / `discoveredFileIds` / `inventoryViolation`), with
+exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3).
 
 ---
 
-## 3. The two known defects this suite pins (micro-tickets, not fixes)
+## 3. The two defects this suite once pinned — both landed (regression record)
 
-Both are reported to their owners. QA does **not** edit `src/**` to make a test
-pass; a `test.fail()` pin asserts the *correct* behaviour, so when the owner lands
-the fix the pin starts failing with "expected to fail but passed" and must be
-removed. Neither can rot silently.
+Both were reported to their owners by QA (QA does **not** edit `src/**` to make a
+test pass) and both were fixed by **R-004b**; the `test.fail()` annotations were
+deleted exactly when the fixes landed — the pins could not rot silently, and the
+suite now contains **no `test.fail()` anywhere**. What remains in the two spec files
+is the regression record: the ship-shape assertions that fail if the defect returns.
 
 ### TICKET-QA-005-1 — keyboard events delivered inside one frame window are replayed
 
 **Reproduce (deterministic).** Dispatch two arrow keydown/keyup pairs inside a
-single task (one rendered-frame window) → the game applies **five** moves instead
+single task (one rendered-frame window) → the game applied **five** moves instead
 of two. One pair alone is exactly one move. Verified in `input-replay.spec.ts`
 (`Expected: 2, Received: 5`).
 
@@ -157,36 +269,30 @@ existing guards are per-*consecutive*-event: the `code + timeStamp + type`
 duplicate check never trips on an alternating down/up sequence, and `repeat = key.isDown`
 is already cleared by the preceding keyup when the re-walk reaches the keydown.
 
-**Impact.** Two keys (or a key repeat and a second key) landing inside one frame can
+**Impact.** Two keys (or a key repeat and a second key) landing inside one frame could
 apply extra moves. It is also what made this suite's own L8/L5 playthrough walk flake
 before `pressDirection` paced it to one press per frame — the flake was *not* a rule
 bug.
 
-**Fix (owner: Gameplay Engineer, at the call site).** Phaser re-emits the same event
-object, so `attachInput`'s handler can dedupe on identity:
+**Fix (owner: Gameplay Engineer, landed at the call site).** `createKeyActionHandler`
+(`src/game/input/key-handler.ts`) holds a `WeakSet<KeyboardEvent>` and consumes the
+same event object at most once.
 
-```ts
-const handled = new WeakSet<KeyboardEvent>();
-const onKeyDown = (event: KeyboardEvent): void => {
-  if (handled.has(event)) return;
-  handled.add(event);
-  …
-};
-```
+**Regression.** `input-replay.spec.ts` — the two-pairs test is now an
+**ordinary passing assertion** (`toBe(2)`), surrounded by three neighbours that must
+stay green: one pair = one move; the paced helper; the same burst one frame apart.
+The defect cannot come back without turning the file red.
 
-**Regression.** `input-replay.spec.ts` — the failing pin plus three passing
-neighbours (one pair = one move; the paced helper; the same burst one frame apart),
-so the pin cannot be "fixed" by breaking the ordinary path.
+### TICKET-QA-005-2 — the end panel said the prototype ended at L5
 
-### TICKET-QA-005-2 — the end panel still says the prototype ends at L5
-
-`hud.ts` builds the last level's dialog body as `L1–L5 cleared · L 10: moves 9`.
-That was true when the playable slice was five levels; the registry now ships
-eleven (so the pin walks **L11** since the QA-005b re-pin, and the body it rejects
-reads `… · L 11: moves 4`). Pinned in `playthrough.spec.ts`
-(`expect(won.dialogBody).not.toContain("L1–L5")`), which still rides as a
-`test.fail()`. Owner: the HUD writer (UI/Art spec authority, Gameplay
-implementation).
+`hud.ts` built the last level's dialog body as `L1–L5 cleared · …` — true when the
+playable slice was five levels, false once the registry shipped eleven. **Fixed
+(R-004b)**: the panel now reads the ladder range from the registry's own list
+(`ladderLabelOf`), so it names what actually shipped. **Regression**: the last-level
+test asserts `dialogBody` does **not** contain `L1–L5` *and* **contains**
+`` `L1–L${EXPECTED_LEVEL_COUNT}` `` (QA-005c MINOR-2), so the cross-module chain —
+registry → `ladderLabelOf` → panel copy — is closed end-to-end, and the derivation
+from the single pin means the assertion tracks the dataset instead of a stale string.
 
 ---
 
@@ -265,6 +371,19 @@ documented row plus one frame of quantisation per side. The assertion therefore
 measurement, so it can never pass by luck and never fail because a CI box renders at
 30 fps.
 
+**QA-005c — the whole protocol is now runner-aware, not just that one bound.** The
+cloud run measured the two remaining local constants bankrupt on a 2-core software-GL
+runner (`frames > 15` received **6**, and `gridMs < 60` against ~125 ms frames): the
+guards failed their own premise rather than catching a defect. Both tests now
+**measure the machine's idle frame grid first** (`measureFrameGrid`) and derive from
+it — the recorder window is `max(700 ms, 24 × idle)`, the `gridMs` ceiling is
+`max(60 ms, 2 × idle)` — with a separate `idle < 335 ms` check, so a "runner" that only
+screenshots is still failed. The teeth survive: `frames > 15` is satisfied because the
+window spans ≥ ~24 of the *runner's own* frames on any machine, the `gridMs` claim
+still means "a rAF grid, not a 670 ms round trip", the beat-coverage band widens by
+one *measured* frame, and the pixel claims (peak change, centred centroid, occlusion)
+never depended on wall clock at all.
+
 ### P2 — the written unreachable verdict, with its proof
 
 The press beat is real, one-shot, and **always** painted under the player:
@@ -321,7 +440,7 @@ Recommended addition — **one job, not a gate on the unit job**:
         with: { node-version: "24", cache: npm }
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test    # its own vite on :5198, both projects
+      - run: npx playwright test --retries=1   # its own vite on :5198, both projects
 ```
 
 Rationale, in the repo's own priority order:
@@ -333,13 +452,39 @@ Rationale, in the repo's own priority order:
   the touch claims use CDP (`Input.dispatchTouchEvent`) and are chromium-specific by
   construction, which `swipeTouch`'s doc-comment states.
 * **`--with-deps`** because the runner has no browser; `--strictPort` on :5198 makes
-  a port clash loud rather than a silent reuse.
-* **Do not add `retries` for CI.** A retry hides exactly the timing-dependent class of
-  bug this suite exists to expose. The two `test.fail()` pins fail *deterministically*
-  and are counted as expected failures, so they do not colour the CI result.
+  a port clash loud rather than a silent reuse — and `reuseExistingServer: false`
+  (QA-005c, §1.3) makes it loud on the runner too.
+* **`retries` — the recommendation was overruled, and this is the record.** QA-005
+  recommended *no* retries, because a retry hides exactly the timing-dependent class
+  of bug this suite exists to expose, and because the two `test.fail()` pins were
+  deterministic (they are gone now — both defects landed, §3). The standing ruling
+  (project-status items 57/63, the "FLAKY-named rule") is instead: CI runs
+  `--retries=1`, but a flake that survives its retry is treated as a **named
+  failure**, not noise — it must be reduced to a named site, root-caused, fixed and
+  regression-pinned before the milestone. That is exactly how the QA-005c flake was
+  handled: `refusal.spec.ts:48` and `latch-door.spec.ts:122` were named, reproduced
+  frame-by-frame, fixed in `expectActorAt`, and re-pinned by the suite itself. A
+  retry is therefore tolerated as a *signal*, never as a way to make a run green.
 * **No artifacts needed** — `trace: "retain-on-failure"` is already set, so a failing
   run keeps a trace without a separate upload step; add `actions/upload-artifact` only
   if trace debugging becomes routine.
+
+### The measured CI envelope (QA-005c)
+
+The e2e job on the chain tip ran **86 tests in 16.9 min** on the 2-core
+software-GL runner (`--retries=1`) against **~3.3 min** locally — a ~4–5× slowdown
+that changes what a *wall-clock* budget has to be, while leaving every assertion
+intact. Two consequences are now in the suite, and both are budgets, not weakened
+claims:
+
+* **Long walks carry a documented per-test budget.** The unlock chain (11 levels,
+  11 HUD reads, 10 `Next` clicks) measured 30.9 s against the 30 s default and now
+  carries 120 s; the per-level refusal walk carries 90 s (CI measured L3/L4/L9 at
+  30.8 s). Neither is an assertion — a hang still fails, just later.
+* **Frame-rate-sensitive measurements measure the runner first.** `transient.spec.ts`
+  calibrates its recorder window and its `gridMs` ceiling from the machine's own idle
+  frame grid (§1.3), so "the recorder really ran" and "this is a rAF grid, not a
+  670 ms screenshot" stay meaningful at ~8 fps.
 
 ---
 
@@ -392,19 +537,24 @@ Two lessons that are load-bearing for anyone extending the suite:
   `theme(phase)` token, every count is a program assertion; the suite contains no
   "looks right" step.
 * **No production change to make a test pass.** If a rule looks wrong, the finding is
-  a ticket and a `test.fail()` pin — with the reproduce → root cause → fix →
-  regression trail written down (`§3`).
+  a ticket with the reproduce → root cause → fix → regression trail written down
+  (`§3`), and a `test.fail()` pin *while the owner works on it* — a pin is deleted
+  the moment the fix lands, so the suite currently carries none. QA may not weaken an
+  assertion to hide a finding either: a flake is root-caused (QA-005c's `expectActorAt`
+  poll), and a slowed runner gets an explicit **wall-clock budget**, never a relaxed
+  claim.
 * **No reduced-motion emulation.** The transient protocol needs the flip arcs and the
   press beat to be visible; `Playwright`'s `reducedMotion` is deliberately not set, and
   `FLIP_TIMING.reduced` (`total: 60`) is not what these tests measure.
 * **Adding a level** needs no test edit *for the behaviour claims*: every par route,
   every refusal, every latch fixture and every portal crossing is recomputed from the
-  shipped files. Three **typed inventories** do not follow: `EXPECTED_LEVEL_COUNT`
-  (`helpers/levels.ts`), `playthrough.spec.ts:47` and `latch-door.spec.ts:60` — L11
-  proved it, because the meta-test "the shipped dataset is N levels" and "the latch
-  levels are exactly the levels that ship doors" compare a hand-typed list against the
-  discovered set. Re-pin all three on purpose, in one commit, and re-word the
-  `playthrough.spec.ts` header while you are there (§1's KNOWN DEFER).
+  shipped files. The dataset **inventories** are derived as well since QA-005c
+  (`datasetIds` / `doorLevelIds` / `inventoryViolation`), so the only deliberate edit
+  an unlock needs is **one number**: `EXPECTED_LEVEL_COUNT` in `helpers/levels.ts`.
+  L11 proved why the pin stays: a dataset that re-derived itself would silently turn a
+  missing level into a green suite. The alarm is pinned in both directions by
+  `tests/unit/level-inventory-derivation.test.ts` (add / remove / renumber a file in a
+  scratch copy and the gate fires).
 * **A new object class** (a shipped portal, say) belongs in `tests/unit/**` for its
   painter and here only for the rule-level consequence a player can observe. Portals
   ship at **L11** since R-003, and `portal.spec.ts` pins exactly that rule-level

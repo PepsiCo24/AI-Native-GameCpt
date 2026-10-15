@@ -22,6 +22,23 @@
  * the managed server entirely (that is the parameterised baseURL the ticket asks
  * for: `PS_E2E_BASE_URL=http://localhost:6000 npx playwright test`).
  *
+ * ── `reuseExistingServer: false` — the QA-005c decision (R-004b's live risk) ──
+ * Playwright's local default is `reuseExistingServer: true`: if *anything* is
+ * already listening on the port, Playwright skips starting the server and tests
+ * against it. That default made the isolation above **illusory in the one case
+ * that matters**: an orphaned `vite` from a *different* worktree left on the
+ * default port meant a config run silently exercised another tree's code, with no
+ * error and a green-looking report (observed on this repo's lanes). `--strictPort`
+ * cannot help there — it only fires if Playwright *tries* to start vite, which it
+ * does not while reusing.
+ *
+ * `false` is therefore the only setting that keeps the promise: Playwright always
+ * starts its own server, so a busy port fails loudly at `--strictPort` instead of
+ * silently testing a stranger's bundle. Nothing is lost: the legitimate "I already
+ * started vite" workflow is the explicit `PS_E2E_BASE_URL` path above, which
+ * disables the managed server by design. Port isolation stays per-lane through
+ * `PS_E2E_PORT` (each lane picks its own; QA-005c runs on `PS_E2E_PORT=5214`).
+ *
  * ── Devices ──────────────────────────────────────────────────────────────────
  * Two profiles, both chromium (the only browser installed here):
  * - `desktop` — 1280×900 @1×, no touch. Runs every spec except `*.mobile.spec.ts`.
@@ -65,7 +82,12 @@ export default defineConfig({
     : {
         command: `node_modules/.bin/vite --port ${String(PORT)} --strictPort`,
         url: BASE_URL,
-        reuseExistingServer: true,
+        // QA-005c: `false`, never `true` — see the header. Playwright's local
+        // default (`true`) silently tests whatever is already on the port, which
+        // defeats `--strictPort` and can exercise another worktree's code. A busy
+        // port must fail loudly; the deliberate "use my own server" path is
+        // `PS_E2E_BASE_URL`, which removes the managed server entirely.
+        reuseExistingServer: false,
         timeout: 60_000,
       },
 

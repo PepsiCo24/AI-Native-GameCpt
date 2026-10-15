@@ -30,6 +30,7 @@ import type { Level } from "@/core/level";
 import type { Direction } from "@/core/state/move";
 import type { Phase } from "@/core/state/phase";
 import type { Vec } from "@/core/state/types";
+import { sameVec } from "@/core/state/types";
 import { computeLayout } from "@/game/renderer/grid-mapping";
 import type { BoardLayout } from "@/game/renderer/grid-mapping";
 import { LAYOUT, theme } from "@/game/theme/tokens";
@@ -210,6 +211,39 @@ export function phaseOf(state: HudState): Phase {
   return state.phase === "B" ? "B" : "A";
 }
 
+/**
+ * How long {@link expectMoves} waits for a gesture to commit (ms).
+ *
+ * A pointer gesture is delivered as DOM events and consumed by the game's own
+ * input update on a later animation frame, so "the HUD has not ticked yet" is
+ * not the same claim as "the gesture was a non-input". The window is ~6 frames on
+ * a 60 Hz machine and covers a CI runner rendering ~4× slower; it is not a sleep —
+ * the first poll that sees the counter returns immediately.
+ */
+export const HUD_COMMIT_TIMEOUT_MS = 2_000;
+
+/**
+ * Assert the HUD's move counter reaches `expected`, polling within a bounded
+ * window instead of reading once after a fixed sleep.
+ *
+ * Used after a **gesture** (tap/swipe), whose commit lands on the game's next
+ * input update: a single read at a fixed offset is a race on a loaded runner,
+ * while the claim itself ("this gesture is exactly one move") is unchanged — the
+ * counter must still reach `expected` or the test fails with the last value.
+ */
+export async function expectMoves(
+  page: Page,
+  expected: number,
+  timeoutMs: number = HUD_COMMIT_TIMEOUT_MS,
+): Promise<void> {
+  await expect
+    .poll(async () => (await hud(page)).moves, {
+      timeout: timeoutMs,
+      message: `the HUD move counter should reach ${String(expected)} once the gesture commits`,
+    })
+    .toBe(expected);
+}
+
 /* ─────────────────────────────── input ──────────────────────────────────── */
 
 /**
@@ -249,17 +283,48 @@ export async function pressRestartKey(page: Page): Promise<void> {
   await page.keyboard.press("KeyR");
 }
 
+/** A CDP session for this page — cached, never detached mid-run. */
+type CdpSession = Awaited<ReturnType<ReturnType<Page["context"]>["newCDPSession"]>>;
+const touchSessions = new WeakMap<Page, CdpSession>();
+
+/**
+ * One CDP session per page, reused by every touch gesture.
+ *
+ * Previously each gesture created a session and detached it immediately after
+ * `touchEnd`. Both halves are round trips, and tearing a session down inside the
+ * gesture's own frame window is exactly the kind of input-lifecycle churn that
+ * can leave Chromium's touch state sticky on a loaded runner — the next
+ * `touchStart` is then dropped and the gesture becomes a no-op
+ * (`mobile.mobile.spec.ts` R-T4, `Received: 0`, cloud-only). A session per page
+ * removes that variable; it dies with the page at the end of the test.
+ */
+async function touchSession(page: Page): Promise<CdpSession> {
+  const existing = touchSessions.get(page);
+  if (existing !== undefined) return existing;
+  const client = await page.context().newCDPSession(page);
+  touchSessions.set(page, client);
+  return client;
+}
+
 /**
  * A real touch swipe via CDP (`Input.dispatchTouchEvent`) — the only way to get
  * Phaser's `pointer.wasTouch === true`, which R-T6 requires and which a synthetic
  * `pointerdown` cannot fake. Chromium-only, which is what this suite runs on.
+ *
+ * The whole gesture is dispatched **inside one frame window**: that is R-T4's own
+ * precondition, not a shortcut. R-T4 accepts a swipe only within
+ * `LAYOUT.swipeMaxMs` (500 ms) of game time, so pacing one event per frame would
+ * put a slow runner over the limit and turn the rule into a lottery; keeping the
+ * burst tight means `elapsed ≈ 0` on every machine. After `touchEnd` the helper
+ * waits one animation frame so the game's input update has **consumed** the
+ * sequence before the caller reads the HUD.
  */
 export async function swipeTouch(
   page: Page,
   from: { x: number; y: number },
   to: { x: number; y: number },
 ): Promise<void> {
-  const client = await page.context().newCDPSession(page);
+  const client = await touchSession(page);
   const point = (p: { x: number; y: number }): Array<{ x: number; y: number }> => [
     { x: p.x, y: p.y },
   ];
@@ -278,7 +343,7 @@ export async function swipeTouch(
     });
   }
   await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-  await client.detach();
+  await waitForFrames(page, 1);
 }
 
 /** Tap a page coordinate with real touch input. */
@@ -474,18 +539,71 @@ export async function actorCell(page: Page, geometry: BoardGeometry, level: Leve
   };
 }
 
-/** Assert the player stands on `expected`, with a diagnostic on failure. */
+/**
+ * How long {@link expectActorAt} waits for a move's animation to settle.
+ *
+ * §6.1's `hop` is 130 ms and the §6.5 deny nudge 90 ms; a 2 s window is ~15× the
+ * longest of them, which covers a CI runner rendering ~4× slower
+ * (project-status item 57) without ever being reached on a healthy local run.
+ */
+export const ACTOR_SETTLE_TIMEOUT_MS = 2_000;
+
+/** `true` when the probe read exactly `expected` — the only settled verdict. */
+function settledAt(probe: ActorProbe, expected: Vec): boolean {
+  const cell = probe.cells[0];
+  return probe.cells.length === 1 && cell !== undefined && sameVec(cell, expected);
+}
+
+/**
+ * Assert the player stands on `expected`, **waiting bounded for the move to
+ * settle** and failing honestly if it never does.
+ *
+ * ── Why this polls (root cause of the QA-005c flake) ─────────────────────────
+ * {@link actorCell} reads the player's tile from **one** presented frame at
+ * **one** instant. A legal move is not instant: §6.1's `hop` tween carries the
+ * disc from the old cell centre to the new one over 130 ms, and between the two
+ * centres the body covers **neither** centre — so the probe reports `cells: []`
+ * for the first frames after a press even though the move is perfectly legal.
+ * The refused case is the same shape: the §6.5 deny nudge moves the body off its
+ * centre for 90 ms.
+ *
+ * Measured on this suite (QA-005c, desktop L1, frame-by-frame after a press):
+ * `cells: []` at frame 0, `[1,1]` from frame 1 — and on the mobile profile the
+ * empty window is frames 0–3. `pressDirection` only waits two frames, so an
+ * assertion issued straight after it could land inside that window. That is the
+ * observed failure: `latch-door.spec.ts` (L6/L10) and `refusal.spec.ts` (L3),
+ * `found []` at a mid-hop instant — a measurement artifact, never a rule
+ * failure.
+ *
+ * ── What the poll does NOT do (the claim is not weakened) ────────────────────
+ * - It succeeds only when **exactly one** cell matches **and it is `expected`**;
+ *   `[]` (mid-flight), `[oldCell]` (still overlapping the start) and two matches
+ *   all keep polling and all fail if they persist.
+ * - The window is **bounded** ({@link ACTOR_SETTLE_TIMEOUT_MS}) and the failure
+ *   message carries the last probe's cells and the elapsed time, so a genuine
+ *   wrong-position bug still fails — it just fails after the bound instead of
+ *   instantly.
+ * - It is **event-driven, not a sleep**: the settled case costs one probe and
+ *   adds no wall-clock padding, so a real timing regression cannot hide behind it.
+ */
 export async function expectActorAt(
   page: Page,
   geometry: BoardGeometry,
   level: Level,
   expected: Vec,
+  timeoutMs: number = ACTOR_SETTLE_TIMEOUT_MS,
 ): Promise<void> {
-  const probe = await actorCell(page, geometry, level);
-  const shellPhase = await page.locator(".ps-shell").getAttribute("data-phase");
+  const startedAt = Date.now();
+  let probe = await actorCell(page, geometry, level);
+  let shellPhase = await page.locator(".ps-shell").getAttribute("data-phase");
+  while (!settledAt(probe, expected) && Date.now() - startedAt < timeoutMs) {
+    await waitForFrames(page, 1);
+    probe = await actorCell(page, geometry, level);
+    shellPhase = await page.locator(".ps-shell").getAttribute("data-phase");
+  }
   expect(
     probe.cell,
     `actor tile should be (${String(expected.x)},${String(expected.y)}) in phase ${String(shellPhase)}; ` +
-      `found ${JSON.stringify(probe.cells)}`,
+      `found ${JSON.stringify(probe.cells)} after ${String(Date.now() - startedAt)} ms`,
   ).toEqual(expected);
 }
