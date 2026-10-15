@@ -877,7 +877,21 @@ and a path must be quiescent before dispatch.**
     `noUncheckedIndexedAccess`, YAGNI call handed to RV-007; stale QA prose is correct ownership discipline →
     **QA-005c micro queued** (narration refresh + the REAL config flaw: `reuseExistingServer: true` means a busy
     :5198 silently tests another tree — must fail loudly); end-panel string awaits UA sign-off (folds into UA-0009);
-    AGENTS §6 mirrors (input dedupe + copy source + architecture §4 test-enforced-arrow note) grow DG-004. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+    AGENTS §6 mirrors (input dedupe + copy source + architecture §4 test-enforced-arrow note) grow DG-004.
+56. **PA-006 MERGED (`df353a0` → `b6a702b`) — G4's human-free half is DONE.** Verification: layered §11 over a
+    byte-untouched V0.5 (sole deletion = the version line itself, T6 honored); my own `shasum -c` re-check 5/5 OK;
+    freeze id `df353a0` (RF-1). The instrument is genuinely stricter than asked: BUT rule bound to the DEPLOYED main
+    commit read off Actions (a mid-round deploy stops the round), defect-neutral BD-1/BD-2 contamination clauses so
+    cohort validity does not depend on R-004b's timing, SEAM-1/SEAM-2 pre-registered thresholds with PP-A
+    hand-verified against shipped `l008`, c′ deferred with three repo-fact grounds — deferred loudly, never silently.
+    **Orchestrator rulings on its three OQs:** (1) YES R-004b lands before cohort v2 — but not because the protocol
+    requires it (it is neutral): it lands as the chain's single green merge anyway, and BD-1 is the round's worst
+    threat; (2) no extra P-standby beyond the 3-replacement cap until replacements actually fire — YAGNI; (3) runbook
+    §2.4 frame-capture execution = **Orchestrator lane** (`:5199` reserved), scheduled right after the chain merge
+    (that IS the Entry-3 portal-capture window — one setup serves both). **GD-010 dispatched** into the free slot
+    (L11 law OUTCOME annotation with byte-preservation proof, line-115 tail fix, A3 non-firing record `[5,0]`, OQ1
+    par-HUD ruling — decision by GD, landing in ui-ux deferred to UA). Live: QA-005b, RV-007, GD-010 = 3/3. PA-006
+    worktree + branch pruned; iteration-log RF-1 entry = DG-004. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
