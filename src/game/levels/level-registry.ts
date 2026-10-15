@@ -84,6 +84,25 @@ export function loadLevels(sources: readonly LevelSource[] = LEVEL_SOURCES): Loa
   return { levels, rejected };
 }
 
+/**
+ * `?level=<n>` → the index of level `n` in the playable list (item 4: deep link).
+ *
+ * The parameter is an **entry selector**, never an unlock system: it picks where
+ * the session starts, and that is all it does — nothing is persisted, and the
+ * win/`next` flow is untouched (`docs/ui-ux.md` §1 has no level-select screen;
+ * `AGENTS.md` §10 forbids progression systems).
+ *
+ * Out of range / unknown / absent ⇒ index **0** (L1). The match is by
+ * `Level.id`, not by array position, so a future non-contiguous dataset still
+ * resolves honestly; a level that is not in the playable list falls back rather
+ * than silently shifting by one.
+ */
+export function startIndexForLevel(levels: readonly Level[], requested: number | null): number {
+  if (requested === null || levels.length === 0) return 0;
+  const index = levels.findIndex((level) => level.id === requested);
+  return index < 0 ? 0 : index;
+}
+
 /** Validated levels in play order, or a hard failure if the slice is empty. */
 export function loadPlayableLevels(): readonly Level[] {
   const { levels, rejected } = loadLevels();

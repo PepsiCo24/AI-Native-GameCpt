@@ -40,6 +40,18 @@ export type MoveOutcome =
   /** Legal move that landed on the goal; the win latched. */
   | "won";
 
+/** Construction options. Both are entry bookkeeping, never rules. */
+export interface GameSessionOptions {
+  /**
+   * Level index to start the session at (`?level=<n>` → `startIndexForLevel`,
+   * dev / playtest / E2E). Defaults to `0` (L1). A value that is not an integer
+   * inside `0..levels.length - 1` falls back to `0` — a bad deep link must never
+   * produce an empty or unplayable session. Nothing is persisted, and this does
+   * **not** bypass the win path: the state is `initialState(level)`, move 0.
+   */
+  readonly startIndex?: number;
+}
+
 export class GameSession {
   readonly events = new EventBus();
 
@@ -47,11 +59,14 @@ export class GameSession {
   private index = 0;
   private gs: GameState;
 
-  constructor(levels: readonly Level[]) {
+  constructor(levels: readonly Level[], options: GameSessionOptions = {}) {
     if (levels.length === 0) {
       throw new Error("GameSession requires at least one validated level");
     }
     this.levels = levels;
+    const requested = options.startIndex ?? 0;
+    this.index =
+      Number.isInteger(requested) && requested >= 0 && requested < levels.length ? requested : 0;
     this.gs = initialState(this.currentLevel);
   }
 
