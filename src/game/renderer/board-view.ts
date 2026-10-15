@@ -94,7 +94,6 @@ import type { L4Slot, TileObjectSpec, TileObjectTransition } from "@/game/render
 import {
   assertLayerOrder,
   assertLayerStack,
-  L4_DEPTH_BASE,
   l4Depth,
   LAYER_DEPTH,
 } from "@/game/renderer/layers";
@@ -280,11 +279,19 @@ export class BoardView {
     // per-slot order *inside* L4 stays `assertLayerOrder`'s job above, which is
     // where the §3.1d arithmetic lives. `backgroundImage` is absent because no art
     // exists yet — the guard checks what was created, never what is merely reserved.
+    //
+    // `objects` reports the depth of the **real bottom L4 container**, not the
+    // constant `L4_DEPTH_BASE`: the base is a group marker and no object is ever
+    // created at it, so passing the constant would make that row of the guard
+    // unfalsifiable (`assertLayerStack` checks `LAYER_GROUP_BASE` rows as a range).
     const observed: readonly ObservedLayer[] = [
       { name: "pageGround", depth: this.pageGfx.depth },
       { name: "boardPlate", depth: this.plateGfx.depth },
       { name: "cellPlate", depth: this.plateGfx.depth },
-      { name: "objects", depth: L4_DEPTH_BASE },
+      {
+        name: "objects",
+        depth: Math.min(...this.l4Containers.map((container) => container.gfx.depth)),
+      },
       { name: "actor", depth: this.actorGfx.depth },
       { name: "cellFeedback", depth: this.feedbackGfx.depth },
       { name: "plateTint", depth: this.tintGfx.depth },

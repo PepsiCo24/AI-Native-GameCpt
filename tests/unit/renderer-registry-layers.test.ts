@@ -47,6 +47,7 @@ import {
   L4_DEPTH_BASE,
   l4Depth,
   LAYER_DEPTH,
+  LAYER_GROUP_BASE,
   LAYER_ORDER,
   LAYER_STACK,
 } from "@/game/renderer/layers";
@@ -284,16 +285,29 @@ describe("layer stack — §3.1d order and §5.2 depths", () => {
   });
 
   it("assertLayerStack accepts the depths board-view.ts actually creates", () => {
+    // `objects` reports the real bottom L4 container (base + §3.1d slot 0 = 41), not the
+    // group base 40 — the base is a marker no object is created at (RV-005 m-9).
     const observed: readonly ObservedLayer[] = [
       { name: "pageGround", depth: 0 },
       { name: "boardPlate", depth: 20 },
       { name: "cellPlate", depth: 20 },
-      { name: "objects", depth: 40 },
+      { name: "objects", depth: l4Depth(L4_SLOT.portal) },
       { name: "actor", depth: 50 },
       { name: "cellFeedback", depth: 60 },
       { name: "plateTint", depth: 70 },
     ];
     expect(() => { assertLayerStack(observed); }).not.toThrow();
+    // Every real L4 container depth is legal for that row (any container could be the
+    // bottom one), and the group base itself is not an object:
+    for (const spec of TILE_OBJECTS) {
+      expect(() => {
+        assertLayerStack(observed.map((layer) =>
+          layer.name === "objects" ? { name: "objects", depth: l4Depth(spec.layer) } : layer,
+        ));
+      }, spec.kind).not.toThrow();
+    }
+    expect(LAYER_GROUP_BASE.has("objects")).toBe(true);
+    expect([...LAYER_GROUP_BASE]).toEqual(["objects"]);
     // The reserved background layer is absent until A-04/A-05 land, and that is
     // legal: the guard checks what exists, never what is merely reserved. When the
     // art does land it slots in at depth 5, between the page and the plate.
@@ -307,18 +321,27 @@ describe("layer stack — §3.1d order and §5.2 depths", () => {
   });
 
   it("assertLayerStack fails loudly on a wrong depth, a descending order or a bad table", () => {
+    // The `objects` row is a group base checked as [40, 50): the base itself, anything
+    // below it and anything at/above the actor are all refused. (V0.7 passed the
+    // constant 40 here, so this row could never fail; RV-005 m-9.)
+    for (const depth of [40, 39, 20, 50, 51]) {
+      expect(() => {
+        assertLayerStack([{ name: "objects", depth }]);
+      }, `objects at ${String(depth)}`).toThrow(/§5\.2/);
+    }
+    // A non-group layer still has to match its depth exactly.
     expect(() => {
-      assertLayerStack([{ name: "objects", depth: 41 }]);
+      assertLayerStack([{ name: "actor", depth: 49 }]);
     }).toThrow(/§5\.2/);
     expect(() => {
       assertLayerStack([
         { name: "actor", depth: 50 },
-        { name: "objects", depth: 40 },
+        { name: "objects", depth: 41 },
       ]);
     }).toThrow(/§5\.2/);
     expect(() => {
       assertLayerStack([
-        { name: "objects", depth: 40 },
+        { name: "objects", depth: 41 },
         { name: "boardPlate", depth: 20 },
       ]);
     }).toThrow(/§5\.2/);

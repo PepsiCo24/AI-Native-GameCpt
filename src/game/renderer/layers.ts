@@ -109,6 +109,21 @@ export interface ObservedLayer {
 }
 
 /**
+ * §5.2 rows whose depth is a **group base**, not a single created object.
+ *
+ * `objects` is the L4 group: its containers are created at `L4_DEPTH_BASE + slot`
+ * (§3.1d, `assertLayerOrder`'s job), so *no object ever sits at exactly 40*. Reporting
+ * the constant `40` for this row — which is what V0.7 did — made check 2 of
+ * {@link assertLayerStack} unconditionally true for it, i.e. the `objects` row could
+ * not fail. The row now reports the real bottom container depth and is checked as a
+ * **range** instead: `(base, next layer's base)` — passing the base itself, or any
+ * depth at/below it, is refused.
+ */
+export const LAYER_GROUP_BASE: ReadonlySet<CanvasLayerName> = new Set<CanvasLayerName>([
+  "objects",
+]);
+
+/**
  * §5.2 boot guard. Called by `board-view.ts` with the depths it just created, so a
  * mis-numbered container fails loudly at boot instead of shipping a picture that
  * contradicts the spec's one fixed stack.
@@ -116,7 +131,11 @@ export interface ObservedLayer {
  * Checks, in order:
  * 1. {@link LAYER_STACK} is strictly ascending (the table itself is consistent, so
  *    a data edit cannot quietly collapse two layers onto one depth);
- * 2. every observed layer's depth **equals** the table's value for that name;
+ * 2. every observed layer's depth **equals** the table's value for that name — except
+ *    the {@link LAYER_GROUP_BASE} rows, whose real object sits at `base + slot` inside
+ *    the group and which are therefore checked as the open range
+ *    `(base, next layer's base)`. Passing the base itself is refused: it is a group
+ *    marker, not an object, and allowing it is what made this row unfalsifiable;
  * 3. the observed layers appear in §5.2 order and never go *down* (equal depths are
  *    legal only for the `boardPlate`/`cellPlate` pair, which shares a container);
  * 4. `objects` sits strictly above `boardPlate` and strictly below `actor` — the
@@ -147,7 +166,22 @@ export function assertLayerStack(observed: readonly ObservedLayer[]): void {
   let lastObservedDepth = -Infinity;
   for (const layer of observed) {
     const expected = LAYER_DEPTH[layer.name];
-    if (layer.depth !== expected) {
+    if (LAYER_GROUP_BASE.has(layer.name)) {
+      // The real object for a group-base row sits one or more slots **above** the base
+      // and must stay strictly below the next named layer. Strict at both ends on
+      // purpose: the base itself is not an object, so passing `LAYER_DEPTH.objects`
+      // (the constant V0.7 passed, making this row unfalsifiable) now throws.
+      const nextName = LAYER_ORDER[LAYER_ORDER.indexOf(layer.name) + 1];
+      const ceiling = nextName === undefined ? Number.POSITIVE_INFINITY : LAYER_DEPTH[nextName];
+      if (!(layer.depth > expected && layer.depth < ceiling)) {
+        throw new Error(
+          `docs/ui-ux.md §5.2: layer "${layer.name}" is a group base at ${String(expected)} — ` +
+            `its real objects sit strictly above the base and below the next layer, so an ` +
+            `observed depth for it must lie in (${String(expected)}, ${String(ceiling)}), ` +
+            `found ${String(layer.depth)}`,
+        );
+      }
+    } else if (layer.depth !== expected) {
       throw new Error(
         `docs/ui-ux.md §5.2: layer "${layer.name}" must draw at depth ${String(expected)}, ` +
           `found ${String(layer.depth)}`,
