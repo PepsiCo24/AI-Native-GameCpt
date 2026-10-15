@@ -52,6 +52,31 @@
  * the stronger statement: the geometry and the timing make the stroke invisible by
  * construction, and the pixels confirm it (the settled scanline across the switch
  * box is uniform actor body).
+ *
+ * ── QA-005e: the natural arm asserts an implication, not a prediction ────────
+ * QA-005d's P1 walked the refusal, *pre-measured* the runner's frame grid, picked
+ * the branch that mean interval implied, and then **required** that branch's
+ * observation. On a runner whose intervals jitter around the arc's own 90 ms length
+ * those are two independent draws from one noisy distribution, and on run
+ * `38784574025` they contradicted each other in both directions — attempt 1 picked
+ * "no beat can exist" and received `onset 643.4` ms; retry #1 picked "the beat is
+ * owed" and received `null`.
+ *
+ * The claim that survives the jitter is stated *after* the recording, from that
+ * recording's own stamps: **if a presented frame fell strictly inside
+ * `(startAt, startAt + 90)`, the beat was owed** (so an absent beat is a real
+ * failure, named `BEAT-REQUIRED-ABSENT`); **if no frame could, an absent beat is a
+ * resolution limit** (`RESOLVE-LIMIT`, with the stamps printed as its
+ * justification); and **an observed beat always owes the full pixel shape** —
+ * whichever draw the runner produced. The mapping lives in one place,
+ * `arcHandling` in `helpers/frame-model.ts`, and every cell of it is unit-proved
+ * with synthetic jitter tables in `tests/unit/frame-model.test.ts`.
+ *
+ * No tooth is traded for this: on a 60 Hz grid short intervals always exist, so an
+ * absent beat there still fails loudly; the fabricated coarse pin (P1b) keeps the
+ * exact prediction its own construction guarantees; and the observed-beat shape
+ * clauses (bounded, centred, settles, under the flip budget) are unchanged and now
+ * run on every machine for every observed beat.
  */
 
 import { expect, test } from "@playwright/test";
@@ -83,8 +108,8 @@ import {
   stopRecorder,
 } from "./helpers/capture";
 import type { CaptureStats, Roi, TransientReport } from "./helpers/capture";
-import { arcVerdict, bracketFrames } from "./helpers/frame-model";
-import type { ArcVerdict } from "./helpers/frame-model";
+import { arcHandling, arcImplication, arcVerdict, arcWindow, describeIntervalHistogram, intervalsBelow } from "./helpers/frame-model";
+import type { ArcHandling, ArcImplication, ArcVerdict, ArcWindow } from "./helpers/frame-model";
 import { installFrameStretcher } from "./helpers/frame-stretch";
 import {
   eventsOfKind,
@@ -128,7 +153,7 @@ const MIN_RECORD_FRAMES = 24;
  */
 const GRID_CEILING_MS = 60;
 
-/* ───────────────── QA-005d: the refusal walk, and its two outcomes ─────────── */
+/* ───────── QA-005d/QA-005e: the refusal walk, and its outcomes ─────────────── */
 
 /** The `probeMark` label that windows the observer log around the refused press. */
 const P1_TRIGGER_MARK = "qa005d-p1-refusal-trigger";
@@ -137,13 +162,17 @@ const P1_TRIGGER_MARK = "qa005d-p1-refusal-trigger";
  * The fabricated per-frame budget of the **coarse-grid proof** (P1b), in ms.
  *
  * Comfortably above `TIMINGS.deny.dur` (90 ms), so the fabricated interval cannot
- * straddle the arc's own length: the classification is then a *prediction* the
- * runner has to obey, instead of a coincidence of a slow machine.
+ * straddle the arc's own length: because the stretcher burns once per frame, *every*
+ * interval on that fabric is longer than the arc. There the classification is a
+ * **prediction the runner has to obey** — exact by construction, which is why
+ * QA-005e keeps it while it removes the same prediction from the natural arm.
  */
 const P1_STRETCH_MS = 140;
 
 /** Everything one P1-style refusal walk measured — whichever branch asserts on it. */
 interface RefusalWalk {
+  /** The arm label carried by every message, attachment and log line. */
+  readonly arm: RefusalArm;
   readonly ref: LevelRef;
   readonly geometry: BoardGeometry;
   /** The player's starting tile — where a refusal must leave them. */
@@ -152,24 +181,44 @@ interface RefusalWalk {
   readonly roi: Roi;
   readonly report: TransientReport;
   readonly stats: readonly CaptureStats[];
+  /** The observer's own `requestAnimationFrame` stamps for this walk. */
+  readonly probeFrames: readonly number[];
+  /**
+   * The §6.5 window, read **post hoc** from this recording's own stamps (QA-005e):
+   * whether a presented frame could have painted the arc at all.
+   */
+  readonly arc: ArcWindow;
   /** The frame interval spanning the keydown, in ms — the arc's resolution limit. */
   readonly gapMs: number;
+  /**
+   * The mean-grid arbiter (QA-005d). Exact for the gap it is handed, but **not**
+   * decisive for the natural arm since QA-005e: a jittering runner can produce a
+   * short bracket on a coarse mean and vice versa. Kept because the fabricated
+   * coarse pin uses it to prove its own fabrication.
+   */
   readonly verdict: ArcVerdict;
+  /** The recorded intervals shorter than the arc, and all of them — the census. */
+  readonly shortIntervals: number;
+  readonly intervalCount: number;
   /** `max(GRID_CEILING_MS, 2 × the idle grid)` — the runner-relative ceiling. */
   readonly gridCeiling: number;
 }
 
+/** Which machine the arm is measuring — carried into every failure message. */
+type RefusalArm = "natural-grid" | "fabricated-coarse";
+
 /**
  * Run the P1 protocol once and return the measurement.
  *
- * ── The model this measures (QA-005d) ────────────────────────────────────────
+ * ── The model this measures (QA-005d, re-read post hoc by QA-005e) ───────────
  * A refusal is recorded with `denyFeedback(dir, scene.time.now)` **on the DOM
- * keydown**, i.e. between two animation steps, where `scene.time.now` still holds
- * the *previous* frame's stamp (`Tₙ`). `BoardView.update` drops the deny at
- * `time >= startAt + deny.dur`, and it is called with the next step's stamp
- * (`Tₙ₊₁`). So the 90 ms arc is painted **iff a frame stamp falls strictly inside
- * `(Tₙ, Tₙ + 90)`** — equivalently, iff the interval between the two frames that
- * bracket the keydown is shorter than the arc:
+ * keydown** — keyed through Phaser's `KeyboardPlugin`, whose `keydown` emission is
+ * synchronous with the DOM event — i.e. between two animation steps, where
+ * `scene.time.now` still holds the *previous* frame's stamp (`Tₙ`). `BoardView.update`
+ * drops the deny at `time >= startAt + deny.dur`, and it is called with the next
+ * step's stamp (`Tₙ₊₁`). So the 90 ms arc is painted **iff a frame stamp falls
+ * strictly inside `(Tₙ, Tₙ + 90)`** — equivalently, iff the interval between the two
+ * frames that bracket the keydown is shorter than the arc:
  *
  * ```
  * Tₙ₊₁ - Tₙ < 90  →  p < 1  →  nudge sin(πp)·4·renderScale and the `feedback.deny`
@@ -180,10 +229,14 @@ interface RefusalWalk {
  * This is an exact, source-level claim about `BoardView`/`LevelScene`, and it is
  * what makes the pixel assertion *conditional on the runner*: on a 60 Hz machine
  * the interval is ~17 ms and the beat is owed; on the 2-core software-GL CI
- * runner the interval straddles 90 ms, which is why the same test came back
- * `onset: null` twice and passed on a retry there. The walk therefore *measures*
- * the interval — from the page's own frame stamps and the delivered keydown
- * (`helpers/probe.ts`) — and reports it, instead of assuming either branch.
+ * runner the interval straddles 90 ms.
+ *
+ * The walk therefore measures the interval — from the page's own frame stamps and
+ * the delivered keydown (`helpers/probe.ts`) — and reports it. QA-005e's change is
+ * that the *branch* is no longer chosen from a pre-measured mean: the stamps of
+ * **this** recording decide, after the fact, whether a frame could have painted
+ * the arc ({@link ArcWindow}), and that fact plus the observed beat is the whole
+ * classification ({@link arcImplication}).
  *
  * `gridWindowMs` sizes the frame-grid calibration: the default 600 ms is QA-005c's
  * protocol value for a ~60 Hz machine, and the coarse-grid test passes a longer
@@ -191,7 +244,7 @@ interface RefusalWalk {
  */
 async function refusalWalk(
   page: Page,
-  options: { readonly gridWindowMs?: number } = {},
+  options: { readonly gridWindowMs?: number; readonly arm: RefusalArm },
 ): Promise<RefusalWalk> {
   const ref = refOf(REFS, 1);
   await installProbe(page);
@@ -244,23 +297,33 @@ async function refusalWalk(
   expect(trigger?.code, "the delivered keydown is the refused direction").toBe(ARROW_KEY.left);
   if (trigger === undefined) throw new Error("[e2e] the refused keydown was not recorded");
 
-  // ── and the classification: the frame interval the deny was measured in ────
-  const bracket = bracketFrames(snapshot.frames, trigger.t);
+  // ── and the classification: the window this recording's own stamps license ──
+  // Both frames bracketing the keydown must have been recorded — the deny's
+  // window opens at the first of them (`scene.time.now` during the keydown) and
+  // closes one frame's worth of stamps later. Their absence is "not measured",
+  // never "no frame inside", so the walk refuses to classify without them.
+  const arc = arcWindow(snapshot.frames, trigger.t, TIMINGS.deny.dur);
   expect(
-    bracket.gapMs,
-    "both frames bracketing the keydown were recorded — the deny's window opens at the first of them (`scene.time.now` during the keydown) and closes one frame later",
+    arc,
+    "both frames bracketing the keydown were recorded — the deny's window opens at the first of them (`scene.time.now` during the keydown) and closes at `startAt + 90`",
   ).not.toBeNull();
-  const gapMs = bracket.gapMs ?? 0;
+  if (arc === null) throw new Error("[e2e] the refused keydown was not bracketed");
+  const gapMs = arc.gapMs;
 
   const walk: RefusalWalk = {
+    arm: options.arm,
     ref,
     geometry,
     player,
     roi,
     report,
     stats,
+    probeFrames: snapshot.frames,
+    arc,
     gapMs,
     verdict: arcVerdict(gapMs, TIMINGS.deny.dur),
+    shortIntervals: intervalsBelow(snapshot.frames, TIMINGS.deny.dur),
+    intervalCount: Math.max(0, snapshot.frames.length - 1),
     gridCeiling,
   };
 
@@ -271,8 +334,30 @@ async function refusalWalk(
   console.log(
     `[QA-005d] transient.spec.ts P1 refusal — frames=${String(report.frames)} gridMs=${report.gridMs.toFixed(1)} gapMs=${gapMs.toFixed(1)} denyDurMs=${String(TIMINGS.deny.dur)} verdict=${walk.verdict} onset=${report.onset === null ? "null" : report.onset.toFixed(1)} settled=${report.settledAt === null ? "null" : report.settledAt.toFixed(1)} peakPrevChanged=${String(report.peakPrevChanged)}`,
   );
+  // …and the QA-005e line carries the *post-hoc* facts the arm actually branches
+  // on: the window's absolute stamps, which of them fell inside, and the interval
+  // census. A red can be read from this line without opening the trace.
+  console.log(
+    `[QA-005e] transient.spec.ts P1 arm=${walk.arm} window=(${arc.startAt.toFixed(1)},${arc.endAt.toFixed(1)}) bracketingGapMs=${gapMs.toFixed(1)} stampsInsideWindow=${String(arc.inside.length)} implication=${arcImplication(arc, report.onset !== null)} handling=${arcHandling(arcImplication(arc, report.onset !== null))} shortIntervals=${String(walk.shortIntervals)}/${String(walk.intervalCount)} histogram=${describeIntervalHistogram(snapshot.frames)}`,
+  );
 
   return walk;
+}
+
+/** `[QA-005e] transient.spec.ts P1 (natural-grid)` — the label every red carries. */
+function armLabel(walk: RefusalWalk): string {
+  return `[QA-005e] transient.spec.ts P1 (${walk.arm}, gridMs=${walk.report.gridMs.toFixed(1)}, onset=${walk.report.onset === null ? "null" : walk.report.onset.toFixed(1)})`;
+}
+
+/** The measured justification, in one sentence, for any outcome a red has to explain. */
+function windowJustification(walk: RefusalWalk): string {
+  const { arc } = walk;
+  return (
+    `window (${arc.startAt.toFixed(1)}, ${arc.endAt.toFixed(1)}) ms contains ` +
+    `${String(arc.inside.length)} recorded frame stamp(s); bracketing gap ${walk.gapMs.toFixed(1)} ms; ` +
+    `${String(walk.shortIntervals)}/${String(walk.intervalCount)} recorded intervals were shorter than ${String(TIMINGS.deny.dur)} ms ` +
+    `(histogram ${describeIntervalHistogram(walk.probeFrames)})`
+  );
 }
 
 /** The channel guards both branches share: the recorder really ran, on a real grid. */
@@ -291,37 +376,58 @@ function expectRecorderHealthy(walk: RefusalWalk): void {
 }
 
 /**
- * The **resolvable** branch: the runner's grid did put a frame inside the arc, so
- * the pixel claim is owed and is asserted in full.
+ * The **observed-beat** branch: a beat appeared in the player's cell, so the pixel
+ * claim is owed and is asserted in full — on every machine, on every run.
+ *
+ * (QA-005e) This is reached for both observed implication classes. When the
+ * recording's own stamps put a frame inside the window the beat is *required*;
+ * when they do not, a beat is still an observed transient of the refusal's own
+ * cell and owes exactly the same shape clauses. What it is **not** is a licence to
+ * assert a predicted absence — that pre-judged prediction is the assertion design
+ * QA-005e removed.
  */
 function expectArcOnTheGrid(walk: RefusalWalk): void {
   const { report, stats } = walk;
+  const label = armLabel(walk);
 
   // ── the shape: frozen, then moved, then stopped ───────────────────────────
-  expect(report.onset, "the refusal beat reached the frame grid").not.toBeNull();
-  expect(report.durationMs, "the beat is short — far below the 220 ms flip budget").not.toBeNull();
+  expect(
+    report.onset,
+    `${label}: the refusal beat reached the frame grid — ${windowJustification(walk)}`,
+  ).not.toBeNull();
+  expect(
+    report.durationMs,
+    `${label}: the beat is short — far below the 220 ms flip budget — ${windowJustification(walk)}`,
+  ).not.toBeNull();
   // Bounded by the flip budget **plus frame quantisation**: a coarse grid cannot
   // fake a long beat, and a slow runner is not failed for its own frame width.
-  expect(report.durationMs ?? 999, "the refusal beat is resolved, not smeared").toBeLessThanOrEqual(
-    TIMINGS.total + 2 * report.gridMs,
-  );
+  expect(
+    report.durationMs ?? 999,
+    `${label}: the refusal beat is resolved, not smeared — ${windowJustification(walk)}`,
+  ).toBeLessThanOrEqual(TIMINGS.total + 2 * report.gridMs);
   // Self-calibrating: the measured window is the documented 90 ms row plus at most
   // one frame of quantisation on each side, so a coarse grid cannot fake a long beat.
   expect(
     report.durationMs ?? 999,
-    "the measured window is the §6.5 deny row plus frame quantisation",
+    `${label}: the measured window is the §6.5 deny row plus frame quantisation`,
   ).toBeLessThanOrEqual(TIMINGS.deny.dur + 2 * report.gridMs + 4);
-  expect(report.peakPrevChanged, "the beat actually changed pixels").toBeGreaterThan(50);
-  expect(report.settledAt, "the board returns to a settled picture").not.toBeNull();
+  expect(
+    report.peakPrevChanged,
+    `${label}: the beat actually changed pixels — ${windowJustification(walk)}`,
+  ).toBeGreaterThan(50);
+  expect(
+    report.settledAt,
+    `${label}: the board returns to a settled picture — ${windowJustification(walk)}`,
+  ).not.toBeNull();
 
   // ── the anchor: the movement is *at the player's tile*, not somewhere else ─
   const moving = stats.filter((frame) => frame.changed > 0 && frame.centroid.x !== 0);
-  expect(moving.length).toBeGreaterThan(0);
+  expect(moving.length, `${label}: at least one frame moved inside the ROI`).toBeGreaterThan(0);
   const centre = { x: walk.roi.w / 2, y: walk.roi.h / 2 };
   for (const frame of moving) {
     expect(
       Math.hypot(frame.centroid.x - centre.x, frame.centroid.y - centre.y),
-      `the refusal transient must stay inside the player's cell (t=${frame.t.toFixed(0)} ms)`,
+      `${label}: the refusal transient must stay inside the player's cell (t=${frame.t.toFixed(0)} ms)`,
     ).toBeLessThan(walk.roi.w / 4);
   }
 }
@@ -334,46 +440,133 @@ function expectArcOnTheGrid(walk: RefusalWalk): void {
  */
 async function expectRefusalState(page: Page, walk: RefusalWalk): Promise<void> {
   const state = await hud(page);
-  expect(state.moves, "a refusal is not a move").toBe(0);
-  expect(state.phase, "a refusal is not a flip").toBe(walk.ref.level.startPhase);
+  expect(state.moves, `${armLabel(walk)}: a refusal is not a move`).toBe(0);
+  expect(state.phase, `${armLabel(walk)}: a refusal is not a flip`).toBe(walk.ref.level.startPhase);
 }
 
 /**
- * The **RESOLVE-LIMIT** branch — what is still owed when the runner's grid cannot
+ * The **beat-owed-and-absent** branch (QA-005e) — a real failure, and it must say so
+ * in its own words.
+ *
+ * A presented frame fell strictly inside `(startAt, startAt + 90)`, so
+ * `BoardView.paintActor` ran with `this.deny` set at that step and painted the
+ * `feedback.deny` ring tint (alpha 0.5) and the nudge. An absent beat therefore
+ * cannot be a limit of the machine: the trigger or the recording dropped it. This
+ * branch exists so the contradiction fails **loudly, by name, with the stamps** —
+ * never as a silent `Received: null` on a prediction whose premise was noise.
+ */
+function expectBeatRequired(walk: RefusalWalk): void {
+  const label = armLabel(walk);
+  const justification = windowJustification(walk);
+  const body = {
+    site: "transient.spec.ts P1",
+    arm: walk.arm,
+    implication: "beat-required-absent" as ArcImplication,
+    handling: arcHandling("beat-required-absent") as ArcHandling,
+    reason:
+      "a presented frame fell strictly inside the §6.5 deny window, so the beat was owed — an absent beat is a real failure, not a resolution limit",
+    denyDurMs: TIMINGS.deny.dur,
+    window: {
+      startAt: walk.arc.startAt,
+      endAt: walk.arc.endAt,
+      gapMs: walk.arc.gapMs,
+      inside: walk.arc.inside,
+      frameInWindow: walk.arc.frameInWindow,
+    },
+    probeFrames: walk.probeFrames,
+    shortIntervals: walk.shortIntervals,
+    intervalCount: walk.intervalCount,
+    histogram: describeIntervalHistogram(walk.probeFrames),
+    recorder: {
+      frames: walk.report.frames,
+      gridMs: walk.report.gridMs,
+      onset: walk.report.onset,
+      settledAt: walk.report.settledAt,
+      durationMs: walk.report.durationMs,
+      peakPrevChanged: walk.report.peakPrevChanged,
+    },
+  };
+  console.log(`[QA-005e] BEAT-REQUIRED-ABSENT ${label}: ${justification}`);
+  test.info().annotations.push({
+    type: "BEAT-REQUIRED-ABSENT",
+    description: `${label}: the recording's own stamps put a frame inside the deny window, so the arc was paintable; the beat is absent. ${justification}`,
+  });
+  void test.info().attach("qa005e-p1-beat-required-absent.json", {
+    contentType: "application/json",
+    body: Buffer.from(`${JSON.stringify(body, null, 2)}\n`),
+  });
+  expect(
+    walk.report.onset,
+    `${label}: the recording's own stamps put ${String(walk.arc.inside.length)} frame(s) inside the §6.5 deny window ` +
+      `(deny window (${walk.arc.startAt.toFixed(1)}, ${walk.arc.endAt.toFixed(1)}) ms, bracketing gap ${walk.gapMs.toFixed(1)} ms < deny.dur ${String(TIMINGS.deny.dur)} ms), ` +
+      `so \`BoardView.paintActor\` painted the \`feedback.deny\` ring tint at that step — yet no beat appeared. ` +
+      `This is a real failure (the trigger was dropped or the recorder missed the frame), not a resolution limit. ${justification}`,
+  ).not.toBeNull();
+}
+
+/**
+ * The **RESOLVE-LIMIT** branch — what is still owed when no presented frame can
  * hold the arc at all.
  *
  * A limit that is declared is engineering; a limit that is silently dropped is a
- * lie. So when the measured frame interval is at least the transient's own
- * length, the pixel claim is replaced by an explicitly named outcome plus every
- * deterministic claim the refusal still owes:
+ * lie. So when **this recording's own stamps** prove that no frame time fell inside
+ * `(startAt, startAt + deny.dur)`, the pixel claim is replaced by an explicitly
+ * named outcome plus every deterministic claim the refusal still owes:
  *
- * 1. the arithmetic, asserted in the direction that makes the limit legitimate
- *    (`gap >= deny.dur`, and the recorder reports **no** onset — so a "no beat"
- *    reading can never be produced by a bug while frames were available);
+ * 1. the justification, asserted in the direction that makes the limit legitimate:
+ *    the window contains **no** recorded frame stamp (and the bracketing interval is
+ *    at least `deny.dur`), plus the recorder reports **no** onset — so a "no beat"
+ *    reading can never be produced by a bug while a frame was available;
  * 2. the refusal itself: no move, no flip (the core's identity contract);
  * 3. the player still on their own tile, **read from the pixels** — so "the
  *    refusal happened" cannot be confused with "the board froze";
  * 4. the read-back channel still alive (real colour, not a black WebGL buffer);
  * 5. a positive control through the *same* channel on the *same* runner, so the
  *    delivered-but-refused press is distinguished from a lost input.
+ *
+ * `mode` only labels *why* the absence is expected: `justified` (this recording's
+ * stamps permit it) for the natural arm, `predicted` for the fabricated coarse pin,
+ * whose every interval is longer than the arc by construction, so the prediction is
+ * physically exact there.
  */
-async function expectResolveLimit(page: Page, walk: RefusalWalk, reason: string): Promise<void> {
+async function expectResolveLimit(
+  page: Page,
+  walk: RefusalWalk,
+  reason: string,
+  mode: "justified" | "predicted",
+): Promise<void> {
+  const label = armLabel(walk);
+  const justification = windowJustification(walk);
   const limit =
-    `RESOLVE-LIMIT transient.spec.ts P1 — ${reason}: the frame interval spanning the trigger is ` +
-    `${walk.gapMs.toFixed(1)} ms >= §6.5 deny.dur ${String(TIMINGS.deny.dur)} ms, so no presented frame can fall ` +
-    `inside the refusal arc's window and no pixel evidence can exist on this runner`;
+    `RESOLVE-LIMIT transient.spec.ts P1 arm=${walk.arm} — ${reason}: no presented frame can fall inside the §6.5 ` +
+    `deny window (${walk.arc.startAt.toFixed(1)}, ${walk.arc.endAt.toFixed(1)}) ms, so no pixel evidence can exist ` +
+    `on this runner [${mode}]`;
   // Greppable in the CI log, and carried in the report as a named outcome.
-  console.log(`[QA-005d] ${limit}`);
-  test.info().annotations.push({ type: "RESOLVE-LIMIT", description: limit });
-  await test.info().attach("qa005d-p1-resolve-limit.json", {
+  console.log(`[QA-005e] ${limit}`);
+  console.log(`[QA-005e] RESOLVE-LIMIT justification: ${justification}`);
+  test.info().annotations.push({ type: "RESOLVE-LIMIT", description: `${limit}. ${justification}` });
+  await test.info().attach("qa005e-p1-resolve-limit.json", {
     contentType: "application/json",
     body: Buffer.from(
       `${JSON.stringify(
         {
           site: "transient.spec.ts P1",
+          arm: walk.arm,
+          mode,
+          implication: "limit-justified-absent" as ArcImplication,
+          handling: arcHandling("limit-justified-absent") as ArcHandling,
           reason,
-          gapMs: walk.gapMs,
           denyDurMs: TIMINGS.deny.dur,
+          window: {
+            startAt: walk.arc.startAt,
+            endAt: walk.arc.endAt,
+            gapMs: walk.arc.gapMs,
+            inside: walk.arc.inside,
+            frameInWindow: walk.arc.frameInWindow,
+          },
+          histogram: describeIntervalHistogram(walk.probeFrames),
+          shortIntervals: walk.shortIntervals,
+          intervalCount: walk.intervalCount,
           verdict: walk.verdict,
           recorderFrames: walk.report.frames,
           recorderGridMs: walk.report.gridMs,
@@ -385,20 +578,25 @@ async function expectResolveLimit(page: Page, walk: RefusalWalk, reason: string)
     ),
   });
 
-  // (1) the arithmetic of the limit
+  // (1) the justification of the limit — post hoc, from this recording's stamps
+  expect(
+    walk.arc.frameInWindow,
+    `${label}: no recorded frame stamp may fall inside the window — ${justification}`,
+  ).toBe(false);
+  expect(walk.arc.inside.length, `${label}: the in-window stamp count is what licenses the limit`).toBe(0);
   expect(
     walk.gapMs,
-    `${reason}: every frame step is at least the deny row long`,
+    `${label}: ${reason}: every frame step is at least the deny row long — ${justification}`,
   ).toBeGreaterThanOrEqual(TIMINGS.deny.dur);
   expect(
     walk.report.onset,
-    `${reason}: the recorder must report no beat — \`BoardView.update\` clears the deny at \`time >= startAt + ${String(TIMINGS.deny.dur)}\`, before it can be painted`,
+    `${label}: ${reason}: the recorder must report no beat — \`BoardView.update\` clears the deny at \`time >= startAt + ${String(TIMINGS.deny.dur)}\`, before it can be painted`,
   ).toBeNull();
 
   // (2) the refusal: no move, no flip
   const state = await hud(page);
-  expect(state.moves, "a refusal is not a move").toBe(0);
-  expect(state.phase, "a refusal is not a flip").toBe(walk.ref.level.startPhase);
+  expect(state.moves, `${label}: a refusal is not a move`).toBe(0);
+  expect(state.phase, `${label}: a refusal is not a flip`).toBe(walk.ref.level.startPhase);
 
   // (3) the player is still where they stood — from the pixels
   await expectActorAt(page, walk.geometry, walk.ref.level, walk.player);
@@ -407,17 +605,45 @@ async function expectResolveLimit(page: Page, walk: RefusalWalk, reason: string)
   const health = await canvasColourHealth(page);
   expect(
     health.distinct,
-    "the canvas read-back has colour — the channel reporting 'no beat' is reading the real board",
+    `${label}: the canvas read-back has colour — the channel reporting 'no beat' is reading the real board`,
   ).toBeGreaterThan(4);
 
   // (5) positive control: the same channel commits a legal move on this runner
   expect(
     walk.ref.refusedAtStart,
-    "the positive control's press is legal at move 0 (asked of the core, not assumed)",
+    `${label}: the positive control's press is legal at move 0 (asked of the core, not assumed)`,
   ).not.toContain("right");
   await pressDirection(page, "right");
   await expectMoves(page, 1);
-  expect((await hud(page)).phase, "the positive control really committed a move and a flip").toBe("B");
+  expect((await hud(page)).phase, `${label}: the positive control really committed a move and a flip`).toBe("B");
+}
+
+/**
+ * The arm's whole decision (QA-005e): one total map from the two facts a recording
+ * produces — a frame in the window or not, a beat or not — to one of three
+ * handlings. `arcHandling` is the single place that mapping lives, and
+ * `tests/unit/frame-model.test.ts` proves every cell of it, including the two
+ * cloud observations of run `38784574025`.
+ */
+async function expectRefusalOutcome(
+  page: Page,
+  walk: RefusalWalk,
+  reason: string,
+  mode: "justified" | "predicted",
+): Promise<void> {
+  const implication = arcImplication(walk.arc, walk.report.onset !== null);
+  switch (arcHandling(implication)) {
+    case "assert-shape":
+      expectArcOnTheGrid(walk);
+      await expectRefusalState(page, walk);
+      return;
+    case "resolve-limit":
+      await expectResolveLimit(page, walk, reason, mode);
+      return;
+    case "fail-loudly":
+      expectBeatRequired(walk);
+      return;
+  }
 }
 
 test.describe("the resampling channel", () => {
@@ -454,38 +680,45 @@ test.describe("P1 — the §6.5 refusal arc (90 ms) is reachable on the frame gr
   test(`a refused move produces a bounded, centred, settling transient shorter than the flip budget`, async ({
     page,
   }) => {
-    const walk = await refusalWalk(page);
+    const walk = await refusalWalk(page, { arm: "natural-grid" });
     expectRecorderHealthy(walk);
 
-    // ── which claim this runner owes (QA-005d) ────────────────────────────────
-    // The arc is painted iff a frame stamp falls strictly inside its 90 ms window,
-    // i.e. iff the interval between the two frames bracketing the trigger is
-    // shorter than the arc. That interval is *measured* above, from the page's own
-    // frame stamps and the delivered keydown — not assumed to be 16.7 ms.
-    if (walk.verdict === "unresolvable-at-grid") {
-      await expectResolveLimit(page, walk, "this runner's own frame grid");
-      return;
-    }
-
-    expectArcOnTheGrid(walk);
-    await expectRefusalState(page, walk);
+    // ── which claim this natural grid owes (QA-005e) ──────────────────────────
+    // Not a pre-judged prediction from a pre-measured mean: the arc is painted iff
+    // a frame stamp falls strictly inside its 90 ms window, and *this recording's*
+    // stamps decide after the fact whether one did. Both observations are legal
+    // inputs; each has exactly one handling (`arcHandling`):
+    //
+    //   frame inside the window + beat observed  → the full pixel shape (assert-shape)
+    //   frame inside the window + beat absent    → a real failure, by name (fail-loudly)
+    //   no frame inside + beat absent            → the named RESOLVE-LIMIT (resolve-limit)
+    //   no frame inside + beat observed          → the same pixel shape, post hoc
+    //
+    // On a 60 Hz machine the window always holds frames, so an absent beat fails
+    // loudly here (the 60 Hz teeth are preserved, not negotiated away). On a
+    // cloud runner whose interval jitters around 90 ms, the *stamps* of whichever
+    // draw happened decide — the assertion no longer contradicts itself.
+    await expectRefusalOutcome(page, walk, "this runner's own frame grid", "justified");
   });
 
   /**
-   * P1b — the `unresolvable-at-grid` branch, **fabricated** so it is provable on
-   * any machine (QA-005d).
+   * P1b — the `resolve-limit` handling, **fabricated** so it is provable on any
+   * machine (QA-005d, re-grounded by QA-005e).
    *
-   * Without this test the branch above is only exercised by a slow runner: on a
-   * local 60 Hz machine the frame interval is ~17 ms and the verdict is always
-   * `resolvable`, so the fallback could rot unnoticed until a 2-core CI runner
+   * Without this test the limit branch is only exercised by a slow runner: on a
+   * local 60 Hz machine the frame interval is ~17 ms and a frame always falls
+   * inside the arc, so the fallback could rot unnoticed until a 2-core CI runner
    * happened to straddle 90 ms. `installFrameStretcher` burns a fixed per-frame
-   * budget, so the interval is *provably* longer than the arc — and then
-   * "no pixel evidence exists" becomes a prediction the runner has to obey.
+   * budget, so **every** interval is longer than the arc *by construction* — and
+   * there the prediction is physically exact, so an absent beat is REQUIRED rather
+   * than merely permitted. (QA-005e keeps that prediction precisely because it does
+   * not rest on one noisy natural measurement: it is a property of the fabric.)
    *
    * This is the regression pin for the classification in `helpers/frame-model.ts`
-   * (whose arithmetic is unit-proved in `tests/unit/frame-model.test.ts`), and it
-   * is what makes the CI fallback trustworthy: the coarse branch is *known* to run
-   * and *known* to hold the refusal, on a fast laptop, on every commit.
+   * (whose arithmetic and implication table are unit-proved in
+   * `tests/unit/frame-model.test.ts`), and it is what makes the CI fallback
+   * trustworthy: the coarse branch is *known* to run and *known* to hold the
+   * refusal, on a fast laptop, on every commit.
    */
   test("a fabricated coarse grid proves the 'unresolvable' branch: no frame can hold a 90 ms arc", async ({
     page,
@@ -501,7 +734,7 @@ test.describe("P1 — the §6.5 refusal arc (90 ms) is reachable on the frame gr
     const watch = watchErrors(page);
     await installFrameStretcher(page, P1_STRETCH_MS);
 
-    const walk = await refusalWalk(page, { gridWindowMs: 1_500 });
+    const walk = await refusalWalk(page, { gridWindowMs: 1_500, arm: "fabricated-coarse" });
     expectRecorderHealthy(walk);
 
     // The fabrication worked — asserted, not trusted: a stretcher that quietly did
@@ -515,7 +748,20 @@ test.describe("P1 — the §6.5 refusal arc (90 ms) is reachable on the frame gr
       `the interval spanning the trigger (${walk.gapMs.toFixed(1)} ms) is a full frame, so the grid cannot place a frame inside the 90 ms arc`,
     ).toBe("unresolvable-at-grid");
 
-    await expectResolveLimit(page, walk, "the fabricated coarse grid");
+    // (QA-005e) The prediction this pin is allowed to make is now measured, not
+    // assumed: the recording's own stamps contain no frame inside the window, so
+    // "no beat" is physically required on this fabric — at *every* interval, not
+    // just the bracketing one (the stretcher burns once per frame).
+    expect(
+      walk.arc.frameInWindow,
+      `the fabricated grid leaves no stamp inside the deny window — ${windowJustification(walk)}`,
+    ).toBe(false);
+    expect(
+      walk.report.onset,
+      `[QA-005e] transient.spec.ts P1 (fabricated-coarse): the coarse prediction is exact by construction — no presented frame can paint the 90 ms arc, so an onset here would be a real anomaly. ${windowJustification(walk)}`,
+    ).toBeNull();
+
+    await expectRefusalOutcome(page, walk, "the fabricated coarse grid", "predicted");
     expectNoPageErrors(watch, "P1b — the coarse-grid refusal walk");
   });
 });
