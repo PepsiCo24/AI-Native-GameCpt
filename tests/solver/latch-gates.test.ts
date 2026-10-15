@@ -55,7 +55,10 @@ function loadLevel(id: number): Level {
     readFileSync(`${LEVELS_DIR}l${String(id).padStart(3, "0")}.json`, "utf8"),
   ) as unknown;
   const result = validateLevel(raw);
-  expect(result.ok, `l${String(id).padStart(3, "0")} must be schema-valid`).toBe(true);
+  expect(
+    result.ok,
+    `l${String(id).padStart(3, "0")} must be schema-valid`,
+  ).toBe(true);
   return raw as Level;
 }
 
@@ -73,18 +76,29 @@ describe("LV-006 · the L6–L10 latch unit is solver-proven", () => {
       const audit = auditLevel(level);
       const r = audit.result;
       expect(r.solvable, `l${level.id} must be solvable`).toBe(true);
-      expect(r.shortestSolution, `l${level.id} par must equal the solver's shortest`).toBe(
-        level.par,
-      );
-      expect(r.deadStates, `l${level.id} must have no dead state (docs/level-design.md §4)`).toBe(0);
-      expect(r.noUnrecoverableOk, `l${level.id} must be recoverable from every state`).toBe(true);
+      expect(
+        r.shortestSolution,
+        `l${level.id} par must equal the solver's shortest`,
+      ).toBe(level.par);
+      expect(
+        r.deadStates,
+        `l${level.id} must have no dead state (docs/level-design.md §4)`,
+      ).toBe(0);
+      expect(
+        r.noUnrecoverableOk,
+        `l${level.id} must be recoverable from every state`,
+      ).toBe(true);
       // AC-1: the whole unit stays ≤ 7×7 and inside the BFS state budget.
       expect(level.width, `l${level.id} width`).toBeLessThanOrEqual(7);
       expect(level.height, `l${level.id} height`).toBeLessThanOrEqual(7);
-      expect(r.reachableStates, `l${level.id} must fit the state budget`).toBeLessThanOrEqual(
-        r.stateBudget,
-      );
-      expect(audit.violations, `l${level.id} must satisfy the level policy`).toEqual([]);
+      expect(
+        r.reachableStates,
+        `l${level.id} must fit the state budget`,
+      ).toBeLessThanOrEqual(r.stateBudget);
+      expect(
+        audit.violations,
+        `l${level.id} must satisfy the level policy`,
+      ).toEqual([]);
     },
   );
 
@@ -104,18 +118,30 @@ describe("LV-006 · the L6–L10 latch unit is solver-proven", () => {
 
   it("L6–L10 are the first levels in the game to carry M1+M3 content", () => {
     for (const level of LATCH_UNIT) {
-      expect(level.doors.length, `l${level.id} must ship a door`).toBeGreaterThanOrEqual(1);
-      expect(level.switches.length, `l${level.id} must ship the switch that drives it`)
-        .toBeGreaterThanOrEqual(1);
-      expect(level.portals, `l${level.id} must not use portals (ADR-0009 puts M2 at L11)`).toEqual(
-        [],
-      );
+      expect(
+        level.doors.length,
+        `l${level.id} must ship a door`,
+      ).toBeGreaterThanOrEqual(1);
+      expect(
+        level.switches.length,
+        `l${level.id} must ship the switch that drives it`,
+      ).toBeGreaterThanOrEqual(1);
+      expect(
+        level.portals,
+        `l${level.id} must not use portals (ADR-0009 puts M2 at L11)`,
+      ).toEqual([]);
     }
     // l001–l005 stay door-free: the latch unit cannot leak backwards into M0.
     for (const id of [1, 2, 3, 4, 5]) {
       const level = loadLevel(id);
-      expect(level.doors, `l00${id} must stay M0-only (no doors before L6)`).toEqual([]);
-      expect(level.switches, `l00${id} must stay M0-only (no switches before L6)`).toEqual([]);
+      expect(
+        level.doors,
+        `l00${id} must stay M0-only (no doors before L6)`,
+      ).toEqual([]);
+      expect(
+        level.switches,
+        `l00${id} must stay M0-only (no switches before L6)`,
+      ).toEqual([]);
     }
   });
 
@@ -138,11 +164,18 @@ describe("LV-006 · the L6–L10 latch unit is solver-proven", () => {
   it("every ladder level L1–L10 has a documented-lesson row (the table cannot drift)", () => {
     for (const id of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
       const lesson = documentedLesson(id);
-      expect(lesson, `l${String(id).padStart(3, "0")} has no documented-lesson row`).not.toBeNull();
-      expect((lesson as { evidence: string }).evidence.length).toBeGreaterThan(0);
+      expect(
+        lesson,
+        `l${String(id).padStart(3, "0")} has no documented-lesson row`,
+      ).not.toBeNull();
+      expect((lesson as { evidence: string }).evidence.length).toBeGreaterThan(
+        0,
+      );
       expect((lesson as { lesson: string }).lesson.length).toBeGreaterThan(0);
     }
-    expect(DOCUMENTED_LESSONS.map((entry) => entry.levelId)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(DOCUMENTED_LESSONS.map((entry) => entry.levelId)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    ]);
   });
 });
 
@@ -153,8 +186,13 @@ describe("LV-006 · M1 never ships alone (door ⇄ switch pairing, ADR-0009 deci
       const graph = explore(level);
       const fired = firingSwitches(level, graph);
       for (const doorDef of level.doors) {
-        const drivers = level.switches.filter((sw) => sw.targets.includes(doorDef.id));
-        expect(drivers.length, `doors "${doorDef.id}" needs at least one switch`).toBeGreaterThan(0);
+        const drivers = level.switches.filter((sw) =>
+          sw.targets.includes(doorDef.id),
+        );
+        expect(
+          drivers.length,
+          `doors "${doorDef.id}" needs at least one switch`,
+        ).toBeGreaterThan(0);
         expect(
           drivers.some((sw) => fired.has(sw.id)),
           `every switch targeting doors "${doorDef.id}" is inert — measured over the whole reachable graph`,
@@ -176,7 +214,9 @@ describe("LV-006 · M1 never ships alone (door ⇄ switch pairing, ADR-0009 deci
         doors: [door("d1", "blue", [[3, 1]])],
       }),
     );
-    expect(audit.violations.map((v) => v.code)).toContain("door-without-switch");
+    expect(audit.violations.map((v) => v.code)).toContain(
+      "door-without-switch",
+    );
   });
 
   it("rejects a switch that can never fire (inert latch, provably not a circuit)", () => {
@@ -220,10 +260,19 @@ describe("LV-006 · documented lessons are program-true (phantom walk offers/for
     // that has no echo at all: the documentation and the board disagree, and the
     // analyzer must say so instead of trusting the doc.
     const audit = auditLevel(
-      makeLevel({ id: 5, width: 5, height: 3, player: [0, 1], goal: [4, 1], par: 4 }),
+      makeLevel({
+        id: 5,
+        width: 5,
+        height: 3,
+        player: [0, 1],
+        goal: [4, 1],
+        par: 4,
+      }),
     );
     expect(audit.embeds.embedRoutes).toBe(0);
-    expect(audit.violations.map((v) => v.code)).toContain("lesson-phantom-walk-forced");
+    expect(audit.violations.map((v) => v.code)).toContain(
+      "lesson-phantom-walk-forced",
+    );
   });
 });
 
@@ -242,14 +291,16 @@ describe("LV-006 · Aha #1 (l008) named gates, measured (docs/level-design.md §
   });
 
   it("gate (ii) — every shortest solution presses the switch and crosses the door that refused", () => {
-    expect(gate("shortest-solution-presses-switch-and-crosses-door").status).toBe("PASS");
+    expect(
+      gate("shortest-solution-presses-switch-and-crosses-door").status,
+    ).toBe("PASS");
     expect(audit.embeds.parRoutes).toBe(6);
-    expect(gate("shortest-solution-presses-switch-and-crosses-door").detail).toContain(
-      "press-then-cross-door=6",
-    );
-    expect(gate("shortest-solution-presses-switch-and-crosses-door").detail).toContain(
-      "refusedThenEnteredTiles=6",
-    );
+    expect(
+      gate("shortest-solution-presses-switch-and-crosses-door").detail,
+    ).toContain("press-then-cross-door=6");
+    expect(
+      gate("shortest-solution-presses-switch-and-crosses-door").detail,
+    ).toContain("refusedThenEnteredTiles=6");
   });
 
   it("gate (iii) — the refusing tile is in refusedThenEnteredTileList", () => {
@@ -297,8 +348,10 @@ describe("LV-006 · Aha #1 (l008) named gates, measured (docs/level-design.md §
     expect(fakeAudit.violations.map((v) => v.code)).toContain(
       "gate-no-solution-with-switches-off",
     );
-    expect(fakeAudit.gates.find((entry) => entry.id === "no-solution-with-switches-off")?.status).toBe(
-      "FAIL",
-    );
+    expect(
+      fakeAudit.gates.find(
+        (entry) => entry.id === "no-solution-with-switches-off",
+      )?.status,
+    ).toBe("FAIL");
   });
 });

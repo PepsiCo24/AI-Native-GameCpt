@@ -66,7 +66,11 @@ import {
   solve,
   tileKey,
 } from "@/core/solver/bfs";
-import type { LevelAudit, NamedGate, PolicyViolation } from "@/core/solver/policy";
+import type {
+  LevelAudit,
+  NamedGate,
+  PolicyViolation,
+} from "@/core/solver/policy";
 import { auditLevel } from "@/core/solver/policy";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -320,7 +324,9 @@ console.log(
 );
 if (escalations.length > 0) {
   console.log("");
-  console.log(`ESCALATIONS (${escalations.length}) — not level failures, not silently dropped:`);
+  console.log(
+    `ESCALATIONS (${escalations.length}) — not level failures, not silently dropped:`,
+  );
   for (const escalation of escalations) console.log(`  - ${escalation}`);
 }
 

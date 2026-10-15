@@ -34,7 +34,12 @@
 
 import type { Level } from "@/core/level";
 import { coordKey } from "@/core/level";
-import type { ArrivalRecord, EmbedMetrics, ReachableGraph, SolveResult } from "./bfs";
+import type {
+  ArrivalRecord,
+  EmbedMetrics,
+  ReachableGraph,
+  SolveResult,
+} from "./bfs";
 import {
   embedMetrics,
   explore,
@@ -91,7 +96,8 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
   },
   {
     levelId: 3,
-    lesson: "first refusal: a permanent (parity-dead) wall, never a timing gate",
+    lesson:
+      "first refusal: a permanent (parity-dead) wall, never a timing gate",
     obligation: null,
     evidence: "docs/level-design.md §2 L3 + ADR-0009",
   },
@@ -109,7 +115,8 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
   },
   {
     levelId: 6,
-    lesson: "M1+M3 debut: the latch — what I step on changes the world, and it stays changed",
+    lesson:
+      "M1+M3 debut: the latch — what I step on changes the world, and it stays changed",
     obligation: "latch-dynamism",
     evidence: "docs/level-design.md §2 L6 + §6 (block-opening dip)",
   },
@@ -121,19 +128,23 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
   },
   {
     levelId: 8,
-    lesson: "Aha #1 (the latch): the door that refused the greedy line opens and stays open",
+    lesson:
+      "Aha #1 (the latch): the door that refused the greedy line opens and stays open",
     obligation: "latch-aha-1",
     evidence: "docs/level-design.md §2 L8 + §3 (named Solver conditions)",
   },
   {
     levelId: 9,
-    lesson: "two doors + two switches: the second switch is behind the first door (ordered plan)",
+    lesson:
+      "two doors + two switches: the second switch is behind the first door (ordered plan)",
     obligation: "latch-dynamism",
-    evidence: "docs/level-design.md §2 L9/L10 (LV-006 authoring note, §6 of the pipeline record)",
+    evidence:
+      "docs/level-design.md §2 L9/L10 (LV-006 authoring note, §6 of the pipeline record)",
   },
   {
     levelId: 10,
-    lesson: "gate check: permanent M0 geometry + the phantom walk + the latch, planned together",
+    lesson:
+      "gate check: permanent M0 geometry + the phantom walk + the latch, planned together",
     obligation: "latch-dynamism",
     evidence: "docs/level-design.md §2 L10 + LV-006 pipeline record",
   },
@@ -173,7 +184,11 @@ interface RouteVerdict {
  * phase) and afterwards enter a tile of a door that switch targets, and is that
  * door tile one the board ever *refused* (`refusedThenEnteredTileList`)?
  */
-function routeVerdict(level: Level, par: number, refusedTiles: readonly string[]): RouteVerdict {
+function routeVerdict(
+  level: Level,
+  par: number,
+  refusedTiles: readonly string[],
+): RouteVerdict {
   const refused = new Set(refusedTiles);
   const doorByTile = new Map<string, string>();
   for (const door of level.doors) {
@@ -203,7 +218,8 @@ function routeVerdict(level: Level, par: number, refusedTiles: readonly string[]
           const doorId = doorByTile.get(tileKey(later.state.player));
           if (doorId === undefined || !targets.includes(doorId)) continue;
           crossedTargetedDoor = true;
-          if (refused.has(tileKey(later.state.player))) crossedRefusedDoor = true;
+          if (refused.has(tileKey(later.state.player)))
+            crossedRefusedDoor = true;
         }
       }
     }
@@ -247,7 +263,8 @@ export function latchAhaGates(
   const gates: NamedGate[] = [
     {
       id: "no-solution-with-switches-off",
-      label: "no solution exists with every switch OFF (docs/level-design.md §3)",
+      label:
+        "no solution exists with every switch OFF (docs/level-design.md §3)",
       status: allOffReachable ? "FAIL" : "PASS",
       detail:
         `all-OFF subgraph: ${allOffStates}/${result.reachableStates} reachable state(s) keep every switch OFF; ` +
@@ -258,7 +275,8 @@ export function latchAhaGates(
       label:
         "every shortest solution presses a switch and then enters a door that switch targets, one the board refused",
       status:
-        verdict.routes > 0 && verdict.pressThenCross === verdict.routes &&
+        verdict.routes > 0 &&
+        verdict.pressThenCross === verdict.routes &&
         verdict.refusedDoor === verdict.routes
           ? "PASS"
           : "FAIL",
@@ -269,7 +287,8 @@ export function latchAhaGates(
     },
     {
       id: "refused-then-entered",
-      label: "refusedThenEnteredTiles ≥ 1 (ADR-0009: the latch, not parity, carries the decision)",
+      label:
+        "refusedThenEnteredTiles ≥ 1 (ADR-0009: the latch, not parity, carries the decision)",
       status: result.refusedThenEnteredTiles > 0 ? "PASS" : "FAIL",
       detail: `refusedThenEnteredTiles=${result.refusedThenEnteredTiles} tiles=[${result.refusedThenEnteredTileList.join(" ")}]`,
     },
@@ -320,7 +339,10 @@ export interface PolicyViolation {
 }
 
 /** Switch ids that actually toggle somewhere in the reachable graph. */
-export function firingSwitches(level: Level, graph: ReachableGraph): ReadonlySet<string> {
+export function firingSwitches(
+  level: Level,
+  graph: ReachableGraph,
+): ReadonlySet<string> {
   const fired = new Set<string>();
   for (let i = 0; i < graph.nodes.length; i += 1) {
     const from = graph.nodes[i];
@@ -329,7 +351,10 @@ export function firingSwitches(level: Level, graph: ReachableGraph): ReadonlySet
       const to = graph.nodes[j];
       if (to === undefined) continue;
       for (const sw of level.switches) {
-        if ((from.switchesOn[sw.id] === true) !== (to.switchesOn[sw.id] === true)) {
+        if (
+          (from.switchesOn[sw.id] === true) !==
+          (to.switchesOn[sw.id] === true)
+        ) {
           fired.add(sw.id);
         }
       }
@@ -362,7 +387,10 @@ export interface LevelAudit {
  * `graph` may be passed when the caller already explored (the CLI does), so the
  * search runs once per level.
  */
-export function auditLevel(level: Level, graph: ReachableGraph = explore(level)): LevelAudit {
+export function auditLevel(
+  level: Level,
+  graph: ReachableGraph = explore(level),
+): LevelAudit {
   const result = analyse(level, graph);
   const par = result.shortestSolution ?? level.par;
   const embeds = embedMetrics(level, par);
@@ -456,7 +484,9 @@ export function auditLevel(level: Level, graph: ReachableGraph = explore(level))
     result,
     embeds,
     allOffGoalReachable:
-      level.switches.length === 0 ? null : goalReachableWithAllSwitchesOff(level, graph),
+      level.switches.length === 0
+        ? null
+        : goalReachableWithAllSwitchesOff(level, graph),
     gates,
     violations,
   };
