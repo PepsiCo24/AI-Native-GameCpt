@@ -14,6 +14,17 @@
  *   be non-wall in BOTH phases and must not be door tiles (hard error), and a
  *   same-parity portal pair can never break the position↔phase parity link
  *   (hard error, they are mechanically inert);
+ * - LV-005 — a door tile must never also be a phase wall (hard error). One cell
+ *   cannot be two objects: `docs/ui-ux.md` §3.1 lists every cell as exactly one
+ *   of empty / wall / door / portal / switch / goal, a wall is drawn in *both*
+ *   phases (solid in its own, hollow echo in the other — §3.1a R-E3) while a
+ *   door's closed state is a second independent state (§3.1b R-D1), and the
+ *   shipped renderer draws the wall and no door object yet. So while the wall
+ *   echoes the cell reads hollow ("passable now", §3.2 R-C2) although the closed
+ *   door still refuses entry — a tile that lies about entry, the one known
+ *   construction that does. The adjudication ("door ∩ wall = ILLEGAL", *not*
+ *   "the door swallows the wall") is recorded in `docs/ai-native-pipeline.md`
+ *   §3b; appearance precedence stays `docs/ui-ux.md`'s call (UI / Art Director);
  * - parity-dead walls — every legal move changes `x + y` parity and the phase
  *   together, so the phase an entry happens in is fixed by the tile's Manhattan
  *   parity from the start; a wall solid in its own entry phase is therefore
@@ -122,6 +133,11 @@ export interface Level {
   phaseAWalls: readonly Coord[];
   /** Tiles solid while phase B is active (passable echoes during phase A). */
   phaseBWalls: readonly Coord[];
+  /**
+   * M1 phase gates. A door tile must **not** appear in `phaseAWalls` /
+   * `phaseBWalls` — hard error, LV-005 (`validateLevel`; `docs/ai-native-pipeline.md`
+   * §3b). Empty for M0 teaching levels.
+   */
   doors: readonly DoorDef[];
   switches: readonly SwitchDef[];
   portals: readonly PortalDef[];
@@ -267,13 +283,14 @@ export interface ValidationResult {
  *   (ADR-0008 rule 7 for the goal); dangling switch `targets`; portal ends
  *   identical / out of bounds / solid in **either** phase / covered by a door
  *   tile / a pair whose two ends share one `(x + y)` parity (architecture V0.5
- *   §7).
+ *   §7); **a door tile that is also a phase wall** (LV-005 — a cell that reads
+ *   hollow while refusing entry; the adjudication is `docs/ai-native-pipeline.md`
+ *   §3b).
  * - Warnings: a tile solid in BOTH phases (never enterable — deliberate design
  *   only, flag for review); a wall that can never be entered on any move count
  *   (an ordinary permanent wall — legal geometry, warning for **every** `id`,
- *   teaching levels included: ADR-0009 / V0.4 §0 + §2); door tiles on a phase
- *   wall, or on the player/goal; a switch that can never fire; a switch with no
- *   targets.
+ *   teaching levels included: ADR-0009 / V0.4 §0 + §2); door tiles on the
+ *   player/goal; a switch that can never fire; a switch with no targets.
  *
  * Parity-dead walls, precisely: every legal move changes `x + y` parity and the
  * phase together, so the player can only stand next to a tile `T` after
@@ -432,10 +449,24 @@ export function validateLevel(raw: unknown): ValidationResult {
 
     door.tiles.forEach((tile, j) => {
       const key = coordKey(tile);
-      if (wallA.has(key) || wallB.has(key)) {
-        const phase = wallA.has(key) ? "A" : "B";
-        warnings.push(
-          `doors[${i}] "${door.id}".tiles[${j}] ${formatCoord(tile)} is also a phase-${phase} wall — while that phase is active the tile is solid regardless of the door state (door may be partially inert)`,
+      // ── door ∩ phase wall = ILLEGAL (LV-005, hard error) ───────────────────
+      // One cell cannot be two objects. `docs/ui-ux.md` §3.1 enumerates every
+      // cell as exactly one class (empty / wall / door / portal / switch /
+      // goal), a wall tile is drawn in *both* phases (solid in its own phase,
+      // hollow echo in the other — §3.1a R-E3), and a door's open/closed state
+      // is a second, independent state (§3.1b R-D1). The shipped renderer draws
+      // the wall and no door object yet, so while the wall echoes this cell is
+      // rendered hollow — "passable now" under the §3.2 fill rule (R-C2) — and
+      // yet the closed door still refuses entry: the only known tile that lies
+      // about entry. Adjudication (not an appearance precedence rule, and never
+      // "the door swallows the wall"): reject. See docs/ai-native-pipeline.md
+      // §3b; appearance precedence belongs to docs/ui-ux.md (UI / Art Director).
+      const wallLists = PHASES.filter((phase) =>
+        (phase === "A" ? wallA : wallB).has(key),
+      ).map((phase) => (phase === "A" ? "phaseAWalls" : "phaseBWalls"));
+      if (wallLists.length > 0) {
+        errors.push(
+          `doors[${i}] "${door.id}".tiles[${j}] ${formatCoord(tile)} is also listed in ${wallLists.join(" and ")} — a door tile must never be a phase wall (hard error): the cell would be two objects at once, and no layer defines which one the player sees. A wall tile is drawn in BOTH phases (solid in its own phase, hollow echo in the other — docs/ui-ux.md §3.1a R-E3), a door's closed state is a second, independent state (docs/ui-ux.md §3.1b R-D1), and §3.1 lists every cell as EXACTLY ONE of empty / wall / door / portal / switch / goal — so this cell has no defined rendering, and the shipped renderer draws the wall and no door object (src/game/renderer/**). Measured consequence, not a theory: while the wall is echoing, this tile is rendered hollow, i.e. "passable now" under the docs/ui-ux.md §3.2 fill rule (R-C2), while the closed door still refuses entry — the board promises a legal move and answers "illegal". Rejected per ADR-0004 (never auto-repaired): re-author the door on a non-wall tile. This is a data-layer verdict, NOT an appearance-precedence rule: "the door swallows the wall" is deliberately not decided here (appearance precedence belongs to docs/ui-ux.md) — see docs/ai-native-pipeline.md §3b`,
         );
       }
       if (key === goalKey) {
