@@ -1,8 +1,8 @@
 # Game Design — Phase Shift: Echo Grid / 双相棋盘：昼夜回响
 
 > Owner: **Agent 1 — Game Designer**
-> Version: **V0.5**
-> Date: 2026-10-14
+> Version: **V0.6**
+> Date: 2026-10-15
 > Status: **LOCKED for prototype** (changes require Product Lead + Game Designer double confirmation)
 
 ---
@@ -161,7 +161,7 @@ Mechanic schedule per **GATE D / ADR-0009 (mechanics forward; core rule unchange
 | **L46–L49** | High-density composite challenge, longest pars | all |
 | **L50** | **Final Exam** — no new mechanics, recombine only what was taught | all |
 
-The curve is intentionally **non-monotonic**: every new-mechanic block starts with a small dip. Difficulty must never feel like a mechanical staircase.
+The curve is intentionally **non-monotonic**: every new-mechanic block starts with a small dip. Difficulty must never feel like a mechanical staircase. **The dip lives on the execution axis `D_exec = D − w5·M`** (level-design.md §6, ADR-design-0001): raw `D` steps **up** at a debut by the comprehension tax `w5·ΔM` — measured **+8.53** at L5→L6 — and that step is admitted openly, not defined away; what dips is what the player's hands must do (`D_exec` −1.47 at L5→L6).
 
 ## 9. Teaching plan (Show, don't tell)
 
@@ -219,6 +219,8 @@ D = w1·L  +  w2·B  +  w3·T  +  w4·R  +  w5·M
 
 Weights are **not** set once and forgotten. They are re-calibrated against real playtest data (see `docs/level-difficulty.md`).
 
+- **The axis split (ADR-design-0001):** `D = D_exec + D_learn`, where `D_exec = w1·L + w2·B + w3·T + w4·R` (execution) and `D_learn = w5·M` (comprehension). The teaching-dip law binds on `D_exec`, never on raw `D` — law and measured record: `docs/level-design.md` §6. Measured anchor (LV-007B, provisional weights `1, 3, 4, 2, 5`): L5→L6 seam = **+8.53 on `D`** (comprehension tax, admitted) and **−1.47 on `D_exec`** (the dip, delivered). Weights are re-calibrated by playtest regression only — never re-tuned to make a target number come out (AGENTS.md §7).
+
 ## 12. Design principles & prohibitions
 
 Priority: **Fun > Readable > Expandable > Pretty.**
@@ -248,3 +250,4 @@ Priority: **Fun > Readable > Expandable > Pretty.**
 | 2026-10-14 | V0.3 | RV-001 reconciliation: win condition made unambiguous (standing on goal post-resolution wins, any phase); M0 union-property note (§1, §5); Aha chain wording made ADR-0006-accurate; ADR-0007 wall echo; level grid cap 3–7 moved to `docs/level-design.md` citing ui-ux R-L2 | Agent 1 |
 | 2026-10-14 | V0.4 | **GATE C (human decision): core rule → Option B (ADR-0008).** Phase solidity blocks entry only; the post-flip standing check is removed; standing inside a flipped-in wall is legal (never crushed / pushed / moved); union property removed (§1, §5); Aha chain re-based on M0 parity routing (§8, §9); goal must be non-wall in both phases. Partially supersedes ADR-0006; revises ADR-0007 echo semantics. **Requires Stage 2 playtest verification + full Solver re-verification of the level set** | Agent 1 / Human at GATE C |
 | 2026-10-14 | V0.5 | **GATE D (human decision, D3 — mechanics forward; ADR-0009).** Checkerboard invariant adopted as design law; ADR-0008 clause 8's parity-routing claim withdrawn (M0, and M1 without switches, are measured static). **M3 promoted OPTIONAL → CORE**; M1+M3 paired teaching unit from L6; M2 portals from L11 under the opposite-colour law. Aha #1 re-defined as the **latch** ("我踩过的东西改变了我脚下的世界"), Aha #2 as the **opposite-colour portal**; phantom walk kept as M0's honest L4–L5 lesson. §1 rules truth, §3.1 (invariant + `[x, y]` = column/row convention), §5, §8, §9 rewritten; §13 A2 replaced, A5 added. **ADR-0008 rules 1–7 unchanged** | Agent 1 / Human at GATE D |
+| 2026-10-15 | V0.6 | **GD-008 — dip law re-axed (ADR-design-0001).** §8/§11: the block-opening dip moves to the execution axis `D_exec = D − w5·M`; raw `D` steps **up** at debuts by the comprehension tax `w5·ΔM` (measured +8.53 at L5→L6), admitted openly — what dips is execution (−1.47). The falsified "2–3 points on `D`" clause is withdrawn **unfitted**: no weight re-tuned to reach a target number. Core rule untouched. | Agent 1 (GD-008) |

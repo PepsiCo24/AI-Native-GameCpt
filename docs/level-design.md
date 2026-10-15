@@ -1,10 +1,10 @@
 # Level Design — Phase Shift: Echo Grid / 双相棋盘：昼夜回响
 
 > Owner: **Agent 1 — Game Designer**
-> Version: **V0.5**
+> Version: **V0.6**
 > Date: 2026-10-15
 > Status: **Draft for Stage 2 prototype** (all level content requires Solver verification per ADR-0004; mechanic schedule per GATE D / ADR-0009)
-> Governing docs: `docs/game-design.md` (core rule §3, mechanics §5, rhythm §8, difficulty §11), ADR-0002, ADR-0004, **ADR-0008 rules 1–7** (entry-only solidity; clause 8 withdrawn), **ADR-0009** (checkerboard invariant; GATE D mechanics-forward)
+> Governing docs: `docs/game-design.md` (core rule §3, mechanics §5, rhythm §8, difficulty §11), ADR-0002, ADR-0004, **ADR-0008 rules 1–7** (entry-only solidity; clause 8 withdrawn), **ADR-0009** (checkerboard invariant; GATE D mechanics-forward), **ADR-design-0001** (dip law on the execution axis `D_exec`), ADR-architecture-0002 (metric #7 canonicality; gate (iii) ordered reader)
 
 ---
 
@@ -149,12 +149,41 @@ The block table itself lives in `docs/game-design.md` §8 and is deliberately **
 - **L46–L49 — Density peak.** High-interaction boards, longest pars, zero new rules.
 - **L50 — Final Exam.** Recombines only what was taught; no new mechanic, no trick rules. Beating it should feel like graduation, not luck.
 
-## 6. Difficulty dip rule (non-monotonic curve)
+## 6. Difficulty dip rule (non-monotonic curve) — re-axed at GD-008 (ADR-design-0001)
 
-- **Every block that introduces a new mechanic starts with a dip:** its first level sits 2–3 points below the previous block's peak on the difficulty metric `D` (game-design.md §11) — a **design target**: `D` is not yet computable (`B`-effective, `T`, `R` are unexposed until LV-007; `docs/level-difficulty.md` §5.1 records the honest gap) — and its first 1–2 levels are short (par ≤ 4), single-concept (one new mechanic *unit*), and free of false routes. Under the ADR-0009 schedule the dips land at **L6** (M1+M3 unit) and **L11** (M2). **Measured on the shipped L5→L6 seam (`docs/level-difficulty.md` §5.1):** `M` jumps **1 → 3** while par **drops 6 → 4** (L6's par 4 is the lowest in the game) — the mechanic count rises, the move count does not, exactly this rule's intended shape; `B_raw` stays flat (2.0–3.0), so the dip is carried by move count, not branching. L6's `switchRequired = false` is the recorded dip concession (§2 L6).
-- **Rationale:** when a mechanic is new, the player's budget is spent on *understanding*; execution difficulty stacked on comprehension load reads as unfairness. This is the L1–L3 lesson applied recursively.
-- Difficulty then ramps **within** the block until it exceeds the previous block's peak — a sawtooth, never a staircase (game-design.md §8).
-- Dips are verified with Solver metrics (solution length, branching, lookahead) at generation time and re-calibrated against playtest data (`docs/level-difficulty.md`, ADR-0004). A new-mechanic level that solver-scores at or above the previous block's peak is **rejected or redesigned** — no exceptions.
+**Measured fact first.** `D` is computable and measured on the shipped L1–L10 since LV-007B (`docs/level-difficulty.md` §2a/§5.2; provisional weights `w1…w5 = 1, 3, 4, 2, 5`) — the V0.5 "not yet computable" gap is closed. The same measurement **falsified** the old version of this section: the L5→L6 seam is **+8.53 on `D`** (ΔL −2 · ΔB +0.53 · ΔM +10), and a −2…−3 `D` dip at a mechanic introduction is **unreachable by construction** — a debut adds `5·ΔM` in exactly the step where the dip must lower the score, while par is already at the game floor and `B` does not fall. The clause is replaced below. **No weight was re-tuned to manufacture a dip; the fix is a change of axis, not of numbers** (full record: `docs/decisions/design-0001-difficulty-dip-on-execution-axis.md`).
+
+**The axis split (what the dip law always meant).** `D` prices two different things in one sum:
+
+```
+D = D_exec + D_learn
+D_exec = w1·L + w2·B + w3·T + w4·R    — execution: what the player must DO and SEARCH
+D_learn = w5·M                        — comprehension: what the player must LEARN
+```
+
+Inside the §4 acceptance region `T ≡ R ≡ 0` (measured theorem, `docs/level-difficulty.md` §5.2), so `D_exec = L + 3·B` there — computable today from the published per-level breakdown as `D − 5·M` (every stored row echoes its weight vector, so the subtraction is unambiguous). A mechanic debut **must** raise `D_learn` — the player really is learning something new, and pretending otherwise is what the falsified clause did. The non-monotonic law therefore lives on `D_exec`, the axis the player feels as "the game asks less of my hands while I learn".
+
+**The dip law (binding, falsifiable):**
+
+- **Seam law.** At every mechanic-introduction seam (`ΔM > 0`), the debut level's `D_exec` sits **strictly below the previous block's `D_exec` peak** (block = the span since the last mechanic introduction — an `M`-plateau). Equivalent budget form: `D(debut) − D(previous block peak) < w5·ΔM` — the entire `D` rise at a debut is comprehension tax, never execution.
+- **Sawtooth.** Within a block, `D_exec` then ramps until it **exceeds the previous block's `D_exec` peak** — a sawtooth on the execution axis, never a staircase (game-design.md §8).
+- **Construction floor (unchanged).** The debut level (and its successor where the block allows) is short (par ≤ 4 in the teaching span), single-concept (one new mechanic *unit*), free of false routes, and teaches **below OFFERED** — the mechanic is demonstrated by walking, not demanded (the L6 precedent: `switchRequired = false` recorded as a deliberate, named concession, **never scored as FORCED**; §2 L6; `docs/ai-native-pipeline.md` §8.5 OQ4).
+- **Rejection teeth (unchanged).** A debut candidate that breaks the seam law is **rejected or redesigned** — no exceptions.
+
+**Recomputed curve** (every value derivable as `D − 5·M` from the test-pinned rows of `docs/level-difficulty.md` §5.2; cross-checked as `L + 3·B`, valid because `T ≡ R ≡ 0` on 10/10; no new numbers introduced):
+
+| Level | L1 | L2 | L3 | L4 | L5 | **L6** | L7 | L8 | L9 | L10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `D` | 14.00 | 15.06 | 15.29 | 15.58 | 15.33 | **23.86** | 22.75 | 25.50 | 27.14 | 28.64 |
+| `D_exec` | 9.00 | 10.06 | 10.29 | 10.58 | 10.33 | **8.86** | 7.75 | 10.50 | 12.14 | 13.64 |
+
+Read-out: the L5→L6 seam is **−1.47 on `D_exec`** (−1.72 against the previous block's peak, L4 10.58) — the dip exists and is measured, on the axis that carries it; the dip spans exactly the two par-4 levels (L6 8.86, L7 7.75), matching the construction floor's "first 1–2 levels"; the block then ramps to 13.64 > 10.58 — sawtooth confirmed. The old "2–3 points" margin is **withdrawn, not re-fit**: no principle independent of the target number ever derived it, and the measured `D_exec` span of the whole shipped ten is only ≈ 5.9 points. The measured margins (−1.47 / −1.72) stand as calibration anchors; any future numeric margin comes from playtest regression (`docs/level-difficulty.md` §4), never from curve-flattery.
+
+**Player-perceivable semantics of the valley (the felt half, and who measures it).** What a *player* experiences at a debut: fewer moves to the goal (par at the game's floor), few effective choices per state (`B` at the block floor), no punishable mistakes (§4's no-dead-state invariant), and a mechanic shown before it is demanded (below OFFERED). The Solver measures the first three at generation time (the seam law above); the **felt half is Playtest Analyst territory** — debut level vs previous block-close level on first-win time, M5 restarts, M6 undos, M4 refusals — to be pinned as a named clause in the Stage-2/3 protocol with thresholds frozen **before** the cohort runs (T6 discipline; handoff: PA). Until that data lands, the valley claim on the experience axis is a labelled **hypothesis**, same honesty discipline as hypothesis d′ (§2).
+
+**Falsifiable prediction for L11 — the law's only remaining test** (L6 and L11 are the only mechanic-introduction seams in the 50-level schedule, game-design.md §8). With `ΔM = +1` at L10→L11: `D_exec(L11) < 13.64` (equivalently `D(L11) < 33.64`), par ≤ 4, a single opposite-colour portal pair, no false routes, below-OFFERED teaching grade; and the L11–L15 block's `D_exec` exceeds 13.64 by its end. A shipped L11 that violates the seam law is a rejected level, whatever its other virtues.
+
+**Rationale (unchanged):** when a mechanic is new, the player's budget is spent on *understanding*; execution difficulty stacked on comprehension load reads as unfairness. This is the L1–L3 lesson applied recursively.
 
 ## 7. Change log
 
@@ -163,3 +192,4 @@ The block table itself lives in `docs/game-design.md` §8 and is deliberately **
 | 2026-10-14 | V0.3 | **GATE C (human decision): Option B / ADR-0008 adopted.** Parity-dependent entry replaces the union property (§0 rewritten); OQ-1 marked RESOLVED; L1–L10 ladder rebuilt so Aha #1 is produced by M0 itself (§2–§3); `goal` hard-validated as non-wall in both phases and portal no-chaining stated (§1); embedded-state rule added to fail conditions (§4); block intents updated (§5). Prior history: `docs/iteration-log.md`. | Agent 1 / Human at GATE C |
 | 2026-10-14 | V0.4 | **GATE D (human decision D3 — mechanics forward; ADR-0009).** Checkerboard invariant replaces the withdrawn parity corollary (§0 rewritten; OQ-1 re-resolved by D3, not by ADR-0008 clause 8). L1–L10 ladder rebuilt: L3 = permanent refusal, L4–L5 = phantom walk (Option B's real gift), **L6–L10 = M1+M3 latch unit with Aha #1 at L8** (§2–§3). §1: doors L6-paired / switches CORE + **invert-per-ON-switch composition pinned** + one-switch-per-door authoring rule (RV-002 M-5); portals gain the **architecture-ruling landing semantics** (entry legal ⇒ teleport unconditional; solid landing = clause-3 embedded state) and the **opposite-colour law**; §1 example replaced (old one self-contradictory — `par: 6` vs its own 4-move trace + decorative wall; RV-002 M-1). Block intents (§5) and dip placements (§6: L6, L11) updated; `R = 0` teaching span now L1–L15 (§4). **ADR-0008 rules 1–7 unchanged.** | Agent 1 / Human at GATE D |
 | 2026-10-15 | V0.5 | **Aligned with LV-006 shipped + solver-proven reality, and with the gate (iv) adjudication** (Orchestrator ruling, `docs/ai-native-pipeline.md` §8.5). §1: stale portal figures corrected — same-colour rejection is landed and machine-enforced (0/400 legal; "validator rule to be added" note removed). §2 intro: ladder synced — **no mechanical Aha before L6** (hook = cadence; retention = hypothesis d′), M1+M3 as one teaching unit L6–L10 with Aha #1 at L8, portals L11+ as the first dual-phase-satisfiable block; 50-level endgame unchanged. §2 L9 **re-worded**: the "switch timing" lesson is unconstructible pre-L11 (F2/F3) and is replaced by the shipped, solver-proven lesson — two doors + two switches, the second switch behind the first door (ordered plan; `l009.json` par 8, rte 2). §2 L6: block-opening dip on the natural path; `switchRequired = false` recorded as a deliberate concession — below-OFFERED debut (l004 OFFERED / l005 FORCED precedent), exempt from the `switchRequired` obligation, **never scored as FORCED**. §3: Aha #1 requirements re-stated as named gates — (i)(ii)(iii) pre-L11 (measured PASS on l008), (iv) `dualPhaseTiles ≥ 1` activates **L11+ only** (unsatisfiable pre-L11 by law, ADR-0009 decision 1); construction bullets (one-door-one-switch funnel; L8 par ≤ 8) kept as spec, programmatic enforcement = LV-007 (RV-004 n-14). §5: L9 / L11 block intents synced. §6: dip rule reconciled with measured `M` 1→3 / par 6→4; the `D`-drop clause labelled a design target until LV-007 exposes `B`/`T`/`R`. | Agent 1 (GD-007) |
+| 2026-10-15 | V0.6 | **GD-008 ruling 1 — §6 rewritten on measurement (ADR-design-0001).** LV-007B closed the "`D` not yet computable" gap and falsified the "2–3 points below peak on `D`" clause in one move (L5→L6 seam measured **+8.53**; −2…−3 proven **unreachable by construction** at `w = 1,3,4,2,5`). The dip law moves to the **execution axis** `D_exec = D − w5·M` (= `L + 3·B` inside the §4 acceptance region): seam law (debut `D_exec` strictly below the previous block's `D_exec` peak; budget form `ΔD < w5·ΔM`), sawtooth on `D_exec`, construction floor and rejection teeth unchanged; the "2–3" margin **withdrawn unfitted** (measured anchor −1.47), the felt-half valley assigned to playtest as a labelled hypothesis (PA handoff), and the falsifiable L11 prediction pre-registered (`D_exec(L11) < 13.64`, par ≤ 4). Recomputed `D_exec` curve published from §5.2's pinned rows — no weight changed, no number invented. | Agent 1 (GD-008) |
