@@ -1204,7 +1204,33 @@ evidence lines printed on MY machine). **MILESTONE: waiting on the develop-tip r
 (clean CI round #2 since the roster went dark; the `--retries=1` removal conversation opens after 2–3
 green rounds land) — on green, THIS session merges develop→main, Pages publishes the 11-level build,
 then DG-004c syncs the ~5 future-scoped hosting sentences + the 88-case inventory + the roster's final
-chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` cohort, P9 demo video). Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` cohort, P9 demo video).
+
+72. **The survivors' ghost: QA-005d's fix died a probabilistic death on the natural arm — corrected roster
+   first (this office's own pairing error, recorded not erased): the GREEN rounds were PR #1 AND the
+   `fb751de` develop round (`38784470154`, success — clean round #2 on the fixed tree); the RED round is
+   `f79b949` (`38784574025`, DOCS-ONLY delta, byte-identical tests) where P1 failed BOTH attempts in
+   OPPOSITE directions: attempt 1 arbiter measured 100.0 ms >= 90 → RESOLVE-LIMIT branch → REQUIRED
+   `onset===null` → **Received 643.4** (jitter landed a frame INSIDE the 90 ms arc window on a
+   coarse-mean runner); retry arbiter saw a fine grid → resolvable branch → **onset null**. Three rounds,
+   same content: green/green/red — the coin is the DESIGN, not the tree: pre-measuring the grid once and
+   then REQUIRING the predicted observation couples a hard assertion to one noisy sample. Physics restated:
+   visibility needs SOME presented frame inside `[startAt, startAt+90)`; a mean interval >= 90 does not
+   prove none fell inside, a mean < 90 does not guarantee one did — only the recording's OWN stamps
+   justify either outcome, POST-HOC. **QA-005e dispatched** (branch `agent/qa/qa-005e-p1-oscillation` @
+   `f79b949`, slot 1/3): implication redesign — (a) beat observed ⇒ full shape clauses ALWAYS; (b) beat
+   absent ⇒ permitted ONLY when the same recording proves no frame inside the window, with the honesty
+   machinery (state refusal + channel health + positive control) still asserted and a named
+   `[QA-005e] RESOLVE-LIMIT` attachment; short-bracket + absent ⇒ FAILS loudly (17 ms local grids always
+   bracket short ⇒ **60 Hz teeth preserved, not negotiated**); (c) fabricated P1b keeps REQUIRED-null
+   (exact by construction, green twice); (d) audit every frame-model-verdict consumer for the same
+   coupling; (e) errors carry the interval histogram. Unit tests must reproduce BOTH observations of run
+   38784574025 as named cases. Acceptance: `--repeat-each=15` transient + 2×88/0 zero-retry local, tsc 0,
+   vitest only-up, then the PR-as-measurement-channel again (<=3 rounds); **milestone main merge holds for
+   a green develop tip** — standing discipline: the e2e gate is REQUIRED, a surviving flake is a named
+   ticket (this one named within minutes of its first firing, exactly as the rule intended), retries stay
+   1, and no green is claimed from a docs-delta tree while its test-content sibling printed red.
+   Live 1/3 (QA-005e); user lanes unchanged: req-08/11 revision art, the frozen `df353a0` cohort, P9 video. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
