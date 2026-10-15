@@ -7,6 +7,10 @@ import { defineConfig } from 'vitest/config';
 // default `node` environment; DOM/Phaser tests opt into jsdom per file with
 //   // @vitest-environment jsdom
 export default defineConfig({
+  // GitHub Pages serves this repo under a subpath (/AI-Native-GameCpt/).
+  // Relative asset URLs make the SAME dist work from the subpath, a repo root,
+  // or a plain `file:`/preview server — no env-specific base juggling.
+  base: "./",
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
