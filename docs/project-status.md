@@ -930,7 +930,36 @@ and a path must be quiescent before dispatch.**
     to R-004b: the `:147` pin's subject MOVED — it now walks L11 (title passes, stale body fails), and WORDING WATCH:
     UA-0009's end-panel canon must be checked at `develop` before their final battery, UA's string wins.
     **Merge discipline unchanged**: chain (`f484e23 → 8f75bc5 → f4e8186`) stays UNMERGED with its 2 reds — the moment
-    R-004b returns 86/0/exit-0, it all becomes ONE green merge. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+    R-004b returns 86/0/exit-0, it all becomes ONE green merge.
+59. **RV-007 RETURNED: 3× MERGE, 0 BLOCKER, serialization plan ENDORSED by an independent judge — plus one live
+   MAJOR it caught mid-flight.** The reviewer judged only disk and re-ran everything: Phaser keyboard semantics
+   RE-DERIVED from installed 3.90.0 source (queue re-walk-from-0, postUpdate-empty, per-consecutive guards, the
+   `key.isDown` repeat guard provably INERT in our game since no Key is ever registered — my agent's commit message
+   was accurate line-for-line); the harness control's 5-action sequence independently hand-derived; the
+   "measured, not typed" sweep numbers recomputed EXACT (339 states / 13 embedded / 0 mismatches / levels 4–11);
+   batteries re-run (23/452/3, 25/441/3); un-pin diffs proven assertion-zero-change; range-diff PROVES the
+   in-progress rebase patch-identical (`3a607ca`≡`679563c`, `318e518`≡`d630f88`); QA chain tip correctly cited
+   `f4e8186` (amended; `d5ef390` orphaned — merge record must use f4e8186). **MAJOR-1, caught alive**: the
+   `playthrough.spec.ts:47` literal was applied by R-004b at 21:19, reverted by 21:26, momentarily UNOWNED —
+   resolved not by intervention but by structure: my resume dispatch had already granted both lines; my own disk
+   read after the report (non-poll): latch-door:60 now `[6..11]` dirty, playthrough:47 still `[1..10]` pending —
+   the agent is mid-work. **Merge gate hard-coded by this office: both lines COMMITTED at return or the chain does
+   not merge** (RV-007's checklist adopted verbatim: ① lines land ② adaptation as commits, range-diff vs d630f88
+   ③ final-SHA battery on an IDLE machine, every timing flake NAMED per the FLAKY rule — candidates on record:
+   playthrough:147 ×1, transient:86 ×1, both green on every other read ④ merge record cites f4e8186 ⑤ §6 doc-debt
+   dispatched at merge). Split-landing alternatives were assessed by the reviewer and rejected for the same reason
+   I chose chain: none saves time, all add red windows. Endorsed forward-note: hand-typed inventories STAY as
+   deliberate dataset-change alarms (doctrine-consistent), budget ~6 lines/4 files per future unlock until
+   QA-005c's derivation ruling lands. **Backlog routed to QA-005c**: MINOR-2 (`:147` gains
+   `toContain(L1–L${EXPECTED_LEVEL_COUNT})` closing the composition-root chain end-to-end), MINOR-3 (recursive
+   layer-scan + bare-import pattern), NIT-4/6 (stale spec headers/doc examples), NIT-5 (`constructor`-code
+   prototype lookup — theoretical, Map/hasOwn when touched); DG-004 carries MINOR-4 (§6 mirrors for ALL THREE
+   held commits + R-003 + LV-008 + QA-005b — the doc-debt pile is now one dispatch). NIT-1 noted: R-003's message
+   said base "22 files" where git ls-tree proves 23 — deltas were and remain right; message stays, this line is
+   the correction. **DG-004a DISPATCHED** (free slot): dyn-merged evidence 15 PNGs + capture-log INTO
+   `docs/evidence/dyn-merged/` with provenance README, every dangling citation re-pointed, dated live-URL truth
+   (10 levels + banner disclosed; says NOTHING about the unmerged chain) — the pre-milestone gate now has its
+   pen. Live: R-004b(resume) + UA-0009 + DG-004a = 3/3. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
