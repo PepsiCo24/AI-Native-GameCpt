@@ -172,17 +172,24 @@ export function doorIsOpenNow(level: Level, gs: GameState, tile: Vec): boolean {
   return door !== undefined && gs.levelState.doorsOpen[door.id] === true;
 }
 
-/** The door render state — R-D1's blocking axis, one predicate for walls and doors. */
-export type DoorRenderState = "closed" | "open" | "occupied";
-
-export function doorRenderState(
-  level: Level,
-  gs: GameState,
-  tile: Vec,
-  playerEmbedded: boolean,
-): DoorRenderState {
-  if (playerEmbedded) return "occupied";
-  return doorIsOpenNow(level, gs, tile) ? "open" : "closed";
+/**
+ * Is the player standing **inside this door tile** while the door blocks entry in
+ * the current phase? R-D1/R-D7's "occupied" render flag, tile-scoped.
+ *
+ * Deliberately a predicate over **one tile**, not a classification of the board: the
+ * caller asks it for the tile it is about to paint, so it needs no `playerEmbedded`
+ * argument and cannot answer for a tile the player is not on. (The V0.7 signature
+ * took the board-wide embedded flag and returned "occupied" for *any* door tile
+ * whenever the player was embedded somewhere — right for the player's own tile, wrong
+ * for every other door on the board.) Both terms come from `GameState`; nothing here
+ * re-derives movement or predicts a flip.
+ */
+export function doorIsOccupiedNow(level: Level, gs: GameState, tile: Vec): boolean {
+  // A tile that carries no door can never be an occupied **door** — the predicate is
+  // answerable for any tile on the board, so it must answer "no" for all of them
+  // rather than only being safe when the caller already filtered to door tiles.
+  if (doorAt(level, tile) === undefined) return false;
+  return isPlayerAt(gs, tile) && !doorIsOpenNow(level, gs, tile);
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -235,20 +242,15 @@ export function portalTilesOf(level: Level): readonly PortalTile[] {
   return out;
 }
 
-/** The portal end at `tile`, regardless of its `activePhase` (same reason as above). */
-export function portalDefAt(level: Level, tile: Vec): PortalDef | undefined {
-  for (const portal of level.portals) {
-    for (const [x, y] of portal.pair) {
-      if (x === tile.x && y === tile.y) return portal;
-    }
-  }
-  return undefined;
-}
-
 /**
  * Is this portal end **active now**? Asked of core's `portalAt` (the same function
  * `applyMove`'s entry step uses), so the swirl can never promise a teleport the
  * rules would not perform — the §3.1c primary channel is exactly this flag.
+ *
+ * There is deliberately no `portalDefAt` counterpart to `switchDefAt`: a portal's
+ * look takes no per-portal data (§3.1c gives the class one outline token and a swirl,
+ * never a colour or a glyph), so the tile's def has no consumer and a lookup that
+ * nothing calls is API, not abstraction. `portalTilesOf` is what enumerates the ends.
  */
 export function portalIsActive(level: Level, gs: GameState, tile: Vec): boolean {
   return portalAt(level, gs.phase, tile) !== undefined;

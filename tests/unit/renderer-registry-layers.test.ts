@@ -22,9 +22,18 @@
 import { describe, expect, it } from "vitest";
 import type { Level } from "@/core/level";
 import type { Phase } from "@/core/state/phase";
-import { initialState } from "@/core/state/transitions";
+import { move } from "@/core/state/move";
+import { applyMoveToGameState, initialState } from "@/core/state/transitions";
 import type { Vec } from "@/core/state/types";
-import { doorTilesOf, portalTilesOf, switchTilesOf } from "@/game/renderer/cell-state";
+import {
+  doorIsOccupiedNow,
+  doorIsOpenNow,
+  doorTilesOf,
+  isPlayerAt,
+  isPlayerEmbedded,
+  portalTilesOf,
+  switchTilesOf,
+} from "@/game/renderer/cell-state";
 import {
   assertLayerOrder,
   assertLayerStack,
@@ -39,7 +48,7 @@ import { L4_ORDER, L4_SLOT, TILE_OBJECTS } from "@/game/renderer/objects/registr
 import type { TileObjectKind, TileObjectSpec } from "@/game/renderer/objects/registry";
 import { theme, toInt } from "@/game/theme/tokens";
 import { loadLevels } from "@/game/levels/level-registry";
-import { makeLevel, portal } from "../helpers/fixtures";
+import { makeLevel, door, portal } from "../helpers/fixtures";
 import { RecordingGraphics } from "../helpers/graphics-recorder";
 
 /** The tile classes §3.1d's table gives an L4 slot — the wall has no spec entry (R-E6). */
@@ -362,5 +371,59 @@ describe("registry ↔ cell-state ↔ core", () => {
     expect(claimed.get("1,1")).toEqual(["switch"]);
     expect(claimed.get("4,4")).toEqual(["portal"]);
     expect(claimed.get("4,0")).toEqual(["goal"]);
+  });
+});
+
+/* ──────────────────────────────────────────────────────────────────────────────
+ * RV-005 m-6 — the door "occupied" flag had two expressions: `doorRenderState`
+ * (unused, board-wide) and an inline one in the registry. It has one now.
+ * ────────────────────────────────────────────────────────────────────────────── */
+
+describe("cell-state — the door 'occupied' flag is one tile-scoped predicate (m-6)", () => {
+  it("reports the player's own tile as occupied exactly when the door blocks entry there", () => {
+    const level = makeLevel({
+      startPhase: "B",
+      player: [0, 1],
+      goal: [4, 4],
+      doors: [door("d1", "blue", [[1, 1]])],
+    });
+    const before = initialState(level);
+    expect(doorIsOpenNow(level, before, { x: 1, y: 1 })).toBe(true); // blue opens in B
+    expect(doorIsOccupiedNow(level, before, { x: 1, y: 1 })).toBe(false);
+
+    const inside = applyMoveToGameState(level, before, move("right"));
+    expect(inside.phase).toBe("A");
+    expect(doorIsOpenNow(level, inside, { x: 1, y: 1 })).toBe(false); // …closed in A
+    expect(isPlayerAt(inside, { x: 1, y: 1 })).toBe(true);
+    expect(doorIsOccupiedNow(level, inside, { x: 1, y: 1 })).toBe(true);
+    // The board-wide flag and the tile-scoped one agree *on the player's own tile* —
+    // which is the case R-D7 actually paints.
+    expect(isPlayerEmbedded(level, inside)).toBe(true);
+  });
+
+  it("is tile-scoped: a player embedded in a WALL does not make another door occupied", () => {
+    // The deleted `doorRenderState(level, gs, tile, playerEmbedded)` took the
+    // board-wide embedded flag and answered "occupied" for **any** door tile whenever
+    // the player was embedded somewhere — correct for the player's own tile, wrong for
+    // every other door on the board. This is that regression, pinned.
+    const level = makeLevel({
+      startPhase: "B",
+      player: [1, 1],
+      goal: [4, 4],
+      phaseAWalls: [[2, 1]],
+      doors: [door("d1", "blue", [[3, 3]])],
+    });
+    const start = initialState(level);
+    const embedded = applyMoveToGameState(level, start, move("right"));
+    expect(embedded).not.toBe(start);
+    expect(embedded.playerPosition).toEqual({ x: 2, y: 1 });
+    expect(embedded.phase).toBe("A");
+    expect(isPlayerEmbedded(level, embedded)).toBe(true); // the player IS embedded…
+
+    expect(doorIsOccupiedNow(level, embedded, { x: 2, y: 1 })).toBe(false); // …but not in a door
+    // A real door tile the player is not standing on stays unoccupied — the answer a
+    // board-wide `playerEmbedded` flag would have got wrong.
+    expect(doorIsOccupiedNow(level, embedded, { x: 3, y: 3 })).toBe(false);
+    expect(doorIsOpenNow(level, embedded, { x: 3, y: 3 })).toBe(false); // closed, and empty
   });
 });

@@ -64,12 +64,13 @@ import type { Level } from "@/core/level";
 import { doorAt } from "@/core/rules/solid";
 import type { GameState, Vec } from "@/core/state/types";
 import {
+  doorIsOccupiedNow,
   doorIsOpenNow,
-  isPlayerAt,
-  portalIsActive,
-  switchDefAt,
   doorTilesOf,
+  portalIsActive,
   portalTilesOf,
+  switchDefAt,
+  switchIsOn,
   switchTilesOf,
 } from "@/game/renderer/cell-state";
 import type { Rect } from "@/game/renderer/grid-mapping";
@@ -261,11 +262,11 @@ const DOOR: TileObjectSpec = {
     const prev = ctx.transition.prev;
     const openBefore = prev !== null && doorIsOpenNow(ctx.level, prev, ctx.tile);
 
-    const occupiedNow = isPlayerAt(ctx.gs, ctx.tile) && !openNow;
-    // "occupied" in the previous state means the player stood there *and* the door
-    // blocked entry then — the same derived flag, read from the previous state
-    // (R-C13.7: one code path, computed from `GameState`, never carried).
-    const occupiedBefore = prev !== null && isPlayerAt(prev, ctx.tile) && !openBefore;
+    // R-C13.7 — one code path for the "occupied" flag: `cell-state.ts`'s tile-scoped
+    // predicate, asked separately of the state being shown and of the previous one
+    // (never carried, never re-derived from `(colour, phase, switches)` here).
+    const occupiedNow = doorIsOccupiedNow(ctx.level, ctx.gs, ctx.tile);
+    const occupiedBefore = prev !== null && doorIsOccupiedNow(ctx.level, prev, ctx.tile);
 
     paintDoor({
       g: ctx.g,
@@ -300,9 +301,9 @@ const SWITCH: TileObjectSpec = {
     const sw = switchDefAt(ctx.level, ctx.tile);
     if (sw === undefined) return; // unreachable, as above
 
-    const onNow = ctx.gs.levelState.switchesOn[sw.id] === true;
+    const onNow = switchIsOn(ctx.gs, sw);
     const prev = ctx.transition.prev;
-    const onBefore = prev !== null && prev.levelState.switchesOn[sw.id] === true;
+    const onBefore = prev !== null && switchIsOn(prev, sw);
     const toggled = prev !== null && onNow !== onBefore;
 
     paintSwitch({
