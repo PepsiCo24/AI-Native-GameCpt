@@ -772,6 +772,45 @@ and a path must be quiescent before dispatch.**
     future milestone merges auto-publish. The public build SHIPS WITH PLACEHOLDER ART DISCLOSED in-game (banner)
     and in the workflow header comment — Asset Gate honored; revision art remains the user's lane; URL ≠ G6 done
     (final release = milestone re-merge when G1–G5 land).
+49. **DG-003 MERGED — facade canonized to disk-truth (`dde5a3d`+`d358e15` → merge `5cabdd2`).** Verification judged the
+    disk, not the report: all 7 cited SHAs exist (`git cat-file`); "M1-alone 0/370" is the canonical figure of this
+    file, not invented; "nothing DELIVERED" matches manifest V0.5 verbatim; secret/banned-word scans over added lines
+    clean; 46/2000 is the only divergence figure cited (1×README, 2×design-thinking, 5×iteration). Their self-check
+    caught three own overclaims before commit — consistent with what landed. **My finding they could not have:
+    dangling evidence pointers** — README/submission cite `dyn-merged/` (15 trusted-input frames + manifest) that
+    live in the Orchestrator smoke dir, NOT in the repo (`git ls-files` 0 hits). A public repo may not cite
+    unverifiable artefacts → **DG-004 queued with pre-milestone force**: copy evidence into `docs/evidence/`,
+    re-point every citation, add the live-URL line (Pages went public after their base — they could not know it).
+    Until DG-004 lands, no further main merge (current public main is pre-DG text — stale but not wrong-citing).
+    Gap inventory routed: #1→PA-006(item 51) · #2→LV-008(live) · #3→QA-005(item 50) · #4→user art lane ·
+    #5→GD post-cohort · #6/#8→GD ticket queued · #7→LV queue · #9 URL half discharged by item 48, video remains ·
+    #10 folds into PA-006's BUT-table re-freeze.
+50. **QA-005 MERGED — standing browser regression permanent (`6b5bf71` → merge `616789e`).** Disk-verified: 12 files
+    exactly their owned set (`playwright.config.ts`+`tests/**`), 3,217 insertions; `--list` count matched 75/7;
+    **the authoritative run was on merged develop, not their worktree**: Playwright **75 passed / exit 0 / 3.4 min** +
+    tsc 0 + vitest 408/3 + levels 10/10 + build ✓ (all re-run by me at `5cabdd2`/`b96f3f8`). Suite is production-data
+    driven (par routes solved at runtime — future levels flow without spec edits). **Two REAL production defects
+    confirmed verbatim at source and pinned, not patched**: ① frame-window keyboard replay — two down/up pairs in one
+    frame ⇒ 5 moves (`input-map.ts:130` onKeyDown); ② stale mid-run win copy prints "L1–L5 cleared" while the game
+    ships L10 (`hud.ts:348`). Both are live on the public URL now — fix ticket dispatched (item 51); pins are the
+    un-pin contract (unexpected-PASS flags removal). **Transient-frame physics got its terminal verdict** (the
+    Entry-2 not-capturable hole): refusal arc P1 measurable (109 ms window in the 220 ms budget, peak 2488 px, actor
+    centroid 2 px off ROI centre); press-beat P2 **occluded by construction** — actor disc 0.70 cell strictly contains
+    the 0.40 cell switch footprint, so no production change is wanted or needed while occupied; ui-ux wording
+    follow-up = UA-0009 queued micro. **CI ruling (their OQ2): e2e job REQUIRED after `verify`** (`b96f3f8`) —
+    chromium-only, workers 1, NO retries (flake surfaces stay visible), report artifact on failure. Their hygiene
+    risk accepted+fixed: `node_modules/`→`node_modules` so worktree symlinks can never be staged.
+51. **DISPATCHED — live agents 3/3 ceiling.** **R-004b → Gameplay Engineer** (branch `agent/gameplay/r-004b-input-hud-embed`,
+    base `b96f3f8`): fix both pinned defects (src + the granted two-line e2e un-pin + new `tests/unit` regressions)
+    AND land R-004 (`isPlayerEmbedded` → `src/core/rules` via the `solidAt` one-truth, six-step order,
+    architecture-0003 R4). **PA-006 → Playtest Analyst** (branch `agent/playtest/pa-006-stage2-refreeze`, base
+    `b96f3f8`): Stage-2 instrument **re-freeze V0.6** — the `41d5a4b` freeze covers L1–L5 only, pre-unlock, so a
+    cohort would test a prototype that no longer exists; scope = L1–L10 per-level metrics (understand-time,
+    first-win, refuses/restarts/undos, confusion markers, continue-intent at the L5→L6 d′ seam and L6→L8 a′ probe),
+    explicit c′-deferral ruling (portals wait for accepted `l011.json`), friction clause + R7 tri-signal coding,
+    sha256 provenance manifest, user-facing 10-cohort runbook. Cohort itself stays the user's lane; this ticket is
+    the human-free half of G4. **Queue**: DG-004 (PRE-MILESTONE GATE), UA-0009, GD ticket (level-design:115 +
+    par-HUD OQ1 + L11 block-ruling after LV-008), R-003 → after LV-008, LV-007D/E → after LV-008, demo video (user/DG).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
