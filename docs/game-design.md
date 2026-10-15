@@ -1,7 +1,7 @@
 # Game Design — Phase Shift: Echo Grid / 双相棋盘：昼夜回响
 
 > Owner: **Agent 1 — Game Designer**
-> Version: **V0.6**
+> Version: **V0.7**
 > Date: 2026-10-15
 > Status: **LOCKED for prototype** (changes require Product Lead + Game Designer double confirmation)
 
@@ -241,7 +241,31 @@ Priority: **Fun > Readable > Expandable > Pretty.**
 | A4 | Readability holds across both worlds on mobile | Board unreadable on small screens | Mobile test + screenshot review |
 | A5 | The M0-only opening (L1–L5: literacy, refusal, phantom walk) retains players to L6 **without a mechanical Aha** | Slow open; early churn before the first real decision at L6 | Stage 2: L1–L5 completion + "wants L6" rate (ADR-0009 hypothesis d′) |
 
-## 14. Change log
+## 14. Open questions ledger (design-owned)
+
+Design rulings on open questions raised in other lanes' files. One row per question; a question is **open** (waiting on named evidence) or **retired** (answered, with grounds). Retired rows stay as history — they are never deleted, and re-opening one requires the named evidence, not taste (AGENTS.md §7).
+
+| # | Source | Question | Status | Ruling |
+|---|---|---|---|---|
+| **GD-OQ1** | `docs/ui-ux.md` §12 OQ1 / §5.3 (M-5b) | Should `par` display in the HUD (`moves 4 / par 6`)? | **RETIRED 2026-10-15 (GD-010) — REFUSED** | §14.1 |
+
+### 14.1 GD-OQ1 — par in the HUD: REFUSED (2026-10-15, GD-010)
+
+**Ruling.** The ui-ux.md V0.3 default — **plain move count only, no par anywhere in the HUD or the win dialog** — is signed as the *design* ruling, ending the "pending Game Designer sign-off" state. `par` stays in the level schema as a Solver/difficulty field (it is load-bearing: the `aha-par-cap` / `gate-portal-par-cap` gates and the seam law read it); it is **not a player-facing number** in the prototype. This changes no rule, no schema, no shipped screen; the outcome lands in `docs/ui-ux.md` via UA's own next round (that file is not edited here).
+
+**Grounds — locked doctrine only:**
+
+1. **Show, don't tell (§9) — the board is the teacher.** In the teaching span the only sanctioned teaching channels are the board and refusal feedback — the refusal IS the tutorial (`docs/level-design.md` §2 L3). A par readout is a *telling* channel: it asserts "a shorter route exists" before the player has the literacy to act on that fact. On L8 the Aha is engineered so the player *realizes it themselves* — never a "you discovered it" popup (§9) — and a visible `moves 9 / par 6` during that search leaks exactly the meta-information the board was built to withhold until discovery.
+2. **The dip law's psychology (`docs/level-design.md` §6 rationale).** Debut levels are deliberately par ≤ 4, single-concept, below-OFFERED so the player's whole budget goes to comprehension: execution difficulty stacked on comprehension load reads as unfairness. A visible par adds a standing *evaluation* channel on top of comprehension load — the player tapping around to learn the latch reads `moves 7 / par 4` as failure. Par is **never a fail condition** (`docs/level-design.md` §1), but a HUD number the player can exceed is a fail condition by position; the honest framings are fail condition (forbidden) or decoration (noise the attention budget has no rank for). Refuse the position, keep the rule intact.
+3. **No-punishment doctrine (§12; `docs/level-design.md` §4).** No death, no timer, no move limit; Restart is one tap, penalty-free, framed as experimentation — *every refusal is information*. An over-par counter is a soft timer inside the player's head: the exact punishment texture the fail-condition law excludes.
+4. **No-new-screens / YAGNI (`docs/ui-ux.md` §0 non-negotiable 5; AGENTS.md §10).** Par-in-HUD is the first cell of a ratings system (perfect-clear chase → stars → progression), all out of prototype scope. The "play one more" hook is already carried by shipped channels: instant one-tap Restart, unlimited Undo, fast cadence on small par ≤ 6 boards (the L1–L5 hook, `docs/level-design.md` §2), and the win dialog's existing move count + Replay.
+5. **The comprehension ladder (`docs/level-design.md` §2).** The ladder spends L1–L10 building one reading skill per level; during L1–L15 the par number answers a question the ladder has not yet taught the player to ask.
+
+**What this ruling is not:** not a schema change (`par` stays; never a fail condition); not a `docs/ui-ux.md` edit (UA owns that file); not a removal of the win dialog's move count (shipped, stays).
+
+**Re-opener (evidence-only, pre-specified):** Stage 2/3 playtest data showing players seek an efficiency target — e.g. win-dialog move-count comparisons measurably driving Replay sessions, or testers spontaneously asking "was that good?" at rates the Playtest Analyst's protocol scores — may re-open this question for the **post-teaching span (L16+)** or for the **win dialog**, with thresholds frozen before the cohort runs (T6 discipline). Playtest data outranks this ruling; taste — mine included — does not.
+
+## 15. Change log
 
 | Date | Version | Change | Author |
 |---|---|---|---|
@@ -251,3 +275,4 @@ Priority: **Fun > Readable > Expandable > Pretty.**
 | 2026-10-14 | V0.4 | **GATE C (human decision): core rule → Option B (ADR-0008).** Phase solidity blocks entry only; the post-flip standing check is removed; standing inside a flipped-in wall is legal (never crushed / pushed / moved); union property removed (§1, §5); Aha chain re-based on M0 parity routing (§8, §9); goal must be non-wall in both phases. Partially supersedes ADR-0006; revises ADR-0007 echo semantics. **Requires Stage 2 playtest verification + full Solver re-verification of the level set** | Agent 1 / Human at GATE C |
 | 2026-10-14 | V0.5 | **GATE D (human decision, D3 — mechanics forward; ADR-0009).** Checkerboard invariant adopted as design law; ADR-0008 clause 8's parity-routing claim withdrawn (M0, and M1 without switches, are measured static). **M3 promoted OPTIONAL → CORE**; M1+M3 paired teaching unit from L6; M2 portals from L11 under the opposite-colour law. Aha #1 re-defined as the **latch** ("我踩过的东西改变了我脚下的世界"), Aha #2 as the **opposite-colour portal**; phantom walk kept as M0's honest L4–L5 lesson. §1 rules truth, §3.1 (invariant + `[x, y]` = column/row convention), §5, §8, §9 rewritten; §13 A2 replaced, A5 added. **ADR-0008 rules 1–7 unchanged** | Agent 1 / Human at GATE D |
 | 2026-10-15 | V0.6 | **GD-008 — dip law re-axed (ADR-design-0001).** §8/§11: the block-opening dip moves to the execution axis `D_exec = D − w5·M`; raw `D` steps **up** at debuts by the comprehension tax `w5·ΔM` (measured +8.53 at L5→L6), admitted openly — what dips is execution (−1.47). The falsified "2–3 points on `D`" clause is withdrawn **unfitted**: no weight re-tuned to reach a target number. Core rule untouched. | Agent 1 (GD-008) |
+| 2026-10-15 | V0.7 | **GD-010 — design-owned OQ ledger opened (new §14); ui-ux.md OQ1 retired: par-in-HUD REFUSED.** HUD stays plain move count only; `par` remains a Solver/difficulty schema field, never a player-facing number in the prototype — argued from locked doctrine alone (§9 show-don't-tell, board-is-the-teacher, refusal-as-tutorial, §12 no-punishment, no-new-screens/YAGNI) plus the comprehension-ladder cost, with an evidence-only re-opener (Stage 2/3 playtest, T6-frozen thresholds; L16+/win-dialog scope). Change log renumbered §14 → §15. Also recorded this round (in `docs/level-design.md` V0.8 + ADR-design-0002): the L11 seam-law OUTCOME, the LV-007C landed gate-(iii) reader, and the L11+ block ruling (promotion trigger tested, did not fire). **No core-rule, mechanic, schedule or difficulty-law change.** | Agent 1 (GD-010) |
