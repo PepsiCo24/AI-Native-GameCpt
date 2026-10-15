@@ -343,6 +343,14 @@ export interface LevelAudit {
   readonly lesson: DocumentedLesson | null;
   readonly result: SolveResult;
   readonly embeds: EmbedMetrics;
+  /**
+   * `docs/level-design.md` §3 condition, measured for **every** switch-bearing
+   * level (not only the Aha): `true` = the goal is still reachable without ever
+   * pressing a switch (the latch is optional), `false` = the switch is required
+   * (the door genuinely refuses the un-switched approach), `null` = the level has
+   * no switches.
+   */
+  readonly allOffGoalReachable: boolean | null;
   /** Named gates — only for a level documented as Aha #1 (`latch-aha-1`). */
   readonly gates: readonly NamedGate[];
   /** Hard policy violations: the level must not ship while any is present. */
@@ -442,5 +450,14 @@ export function auditLevel(level: Level, graph: ReachableGraph = explore(level))
     });
   }
 
-  return { levelId: level.id, lesson, result, embeds, gates, violations };
+  return {
+    levelId: level.id,
+    lesson,
+    result,
+    embeds,
+    allOffGoalReachable:
+      level.switches.length === 0 ? null : goalReachableWithAllSwitchesOff(level, graph),
+    gates,
+    violations,
+  };
 }

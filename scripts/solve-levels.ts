@@ -186,6 +186,10 @@ function reportLevel(
   console.log(
     `       parRoutes=${audit.embeds.parRoutes} embedRoutes=${audit.embeds.embedRoutes} embedForced=${String(audit.embeds.embedForced)}`,
   );
+  // docs/level-design.md §3 condition, measured on every switch-bearing level.
+  console.log(
+    `       switchRequired=${audit.allOffGoalReachable === null ? "n/a (no switches)" : String(!audit.allOffGoalReachable)} (goal reachable with every switch OFF: ${audit.allOffGoalReachable === null ? "n/a" : String(audit.allOffGoalReachable)})`,
+  );
   console.log(
     `       deadStates=${result.deadStates} states=${formatTiles(result.deadStateList)}`,
   );
