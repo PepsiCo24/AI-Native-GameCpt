@@ -175,10 +175,12 @@ are judged by report, not footprint). Verdict: LV-007B merge stands; 12/12 mutat
 all recomputed exact. Findings routed: **MINOR-2** (stale bfs.ts gate-(iii) comment) **already closed on disk** by
 LV-007C's own rewrite (verified on develop); **MINOR-1** (46/2000 vs 0.9% vs 18/2000 divergence numbers cited
 across docs without generator labels) → **LV-007D micro + AR-0006** (OQ1: in-repo harness vs unify citations);
-NOTE-1..5 → QA archive (`rv006-mut/` logs) + backlog. Worktree removed. Three new tickets live: **LV-008** (L11 first-portal authoring
-against the frozen pre-registered law — `D_exec<13.64`, par≤4, one opposite-color pair, no false routes; ≥20
-candidates, program proves, accept/reject never repair), **UA-0008d** (l9→78 px attribution fix + docs/assets
-pre-D3 L36 sweep from LV-007C OQ3), **DG-002** (iteration-log entries for GD-008/UA-0008c/R-002/LV-007C). The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
+ NOTE-1..5 → QA archive (`rv006-mut/` logs) + backlog. Worktree removed. Since then: **UA-0008d — CLOSED & MERGED
+ (`4d9dde9`)** and **DG-002 — CLOSED & MERGED (`9bae42c`)** (items 41–42). Live now: **LV-008** (L11 first-portal
+ authoring against the frozen pre-registered law — `D_exec<13.64`, par≤4, one opposite-color pair, no false
+ routes; ≥20 candidates, program proves, accept/reject never repair), **AR-0006** (three rulings: divergence-number
+ source of truth / graphics2d type-purity / metrics persistence; four doc debts), **DG-002b** (ITER-0007 verbatim
+ relocation out of the template comment). The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
 firing on portal boards are now in. **QA-005 re-scoped**: Playwright now
 **installed** (devDep + chromium v1248, installed by the Orchestrator as sole package.json writer) and all dynamic
 frames already captured (see item 28). Remaining QA-005 = the permanent spec only: `playwright.config` +
@@ -652,8 +654,21 @@ and a path must be quiescent before dispatch.**
     spelled out) + four doc debts (stale §55 `generate-levels` citation to be replaced with the REAL script family,
     §8 future-tense → shipped + two-legs-unchained declaration, n-6 `isPlayerEmbedded` dependency direction with
     code moves pre-specified as engineer micro-tickets, LV-007C OQ4 multi-switch-door flag home ruling). Rulings
-    route onward to LV-007D / GD / gameplay micro-tickets; no code touched by AR. Three live: LV-008 · DG-002 ·
-    AR-0006.
+    route onward to LV-007D / GD / gameplay micro-tickets; no code touched by AR.
+42. **DG-002 — RETURNED & MERGED (`9bae42c`): iteration-log ITER-0008..0011 landed — the AGENTS §6 compliance
+    record for the L6–L10 gameplay merge.** Four entries (GD-008 / UA-0008c / R-002+R-002b headline / LV-007C),
+    boundary exactly `docs/iteration-log.md`, +68 lines PURE ADDITIONS, all cited SHAs verified alive on my disk
+    (4/4), CI green through `9bae42c`. Their OQ caught a REAL structural defect I confirmed before ruling:
+    **ITER-0007 (the RENDER-001 vertical-slice milestone — the first time the game ran in a browser) was entombed
+    inside the `<!-- Template for future entries` comment** (line 219 inside a comment opening at 217) — invisible
+    in rendered markdown AND chronologically misplaced (belongs between ITER-0006 and ITER-0008). Ruling: approved
+    as a verbatim relocation, zero content change — and DG's restraint (asked instead of touching it, then
+    escalating precisely) is the ownership discipline working as designed. **DG-002b dispatched** (worktree
+    `…/dg-iter0007-rescue`, branch off `9bae42c`): byte-identical lift to the ITER-0006/0008 seam, template comment
+    must remain legally paired after the move, self-check = heading count invariant + monotonic ordering + diff
+    shows pure relocation; one commit. Three live: **LV-008** (L11 authoring against the frozen pre-registered law)
+    · **AR-0006** (three rulings + four doc debts) · **DG-002b**. Vite :5199 stays up on the merged tree — the
+    Entry-3 portal pair-frames fire the moment LV-008's board passes and R-003 unlocks it in the registry.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
