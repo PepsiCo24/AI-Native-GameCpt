@@ -142,6 +142,9 @@ come from CDP/Playwright events, never from dispatched synthetic events.**
 `~/.local/share/opencode/worktree/f9a5d9/r-002-painters` (base `5624558`, branch `agent/gameplay/r-002-painters`).
 Visual acceptance is NOT his call: Orchestrator smoke + UA vision review + §6 iteration-log entry gate before merge.
 
+**GD-007** (Game Designer, background) — `docs/level-design.md` V0.5 alignment, isolated worktree
+`~/.local/share/opencode/worktree/f9a5d9/gd-007-level-design` (base `cd2054e`).
+
 **QA-004** (QA Engineer, background) — independent second-implementation reproduction of the ART-INTAKE audit
 numbers (`audit.json`) + suite regression, read-only, no commits. It can now only trigger a **corrigendum** to
 `docs/assets/art-acceptance-2026-10-15.md`, not reopen a ruling. Everything else has returned; the art intake docs are
@@ -376,9 +379,26 @@ and a path must be quiescent before dispatch.**
    no genuine timing-gate wall — phase walls exist only as permanent obstacle / permanent decoration / echo.**
    Worktree hygiene note: `?? node_modules` in the worktree = ignore pattern `node_modules/` (trailing slash) does
    not match the symlink; harmless with explicit-path staging, fix before worktrees are reused.
-16. **GD-007 (tiny, batched with the L6 authoring pass):** `docs/level-design.md` §1 lines ~43/46 still cite the withdrawn "0/200" figure and describe the
+16. **GD-007 — DISPATCHED 2026-10-15** (isolated worktree `~/.local/share/opencode/worktree/f9a5d9/gd-007-level-design`,
+    branch `agent/design/gd-007-level-design`, base `cd2054e`; brief = five edits: §1 ladder-sync to ADR-0009 + gate-(iv)
+    ruling, L9 re-word to the F3-constructible ordered-plan lesson, L6 dip confirmed never-forced, §3 Aha bullets aligned
+    ((i)(ii)(iii) pre-L11 / dualPhase from L11), §6 dip numbers vs §5.1). **Acceptance check on return: also verify the
+    withdrawn "0/200" figure and the same-colour-portal "validator rule to be added" sentence are gone/updated** (rule
+    landed since LV-002A: `npm run levels` rejects every same-colour pair, 0/400 legal) — if missed, GD-007b micro-fix.
+    `docs/level-design.md` §1 lines ~43/46 still cite the withdrawn "0/200" figure and describe the
     same-colour-portal rejection as a "validator rule to be added" — that rule has since **landed** (`npm run levels` rejects every same-colour pair, 0/400 legal).
     GD-006 correctly stayed out of scope and flagged it instead of widening the edit.
+27. **AUTONOMOUS OPERATION MODE (user ruling 2026-10-15: 后续全部工作均由你自主决策执行 — full self-delegation to the
+    Orchestrator).** Git/merge/push/verification decisions now execute under AGENTS.md §4/§6 without per-step confirmation;
+    integration flow keeps its evidence gates (review → merge → verify → push). Rulings taken under it: (i) `assets/`
+    storage — **all 11 candidate PNGs (9.2 MB, sha256-pinned) + quantitative evidence (`audit.json`, `audit_flat.txt`,
+    `baseline.sha256`, `art-audit.py` re-acceptance program) committed** → develop `cd2054e` (revision batch lands as a
+    forward correction; batch-1 pinning + re-runnable audit program = the chain, not a claim); (ii) QA-004 timeout policy —
+    live until R-002 returns, then closed unilaterally as LOST-on-disk (no second implementation = its corrigendum power
+    lapses; `art-audit.py` in Git keeps reproduction possible later); (iii) GD-007 dispatched (item 16); (iv) LV-007 queue
+    holds at ≤3 concurrent. What delegation cannot remove: **the Asset Gate generator itself** (image generation lives in
+    the user's Codex channel — req-08/11 P0 remains user-side) and **the 10 non-developer playtest cohort** (BUT/PA
+    protocol forbids agent-as-player substitution). Everything else is moving on my judgment.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
