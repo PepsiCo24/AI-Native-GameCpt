@@ -13,8 +13,12 @@
  *    and that switch must be able to fire somewhere in the reachable state space.
  *    A door without a live switch is measured static (ADR-0009: 0/400 boards,
  *    `refusedThenEnteredTiles > 0`), i.e. it is M1-alone content by another name.
- *    Enforced here, printed by `scripts/solve-levels.ts`, pinned by
- *    `tests/solver/**` — the schema stays a shape contract, not a design policy.
+ *    Enforced here, printed by `scripts/solve-levels.ts`, and pinned **code by
+ *    code** (RV-004 m-2): {@link POLICY_VIOLATION_CODES} is the inventory of every
+ *    code this module can emit, and `tests/solver/policy-negative-controls.test.ts`
+ *    carries one negative control per entry — a board that must be rejected **by
+ *    that exact name** — plus a source scan that fails when a code is added
+ *    without a control. The schema stays a shape contract, not a design policy.
  * 2. **A documented lesson must be program-true** (`AGENTS.md` §7: levels ⇒
  *    solver proof). A level the docs call a *forced* phantom walk must FORCE one
  *    (`embedForced`); one documented as *offering* it must offer it and not force
@@ -160,8 +164,21 @@ export function documentedLesson(levelId: number): DocumentedLesson | null {
 
 export type GateStatus = "PASS" | "FAIL" | "UNSATISFIABLE";
 
+/**
+ * The named gates {@link latchAhaGates} can report (the Aha #1 condition list of
+ * `docs/level-design.md` §3). Deliberately a **closed union typed onto
+ * `NamedGate.id`**: adding a gate without declaring it here is a compile error,
+ * so the gate list cannot drift past `POLICY_VIOLATION_CODES` / the suite's
+ * one-negative-control-per-code rule below.
+ */
+export type AhaGateId =
+  | "no-solution-with-switches-off"
+  | "shortest-solution-presses-switch-and-crosses-door"
+  | "refused-then-entered"
+  | "dual-phase-tiles";
+
 export interface NamedGate {
-  readonly id: string;
+  readonly id: AhaGateId;
   /** The condition in the words of the design doc / dispatch. */
   readonly label: string;
   readonly status: GateStatus;
@@ -334,9 +351,39 @@ function countAllOffStates(level: Level, graph: ReachableGraph): number {
 
 export interface PolicyViolation {
   /** Stable machine-readable code, so a failure can be pinned by the suite. */
-  readonly code: string;
+  readonly code: PolicyViolationCode;
   readonly detail: string;
 }
+
+/**
+ * The inventory of every code this module can emit — a failing gate is reported
+ * as `gate-<id>`, everything else is listed literally.
+ *
+ * This list is the **declaration of record** (RV-004 m-2): each entry must have a
+ * negative control in `tests/solver/policy-negative-controls.test.ts` that fails
+ * if that single check is disabled, so "pinned by tests" is a claim about every
+ * code and not only about the four that were convenient. A code emitted inline
+ * without being added here is caught by the same suite's source scan.
+ */
+export type PolicyViolationCode =
+  | "door-without-switch"
+  | "switch-never-fires"
+  | "lesson-phantom-walk-forced"
+  | "lesson-phantom-walk-offered"
+  | "lesson-latch-dynamism"
+  | `gate-${AhaGateId}`;
+
+export const POLICY_VIOLATION_CODES: readonly PolicyViolationCode[] = [
+  "door-without-switch",
+  "switch-never-fires",
+  "lesson-phantom-walk-forced",
+  "lesson-phantom-walk-offered",
+  "lesson-latch-dynamism",
+  "gate-no-solution-with-switches-off",
+  "gate-shortest-solution-presses-switch-and-crosses-door",
+  "gate-refused-then-entered",
+  "gate-dual-phase-tiles",
+];
 
 /** Switch ids that actually toggle somewhere in the reachable graph. */
 export function firingSwitches(

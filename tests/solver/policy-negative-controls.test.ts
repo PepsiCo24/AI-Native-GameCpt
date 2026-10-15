@@ -1,0 +1,444 @@
+/**
+ * LV-007A · RV-004 **m-2** — one negative control per policy code
+ * (`@/core/solver/policy`, `POLICY_VIOLATION_CODES`).
+ *
+ * Why this file exists: RV-004 re-ran the suite with a deliberately mutated
+ * analyzer (`result.refusedThenEnteredTiles === 0` → `false`, i.e. the
+ * `lesson-latch-dynamism` check disabled) and **176 tests stayed green** — the
+ * policy module claimed to be "pinned by tests", but five of its codes had no
+ * control that fails when the code stops firing. "Pinned by tests" must mean: for
+ * every code, there is a board that is *rejected by that exact name*, so deleting
+ * or neutering the check turns the suite RED.
+ *
+ * What is enforced here:
+ *
+ * 1. **Coverage** — `NEGATIVE_CONTROLS` is typed `Record<PolicyViolationCode, …>`
+ *    (keyed by the inventory in `policy.ts`), so a new code that is not given a
+ *    control is a **compile error**, and every entry is then *measured*: the board
+ *    must produce that code (and nothing exotic: several controls assert the
+ *    violation list exactly, so they cannot pass for an unrelated reason).
+ * 2. **Discrimination** — each control is paired with the *shipped* board carrying
+ *    the same documented lesson, which must NOT be rejected. A check that rejects
+ *    everything is as useless as a check that rejects nothing.
+ * 3. **No silent code** — a source scan of `policy.ts` fails if a `code: "…"`
+ *    literal or a named-gate id is emitted without being listed in
+ *    `POLICY_VIOLATION_CODES`.
+ *
+ * These are the *hypothetical* boards the rules allow us to write: a negative
+ * control is a Level object handed straight to `auditLevel`, never shipped content
+ * (ADR-0004 — reject, never repair; this file only ever rejects).
+ */
+
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import type { Level } from "@/core/level";
+import { validateLevel } from "@/core/level";
+import type { PolicyViolationCode } from "@/core/solver/policy";
+import {
+  POLICY_VIOLATION_CODES,
+  auditLevel,
+  firingSwitches,
+} from "@/core/solver/policy";
+import { explore } from "@/core/solver/bfs";
+import { door, makeLevel, switchDef } from "../helpers/fixtures";
+
+const LEVELS_DIR = fileURLToPath(new URL("../../src/levels/", import.meta.url));
+
+/** A shipped level's board, schema-validated first (the documented lesson travels with the id). */
+function shippedBoard(id: number): Level {
+  const raw = JSON.parse(
+    readFileSync(
+      `${LEVELS_DIR}l${String(id).padStart(3, "0")}.json`,
+      "utf8",
+    ),
+  ) as Level;
+  expect(validateLevel(raw).ok, `l${String(id).padStart(3, "0")}`).toBe(true);
+  return raw;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Control boards (each one isolates exactly one code)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** M1 alone: a door nobody drives. */
+const DOOR_WITHOUT_SWITCH: Level = makeLevel({
+  id: 900,
+  width: 5,
+  height: 3,
+  player: [0, 1],
+  goal: [4, 1],
+  doors: [door("d1", "blue", [[3, 1]])],
+});
+
+/**
+ * Inert latch: `(1,1)` is entered in phase A only (Manhattan distance 1 ⇒ entry
+ * phase A, ADR-0009 decision 1), so an `activePhase: "B"` switch sitting there can
+ * never be current — dead data that still *looks* like a circuit.
+ */
+const INERT_SWITCH: Level = makeLevel({
+  id: 900,
+  width: 5,
+  height: 3,
+  player: [0, 1],
+  goal: [4, 1],
+  doors: [door("d1", "blue", [[3, 1]])],
+  switches: [switchDef("s1", [1, 1], "B", ["d1"])],
+});
+
+/**
+ * The documented **FORCED** phantom walk (`l005`, obligation `phantom-walk-forced`)
+ * with a board that has no echo at all: documentation and board disagree.
+ */
+const FORCED_LESSON_WITHOUT_ECHO: Level = makeLevel({
+  id: 5,
+  width: 5,
+  height: 3,
+  player: [0, 1],
+  goal: [4, 1],
+  par: 4,
+});
+
+/**
+ * The documented **OFFERED** phantom walk (`l004`) delivered by a board that
+ * *forces* it: `l005`'s shipped board (3/3 shortest routes embed) re-labelled as
+ * the offered lesson. Same code, opposite defect from the previous control.
+ */
+const OFFERED_LESSON_WITH_FORCED_BOARD: Level = {
+  ...shippedBoard(5),
+  id: 4,
+};
+
+/**
+ * A board documented as a **latch** level that is mechanically static.
+ *
+ * Construction (why `refusedThenEnteredTiles` is really 0 here, measured not
+ * argued): the blue door at `(1,0)` has exactly three neighbours — `(0,0)`,
+ * `(2,0)` and `(1,1)` — and all three are walls in **both** phases, so no
+ * reachable state ever stands next to the door and the door tile is therefore
+ * never *clicked*. `refusedThenEnteredTiles` is a **clicked**-tile metric
+ * (`@/core/solver/bfs`), so it is 0 by construction while every other policy
+ * check passes: the switch at `(2,1)` targets the door and really fires
+ * (`d(2,1) = 2` ⇒ entry phase B = its `activePhase`). This is the board type the
+ * mutation above could not be caught by: the latch exists as data, not as a
+ * decision.
+ */
+const LATCH_LESSON_WITH_STATIC_BOARD: Level = {
+  id: 6,
+  width: 5,
+  height: 3,
+  startPhase: "A",
+  player: [0, 1],
+  goal: [4, 1],
+  phaseAWalls: [
+    [0, 0],
+    [2, 0],
+    [1, 1],
+  ],
+  phaseBWalls: [
+    [0, 0],
+    [2, 0],
+    [1, 1],
+  ],
+  doors: [door("d1", "blue", [[1, 0]])],
+  switches: [switchDef("s1", [2, 1], "B", ["d1"])],
+  portals: [],
+  par: 6,
+};
+
+const STATIC_BOARD_AS_AHA: Level = { ...LATCH_LESSON_WITH_STATIC_BOARD, id: 8 };
+
+/**
+ * A board documented as **Aha #1** whose shortest solutions can *walk around* the
+ * door: the goal row is open on both sides, so the latch is not what carries the
+ * decision (`allOffGoalReachable === true` — the un-switched world wins too).
+ */
+const AHA_LESSON_WITH_BYPASS: Level = makeLevel({
+  id: 8,
+  width: 5,
+  height: 3,
+  player: [0, 1],
+  goal: [4, 1],
+  doors: [door("d1", "blue", [[3, 1]])],
+  switches: [switchDef("s1", [2, 0], "A", ["d1"])],
+  par: 4,
+});
+
+/**
+ * A board documented as **Aha #1** that carries a portal which can never be used
+ * (its two ends form a sealed pocket, so they are never entered): `dualPhaseTiles`
+ * is measured 0 while `portals.length > 0`. This is the *only* way gate (iv) can
+ * reach its FAIL branch — and the branch must be reachable, otherwise
+ * `UNSATISFIABLE` would silently excuse a real failure on any board that merely
+ * mentions M2.
+ */
+const AHA_LESSON_WITH_INERT_PORTAL: Level = {
+  ...shippedBoard(8),
+  phaseAWalls: [
+    [4, 0],
+    [4, 2],
+    [0, 2],
+    [1, 2],
+    [2, 3],
+  ],
+  phaseBWalls: [
+    [0, 2],
+    [1, 2],
+    [2, 3],
+  ],
+  portals: [{ id: "p1", pair: [[0, 3], [1, 3]], activePhase: "A" }],
+};
+
+/** The gate-(i) control `tests/solver/latch-gates.test.ts` already carried. */
+const AHA_LESSON_WITHOUT_FUNNEL: Level = AHA_LESSON_WITH_BYPASS;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. Coverage — typed by the inventory, measured by the analyzer
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * `Record<PolicyViolationCode, …>` is the compile-time half of the pin: adding a
+ * code to `policy.ts` without giving it a control stops `tsc` (AGENTS.md §7 — a
+ * claim needs a test, and this one cannot be forgotten).
+ */
+const NEGATIVE_CONTROLS: Readonly<Record<PolicyViolationCode, readonly Level[]>> =
+  {
+    "door-without-switch": [DOOR_WITHOUT_SWITCH],
+    "switch-never-fires": [INERT_SWITCH],
+    "lesson-phantom-walk-forced": [FORCED_LESSON_WITHOUT_ECHO],
+    "lesson-phantom-walk-offered": [
+      FORCED_LESSON_WITHOUT_ECHO,
+      OFFERED_LESSON_WITH_FORCED_BOARD,
+    ],
+    "lesson-latch-dynamism": [LATCH_LESSON_WITH_STATIC_BOARD],
+    "gate-no-solution-with-switches-off": [AHA_LESSON_WITHOUT_FUNNEL],
+    "gate-shortest-solution-presses-switch-and-crosses-door": [
+      AHA_LESSON_WITH_BYPASS,
+    ],
+    "gate-refused-then-entered": [STATIC_BOARD_AS_AHA],
+    "gate-dual-phase-tiles": [AHA_LESSON_WITH_INERT_PORTAL],
+  };
+
+describe("LV-007A · m-2 — every policy code has a negative control that fails when the check is disabled", () => {
+  it("the inventory and the control table cover exactly the same codes", () => {
+    expect(Object.keys(NEGATIVE_CONTROLS).sort()).toEqual(
+      [...POLICY_VIOLATION_CODES].sort(),
+    );
+  });
+
+  it.each([...POLICY_VIOLATION_CODES])(
+    "%s — a board is rejected by that exact code",
+    (code) => {
+      const boards = NEGATIVE_CONTROLS[code];
+      expect(boards.length).toBeGreaterThan(0);
+      const fired = boards.filter((board) =>
+        auditLevel(board).violations.some((v) => v.code === code),
+      );
+      expect(
+        fired.length,
+        `no control board produced the code "${code}" — the check is unpinned (a mutated check would stay green)`,
+      ).toBeGreaterThan(0);
+    },
+  );
+
+  it("no control board is rejected for an unrelated reason only (each code is isolated)", () => {
+    // Three controls are deliberately *exact*: they fire one code and nothing else,
+    // so the code name — not a side effect — is what the assertion is reading.
+    const exact = [
+      LATCH_LESSON_WITH_STATIC_BOARD,
+      AHA_LESSON_WITH_INERT_PORTAL,
+      FORCED_LESSON_WITHOUT_ECHO,
+    ];
+    for (const board of exact) {
+      expect(
+        auditLevel(board)
+          .violations.map((v) => v.code)
+          .sort(),
+        `board id=${board.id}`,
+      ).toEqual(
+        board === FORCED_LESSON_WITHOUT_ECHO
+          ? ["lesson-phantom-walk-forced"]
+          : board === AHA_LESSON_WITH_INERT_PORTAL
+            ? ["gate-dual-phase-tiles"]
+            : ["lesson-latch-dynamism"],
+      );
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. Discrimination — the shipped board for the same lesson must NOT be rejected
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("LV-007A · m-2 — each control is paired with the shipped board it must not reject", () => {
+  it("l004 (OFFERED) is accepted, the forced board carrying the same id is not", () => {
+    const offered = auditLevel(shippedBoard(4));
+    expect(offered.embeds.parRoutes).toBeGreaterThan(1);
+    expect(offered.embeds.embedRoutes).toBeGreaterThan(0);
+    expect(offered.embeds.embedForced).toBe(false);
+    expect(offered.violations).toEqual([]);
+    // …and the control only differs in the *board*, never in the obligation: the id
+    // is the same, so the analyzer is reading the metrics.
+    expect(OFFERED_LESSON_WITH_FORCED_BOARD.id).toBe(4);
+    expect(
+      auditLevel(OFFERED_LESSON_WITH_FORCED_BOARD).embeds.embedForced,
+    ).toBe(true);
+    expect(
+      auditLevel(OFFERED_LESSON_WITH_FORCED_BOARD).violations.map(
+        (v) => v.code,
+      ),
+    ).toEqual(["lesson-phantom-walk-offered"]);
+  });
+
+  it("l006 (the latch lesson, the documented dip) is accepted while a static board with the same lesson is not", () => {
+    const shipped = auditLevel(shippedBoard(6));
+    expect(shipped.result.refusedThenEnteredTiles).toBe(1);
+    expect(shipped.violations).toEqual([]);
+
+    // The control: same documented lesson (id 6), latched door and firing switch as
+    // data — and a *measured* 0, because the door tile is never clickable.
+    const staticBoard = auditLevel(LATCH_LESSON_WITH_STATIC_BOARD);
+    expect(staticBoard.result.refusedThenEnteredTiles).toBe(0);
+    expect(staticBoard.result.solvable).toBe(true);
+    // "otherwise legal": the M1⇄M3 pairing law is satisfied on the control board
+    // (the door is targeted *and* the switch really toggles in the reachable graph),
+    // so `lesson-latch-dynamism` is the only complaint — exactly the mutation case.
+    expect(staticBoard.violations.map((v) => v.code)).toEqual([
+      "lesson-latch-dynamism",
+    ]);
+    expect(firingSwitches(LATCH_LESSON_WITH_STATIC_BOARD, explore(LATCH_LESSON_WITH_STATIC_BOARD)).has("s1")).toBe(true);
+    expect(validateLevel(LATCH_LESSON_WITH_STATIC_BOARD).ok).toBe(true);
+  });
+
+  it("l008 (Aha #1) passes its gates while the bypass and static variants fail theirs", () => {
+    const shipped = auditLevel(shippedBoard(8));
+    expect(shipped.violations).toEqual([]);
+    expect(shipped.gates.filter((g) => g.status === "FAIL")).toEqual([]);
+    // The two controls are the same documented lesson (id 8) with a broken board.
+    for (const board of [AHA_LESSON_WITH_BYPASS, STATIC_BOARD_AS_AHA]) {
+      const audit = auditLevel(board);
+      expect(audit.result.solvable, `id=${board.id}`).toBe(true);
+      expect(
+        audit.gates.filter((g) => g.status === "FAIL").length,
+        `id=${board.id} must really fail a named gate`,
+      ).toBeGreaterThan(0);
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. The two newly controlled gates, stated in their own words
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("LV-007A · m-2 — gate (ii) rejects a board whose shortest solution bypasses the door", () => {
+  const audit = auditLevel(AHA_LESSON_WITH_BYPASS);
+  const gate = audit.gates.find(
+    (g) => g.id === "shortest-solution-presses-switch-and-crosses-door",
+  );
+
+  it("the bypass is measured, not asserted: some shortest routes never cross the door", () => {
+    expect(gate?.status).toBe("FAIL");
+    // par comes from the solver (the board's own `par: 4` is a proposal that the
+    // gate does not read); 12 shortest routes exist and only 6 of them press the
+    // switch *and then* enter the door it targets — the other 6 walk around it.
+    expect(gate?.detail).toContain("par=6: routes=12; press-then-cross-door=6");
+    expect(gate?.detail).not.toContain("refusedThenEnteredTiles=");
+    expect(audit.violations.map((v) => v.code)).toContain(
+      "gate-shortest-solution-presses-switch-and-crosses-door",
+    );
+  });
+
+  it("the same board also fails gate (i) — a bypass *is* an all-OFF solution", () => {
+    // Honest coupling, stated rather than hidden: gate (i) asks "can the goal be
+    // reached without pressing a switch" and gate (ii) asks "does every shortest
+    // route press one and cross the door it targets". A route that walks around the
+    // door answers *no* to (ii) and *yes* to (i), so a bypass control cannot fail
+    // (ii) alone. (Stated here so the duplication is not misread as a stray code.)
+    expect(audit.allOffGoalReachable).toBe(true);
+    expect(
+      audit.gates.find((g) => g.id === "no-solution-with-switches-off")?.status,
+    ).toBe("FAIL");
+  });
+});
+
+describe("LV-007A · m-2 — gate (iii) rejects a board with a latched door nothing ever refuses", () => {
+  it("reports refusedThenEnteredTiles=0 as a FAIL, not as an absence of evidence", () => {
+    const audit = auditLevel(STATIC_BOARD_AS_AHA);
+    const gate = audit.gates.find((g) => g.id === "refused-then-entered");
+    expect(audit.result.refusedThenEnteredTiles).toBe(0);
+    expect(gate?.status).toBe("FAIL");
+    expect(gate?.detail).toBe("refusedThenEnteredTiles=0 tiles=[]");
+    expect(audit.violations.map((v) => v.code)).toContain(
+      "gate-refused-then-entered",
+    );
+  });
+});
+
+describe("LV-007A · m-2 — gate (iv) reaches FAIL (not UNSATISFIABLE) when a portal is present", () => {
+  it("a portal-bearing board with dualPhaseTiles=0 is a real failure", () => {
+    const audit = auditLevel(AHA_LESSON_WITH_INERT_PORTAL);
+    const gate = audit.gates.find((g) => g.id === "dual-phase-tiles");
+    expect(audit.result.dualPhaseTiles).toBe(0);
+    expect(AHA_LESSON_WITH_INERT_PORTAL.portals.length).toBeGreaterThan(0);
+    expect(gate?.status).toBe("FAIL");
+    expect(audit.violations.map((v) => v.code)).toEqual([
+      "gate-dual-phase-tiles",
+    ]);
+  });
+
+  it("the same board without the portal is UNSATISFIABLE (the escalation is not lost)", () => {
+    const portalFree: Level = { ...AHA_LESSON_WITH_INERT_PORTAL, portals: [] };
+    expect(validateLevel(portalFree).ok).toBe(true);
+    expect(
+      auditLevel(portalFree).gates.find((g) => g.id === "dual-phase-tiles")
+        ?.status,
+    ).toBe("UNSATISFIABLE");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. No silent code — the inventory cannot drift from the source
+// ─────────────────────────────────────────────────────────────────────────────
+
+const POLICY_SOURCE = readFileSync(
+  fileURLToPath(new URL("../../src/core/solver/policy.ts", import.meta.url)),
+  "utf8",
+);
+
+describe("LV-007A · m-2 — policy.ts emits no code that the inventory does not declare", () => {
+  it("every literal `code:` and every named-gate id is in POLICY_VIOLATION_CODES", () => {
+    const declared = new Set<string>(POLICY_VIOLATION_CODES);
+    const literals = [...POLICY_SOURCE.matchAll(/code:\s*"([^"]+)"/g)].map(
+      (match) => match[1] as string,
+    );
+    const gateIds = [
+      ...POLICY_SOURCE.matchAll(/id:\s*"([^"]+)",\s*\n\s*label:/g),
+    ].map((match) => match[1] as string);
+
+    // A silent zero-match would make this test vacuous, so the scan itself is
+    // checked first (and its shape re-stated for the next maintainer).
+    expect(
+      literals.length,
+      'the source scan found no `code: "…"` literal — update the scan if policy.ts changed shape',
+    ).toBeGreaterThan(0);
+    expect(
+      gateIds.length,
+      'the source scan found no `id: "…", label:` gate entry — update the scan if policy.ts changed shape',
+    ).toBe(
+      POLICY_VIOLATION_CODES.filter((code) => code.startsWith("gate-")).length,
+    );
+
+    for (const code of literals) {
+      expect(
+        declared.has(code),
+        `policy.ts emits "${code}" but POLICY_VIOLATION_CODES does not declare it (add it *and* a negative control)`,
+      ).toBe(true);
+    }
+    for (const id of gateIds) {
+      expect(
+        declared.has(`gate-${id}`),
+        `policy.ts reports the gate "${id}" but POLICY_VIOLATION_CODES does not declare gate-${id}`,
+      ).toBe(true);
+    }
+  });
+});
