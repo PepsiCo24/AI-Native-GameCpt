@@ -175,9 +175,12 @@ is printed with a machine-readable reason and dropped (ADR-0004: reject, never r
 Result of the recorded run (re-runnable, byte-identical):
 
 ```
-seed 20261015 · 46 candidates · 42 accepted, 4 rejected (reason: unsolvable)
+seed 20261015 · 43 candidates · 39 accepted, 4 rejected (reason: unsolvable)
+per family: l006 15/15 · l007 5/6 · l008 5/6 · l009 5/7 · l010 9/9 accepted
 rejection histogram: unsolvable: 4
 shipped file re-derived by the program: l006 YES · l007 YES · l008 YES · l009 YES · l010 YES
+negative probes: 3/3 rejected by name
+summary: l006–l010 each re-derived from the recorded template families (seed 20261015); 5/5 shipped files MATCH an accepted candidate; 3/3 negative probes rejected by name; rejections are named, never repaired.
 ```
 
 `shipped=MATCH` in the run means the shipped JSON **is** an accepted candidate of the

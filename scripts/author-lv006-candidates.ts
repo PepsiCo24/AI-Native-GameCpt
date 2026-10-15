@@ -453,7 +453,7 @@ for (const family of FAMILIES) {
     const matches = canonical(level) === shippedCanon;
     if (matches) shippedMatched = true;
     console.log(
-      `  ACCEPT l${String(family.id).padStart(3, "0")}  ${candidate.axes.padEnd(44)} ${outcome.reason}` +
+      `  ACCEPT l${String(family.id).padStart(3, "0")}  ${candidate.axes.padEnd(44)} ${outcome.reason} · ` +
         `${level.width}x${level.height} shipped=${matches ? "MATCH" : "variant"}`,
     );
   }
@@ -477,7 +477,7 @@ for (const family of FAMILIES) {
     accepted += 1;
     const matches = canonical(level) === shippedCanon;
     console.log(
-      `  ACCEPT l${String(family.id).padStart(3, "0")}  ${`seeded+${String(1 + i)} permanent wall(s)`.padEnd(44)} ${outcome.reason}` +
+      `  ACCEPT l${String(family.id).padStart(3, "0")}  ${`seeded+${String(1 + i)} permanent wall(s)`.padEnd(44)} ${outcome.reason} · ` +
         `${level.width}x${level.height} shipped=${matches ? "MATCH" : "variant"}`,
     );
   }

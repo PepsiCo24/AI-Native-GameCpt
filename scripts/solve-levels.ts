@@ -19,8 +19,9 @@
  *      solution (`par` is stamped from the solver, §8 — a mismatch is a data
  *      error, not a softer target);
  *   4. prints the mechanical-static conclusion: every level with
- *      `dualPhaseTiles == 0` is, by ADR-0009, a **mechanically static** board
- *      (a pure timing-gate maze) and is flagged for difficulty review;
+ *      `dualPhaseTiles == 0` has the position→phase link intact (**ADR-0009: not a
+ *      timing gate** — read `refusedThenEnteredTiles` for the latch dynamism) and is
+ *      flagged for difficulty review;
  *   5. LV-004 hygiene: prints `parRoutes / embedRoutes / embedForced` (every
  *      shortest route enumerated) and enforces the level policy — M1 never ships
  *      alone (every door paired with a switch that can actually fire), a
@@ -285,7 +286,7 @@ if (staticLevels.length > 0) {
     `  dualPhaseTiles == 0 on ${staticLevels.length}/${files.length} level(s) ⇒ these boards are MECHANICALLY STATIC`,
   );
   console.log(
-    `  (no cell is enterable in two phases ⇒ a pure timing-gate maze) ⇒ FLAG FOR DIFFICULTY REVIEW: ${staticLevels.join(", ")}`,
+    `  (no cell is enterable in two phases ⇒ the position→phase link is intact (ADR-0009: not a timing gate; read refusedThenEnteredTiles for latch dynamism)) ⇒ FLAG FOR DIFFICULTY REVIEW: ${staticLevels.join(", ")}`,
   );
 }
 if (dynamicLevels.length > 0) {

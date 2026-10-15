@@ -34,7 +34,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { Level } from "@/core/level";
 import { validateLevel } from "@/core/level";
@@ -48,6 +48,17 @@ import { explore } from "@/core/solver/bfs";
 import { door, makeLevel, switchDef } from "../helpers/fixtures";
 
 const LEVELS_DIR = fileURLToPath(new URL("../../src/levels/", import.meta.url));
+
+/**
+ * Every shipped level id, read from the dataset directory itself — **never** a
+ * hardcoded ladder. `policy.ts` promises that "adding a level without a row here
+ * is caught by the suite"; a literal `[1, …, 10]` loop cannot keep that promise,
+ * because a new `src/levels/l0NN.json` would simply not be looked at.
+ */
+const LEVEL_IDS = readdirSync(LEVELS_DIR)
+  .filter((name) => /^l\d+\.json$/.test(name))
+  .map((name) => Number(name.slice(1, -".json".length)))
+  .sort((a, b) => a - b);
 
 /** Load a shipped level file, asserting it is schema-valid first (ADR-0004). */
 function loadLevel(id: number): Level {
@@ -161,8 +172,9 @@ describe("LV-006 · the L6–L10 latch unit is solver-proven", () => {
     ).toBe(true);
   });
 
-  it("every ladder level L1–L10 has a documented-lesson row (the table cannot drift)", () => {
-    for (const id of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+  it("every shipped level in src/levels has a documented-lesson row (the table cannot drift)", () => {
+    expect(LEVEL_IDS.length).toBeGreaterThan(0);
+    for (const id of LEVEL_IDS) {
       const lesson = documentedLesson(id);
       expect(
         lesson,
@@ -173,9 +185,18 @@ describe("LV-006 · the L6–L10 latch unit is solver-proven", () => {
       );
       expect((lesson as { lesson: string }).lesson.length).toBeGreaterThan(0);
     }
-    expect(DOCUMENTED_LESSONS.map((entry) => entry.levelId)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-    ]);
+    // Superset, not equality: the table may legitimately keep rows for levels that
+    // are not shipped yet, but it may never lack a row for a *shipped* level. The
+    // dataset id set must therefore be a subset of the table's id set.
+    const documentedIds = new Set(
+      DOCUMENTED_LESSONS.map((entry) => entry.levelId),
+    );
+    expect(
+      LEVEL_IDS.filter((id) => !documentedIds.has(id)).map(
+        (id) => `l${String(id).padStart(3, "0")}`,
+      ),
+      "every id in the dataset must appear in DOCUMENTED_LESSONS (table ⊇ dataset)",
+    ).toEqual([]);
   });
 });
 
@@ -298,9 +319,18 @@ describe("LV-006 · Aha #1 (l008) named gates, measured (docs/level-design.md §
     expect(
       gate("shortest-solution-presses-switch-and-crosses-door").detail,
     ).toContain("press-then-cross-door=6");
+    // RV-004 m-4: this number is a **route** count, so it must never print under
+    // gate (iii)'s tile-count name (`refusedThenEnteredTiles`) — the two values
+    // differ (6 routes vs 1 tile on l008) and the shared name was a misread trap.
     expect(
       gate("shortest-solution-presses-switch-and-crosses-door").detail,
-    ).toContain("refusedThenEnteredTiles=6");
+    ).toContain("that door is one of the refused tiles: routes=6");
+    expect(
+      gate("shortest-solution-presses-switch-and-crosses-door").detail,
+    ).not.toContain("refusedThenEnteredTiles=");
+    expect(gate("refused-then-entered").detail).toContain(
+      "refusedThenEnteredTiles=1 tiles=[3,1]",
+    );
   });
 
   it("gate (iii) — the refusing tile is in refusedThenEnteredTileList", () => {

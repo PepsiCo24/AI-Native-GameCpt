@@ -282,7 +282,7 @@ export function latchAhaGates(
           : "FAIL",
       detail:
         `par=${par}: routes=${verdict.routes}; press-then-cross-door=${verdict.pressThenCross}; ` +
-        `…and that door is in refusedThenEnteredTiles=${verdict.refusedDoor}; ` +
+        `…and that door is one of the refused tiles: routes=${verdict.refusedDoor}; ` +
         `parRoutes=${embeds.parRoutes} embedRoutes=${embeds.embedRoutes}`,
     },
     {
