@@ -143,15 +143,18 @@ worktree `~/.local/share/opencode/worktree/f9a5d9/r-002-painters`). Teeth: Graph
 production path, `cell-state` divergence, acceptance-list wiring (R-Z7 / deny cause (i) / hover ring), transition
 invariants, negative-control authenticity, independent re-derivation of the 1.589@40 contrast figure.
 
-**UA-0008** (UI / Art Director, background, fresh session) — first visual acceptance of the static board shots
-(`…/orch-smoke-2026-10-15/` + manifest) + rulings on R-002 three spec-silences (Q1 contrast authority
-section 4.3-vs-3.1b, Q2 switch both-phase glyph & sin(pi p) press beat, Q3 portal=vector-by-design & 9.1/A-06 wording).
-Worktree `…/ua-0008-painter-rulings` (base `1225b35`), docs-owned files only.
+**UA-0008 — CLOSED & MERGED (`36a3b06`)**: ui-ux V0.8 + manifest V0.5.2, all four rulings landed (see item 30).
+
+**UA-0008b** (UI / Art Director, background, fresh session) — §3.3b **Entry 2** on the Playwright dynamic frames
+(`…/orch-smoke-2026-10-15/dyn/`: refusal arc, press beat, standing-on-open-door, night vocabulary, victory dialog,
++ new `mobile_390_l{8,9,10}.png`) + stale "M2 (L36)" portal-milestone refs synced to ADR-0009 D3 (L11). Worktree
+`…/ua-0008b-entry2` (base `36a3b06`), docs-owned only.
 
 **LV-007A — MERGED (`1225b35`) & disk-verified** (tsc 0, vitest 14 files / 211 passed / 3 skipped, solver 10/10,
 validate 10/10+10, generator 5/5+3/3, zero id-exemption hardcodes). **LV-007B** (B/T/R to D, n-11 route pruning +
 maxRouteVisits, n-13 switch-without-targets, m-8/9/10 doc lines, first real D-dip verification at L5-L6 /
-L10-L11 seams) queued; **ruling: LV-007B lands BEFORE L11-L20 authoring** (n-11 is a hard prerequisite for 7x7
+L10-L11 seams + the AR-0005b ordered companion `refusedBeforeEnteredTiles` with its L11 trigger folded in)
+**DISPATCHED** (worktree `…/lv-007b-metrics`, base `95bd2c7`); **ruling: LV-007B lands BEFORE L11-L20 authoring** (n-11 is a hard prerequisite for 7x7
 long-par boards; gate (iv) machinery needs it to fire on portal boards). **QA-005 re-scoped**: Playwright now
 **installed** (devDep + chromium v1248, installed by the Orchestrator as sole package.json writer) and all dynamic
 frames already captured (see item 28). Remaining QA-005 = the permanent spec only: `playwright.config` +
@@ -425,6 +428,35 @@ and a path must be quiescent before dispatch.**
     par-4 on the natural path, L10 mid-route. This **supersedes UA-0008's static-set constraint** — a fresh-session
     **UA-0008b vision addendum** will judge the dynamic vocabulary after UA-0008 returns (new-session lesson holds).
     QA-004 formally closed (above). Concurrency: RV-005 + UA-0008 + AR-0005b live; LV-007B queued for first return.
+29. **AR-0005b — CLOSED & MERGED (`95bd2c7`): architecture V0.6 + ADR-architecture-0002, disk-verified (exactly 2
+    owned files).** Ruling 1: metric #7 `refusedThenEnteredTiles` stays **canonical** with its shipped unordered
+    state-set semantics — definition contract pinned from `bfs.ts` code, not memory (reachable-set fixpoint ⇒ already
+    order-free; the original "order-sensitive" ticket conflated trace layer with state space); downgrade/advisory/
+    redefine all rejected on evidence; **ordered companion `refusedBeforeEnteredTiles` adopted by spec** (∃ refuse-state
+    → accept-state reachability; identical on L1–L10, wild divergence 18/2000 = trapped-refusal pockets), trigger =
+    before first L11+ acceptance — folded into LV-007B. Gate (iii) and pipeline §8.5 keep reading unordered until
+    GD-008 applies Appendix-A wording (**GD-008 queued**: ADR-0009 Context-5 deferral closure + level-design §3 (iii)
+    re-point; drafts supplied). Ruling 2: theme-token canonical chain — docs §4.3/§5.4 = value & meaning authority,
+    `src/game/theme/tokens.ts` = sole injection, tests = parity pins; two §12 test rows specified green-by-construction
+    → **folded into QA-005 scope** (theme-law scan + token-parity pin); H-5 known-gap note corrected (both tests shipped).
+30. **UA-0008 — CLOSED & MERGED (`36a3b06`): ui-ux V0.8 + manifest V0.5.2. Four rulings, zero code touched.**
+    K-1 visual acceptance = **CONDITIONAL PASS** (conditions are evidence additions, explicitly not merge-blockers for
+    R-002; §3.3b Entry 1 records closed/open door reads, switch-vs-medallion glyph families non-colliding, phase
+    inversion, red=A/blue=B both-phase verified, plus a real-render confirmation of R-C13 occupied-wall carriers on L4).
+    K-2 (Q1) = **option (a)**: the V0.5 §4.3 script measured a construction that never shipped (ghost-box counterfactual
+    1.744/1.613 reproduces the old published 45.0 % almost exactly); republished from shipped geometry — **R-D2 is now
+    a two-tier band: ≥1.6 @56 nominal (measured 1.706) / ≥1.55 @40 floor guard (measured 1.589)**; geometry untouched,
+    no engineer ticket; re-opener pre-specified = RV-005 pure-math recheck diverging > ±0.01 (still live, merge-gating
+    for that row only). This resolves R-002's sole metric escalation. K-3 (Q2) = both switch extensions **codified**
+    (owning-`activePhase` glyph, box `max(7, round(0.18·c))`, never size-gated ≥40; press beat sin(πp) 2→3 px,
+    object-anchored, latch-moving step only) — no revert ticket. K-4 (Q3) = **portals vector-by-design**: §3.1c frozen
+    vector construction (numbers match the shipped painter), §9.1/A-06 rewritten, req-09 raster portal demoted to
+    optional Stage-5 polish, **no new asset-request**. Structural finding I am acting on: (i) the portal painter ships
+    with **zero registry content able to render it** — first L11 board is now also a visual-evidence gate, raising
+    LV-008 priority immediately after LV-007B; (ii) UA left stale "M2 (L36)" portal-milestone refs (§3.1c/§9.1) that
+    contradict ADR-0009 D3 (portals L11) — wording fix dispatched to **UA-0008b** together with §3.3b Entry 2 on the
+    now-existing dyn/ frames (OQ-UA8-2 satisfied ahead of QA-005; portal-frame + §3.1d-picture + any remaining 40 px
+    conditions stay open with named fixtures).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
