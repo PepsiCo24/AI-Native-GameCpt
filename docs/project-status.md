@@ -138,16 +138,24 @@ come from CDP/Playwright events, never from dispatched synthetic events.**
 
 ## In progress (background agents)
 
-**R-002** (Gameplay Engineer, background) — door/switch/portal painters + L6–L10 registry unlock, isolated worktree
-`~/.local/share/opencode/worktree/f9a5d9/r-002-painters` (base `5624558`, branch `agent/gameplay/r-002-painters`).
-Visual acceptance is NOT his call: Orchestrator smoke + UA vision review + §6 iteration-log entry gate before merge.
+**RV-005** (Reviewer, background) — read-only merge-gate review of the R-002 painters (`5624558..d69ed41`,
+worktree `~/.local/share/opencode/worktree/f9a5d9/r-002-painters`). Teeth: Graphics2D-vs-real-Phaser adapter on the
+production path, `cell-state` divergence, acceptance-list wiring (R-Z7 / deny cause (i) / hover ring), transition
+invariants, negative-control authenticity, independent re-derivation of the 1.589@40 contrast figure.
 
-**LV-007A** (Level AI + Solver, background) — enforcement & pinning batch (m-2 negative controls, m-5 UNSATISFIABLE
-guard+whitelist, n-14 named gates (v)(vi), n-18 pin hardening, switchRequired obligation L7–L10 per OQ4 ruling),
-isolated worktree `~/.local/share/opencode/worktree/f9a5d9/lv-007a-enforcement` (base `99e3f90`). **LV-007B** (metrics:
-B/T/R→`D`, n-11 route pruning + `maxRouteVisits`, m-8/9/10 doc lines, first real `D`-dip verification at L5→L6 /
-L10→L11 seams) queued for the next free slot. Deferred design question from GD-007: whether "below OFFERED" becomes a
-named teaching grade (kept descriptive for now).
+**UA-0008** (UI / Art Director, background, fresh session) — first visual acceptance of the static board shots
+(`…/orch-smoke-2026-10-15/` + manifest) + rulings on R-002 three spec-silences (Q1 contrast authority
+section 4.3-vs-3.1b, Q2 switch both-phase glyph & sin(pi p) press beat, Q3 portal=vector-by-design & 9.1/A-06 wording).
+Worktree `…/ua-0008-painter-rulings` (base `1225b35`), docs-owned files only.
+
+**LV-007A — MERGED (`1225b35`) & disk-verified** (tsc 0, vitest 14 files / 211 passed / 3 skipped, solver 10/10,
+validate 10/10+10, generator 5/5+3/3, zero id-exemption hardcodes). **LV-007B** (B/T/R to D, n-11 route pruning +
+maxRouteVisits, n-13 switch-without-targets, m-8/9/10 doc lines, first real D-dip verification at L5-L6 /
+L10-L11 seams) queued; **ruling: LV-007B lands BEFORE L11-L20 authoring** (n-11 is a hard prerequisite for 7x7
+long-par boards; gate (iv) machinery needs it to fire on portal boards). **QA-005 ticket raised**: add Playwright
+(devDep + browsers), trusted-input E2E for L8 refuse/press/cross + victory dialog, and page.screenshot dynamic
+frames (refusal arc / standing-on-open-door) that the OpenCode webview could not deliver (keydown never reached the
+game; see orch-smoke manifest). Deferred GD question: 'below OFFERED' as a named teaching grade stays descriptive.
 
 **QA-004** (QA Engineer, background) — independent second-implementation reproduction of the ART-INTAKE audit
 numbers (`audit.json`) + suite regression, read-only, no commits. It can now only trigger a **corrigendum** to
