@@ -55,17 +55,25 @@
  */
 
 import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
-import { loadReferenceLevels, levelUrl, refOf } from "./helpers/levels";
+import { ARROW_KEY, loadReferenceLevels, levelUrl, refOf } from "./helpers/levels";
+import type { LevelRef } from "./helpers/levels";
 import {
   boardGeometry,
+  canvasColourHealth,
+  expectActorAt,
+  expectMoves,
+  expectNoPageErrors,
   hud,
   installPixelReadback,
   openLevel,
   pressDirection,
   sampleCanvas,
   waitForFrames,
+  watchErrors,
 } from "./helpers/game";
+import type { BoardGeometry } from "./helpers/game";
 import {
   measureFrameGrid,
   reportTransient,
@@ -74,9 +82,21 @@ import {
   startRecorder,
   stopRecorder,
 } from "./helpers/capture";
+import type { CaptureStats, Roi, TransientReport } from "./helpers/capture";
+import { arcVerdict, bracketFrames } from "./helpers/frame-model";
+import type { ArcVerdict } from "./helpers/frame-model";
+import { installFrameStretcher } from "./helpers/frame-stretch";
+import {
+  eventsOfKind,
+  eventsSince,
+  installProbe,
+  probeMark,
+  probeSnapshot,
+} from "./helpers/probe";
 import { switchParts } from "@/game/renderer/objects/switch";
 import { cellRect } from "@/game/renderer/grid-mapping";
 import { FLIP_TIMING, FLIP_VARIANT, theme } from "@/game/theme/tokens";
+import type { Vec } from "@/core/state/types";
 import type { Rgb } from "./helpers/game";
 
 const REFS = loadReferenceLevels();
@@ -107,6 +127,298 @@ const MIN_RECORD_FRAMES = 24;
  * not a 670 ms screenshot round trip.
  */
 const GRID_CEILING_MS = 60;
+
+/* ───────────────── QA-005d: the refusal walk, and its two outcomes ─────────── */
+
+/** The `probeMark` label that windows the observer log around the refused press. */
+const P1_TRIGGER_MARK = "qa005d-p1-refusal-trigger";
+
+/**
+ * The fabricated per-frame budget of the **coarse-grid proof** (P1b), in ms.
+ *
+ * Comfortably above `TIMINGS.deny.dur` (90 ms), so the fabricated interval cannot
+ * straddle the arc's own length: the classification is then a *prediction* the
+ * runner has to obey, instead of a coincidence of a slow machine.
+ */
+const P1_STRETCH_MS = 140;
+
+/** Everything one P1-style refusal walk measured — whichever branch asserts on it. */
+interface RefusalWalk {
+  readonly ref: LevelRef;
+  readonly geometry: BoardGeometry;
+  /** The player's starting tile — where a refusal must leave them. */
+  readonly player: Vec;
+  /** The captured region of interest, in canvas device px. */
+  readonly roi: Roi;
+  readonly report: TransientReport;
+  readonly stats: readonly CaptureStats[];
+  /** The frame interval spanning the keydown, in ms — the arc's resolution limit. */
+  readonly gapMs: number;
+  readonly verdict: ArcVerdict;
+  /** `max(GRID_CEILING_MS, 2 × the idle grid)` — the runner-relative ceiling. */
+  readonly gridCeiling: number;
+}
+
+/**
+ * Run the P1 protocol once and return the measurement.
+ *
+ * ── The model this measures (QA-005d) ────────────────────────────────────────
+ * A refusal is recorded with `denyFeedback(dir, scene.time.now)` **on the DOM
+ * keydown**, i.e. between two animation steps, where `scene.time.now` still holds
+ * the *previous* frame's stamp (`Tₙ`). `BoardView.update` drops the deny at
+ * `time >= startAt + deny.dur`, and it is called with the next step's stamp
+ * (`Tₙ₊₁`). So the 90 ms arc is painted **iff a frame stamp falls strictly inside
+ * `(Tₙ, Tₙ + 90)`** — equivalently, iff the interval between the two frames that
+ * bracket the keydown is shorter than the arc:
+ *
+ * ```
+ * Tₙ₊₁ - Tₙ < 90  →  p < 1  →  nudge sin(πp)·4·renderScale and the `feedback.deny`
+ *                             ring tint at alpha 0.5 are painted  →  the recorder sees a beat
+ * Tₙ₊₁ - Tₙ ≥ 90  →  the deny is cleared before painting        →  no beat can exist
+ * ```
+ *
+ * This is an exact, source-level claim about `BoardView`/`LevelScene`, and it is
+ * what makes the pixel assertion *conditional on the runner*: on a 60 Hz machine
+ * the interval is ~17 ms and the beat is owed; on the 2-core software-GL CI
+ * runner the interval straddles 90 ms, which is why the same test came back
+ * `onset: null` twice and passed on a retry there. The walk therefore *measures*
+ * the interval — from the page's own frame stamps and the delivered keydown
+ * (`helpers/probe.ts`) — and reports it, instead of assuming either branch.
+ *
+ * `gridWindowMs` sizes the frame-grid calibration: the default 600 ms is QA-005c's
+ * protocol value for a ~60 Hz machine, and the coarse-grid test passes a longer
+ * window because its own frames are ~140 ms wide.
+ */
+async function refusalWalk(
+  page: Page,
+  options: { readonly gridWindowMs?: number } = {},
+): Promise<RefusalWalk> {
+  const ref = refOf(REFS, 1);
+  await installProbe(page);
+  await installPixelReadback(page);
+  await openLevel(page, levelUrl(1));
+  const geometry = await boardGeometry(page, ref.level);
+
+  // The player's own cell — the deny nudge and the deny ring are both anchored
+  // to it (R-Z7: player-anchored L5 treatments).
+  const player: Vec = { x: ref.level.player[0], y: ref.level.player[1] };
+  const roi = roiAround(
+    geometry.cellCenterDevice(player.x, player.y),
+    geometry.layout.cellSize / 2 + 8,
+  );
+
+  // …and the press below is a refusal by the core's own rules, not by the test's
+  // belief: `refusedAtStart` is `isLegalMove` run over the shipped level.
+  expect(ref.refusedAtStart, "L1 refuses a left press from its start tile").toContain("left");
+
+  // ── calibrate to THIS runner before the trigger ───────────────────────────
+  // The bounds below are stated relative to the machine's own frame grid, so a
+  // 2-core software-GL CI runner (measured: 6 frames / 700 ms, item 57) is
+  // judged on its own terms instead of on a local-machine constant.
+  const idle = await measureFrameGrid(page, options.gridWindowMs ?? 600);
+  expect(
+    idle.gridMs,
+    "the machine renders animation frames at all — the channel is a rAF grid, not the ~670 ms screenshot round trip",
+  ).toBeLessThan(SCREENSHOT_ROUND_TRIP_MS / 2);
+  expect(idle.frames, "the frame-grid calibration itself ran").toBeGreaterThan(3);
+  const recordMs = Math.max(BASE_RECORD_MS, Math.round(idle.gridMs * MIN_RECORD_FRAMES));
+  const gridCeiling = Math.max(GRID_CEILING_MS, idle.gridMs * 2);
+
+  await startRecorder(page, roi, recordMs);
+  await probeMark(page, P1_TRIGGER_MARK);
+  await page.keyboard.press(ARROW_KEY.left);
+  // The recorder's own window, sized from the measured grid: it is the "still,
+  // then moved, then still again" budget, not a sleep.
+  await page.waitForTimeout(recordMs);
+  const stats = await stopRecorder(page, roi);
+  const report = reportTransient(stats);
+
+  // ── the delivery proof: the refused press reached the page ────────────────
+  // §6.5 makes the DOM silent about a refusal on purpose, so the *trigger* is
+  // pinned from the page's own event log: exactly one keydown, for the refused
+  // direction, at a known `performance.now()`.
+  const snapshot = await probeSnapshot(page);
+  const keydowns = eventsOfKind(eventsSince(snapshot, P1_TRIGGER_MARK), "keydown");
+  expect(keydowns.length, "exactly one keydown was delivered for the refused press").toBe(1);
+  const trigger = keydowns[0];
+  expect(trigger?.code, "the delivered keydown is the refused direction").toBe(ARROW_KEY.left);
+  if (trigger === undefined) throw new Error("[e2e] the refused keydown was not recorded");
+
+  // ── and the classification: the frame interval the deny was measured in ────
+  const bracket = bracketFrames(snapshot.frames, trigger.t);
+  expect(
+    bracket.gapMs,
+    "both frames bracketing the keydown were recorded — the deny's window opens at the first of them (`scene.time.now` during the keydown) and closes one frame later",
+  ).not.toBeNull();
+  const gapMs = bracket.gapMs ?? 0;
+
+  const walk: RefusalWalk = {
+    ref,
+    geometry,
+    player,
+    roi,
+    report,
+    stats,
+    gapMs,
+    verdict: arcVerdict(gapMs, TIMINGS.deny.dur),
+    gridCeiling,
+  };
+
+  // One evidence line per walk: the CI log carries the *measurement* this test
+  // branches on — the runner's grid, the interval spanning the trigger, and the
+  // verdict — so a RESOLVE-LIMIT (or a pixel pass) is checkable from the log
+  // alone, without the report artefacts.
+  console.log(
+    `[QA-005d] transient.spec.ts P1 refusal — frames=${String(report.frames)} gridMs=${report.gridMs.toFixed(1)} gapMs=${gapMs.toFixed(1)} denyDurMs=${String(TIMINGS.deny.dur)} verdict=${walk.verdict} onset=${report.onset === null ? "null" : report.onset.toFixed(1)} settled=${report.settledAt === null ? "null" : report.settledAt.toFixed(1)} peakPrevChanged=${String(report.peakPrevChanged)}`,
+  );
+
+  return walk;
+}
+
+/** The channel guards both branches share: the recorder really ran, on a real grid. */
+function expectRecorderHealthy(walk: RefusalWalk): void {
+  // ── the channel was real: a rendered-frame grid, not a few lucky screenshots ──
+  // The read-back costs ~0.3 ms/frame, so the recorder's grid IS the runner's
+  // grid; the window is sized from the measured grid (above), which keeps the
+  // "the recorder really ran" tooth meaningful on any runner. The claim that
+  // matters is the *order of magnitude*: the runner's own frames, not the 670 ms
+  // CDP screenshot round trip that makes a 90 ms event unreachable.
+  expect(walk.report.frames, "the recorder ran long enough to resolve a 90 ms event").toBeGreaterThan(15);
+  expect(
+    walk.report.gridMs,
+    `median frame interval is the runner's own frame grid (<${String(walk.gridCeiling)} ms), not a CDP screenshot round trip`,
+  ).toBeLessThan(walk.gridCeiling);
+}
+
+/**
+ * The **resolvable** branch: the runner's grid did put a frame inside the arc, so
+ * the pixel claim is owed and is asserted in full.
+ */
+function expectArcOnTheGrid(walk: RefusalWalk): void {
+  const { report, stats } = walk;
+
+  // ── the shape: frozen, then moved, then stopped ───────────────────────────
+  expect(report.onset, "the refusal beat reached the frame grid").not.toBeNull();
+  expect(report.durationMs, "the beat is short — far below the 220 ms flip budget").not.toBeNull();
+  // Bounded by the flip budget **plus frame quantisation**: a coarse grid cannot
+  // fake a long beat, and a slow runner is not failed for its own frame width.
+  expect(report.durationMs ?? 999, "the refusal beat is resolved, not smeared").toBeLessThanOrEqual(
+    TIMINGS.total + 2 * report.gridMs,
+  );
+  // Self-calibrating: the measured window is the documented 90 ms row plus at most
+  // one frame of quantisation on each side, so a coarse grid cannot fake a long beat.
+  expect(
+    report.durationMs ?? 999,
+    "the measured window is the §6.5 deny row plus frame quantisation",
+  ).toBeLessThanOrEqual(TIMINGS.deny.dur + 2 * report.gridMs + 4);
+  expect(report.peakPrevChanged, "the beat actually changed pixels").toBeGreaterThan(50);
+  expect(report.settledAt, "the board returns to a settled picture").not.toBeNull();
+
+  // ── the anchor: the movement is *at the player's tile*, not somewhere else ─
+  const moving = stats.filter((frame) => frame.changed > 0 && frame.centroid.x !== 0);
+  expect(moving.length).toBeGreaterThan(0);
+  const centre = { x: walk.roi.w / 2, y: walk.roi.h / 2 };
+  for (const frame of moving) {
+    expect(
+      Math.hypot(frame.centroid.x - centre.x, frame.centroid.y - centre.y),
+      `the refusal transient must stay inside the player's cell (t=${frame.t.toFixed(0)} ms)`,
+    ).toBeLessThan(walk.roi.w / 4);
+  }
+}
+
+/**
+ * The DOM half of the triple freeze, for both branches: no move, no flip.
+ *
+ * §6.5's refusal is deliberately invisible in the HUD — "the world did not flip"
+ * is the primary cue — so this is asserted *after* the branch's pixel evidence.
+ */
+async function expectRefusalState(page: Page, walk: RefusalWalk): Promise<void> {
+  const state = await hud(page);
+  expect(state.moves, "a refusal is not a move").toBe(0);
+  expect(state.phase, "a refusal is not a flip").toBe(walk.ref.level.startPhase);
+}
+
+/**
+ * The **RESOLVE-LIMIT** branch — what is still owed when the runner's grid cannot
+ * hold the arc at all.
+ *
+ * A limit that is declared is engineering; a limit that is silently dropped is a
+ * lie. So when the measured frame interval is at least the transient's own
+ * length, the pixel claim is replaced by an explicitly named outcome plus every
+ * deterministic claim the refusal still owes:
+ *
+ * 1. the arithmetic, asserted in the direction that makes the limit legitimate
+ *    (`gap >= deny.dur`, and the recorder reports **no** onset — so a "no beat"
+ *    reading can never be produced by a bug while frames were available);
+ * 2. the refusal itself: no move, no flip (the core's identity contract);
+ * 3. the player still on their own tile, **read from the pixels** — so "the
+ *    refusal happened" cannot be confused with "the board froze";
+ * 4. the read-back channel still alive (real colour, not a black WebGL buffer);
+ * 5. a positive control through the *same* channel on the *same* runner, so the
+ *    delivered-but-refused press is distinguished from a lost input.
+ */
+async function expectResolveLimit(page: Page, walk: RefusalWalk, reason: string): Promise<void> {
+  const limit =
+    `RESOLVE-LIMIT transient.spec.ts P1 — ${reason}: the frame interval spanning the trigger is ` +
+    `${walk.gapMs.toFixed(1)} ms >= §6.5 deny.dur ${String(TIMINGS.deny.dur)} ms, so no presented frame can fall ` +
+    `inside the refusal arc's window and no pixel evidence can exist on this runner`;
+  // Greppable in the CI log, and carried in the report as a named outcome.
+  console.log(`[QA-005d] ${limit}`);
+  test.info().annotations.push({ type: "RESOLVE-LIMIT", description: limit });
+  await test.info().attach("qa005d-p1-resolve-limit.json", {
+    contentType: "application/json",
+    body: Buffer.from(
+      `${JSON.stringify(
+        {
+          site: "transient.spec.ts P1",
+          reason,
+          gapMs: walk.gapMs,
+          denyDurMs: TIMINGS.deny.dur,
+          verdict: walk.verdict,
+          recorderFrames: walk.report.frames,
+          recorderGridMs: walk.report.gridMs,
+          onset: walk.report.onset,
+        },
+        null,
+        2,
+      )}\n`,
+    ),
+  });
+
+  // (1) the arithmetic of the limit
+  expect(
+    walk.gapMs,
+    `${reason}: every frame step is at least the deny row long`,
+  ).toBeGreaterThanOrEqual(TIMINGS.deny.dur);
+  expect(
+    walk.report.onset,
+    `${reason}: the recorder must report no beat — \`BoardView.update\` clears the deny at \`time >= startAt + ${String(TIMINGS.deny.dur)}\`, before it can be painted`,
+  ).toBeNull();
+
+  // (2) the refusal: no move, no flip
+  const state = await hud(page);
+  expect(state.moves, "a refusal is not a move").toBe(0);
+  expect(state.phase, "a refusal is not a flip").toBe(walk.ref.level.startPhase);
+
+  // (3) the player is still where they stood — from the pixels
+  await expectActorAt(page, walk.geometry, walk.ref.level, walk.player);
+
+  // (4) the channel that reported "no beat" was alive
+  const health = await canvasColourHealth(page);
+  expect(
+    health.distinct,
+    "the canvas read-back has colour — the channel reporting 'no beat' is reading the real board",
+  ).toBeGreaterThan(4);
+
+  // (5) positive control: the same channel commits a legal move on this runner
+  expect(
+    walk.ref.refusedAtStart,
+    "the positive control's press is legal at move 0 (asked of the core, not assumed)",
+  ).not.toContain("right");
+  await pressDirection(page, "right");
+  await expectMoves(page, 1);
+  expect((await hud(page)).phase, "the positive control really committed a move and a flip").toBe("B");
+}
 
 test.describe("the resampling channel", () => {
   test("the channel is live: the presented WebGL frame reads back as real colours", async ({
@@ -142,79 +454,69 @@ test.describe("P1 — the §6.5 refusal arc (90 ms) is reachable on the frame gr
   test(`a refused move produces a bounded, centred, settling transient shorter than the flip budget`, async ({
     page,
   }) => {
-    const ref = refOf(REFS, 1);
-    await installPixelReadback(page);
-    await openLevel(page, levelUrl(1));
-    const geometry = await boardGeometry(page, ref.level);
+    const walk = await refusalWalk(page);
+    expectRecorderHealthy(walk);
 
-    // The player's own cell — the deny nudge and the deny ring are both anchored
-    // to it (R-Z7: player-anchored L5 treatments).
-    const player = { x: ref.level.player[0], y: ref.level.player[1] };
-    const roi = roiAround(geometry.cellCenterDevice(player.x, player.y), geometry.layout.cellSize / 2 + 8);
-
-    // ── calibrate to THIS runner before the trigger ───────────────────────────
-    // The bounds below are stated relative to the machine's own frame grid, so a
-    // 2-core software-GL CI runner (measured: 6 frames / 700 ms, item 57) is
-    // judged on its own terms instead of on a local-machine constant.
-    const idle = await measureFrameGrid(page);
-    expect(
-      idle.gridMs,
-      "the machine renders animation frames at all — the channel is a rAF grid, not the ~670 ms screenshot round trip",
-    ).toBeLessThan(SCREENSHOT_ROUND_TRIP_MS / 2);
-    expect(idle.frames, "the frame-grid calibration itself ran").toBeGreaterThan(3);
-    const recordMs = Math.max(BASE_RECORD_MS, Math.round(idle.gridMs * MIN_RECORD_FRAMES));
-    const gridCeiling = Math.max(GRID_CEILING_MS, idle.gridMs * 2);
-
-    await startRecorder(page, roi, recordMs);
-    await page.keyboard.press("ArrowLeft");
-    await page.waitForTimeout(Math.round(recordMs * 0.7));
-    const stats = await stopRecorder(page, roi);
-    const report = reportTransient(stats);
-
-    // ── the channel was real: a rendered-frame grid, not a few lucky screenshots ──
-    // The read-back costs ~0.3 ms/frame, so the recorder's grid IS the runner's
-    // grid; the window is sized from the measured grid (above), which keeps the
-    // "the recorder really ran" tooth meaningful on any runner. The claim that
-    // matters is the *order of magnitude*: the runner's own frames, not the 670 ms
-    // CDP screenshot round trip that makes a 90 ms event unreachable.
-    expect(report.frames, "the recorder ran long enough to resolve a 90 ms event").toBeGreaterThan(15);
-    expect(
-      report.gridMs,
-      `median frame interval is the runner's own frame grid (<${String(gridCeiling)} ms), not a CDP screenshot round trip`,
-    ).toBeLessThan(gridCeiling);
-
-    // ── the shape: frozen, then moved, then stopped ───────────────────────────
-    expect(report.onset, "the refusal beat reached the frame grid").not.toBeNull();
-    expect(report.durationMs, "the beat is short — far below the 220 ms flip budget").not.toBeNull();
-    // Bounded by the flip budget **plus frame quantisation**: a coarse grid cannot
-    // fake a long beat, and a slow runner is not failed for its own frame width.
-    expect(report.durationMs ?? 999, "the refusal beat is resolved, not smeared").toBeLessThanOrEqual(
-      TIMINGS.total + 2 * report.gridMs,
-    );
-    // Self-calibrating: the measured window is the documented 90 ms row plus at most
-    // one frame of quantisation on each side, so a coarse grid cannot fake a long beat.
-    expect(
-      report.durationMs ?? 999,
-      "the measured window is the §6.5 deny row plus frame quantisation",
-    ).toBeLessThanOrEqual(TIMINGS.deny.dur + 2 * report.gridMs + 4);
-    expect(report.peakPrevChanged, "the beat actually changed pixels").toBeGreaterThan(50);
-    expect(report.settledAt, "the board returns to a settled picture").not.toBeNull();
-
-    // ── the anchor: the movement is *at the player's tile*, not somewhere else ─
-    const moving = stats.filter((frame) => frame.changed > 0 && frame.centroid.x !== 0);
-    expect(moving.length).toBeGreaterThan(0);
-    const centre = { x: roi.w / 2, y: roi.h / 2 };
-    for (const frame of moving) {
-      expect(
-        Math.hypot(frame.centroid.x - centre.x, frame.centroid.y - centre.y),
-        `the refusal transient must stay inside the player's cell (t=${frame.t.toFixed(0)} ms)`,
-      ).toBeLessThan(roi.w / 4);
+    // ── which claim this runner owes (QA-005d) ────────────────────────────────
+    // The arc is painted iff a frame stamp falls strictly inside its 90 ms window,
+    // i.e. iff the interval between the two frames bracketing the trigger is
+    // shorter than the arc. That interval is *measured* above, from the page's own
+    // frame stamps and the delivered keydown — not assumed to be 16.7 ms.
+    if (walk.verdict === "unresolvable-at-grid") {
+      await expectResolveLimit(page, walk, "this runner's own frame grid");
+      return;
     }
 
-    // ── and the refusal itself is still a triple freeze ───────────────────────
-    const state = await hud(page);
-    expect(state.moves).toBe(0);
-    expect(state.phase).toBe(ref.level.startPhase);
+    expectArcOnTheGrid(walk);
+    await expectRefusalState(page, walk);
+  });
+
+  /**
+   * P1b — the `unresolvable-at-grid` branch, **fabricated** so it is provable on
+   * any machine (QA-005d).
+   *
+   * Without this test the branch above is only exercised by a slow runner: on a
+   * local 60 Hz machine the frame interval is ~17 ms and the verdict is always
+   * `resolvable`, so the fallback could rot unnoticed until a 2-core CI runner
+   * happened to straddle 90 ms. `installFrameStretcher` burns a fixed per-frame
+   * budget, so the interval is *provably* longer than the arc — and then
+   * "no pixel evidence exists" becomes a prediction the runner has to obey.
+   *
+   * This is the regression pin for the classification in `helpers/frame-model.ts`
+   * (whose arithmetic is unit-proved in `tests/unit/frame-model.test.ts`), and it
+   * is what makes the CI fallback trustworthy: the coarse branch is *known* to run
+   * and *known* to hold the refusal, on a fast laptop, on every commit.
+   */
+  test("a fabricated coarse grid proves the 'unresolvable' branch: no frame can hold a 90 ms arc", async ({
+    page,
+  }) => {
+    // CI-envelope sizing (QA-005d): the fabricated grid makes every animation frame
+    // ~150 ms wide *on purpose*, and the walk's protocol is wall clock — a 1.5 s
+    // grid calibration, a 24-frame recorder window, the positive control, plus a
+    // page round trip that can wait for the current frame's burn. Measured ~18 s
+    // locally, which leaves no headroom under the default 30 s on the 2-core
+    // software-GL runner (item 57). The budget is wall clock, never an assertion:
+    // every claim below is unchanged.
+    test.setTimeout(120_000);
+    const watch = watchErrors(page);
+    await installFrameStretcher(page, P1_STRETCH_MS);
+
+    const walk = await refusalWalk(page, { gridWindowMs: 1_500 });
+    expectRecorderHealthy(walk);
+
+    // The fabrication worked — asserted, not trusted: a stretcher that quietly did
+    // nothing would otherwise turn this test into a duplicate of P1.
+    expect(
+      walk.report.gridMs,
+      `the frame stretcher produced a coarse grid: the recorder's own median interval (${walk.report.gridMs.toFixed(1)} ms) is at least the deny row`,
+    ).toBeGreaterThanOrEqual(TIMINGS.deny.dur);
+    expect(
+      walk.verdict,
+      `the interval spanning the trigger (${walk.gapMs.toFixed(1)} ms) is a full frame, so the grid cannot place a frame inside the 90 ms arc`,
+    ).toBe("unresolvable-at-grid");
+
+    await expectResolveLimit(page, walk, "the fabricated coarse grid");
+    expectNoPageErrors(watch, "P1b — the coarse-grid refusal walk");
   });
 });
 
