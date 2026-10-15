@@ -56,4 +56,23 @@ Three figures circulate for the same quantity (boards where `refusedThenEnteredT
 
 **裁决 (one-line terminal ruling):** the module stays as-is — interface and its compile-time proof of fit are one seam artifact; splitting them adds a one-const module, buys zero decoupling, and separates the guard from the guarded, which is how guards rot (§13: no measured problem, no move).
 
-**Rejected:** `types-probe.ts` split (churn; the purity it buys is aesthetic — erased at the boundary anyway). **No engineer ticket is issued.** If a future change ever value-imports the module, the probe rides the bundle as `export const … = true` — harmless, and still not a reason to split.
+**Rejected:** `types-probe.ts` split (churn; the purity it buys is aesthetic — erased at the boundary anyway). **No engineer ticket is issued.** If a future change ever value-imports the module, the probe rides the bundle as an exported `true` — harmless, and still not a reason to split.
+
+## Ruling 3 — accepted-set metrics persist as a **generated sidecar report** with a freshness pin; the level schema stays untouched
+
+**Question (LV-007B OQ5 / RV-006 OQ3):** the acceptance metrics — `B T R M` / `D` / `Dexec` and the solver fields — are today **recomputed** on every `scripts/solve-levels.ts` run and pinned by tests, but never land on disk as an artifact. Submission material and frozen pre-registrations (GD-008's `D_exec(L11) < 13.64`, project-status item 36) need a per-level difficulty table that can be *shown*, not re-derived by hand. Three options: (a) keep recompute-only; (b) add metric fields to the level files (schema change); (c) a committed sidecar report.
+
+### 裁决 (ruling): **(c), minimal surface — one flag, one file, one pin.**
+
+1. **Emit:** `scripts/solve-levels.ts --report` writes **`docs/level-difficulty.report.json`** — one record per shipped level carrying only what `analyse` (`SolveResult`) and `analyseDifficulty` (`DifficultyBreakdown`) already compute: `id`, `solvable`, `shortestSolution`, `par` (read back from the level file, as a cross-check), `reachableStates`, `deadStates`, `dualPhaseTiles`, `refusedThenEnteredTiles`, `refusedBeforeEnteredTiles`, `L B T R M`, `D`, `Dexec` — plus a header with the weight vector (`DIFFICULTY_WEIGHTS`) so the table is self-describing. **No git SHA inside the payload** — the freshness pin compares the whole file, and a SHA would break it on every unrelated commit. No new metric is invented for the report.
+2. **Pin (the "whoever drifts goes red" mechanism, same discipline as §9.1):** a `tests/solver/**` freshness test recomputes the report from `src/levels/*.json` in memory and asserts deep-equality with the committed file. Any level edit, weight change or solver change without a regeneration goes red at commit time.
+3. **Ownership (ruled here, ratified at merge):** the file is machine-written by LV's script and pinned by LV's test, so it is assigned to Level AI + Solver as an extension of its `docs/level-difficulty.md` ownership — hand-edits forbidden; Docs + GitHub's `docs/**` catch-all explicitly excludes generated artifacts with a named generator. DG *consumes* it for submission tables.
+
+### Rejected options
+
+- **(a) Recompute-only — rejected on evidence drift, twice burned.** Every prose-copied number is a future MINOR: the divergence-rate drift (Ruling 1 above) and the `docs/level-difficulty.md` §3 stale rows withdrawn at LV-007C are the two prior incidents of exactly this class. A competition submission needs an artifact a judge can diff against a one-command re-run; "run the script yourself" is reproducibility for *us*, not evidence for *them*.
+- **(b) Level-file fields — rejected.** Derived measurements in the authoring source of truth: the schema cannot enforce freshness, the change ripples through the zod schema / fixtures / all ten level files, and it invites hand-tuned numbers (`AGENTS.md` §7 culture). `par` stays the **single deliberate exception** — gameplay displays it (§5). Nothing else derived earns a schema field.
+
+### Follow-up ticket (LV queue — code; LV owns `scripts/**`, `src/levels/**`, `tests/solver/**`)
+
+`LV-007E` (name assigned here): `scripts/solve-levels.ts --report` + committed `docs/level-difficulty.report.json` + the freshness pin in `tests/solver/`. Acceptance: the pin goes red when any shipped level's `Dexec` changes without regeneration; the file renders the GD-008 frozen anchors exactly (L10 `Dexec` = 13.64…, the L11 pre-registration threshold). Docs-do-not-run-ahead-of-code note: `docs/architecture.md` §8/§12 name this artifact as **specified, not yet implemented** until the ticket lands.
