@@ -219,9 +219,139 @@ mechanism, local-calibrated constants, gesture commit) and proved locally; the n
 CI run on `develop` is the confirmation, and the orchestrator's item 66 roster is the
 baseline to compare against.
 
+### 1.5 QA-005d — the two cloud-only survivors: measured root causes, and the branches that name themselves
+
+The QA-005c tip was 86 / 0 three times locally and the merged tip still carried
+**two deterministic CI reds** on the 2-core software-GL runner (`ci.yml` runs
+`npx playwright test --retries=1`):
+
+| survivor | CI symptom | class |
+|---|---|---|
+| `transient.spec.ts` **P1** — the §6.5 refusal arc | `onset: null` on the runner, an onset on every local run; it *passed on retry #1* | the runner's frame grid **cannot present a 90 ms transient** — a measurement limit, not a rule failure |
+| `mobile.mobile.spec.ts` **R-T4** — the ≥ 24 px swipe | `Expected: 1, Received: 0`, 4/4 deterministic | the CDP touch burst spanned 15 of the runner's frames, so the *game clock* read it as > 500 ms and degraded it to a tap — a **driver pacing** defect |
+
+Both root causes were established by measurement before anything was changed, and
+neither required a `src/**` edit. The measuring instrument is one new in-page
+observer (`helpers/probe.ts`): **every `requestAnimationFrame` stamp** (Phaser
+steps the scene once per frame and stamps that step with the rAF timestamp, so
+these *are* the game's own frame times) plus **every delivered DOM input event**,
+on the same `performance.now()` clock, recorded as delivered — order and
+coordinates included, so a "fix" that assumes events arrived cannot hide behind
+it. The arithmetic they feed is one pure module (`helpers/frame-model.ts`, no
+Playwright / Phaser / `src/**` import) whose classification is unit-proved with
+synthetic grids (`tests/unit/frame-model.test.ts`), which is how the coarse-runner
+branch runs on **any** machine, including a fast 60 Hz laptop.
+
+**P1 — the root cause, at source level.** `LevelScene.tryMove` records the denial
+with `denyFeedback(dir, this.time.now)` **synchronously on the DOM keydown**, i.e.
+*between* two animation steps, where `scene.time.now` still holds the previous
+step's stamp `Tₙ`. The next step runs with `Tₙ₊₁` and `BoardView.update` clears the
+deny at `time >= startAt + deny.dur` (90 ms). The arc is therefore painted **iff**
+
+```
+Tₙ₊₁ − Tₙ < 90 ms   —  the interval between the two frames bracketing the trigger
+```
+
+On a 60 Hz laptop that interval is ~17 ms and the beat is owed; the CI runner's
+interval *straddles* 90 ms, which is exactly why the same commit reported
+`onset: null` and then passed on a retry. The walk now **measures** the interval
+from the page's own frame stamps and the delivered keydown and branches on it
+(`arcVerdict(gapMs, deny.dur)`), instead of assuming either machine.
+
+- **`resolvable` — the pixel teeth are unchanged.** Fresh local evidence:
+  `frames=41 gridMs=17.1 gapMs=16.7 verdict=resolvable onset=105.4 settled=213.3
+  peakPrevChanged=1944`. The 1944 changed pixels at the first step inside the
+  window are the `deny` ring tint at `ringAlpha = 0.5` plus the nudge — detection
+  does not depend on the nudge offset being non-zero (the unit file asserts the
+  geometry agrees with the verdict anyway).
+- **`unresolvable-at-grid` — a named outcome, never a dropped assertion.** It is
+  only legitimate in the direction that makes the limit real (`gap >= 90 ms`, and
+  the recorder reports **no** onset), and it still asserts everything deterministic
+  the refusal owes: no move · no flip (state channel); the player **still on their
+  own tile**, read from the pixels; the canvas read-back healthy (`distinct > 4`,
+  not the black-WebGL trap); and a **positive control through the same channel on
+  the same runner** (`pressDirection("right")` → `moves 1`, `phase B`). It emits a
+  greppable `[QA-005d] RESOLVE-LIMIT …` log line, a `RESOLVE-LIMIT` test
+  annotation and a JSON attachment — so a green CI run can never be `onset: null`
+  *silently*.
+- **P1b — the fallback is proved, not left to a slow runner's mercy.** The 140 ms
+  `installFrameStretcher` (`helpers/frame-stretch.ts`) burns a fixed budget once
+  per animation frame from the test side (`addInitScript`; `src/**` untouched), so
+  a ~150 ms grid makes the classification a *prediction* the runner must obey.
+  Fresh local evidence: `frames=24 gridMs=156.0 gapMs=150.0
+  verdict=unresolvable-at-grid onset=null settled=155.8 peakPrevChanged=0`. Without
+  P1b the fallback would only ever execute on a slow machine and could rot
+  unnoticed until a runner happened to straddle 90 ms.
+
+**R-T4 — the root cause (reproduced, then fixed tests-side).** Each awaited CDP
+`Input.dispatchTouchEvent` is gated by the renderer's next animation frame, and
+the game clock is quantised to the frame grid (`onPointerUp` computes
+`elapsed = scene.time.now − start.time`, and `scene.time.now` only moves once per
+frame). The old helper sent `start`, four interpolated `move`s and `end` **one
+awaited send at a time**, so the burst's game-clock duration was
+`frames_spanned × grid`, never its wall-clock span. Measured with the observer:
+
+| grid | old burst (6 awaited sends) | game-clock elapsed | R-T4 verdict |
+|---|---|---|---|
+| 16.7 ms (local 60 Hz) | 13 frames | 217 ms | swipe ✓ — **no local run could ever fail** |
+| 66.7 ms | 15 frames | 1001 ms | over 500 → tap |
+| 133.3 ms | 15 frames | 1999 ms | over 500 → tap |
+
+Past the window the gesture falls to the tap branch, the travel ends inside the
+player's own cell, `adjacentDirection(player, player)` is `null` and the counter
+stays at 0 — the cloud `Received: 0`. **Fix (driver only):** issue start, move and
+end in **one tick** via `Promise.all` (array order = wire order), so the burst
+costs **zero game frames at any grid**. Re-measured: `span 0 / game 0 ms at 16.7,
+66.7 and 133.3 ms grids, 12/12 runs`; the four interpolated `touchMove`s went with
+the `await`s that made them necessary (`onPointerUp` reads only the final
+position). Causality was proved by temporarily restoring the old helper: the
+coarse pin then failed with exactly the CI shape (`span 15 × 150.0 ms = 2250 ms`)
+while the natural-grid swipes still passed.
+
+**Every "it moved" / "nothing happened" claim now asserts delivery first.**
+`expectGestureDelivered` requires exactly one `touchstart`, ≥ 1 `touchmove`,
+exactly one `touchend`, in gesture order (`/^start(?:,move)*,end$/`) and at the
+coordinates the driver aimed at (± 1 CSS px — Chromium rounds `52.5` to `53`), and
+`expectSwipeDelivered` then requires the gesture to fit R-T4's own
+`swipeMaxMs = 500` **on this runner's grid** (`span × grid`). A red `moves`
+counter can therefore only be a *rule* verdict; a delivery regression fails by
+name. Fresh local evidence: `gridMs=16.7 span=0 gameElapsedMs=0 maxMs=500
+delivered=touchstart@(53,284) → touchmove@(53,248) → touchend@(53,248)`; on the
+fabricated 150 ms grid, `gridMs=150.0 span=0 gameElapsedMs=0`. The dominant-axis
+test is instrumented too: on a 72 CSS px cell its endpoint would *also* resolve to
+`right` through the tap path, so without the evidence that assertion could have
+passed without R-T4's swipe branch ever running.
+
+**Two new tests are wall-clock heavy on purpose, and carry explicit budgets** (the
+2-core runner must not blow the default 30 s): P1b measured ~18 s locally
+(`test.setTimeout(120_000)`) and the mobile coarse pin ~12 s
+(`test.setTimeout(90_000)`). Both budgets are wall clock only — no assertion is
+relaxed — and both tests assert their own fabrication (the stretcher really
+produced a grid ≥ the arc / ≥ `SWIPE_STRETCH_MS`) rather than trusting it.
+
+**Known gap (deliberately not widened here).** The R-T5 fallback test
+(`mobile.mobile.spec.ts` ~:462) still relies on the tap path resolving its 40 px
+travel to `right`, so it does **not** prove the swipe branch; only R-T4 (:270), the
+dominant-axis test (:327) and the coarse pin (:371) carry delivery evidence now.
+Recorded as an OPEN_QUESTION rather than silently instrumented.
+
+Evidence (QA-005d; the two changed sites were re-run against a QA-owned vite on
+`:5216`, the full battery on the managed server):
+
+| check | result |
+|---|---|
+| `tsc --noEmit` | 0 errors |
+| `vitest run` | **30 files · 553 passed · 3 skipped** — +1 file / +10 tests, the unit proof of the frame model |
+| `npm run levels` | `11/11 level files ok · 0 errors · 15 warnings · 11/11 negative cases` → **PASS** |
+| `npm run build` | ✓ built (chunk-size warning only) |
+| `npx playwright test --list` | **88 tests in 8 files** (was 86: +1 `transient` P1b, +1 mobile coarse pin) |
+| targeted re-runs | P1 + P1b (2 passed, 21.2 s) and the six R-T4 mobile cases (6 passed, 17.5 s), delivery evidence in the log |
+| `npx playwright test` | **88 passed · 0 failed, zero retries**, × 3 consecutive runs |
+| targeted repeats | `--repeat-each=10` at both changed sites |
+
 ---
 
-## 2. Inventory — 86 cases
+## 2. Inventory — 88 cases
 
 | file | cases | project | what it pins |
 |---|---:|---|---|
@@ -231,8 +361,8 @@ baseline to compare against.
 | `portal.spec.ts` | 6 | desktop | M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
 | `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
-| `transient.spec.ts` | 6 | desktop | the resampling channel is live; **P1** the 90 ms refusal arc; **P2** the press beat's occlusion proof (timing inequality + pixel-measured geometry) and the bounded arrival transient |
-| `mobile.mobile.spec.ts` | 11 | mobile | 56/72 px bars and the board filling the play area between them; whole-CSS-px square cells above the 40 px floor; ≥ 44×44 buttons with ≥ 8 px gaps; tap = move; distant tap = non-input; swipe ≥ 24 px = move on the dominant axis; R-T6 ring never under touch; R-T5 hint at a 280×600 viewport and the swipe fallback; a touch-only win + dialog `Next`; touch undo |
+| `transient.spec.ts` | 7 | desktop | the resampling channel is live; **P1** the 90 ms refusal arc with a runner-measured arbiter — the full pixel claim when the frame grid can hold the arc, or a named `RESOLVE-LIMIT` (state refusal + pixel position + channel health + positive control) when it provably cannot; **P1b** that fallback fabricated with a 140 ms/frame stretcher; **P2** the press beat's occlusion proof (timing inequality + pixel-measured geometry) and the bounded arrival transient |
+| `mobile.mobile.spec.ts` | 12 | mobile | 56/72 px bars and the board filling the play area between them; whole-CSS-px square cells above the 40 px floor; ≥ 44×44 buttons with ≥ 8 px gaps; tap = move; distant tap = non-input; swipe ≥ 24 px = move on the dominant axis, with the gesture's **delivery and game-clock span asserted before the HUD read**; the R-T4 delivery shape pinned on a fabricated coarse grid; R-T6 ring never under touch; R-T5 hint at a 280×600 viewport and the swipe fallback; a touch-only win + dialog `Next`; touch undo |
 
 **Every expectation is derived from production.** Routes, phases, refused
 directions, door states, latch fixtures and portal crossings come from `solve()` /
