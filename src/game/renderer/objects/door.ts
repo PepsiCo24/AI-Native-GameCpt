@@ -6,8 +6,12 @@
  * (frame + 4 corner stubs + medallion floating in an empty passage). The state is
  * carried by **geometry**, never by a colour swap (R-D2: "no desaturation, no
  * dichromat simulation and no dirty phone screen can collapse it"), and the door
- * token is the **same value in both states and both phases** (§3.1b Proposal 2,
- * R-C10/R-C12) — the only additions are the two formula-derived `*Occupied`
+ * picks the **same token in both states** (§3.1b Proposal 2, R-C10/R-C12: open and
+ * closed never change the colour family — only the geometry). That is *not* the same
+ * **value in both phases**: R-C10 flips value and temperature with the phase
+ * (`obj.doorRed` `#B03A32` in A → `#FF8A7A` in B), so a flip does repaint this
+ * painter's ink and §6.2's `tokens` row cross-fades it (`renderer/theme-mix.ts`).
+ * The only state-dependent additions are the two formula-derived `*Occupied`
  * tokens, used when the player legally stands inside a closed door (R-D7).
  *
  * | property | closed | open | channel |
@@ -203,10 +207,11 @@ export interface DoorLook {
 }
 
 /**
- * `obj.doorRed` / `obj.doorBlue` are phase-independent values (R-C10), so the
- * token comes from the **mixed** map the caller passes in and the colour family is
- * the only thing `color` decides — never the state (R-D8: open/closed is a derived
- * render flag, not a colour decision).
+ * `obj.doorRed` / `obj.doorBlue` are **per-phase** values (R-C10: same hue family,
+ * value and temperature flip with the phase), so the token comes from the **mixed**
+ * map the caller passes in — the caller is what makes this a cross-fade instead of a
+ * step. The colour *family* is the only thing `color` decides — never the state
+ * (R-D8: open/closed is a derived render flag, not a colour decision).
  */
 export function doorLook(
   tokens: ThemeTokens,

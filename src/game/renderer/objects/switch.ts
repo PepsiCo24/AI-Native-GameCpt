@@ -118,7 +118,11 @@ export function switchParts(
  * presence/absence; `emphasis` is the press beat.
  */
 export interface SwitchLook {
-  /** `obj.switch` — one token in both states and both phases (R-C10). */
+  /**
+   * `obj.switch` — one token in both latch states (the on/off channel is the dot,
+   * R-C1) and still **per-phase in value** (R-C10: same hue family, value and
+   * temperature flip with the phase, cross-faded by `renderer/theme-mix.ts`).
+   */
   readonly outline: number;
   /** The owning phase's glyph (extension 1). */
   readonly glyph: PhaseGlyph;

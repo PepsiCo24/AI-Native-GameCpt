@@ -28,11 +28,23 @@
  * is unchanged and only motion is removed.
  *
  * **Scope.** This covers the tokens the canvas reads *outside* the two stateful
- * painters: `ground` (all five), `obj.goal`, `accent` (hover ring) and
- * `feedback.win` (L7 plate tint). Walls interpolate `WallLook` (fill, stroke,
- * edge, footprint, notch) and the actor interpolates `ActorLook` (body, ring,
- * ring alpha, deny tint, `fx.phaseRing`) — both carry geometry/alpha that a
- * colour-only mix cannot express, and both keep their single owner.
+ * painters: `ground` (all five), the eight `obj.*` members a **painter** reads
+ * directly (`goal`, `portal`, `portalEcho`, `switch`, `doorRed`, `doorBlue`,
+ * `doorRedOccupied`, `doorBlueOccupied` — see the note in the `obj` block for why
+ * the wall tokens are excluded), `accent` (hover ring) and `feedback.win` (L7 plate
+ * tint). Walls interpolate `WallLook` (fill, stroke, edge, footprint, notch) and the
+ * actor interpolates `ActorLook` (body, ring, ring alpha, deny tint,
+ * `fx.phaseRing`) — both carry geometry/alpha that a colour-only mix cannot express,
+ * and both keep their single owner.
+ *
+ * **The `obj` block is not cosmetic (§6.2's `tokens` row).** V0.7 added door,
+ * switch and portal painters, and each one reads its colour straight out of this
+ * map, so a value left to `...to.obj` **steps** at the flip instead of fading: the
+ * review measured ΔL* doorRed +28.1, doorBlue +35.2, switch +26.2, portal +38.0
+ * against §3.3a's ΔL* ≥ 12 value-step floor — i.e. three classes were popping at the
+ * exact beat the spec designed for a cross-fade. The `obj` set below is therefore
+ * *every* `obj.*` member a painter reads, enumerated; the wall family is the only
+ * one excluded, because it has its own look mixer on §6.2's `walls` row.
  */
 
 import type { Hex, ThemeTokens } from "@/game/theme/tokens";
@@ -78,9 +90,28 @@ export function mixTheme(from: ThemeTokens, to: ThemeTokens, t: number): ThemeTo
     },
     obj: {
       ...to.obj,
-      // The goal is the one `obj.*` token the canvas reads directly; walls,
-      // doors and portals interpolate their own looks.
+      // Every `obj.*` token a **painter reads directly** on this row: the goal
+      // ring, the door's two colour families and their two derived *Occupied
+      // variants (R-D7), the switch outline (M3) and the portal's active/inactive
+      // pair (§3.1c). They are per-phase *values* under R-C10 — the class keeps its
+      // hue family, its value and temperature flip with the phase — so a step
+      // function here is a colour pop (measured ΔL* 26–38 across these seven), which
+      // is why they cross-fade on §6.2's `tokens` row, globally and unstaggered,
+      // with the ground the objects sit on.
+      //
+      // Walls are deliberately **not** here: the wall class carries its own look
+      // mixer (`WallLook` via `wall-tiles.ts`) on §6.2's staggered `walls` row, and
+      // its tokens (`wall`, `wallEcho`, `wallEchoFill`, `wallOccupied`, `wallEdge`)
+      // are read through that look, never from this map. Mixing them in two places
+      // would fade one wall's interior on two different curves.
       goal: c(from.obj.goal, to.obj.goal),
+      portal: c(from.obj.portal, to.obj.portal),
+      portalEcho: c(from.obj.portalEcho, to.obj.portalEcho),
+      switch: c(from.obj.switch, to.obj.switch),
+      doorRed: c(from.obj.doorRed, to.obj.doorRed),
+      doorBlue: c(from.obj.doorBlue, to.obj.doorBlue),
+      doorRedOccupied: c(from.obj.doorRedOccupied, to.obj.doorRedOccupied),
+      doorBlueOccupied: c(from.obj.doorBlueOccupied, to.obj.doorBlueOccupied),
     },
     accent: c(from.accent, to.accent),
     feedback: {

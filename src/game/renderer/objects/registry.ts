@@ -209,6 +209,13 @@ const GOAL: TileObjectSpec = {
  *
  * Both ends come from resolved state (`doorsOpen` — a literal `true` means open) and
  * the previous state, never from a re-derivation of the door rule.
+ *
+ * The door's **colour** rides neither of those rows: `obj.doorRed` / `obj.doorBlue`
+ * (and their `*Occupied` variants) are **per-phase values** (R-C10 — same hue family,
+ * value and temperature flip with the phase), read from `ctx.theme`, i.e. §6.2's
+ * `tokens` row on the global, unstaggered beat. R-C10 does **not** mean "same value in
+ * both phases"; mixing the token into `objectMix` instead would fade a door's ink on
+ * the wall's staggered curve and desynchronise it from the ground it stands on.
  */
 const DOOR: TileObjectSpec = {
   kind: "door",
