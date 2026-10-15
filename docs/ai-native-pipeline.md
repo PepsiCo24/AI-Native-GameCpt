@@ -1,7 +1,7 @@
 # AI Native Pipeline — Phase Shift: Echo Grid
 
 > Owner: **Level AI + Solver** with **Orchestrator** (formatting maintenance by Docs + GitHub; content belongs to the owners)
-> Version: V0.7 · Date: 2026-10-15
+> Version: V0.8 · Date: 2026-10-15
 
 ---
 
@@ -164,11 +164,11 @@ The final submission must show the chain, not a claim:
 
 ## 7. Reproducibility
 
-- Level generation is **seeded** and scripted. The committed, re-runnable scripts are `scripts/validate-levels.ts` (schema/rule gate + 10 negative self-tests), `scripts/solve-levels.ts` (BFS proof, `par`, metrics, policy, gates) and `scripts/author-lv006-candidates.ts` (the L6–L10 doors+switch families, fixed `SEED`, no clock / network / filesystem writes, byte-identical output on every run — see §8.6). A **bulk** multi-block generator does not exist yet; the L11–L20 portals block is where it will be needed, and until it is written this section must not cite a script that is not in the repository (`scripts/generate-levels` was cited here and in `docs/architecture.md` — the latter is the Architect's file, so correcting it there is an OPEN_QUESTION in the LV-007B handoff, not an edit made by this role).
+- Level generation is **seeded** and scripted. The committed, re-runnable scripts are `scripts/validate-levels.ts` (schema/rule gate + 10 negative self-tests), `scripts/solve-levels.ts` (BFS proof, `par`, metrics, policy, gates), `scripts/author-lv006-candidates.ts` (the L6–L10 doors+switch families, fixed `SEED`, no clock / network / filesystem writes, byte-identical output on every run — see §8.6) and `scripts/author-l11-candidates.ts` (since **LV-008**: the M2 portal-debut family, 54 candidates, same discipline — see §8.8). Every one of them is re-runnable and prints its rejects. A **bulk** multi-block generator does not exist yet; the rest of the L11–L20 portals block is where it will be needed, and until it is written this section must not cite a script that is not in the repository (`scripts/generate-levels` was cited here and in `docs/architecture.md` — the latter is the Architect's file, so correcting it there is an OPEN_QUESTION in the LV-007B handoff, not an edit made by this role).
 - Every accepted level stores its generation metadata (model role, seed, prompt version, solver metrics).
 - Rejected candidates are archived too — the failures are part of the evidence. The LV-006 generator prints its rejects and **fails** if any of its three negative probes is accepted.
 
-## 8. The level-pipeline record — LV-006 (the L6–L10 unit) → LV-007B (2026-10-15)
+## 8. The level-pipeline record — LV-006 (the L6–L10 unit) → LV-007B → LV-008 (2026-10-15)
 
 §8.1–§8.2 are the **LV-006** run. §8.3 onward is the running protocol record: each later
 task appends what it changed about *how levels are proved*, so the record cannot drift into
@@ -260,13 +260,16 @@ schema is a *shape* contract (`src/core/level/**` was not changed by LV-006):
    Architect/Game-Designer question: doing so would change `src/core/level/**`, which the
    solver role must not touch (OPEN_QUESTION in the LV-007B handoff).
 2. **A documented lesson must be program-true** — the ladder's lesson table
-   (`@/core/solver/policy` `DOCUMENTED_LESSONS`, L1–L10) is checked against the metrics:
+   (`@/core/solver/policy` `DOCUMENTED_LESSONS`, L1–L11) is checked against the metrics:
    phantom walk FORCED (l005) / OFFERED (l004), latch dynamism on L6–L10, the documented
    `switchRequired` obligation (L7–L10, with L6's dip recorded on its row as `"exempt"` —
    §8.5), and the named Aha #1 gates of §3 on L8 — measured conditions (i)(ii)(iii) plus,
    since LV-007A, the §3 **construction** bullets as gates (v) `single-door-one-switch-funnel`
-   and (vi) `aha-par-cap` (`par ≤ 8`). The suite fails if a ladder level has no
-   documented-lesson row, so the table cannot drift from the dataset.
+   and (vi) `aha-par-cap` (`par ≤ 8`). Since **LV-008** the table carries a second gate
+   family, Aha #2 (`portal-aha-2`) on L11 (§8.8), whose `switchRequired` obligation is
+   `"exempt"` on the same L6 pattern — the debut *demonstrates* M2, it does not demand it.
+   The suite fails if a ladder level has no documented-lesson row, so the table cannot drift
+   from the dataset.
 
 ### 8.5 Escalation — one named condition is unsatisfiable as written
 
@@ -279,6 +282,11 @@ portal exists in `src/levels` before it. The gate is therefore **implemented and
 as `UNSATISFIABLE` with the proof printed**, `dualPhaseTiles === 0` is pinned as the proven
 value, and the CLI lists it under ESCALATIONS — never as a pass, never softened, and never
 "fixed" by adding a portal the schedule forbids.
+
+*(Resolved at **LV-008**: the L11 portal debut exists, so gate (iv) is satisfiable for the
+first time and PASSes with `dualPhaseTiles = 21` measured on `l011.json` — §8.8. The escalation
+channel is nevertheless unchanged, because no *pre-L11* board can satisfy it: `dual-phase-tiles`
+remains the single legitimate producer and `l008` the single board that reports it.)*
 
 **The corrected acceptance law, restated for the record (Orchestrator adjudication of this
 escalation).** Because gate (iv) cannot be satisfied before L11, acceptance of an M1+M3 level
@@ -324,14 +332,17 @@ this section still reads the **unordered** form:
 
 So the split reads: **spec (iii) = ordered, this section's generation/acceptance leg =
 unordered — until the L11 block ruling.** The switch is verdict-identical on shipped
-content: on the ten levels both forms report identical tile lists (1 / 1 / 1 / 2 / 1 on
-L6–L10), so no gate verdict moved (the CLI's per-level metric lines are byte-identical
+content: on the eleven levels both forms report identical tile lists (1 / 1 / 1 / 2 / 1 on
+L6–L10, and `[5,0]` on both forms for L11 — §8.8), so no gate verdict moved (the CLI's per-level metric lines are byte-identical
 across the switch; the l008 gate (iii) line changed only in its wording), while on 2000
 seeded single-door-single-switch boards 46 diverge (44 of them because the door tile *is*
 the switch tile). The companion's **promotion trigger** beyond gate (iii) is
 ADR-architecture-0002's: it MUST land as the gate before the first **L11+ portal
 candidate** is accepted (teleport edges make trapped refusals more likely), and SHOULD be
-promoted wherever a candidate first diverges.
+promoted wherever a candidate first diverges. *(Satisfied at **LV-007C**: the ordered form
+*is* gate (iii) now — and the trigger was then tested at the first L11+ portal candidate,
+LV-008, where it did **not** fire: `l011.json` reports the same tile list on both readers,
+§8.8.)*
 
 **`switchRequired` is an obligation on the documented lesson (LV-007A · OQ4 ruling).** The
 `switchRequired = true` that L7–L10 carry (all four measure `true` on the shipped boards) is no
@@ -351,10 +362,14 @@ that weakens the latch is a rejection, not a repair (ADR-0004).
 
 ```bash
 node_modules/.bin/tsx scripts/author-lv006-candidates.ts   # families → accept/reject + probes
-node_modules/.bin/tsx scripts/solve-levels.ts              # 10/10 PASS, per-level metrics + gates
+node_modules/.bin/tsx scripts/author-l11-candidates.ts     # M2 debut family → accept/reject + probes
+node_modules/.bin/tsx scripts/solve-levels.ts              # 11/11 PASS, per-level metrics + gates
 node_modules/.bin/tsx scripts/validate-levels.ts           # schema/rule gate + 10 negative cases
 node_modules/.bin/vitest run                               # incl. tests/solver/latch-gates.test.ts
 ```
+
+This is §8's (LV-006 era) reproducer; commands are kept because they must keep passing, and
+the current end-to-end block is **§8.9** (it is the one that prints 11/11).
 
 ### 8.7 LV-007B — solver hardening + the measurement pass (2026-10-15)
 
@@ -385,9 +400,128 @@ deleted, never committed; `tsc` + full suite + all three CLI gates re-run per it
    at LV-007C item 3** — the pre-ADR-0009 schedule (door at L21, portal at L36) and the
    pre-measurement absolute `D` bands are withdrawn by name, the block table now follows
    `docs/game-design.md` §8 with dips only at the two real seams (L6, L11), and the only
-   numbers with legal force are L1–L10 (measured) and L11 (pre-registered).
+   numbers with legal force are L1–L10 (measured) and L11 (pre-registered). *(Superseded in
+   part at **LV-008**: L11 is no longer pre-registered — it is authored and measured, §8.8;
+   the legal-force set is now L1–L11 measured.)*
 4. **n-13 · a policy code for M3 content no door reads** — `switch-without-targets`, its own
    negative control, and the validator-warning-vs-policy-rejection layering: §8.4 law 1.
+
+### 8.8 LV-008 — the M2 (portal) debut, `l011.json` (2026-10-15)
+
+The second mechanic seam, and the first level authored **against a pre-registered numeric law**
+rather than against a design paragraph. Recorded here because it is the pipeline's first
+complete pass on a *mechanic debut*, which is the case the whole "LLM proposes, the program
+proves" split exists for.
+
+**The pre-registration, and the order of events.** `docs/level-design.md` §6 (V0.6 /
+ADR-design-0001) and `docs/level-difficulty.md` §3.3–§3.4 published the debut's acceptance
+contract **before any candidate existed**: `D_exec(L11) < 13.64` (⇔ `D < 33.64`), `par ≤ 4`,
+exactly **one** opposite-colour portal pair, no false routes, and a **below-OFFERED** teaching
+grade. 13.64 is not a chosen constant — it is the *published 2-dp form* of the shipped
+`l010.json` measurement (13.642857, re-derived in the suite from the board itself), so the bound
+is strictly **harder** than "beat L10". The order matters and is kept in the record: the board
+was filtered *to* the bound, never the bound read off the board.
+
+**The proposal side (recorded families, not trusted).** `scripts/author-l11-candidates.ts`
+(`SEED = 20261015`) enumerates the M2-debut template family — the L6 debut template's wall-free
+7 × 3 skeleton × switch tile × door tile × door colour × pair × channel phase — plus a seeded
+pair-placement axis drawn from the recorded lattice, **54 candidates**, printing every
+rejection with its machine-readable reason. The recorded axes are hypotheses in the AGENTS.md
+§1 sense: the *designer's* claim is "put the channel on the natural row so it is the core action
+of par"; the *program* decides which of the 54 placements actually satisfies that.
+
+**The proof side (the program, on every candidate).** Unchanged from §8.2, plus the debut's own
+gate family: zod → `validateLevel` → `explore`/`analyse` → `par` **from the solver** → the whole
+`portal-aha-2` suite in `@/core/solver/policy` → accept/reject. A candidate is accepted only if
+it has zero policy violations *and* every par route teleports *and* the portal-free world still
+solves *and* `par ≤ 4` *and* `D_exec < 13.64`.
+
+**Result — 1/54 accepted, and it is the shipped file (`shipped=MATCH`), with 2/2 negative probes
+rejected by name:**
+
+| Family outcome | Count | What it means |
+|---|---|---|
+| accepted | **1** | `switch=1,1 door=5,0/blue p=2,1⇄4,0/B` — the shipped board (`par=4`, `Dexec=8.5732`) |
+| rejected by `gate-shortest-solution-presses-switch-and-crosses-door` | 49 | the M1+M3 unit is not on the shortest route — the latch became decoration |
+| rejected by `gate-portal-par-cap` | 4 | the channel placement made the proven shortest solution longer than 4 |
+
+The 1/54 rate is the **finding**, not a failure of the sweep: the debut's constraint set is
+genuinely tight (the channel must sit *exactly* on the only route, while the door must still be
+*closed* in its entry phase, so the teleport is the only thing that can put the player beside an
+open door). The board was found by filtering 54 recorded proposals, not hand-fitted.
+
+**Negative probes (both must be rejected, and both are plausible authoring mistakes):**
+
+1. **Same-colour pair** — `(6,2) ⇄ (0,2)`, both `x + y` even (8 and 2), so the pair preserves the
+   parity link and is mechanically nothing (ADR-0009 decision 5). Rejected by the **level layer**
+   as a hard **error** (not a warning), which is why this probe asserts on `validateLevel` and
+   not on a policy code. A validator-warning-vs-policy-rejection case, the same layering §8.4
+   law 1 records for `switch-without-targets`.
+2. **Bypassable portal** — the same board with the goal moved to `(4,1)` and the channel
+   re-declared in phase A, the phase the par route never stands in, so every shortest route
+   walks the whole way and the level teaches a mechanic it does not use: rejected by
+   `gate-portal-crossing-on-every-par-route` ("no false routes"). This is the one construction
+   where the portal is decoration, which is exactly what the debut's construction floor forbids.
+   The script prints **both** codes it trips — gate (ii) also fires, because the moved goal puts
+   the M1+M3 unit off the route (the same coupling the N2 family of the control table records) —
+   and the probe asserts on the portal code, the one the board was built to break.
+
+**What the debut's gate suite got, and what it deliberately did not.** `portalAhaGates` reuses
+the *same implementations* as Aha #1 for the two gates they share — `pressThenCrossGate` and
+`refusedBeforeEnteredGate` were **extracted**, not copied (a second implementation would be a
+second truth source for one condition), which is why L11's `press-then-cross-door` line is
+byte-identical in shape to `l008`'s. Five new codes arrived with it
+(`gate-portal-pair-single-opposite-colour`, `gate-portal-crossing-on-every-par-route`,
+`gate-portal-par-cap`, `gate-portal-teaching-grade-below-offered`,
+`gate-portal-seam-law-execution-axis`), each with a negative control in
+`tests/solver/policy-negative-controls.test.ts` — the one-negative-control-per-code law of §8.3,
+enforced at compile time. Deliberately **absent**: a `portalRequired` flag or a
+"lesson-portal-required" code. The debut's design asks for the mechanic to be *demonstrated,
+not demanded*, so such a check would be unreachable — and an unreachable check violates the
+one-control-per-code law. The load-bearing question is instead answered by the **shared** gate
+(ii) (the latch is on the only par route) and recorded on the lesson row as
+`switchRequired: "exempt"` (the L6 pattern, generalized to a second seam).
+
+**L11 also lands the ordered/unordered block ruling of §8.5.** Both readers report the same tile
+list (`[5,0]`) on L11, so gate (iii)'s switch to `refusedBeforeEnteredTiles` (LV-007C) moves no
+verdict on the shipped set — the debut is where the *promotion trigger* recorded at LV-007B was
+to be tested, and it did not fire. `dualPhaseTiles = 21` (all 21 tiles enterable in both phases)
+makes gate (iv) satisfiable **for the first time**, so the escalation channel §8.5 whitelists
+remains exactly one gate on exactly one board (`l008`), unchanged.
+
+**The honest gaps, stated rather than hidden:**
+
+- The seam-law negative control is **not surgical**, and a search was run for one. `D_exec` is
+  driven here by `L` and `B`; adding dead pockets to `l011` (which would raise `D_exec` without
+  touching the construction gates) was measured to produce `deadStates = 0` and `T = 0`, i.e.
+  **no `D_exec` movement at all**, because §4 legal geometry forbids the very states that would
+  move it. The control shipped is therefore the *boundary* board — the shipped `l010` re-labelled
+  `id: 11`, `D_exec = 13.642857 ≥ 13.64` — which fails the seam gate **and** the three
+  construction gates. That coupling proves the budget is not a flattering rounding; it is
+  documented in the control table rather than presented as isolation.
+- The portal-pair control **is** surgical in its phase clause (`l011` + a second pair in the
+  *other* phase fails only the pair gate) but its count clause is not always: one variant
+  (`(0,0) ⇄ (5,2)`, phase A) makes the added pair enterable on two further par routes, so
+  `parRoutes` rises 1 → 3 and gate (ii) fails with it. The surgical variant was chosen for the
+  table and the coupled one is recorded in the test file's comment — same class, one more
+  complaint.
+- On the **total** axis the M2 debut is *not* a dip: `D` falls 0.0697 (28.6429 → 28.5732) while
+  `M` rises +1 (+5 on `D`). This is the same structural finding §8.7 item 3 records for L5→L6,
+  now confirmed at the last `ΔM > 0` seam in the schedule: the sawtooth is real on `D_exec`
+  (`13.6429 → 8.5732`, **−5.07**) and invisible on `D`. No weight was tuned to change that.
+
+### 8.9 Reproducing *this* record
+
+```bash
+node_modules/.bin/tsx scripts/author-l11-candidates.ts     # M2 family → accept/reject + probes
+node_modules/.bin/tsx scripts/solve-levels.ts              # 11/11 PASS (l011: 8 gates, all PASS)
+node_modules/.bin/tsx scripts/validate-levels.ts           # 11/11 level files ok
+node_modules/.bin/vitest run                               # incl. tests/solver/l11-portal-gates.test.ts
+```
+
+The ten pre-existing solver-dump lines are byte-identical to the pre-LV-008 run; L11 is appended
+as line 11 and the only other diff is the aggregate count lines. ADR-0004 in force throughout:
+reject, never repair.
 
 ## 9. Change log
 
@@ -401,3 +535,4 @@ deleted, never committed; `tsc` + full suite + all three CLI gates re-run per it
 | 2026-10-15 | V0.6 | **LV-007B (m-8/m-9/m-10 reconciliation) + LV-007B items 1–4 recorded.** §4 **corrected**: the metric block now separates what `SolveResult` carries from what `@/core/solver/difficulty` adds, `maxSearchDepth` is labelled NOT `T`, and "still unmeasured" is replaced by the measured state (`B`/`T`/`R`/`D` landed, §5.2 of `docs/level-difficulty.md`; `D = L + 3·B + 5·M` inside the §4 acceptance region because `T ≡ R ≡ 0` there; the L5→L6 dip is measured **+8.53**, not −2…−3). §7 **stops citing a script that does not exist** (`scripts/generate-levels`) and names the three real gates, with the stale `docs/architecture.md` citation raised as an OPEN_QUESTION since that file is the Architect's. §8.4 law 1 gains the **mirror** law (n-13 `switch-without-targets`: a switch that fires but no door reads is M3 decoration; validator warning ≠ policy gate). §8.5 gains the **ADR-architecture-0002 split stated for the record**: gate (iii) and the pre-L11 acceptance law keep reading the **unordered** `refusedThenEnteredTiles`; the ordered companion `refusedBeforeEnteredTiles` is reported, never gated, with its L11 promotion trigger and the measured 0.9 %-class divergence. New **§8.7** records the n-11 route-walk fix (exact pruning + its **own** budget key `maxRouteVisits`; it used to read the exploration cap), item 2, item 3 and item 4 in one place. Header version resynced to the changelog (it had been left at V0.3 across V0.4/V0.5), and §8 retitled to the running pipeline record with §8.1–§8.2 declared to be the LV-006 block | Level AI + Solver (LV-007B) |
 | 2026-10-15 | V0.7 | **LV-007C item 1 — gate (iii) reads the ordered companion** (the code half of GD-008's re-wording of `docs/level-design.md` §3 (iii); ADR-architecture-0002 decision 4 / Appendix A2). `policy.ts` gate (iii) now gates `refusedBeforeEnteredTiles ≥ 1` and prints both forms in its detail; `lesson-latch-dynamism`, gate (ii)'s refusal half and §8.5's pre-L11 acceptance law stay on the canonical **unordered** `refusedThenEnteredTiles` (A3 — the legs are not re-stitched; §8.5 rewritten to say so). Teeth: a watched trapped-refusal pocket (canonical 1, ordered 0) is now rejected by `gate-refused-then-entered`, added to the one-control-per-code table alongside the zero-board control. No shipped verdict moved: both forms report identical tile lists on L1–L10 (asserted), the CLI's per-level metric lines are byte-identical across the switch and the sole diff is gate (iii)'s own label/detail line. §4's metric block now names gate (iii) as the ordered field's single reader | Level AI + Solver (LV-007C) |
 | 2026-10-15 | V0.7 | **LV-007C items 2–3 — the execution axis in this pipeline's record, and the target-curve reconciliation it points at.** *Item 2* (landed in its own commit): §4's metric block names `D_exec = D − w5·M` as a **component** of `D` (ADR-design-0001) and §8.7 item 3 records that the CLI prints it per level (`difficultyExec`, `@/core/solver/difficulty` `DifficultyBreakdown.Dexec`), both forms, `null` iff the board is unsolvable; `D`'s formula, weights and published values untouched. *Item 3*: §4's dip sentence now names its source precisely (`docs/level-difficulty.md` §3's "block starts with a dip" rule against the **pre-V0.6** `docs/level-design.md` §6 clause), and §8.7 item 3 records that §3 of `docs/level-difficulty.md` was **re-keyed** to the V0.6 execution-axis law — pre-ADR-0009 schedule (door L21 / portal L36) and pre-measurement absolute `D` bands withdrawn **by name**, block table following `docs/game-design.md` §8, dips scheduled only at the two real seams (**L6**, **L11**), legal-force numbers limited to L1–L10 (measured) + L11 (pre-registered). No solver behaviour, verdict, gate or contract changes in either item | Level AI + Solver (LV-007C) |
+| 2026-10-15 | V0.8 | **LV-008 — the first complete mechanic-debut pass: `l011.json`, the M2 (portal) debut.** New **§8.8** records the second and last seam end-to-end: the pre-registered acceptance contract (`docs/level-design.md` §6 V0.6 / `docs/level-difficulty.md` §3.3–§3.4: `D_exec < 13.64`, `par ≤ 4`, exactly one opposite-colour pair, no false routes, below-OFFERED) filtered **before** the board existed; the committed seeded proposal family (`scripts/author-l11-candidates.ts`, `SEED = 20261015`, 54 candidates, histogram `gate-shortest-solution-presses-switch-and-crosses-door` 49 / `gate-portal-par-cap` 4); the 1 accept that is the shipped file (`shipped=MATCH`, `par=4`, `Dexec=8.5732`); the two named negative probes (same-colour pair → level-layer hard **error**, bypassable portal → `gate-portal-crossing-on-every-par-route`); the five new `PortalGateId` codes, each with its negative control under the §8.3 one-control-per-code law, and the deliberately **absent** `portalRequired`/"lesson-portal-required" check (unreachable ⇒ it would violate that law; the load-bearing question stays on shared gate (ii) + `switchRequired: "exempt"`); **gate (iv) satisfied for the first time** (`dualPhaseTiles = 21`), so §8.5's escalation paragraph gains its resolution note while the whitelist stays one gate on one board (`l008`); the §8.5 ordered/unordered **promotion trigger tested and not fired** (`[5,0]` on both readers). Honest gaps stated, not hidden: the seam-law control is a documented **boundary** board (shipped `l010` re-labelled `id: 11`, `D_exec = 13.642857 ≥ 13.64`), no surgical variant exists on `l011` because dead pockets there measure `deadStates = 0` / `T = 0`; the portal-pair control is surgical in its phase clause but its count clause couples to gate (ii) on one variant (recorded, not shipped); and on the **total** axis the debut is *not* a dip (`D` 28.6429 → 28.5732 while `M` +1) — the same structural sawtooth §8.7 item 3 records for L5→L6, real on `D_exec` (13.6429 → 8.5732, −5.07) and invisible on `D`, with no weight tuned to change it. §8.4 law 2 named the second gate family (L1–L11 lesson rows), §8.6's reproducer gained the new script, §8.7 item 3 / §8.5's trigger paragraph and §7's script list were reconciled to the authored state, and new **§8.9** is the current end-to-end block (11/11 PASS). Legal-force numbers are now L1–L11 measured | Level AI + Solver (LV-008) |

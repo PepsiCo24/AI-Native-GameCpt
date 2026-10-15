@@ -36,6 +36,10 @@
  *      values is pinned by an **equality** assertion below, because n-11 touched
  *      the walk that produces three of them. `scripts/solve-levels.ts` byte-diff
  *      against the pre-change run is the CLI-level half of the same evidence.
+ *      **LV-008** extends the table to `l011` (the M2 debut) in the same form: the
+ *      ten pre-existing rows are pinned by the *same* numbers, and only the
+ *      aggregate counts move (10 static / 6 latched / 6 switch-bearing, still 0 dead
+ *      and 0 unrecoverable).
  *
  * ── WHAT THIS FILE IS NOT ────────────────────────────────────────────────────
  * The pinned `routeCost` numbers are **read-outs** (`docs/architecture.md` §8: the
@@ -513,6 +517,12 @@ const PINS: Readonly<Record<number, ShippedPin>> = {
   8: { shortest: 6, reachable: 34, positions: 18, maxDepth: 8, dualPhaseTiles: 0, refusedThenEnteredTiles: 1, refusedThenEnteredTileList: ["3,1"], deadStates: 0, unrecoverableStates: 0, parRoutes: 6, embedRoutes: 6, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 16, cost: { visits: 27, lookaheadVisits: 172, prunedChildren: 43 } },
   9: { shortest: 8, reachable: 58, positions: 20, maxDepth: 15, dualPhaseTiles: 0, refusedThenEnteredTiles: 2, refusedThenEnteredTileList: ["2,2", "4,1"], deadStates: 0, unrecoverableStates: 0, parRoutes: 2, embedRoutes: 2, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 10, cost: { visits: 16, lookaheadVisits: 225, prunedChildren: 27 } },
   10: { shortest: 9, reachable: 42, positions: 22, maxDepth: 9, dualPhaseTiles: 0, refusedThenEnteredTiles: 1, refusedThenEnteredTileList: ["4,1"], deadStates: 0, unrecoverableStates: 0, parRoutes: 36, embedRoutes: 36, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 20, cost: { visits: 163, lookaheadVisits: 721, prunedChildren: 303 } },
+  // LV-008 — the M2 debut. The first shipped board with `dualPhaseTiles > 0` (21 of its
+  // 21 tiles are enterable in both phases: the opposite-colour pair `(2,1) ⇄ (4,0)`
+  // breaks the position→phase parity link on *every* tile it can reach), and the first
+  // whose `driver` is a single route: `parRoutes = 1`. `allOffGoalReachable: true` is the
+  // documented "below OFFERED" grade, not a defect — the walking world solves in 7.
+  11: { shortest: 4, reachable: 82, positions: 21, maxDepth: 10, dualPhaseTiles: 21, refusedThenEnteredTiles: 1, refusedThenEnteredTileList: ["5,0"], deadStates: 0, unrecoverableStates: 0, parRoutes: 1, embedRoutes: 1, embedForced: true, allOffGoalReachable: true, allOffReachableStates: 41, cost: { visits: 5, lookaheadVisits: 80, prunedChildren: 9 } },
 };
 
 /** Everything the CLI prints for a level, projected off the audit — one object, one diff. */
@@ -545,7 +555,7 @@ function project(id: number): ShippedPin {
   };
 }
 
-describe("LV-007B · n-11 — the shipped L1–L10 numbers are unchanged", () => {
+describe("LV-007B · n-11 — the shipped L1–L10 numbers are unchanged (LV-008 appends L11 to the same table)", () => {
   it("the pin table covers the dataset (no shipped level is unpinned)", () => {
     expect(Object.keys(PINS).map(Number).sort((a, b) => a - b)).toEqual(SHIPPED_IDS);
   });
@@ -576,13 +586,24 @@ describe("LV-007B · n-11 — the shipped L1–L10 numbers are unchanged", () =>
     expect(l8.result.reachableStates).toBe(34);
   });
 
-  it("the CLI's aggregate lines still hold (10 static, 5 latched, 0 dead, 0 unrecoverable)", () => {
+  it("the CLI's aggregate lines still hold (10 static, 6 latched, 0 dead, 0 unrecoverable)", () => {
+    // LV-008 moved three of these counts by adding the M2 debut: `dualPhaseTiles === 0`
+    // is now 10 of 11, `refusedThenEnteredTiles > 0` is 6 of 11, and the switch-bearing
+    // set (`allOffGoalReachable !== null`) is 6 of 11. The "0 dead / 0 unrecoverable"
+    // lines are the ones that must stay *whole*: every shipped board obeys §4.
     const table = SHIPPED_IDS.map((id) => PINS[id] as ShippedPin);
     expect(table.filter((pin) => pin.dualPhaseTiles === 0)).toHaveLength(10);
-    expect(table.filter((pin) => pin.refusedThenEnteredTiles > 0)).toHaveLength(5);
-    expect(table.filter((pin) => pin.deadStates === 0)).toHaveLength(10);
-    expect(table.filter((pin) => pin.unrecoverableStates === 0)).toHaveLength(10);
-    expect(table.filter((pin) => pin.allOffGoalReachable !== null)).toHaveLength(5);
+    expect(table.filter((pin) => pin.refusedThenEnteredTiles > 0)).toHaveLength(6);
+    expect(table.filter((pin) => pin.deadStates === 0)).toHaveLength(11);
+    expect(table.filter((pin) => pin.unrecoverableStates === 0)).toHaveLength(11);
+    expect(table.filter((pin) => pin.allOffGoalReachable !== null)).toHaveLength(6);
+    // …and the single level that carries the parity-breaking displacement is the M2
+    // debut, so the aggregate line names it rather than counting it.
+    expect(
+      table
+        .filter((pin) => pin.dualPhaseTiles > 0)
+        .map((pin) => pin.dualPhaseTiles),
+    ).toEqual([21]);
     // The escalation count of the CLI run is one, and it is gate (iv)'s — unchanged
     // by n-11 but printed next to the same lines, so it is pinned with them.
     const escalations = SHIPPED_IDS.flatMap((id) =>

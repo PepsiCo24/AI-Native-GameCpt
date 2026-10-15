@@ -292,6 +292,137 @@ const SWITCH_WITHOUT_TARGETS: Level = makeLevel({
 const REQUIRED_LESSON_WITH_DECORATIVE_LATCH: Level = { ...shippedBoard(6), id: 7 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 1b. LV-008 — the five M2 (portal) debut gates: one mutation each, off the
+//     shipped board
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * `l011`'s shipped board, schema-validated (the `shippedBoard` helper does it): **every**
+ * portal control below is this board with exactly one mutation, which is what makes each
+ * of them a probe of the gate it names rather than a probe of some other board. Deriving
+ * them from the shipped artifact matters: a control built from a synthetic board would
+ * tell us that *some* board trips the check, not that the gates protecting *this* level
+ * have teeth.
+ */
+const PORTAL_DEBUT_BOARD: Level = shippedBoard(11);
+
+/**
+ * **N1a** — `gate-portal-pair-single-opposite-colour`, the *phase* clause: a **second**
+ * portal pair carrying the *other* channel phase (`A`, while the shipped pair is `B`).
+ * Both pairs are individually legal — opposite checkerboard colour, validator-clean — so
+ * the only thing wrong with the board is the count: two channels where a mechanic debut
+ * may introduce one (`docs/level-difficulty.md` §3.4 "single-concept"; `docs/level-design.md`
+ * §1 keeps the other phase's channel for a later block).
+ *
+ * Measured surgical: exactly one gate is non-PASS, and the rest of the debut suite (the
+ * M1+M3 unit, the ordered beat, the par cap, the seam law) still passes — so this control
+ * cannot be green for an unrelated reason. The route set does not move (`parRoutes` stays
+ * 1), which is why gate (ii) is untouched: the added pair is never entered on the par
+ * route.
+ */
+const PORTAL_DEBUT_WITH_SECOND_PAIR: Level = {
+  ...PORTAL_DEBUT_BOARD,
+  portals: [
+    ...PORTAL_DEBUT_BOARD.portals,
+    { id: "p2", pair: [[1, 2], [6, 0]], activePhase: "A" },
+  ],
+};
+
+/**
+ * **N1b** — the *count* clause on its own: a second pair in the **same** channel phase
+ * (`B`). It separates `portals.length === 1` from "a second pair in another phase is a
+ * second mechanic": even a same-phase duplicate is rejected, because one channel is one
+ * concept. Surgical for the same measured reason as N1a (nothing else moves).
+ *
+ * Not carried as a control: the same mutation with the ends `(0,0)`/`(5,2)` (also phase
+ * `A`). It is honest coupling rather than an isolated probe — the extra pair is entered
+ * on two *additional* par routes, so `parRoutes` rises 1 → 3 and gate (ii) fails with the
+ * pair gate. Same code, same board class, one more complaint; N1a already pins the code,
+ * so the coupled variant is recorded here instead of shipping as a second control.
+ */
+const PORTAL_DEBUT_WITH_SAME_PHASE_PAIR: Level = {
+  ...PORTAL_DEBUT_BOARD,
+  portals: [
+    ...PORTAL_DEBUT_BOARD.portals,
+    { id: "p2", pair: [[0, 2], [5, 2]], activePhase: "B" },
+  ],
+};
+
+/**
+ * **N2a** — the *unit* gate on a portal board (the LV-008 extraction of gate (ii)):
+ * `l011` with the goal moved to `(4,1)`. The then-3-move shortest route teleports
+ * `(2,1) → (4,0)` and steps onto the goal **without ever crossing the door** — the portal
+ * really is on the route (so the debut's own crossing gate passes), and the one complaint
+ * is the M1+M3 unit. This is the board that proves gate (ii) reads `par` from the solver
+ * on a channel-bearing board too, i.e. that the shared implementation is not a
+ * latch-board-only reader.
+ */
+const PORTAL_DEBUT_DOOR_BYPASSED: Level = { ...PORTAL_DEBUT_BOARD, goal: [4, 1] };
+
+/**
+ * **N2b** — `gate-portal-crossing-on-every-par-route`, the true *bypass* control: the same
+ * goal move, but the pair is re-declared `activePhase: "A"`. The channel is then dead in
+ * every phase the shortest routes stand in, so the par-4 route set walks the whole way and
+ * never teleports: the portal is decoration, and the board claims a lesson it does not
+ * deliver. Because a bypass *is* a route that ignores the latch, this board fails gate (ii)
+ * as well — the same honest coupling §3 records for `AHA_LESSON_WITH_BYPASS`, restated here
+ * so the second code is not misread as a stray.
+ */
+const PORTAL_DEBUT_WITH_DEAD_CHANNEL: Level = {
+  ...PORTAL_DEBUT_BOARD,
+  goal: [4, 1],
+  portals: [{ id: "p1", pair: [[2, 1], [4, 0]], activePhase: "A" }],
+};
+
+/**
+ * **N3** — `gate-portal-par-cap`: the shipped board with `par: 5`. Nothing else moves —
+ * the solver's shortest is still 4 and every measured metric is identical — so the cap is
+ * the one and only complaint (the LV-007A `AHA_LESSON_OVER_PAR_CAP` pattern, on the M2
+ * debut's `par ≤ 4` floor instead of Aha #1's `≤ 8`).
+ */
+const PORTAL_DEBUT_OVER_PAR_CAP: Level = { ...PORTAL_DEBUT_BOARD, par: 5 };
+
+/**
+ * **N4** — `gate-portal-teaching-grade-below-offered`: the column `x = 3` sealed with
+ * parity-dead walls (one in phase A, two in phase B), so the walking world can no longer
+ * reach the goal and the portal becomes **required** — a FORCED-grade debut, which the
+ * construction floor forbids. The walls are legal geometry: the validator *warns* three
+ * times (same-parity entry phase, and the parity argument is explicitly "NOT PROVEN" on a
+ * portal-bearing board) and returns `ok: true`, which is why the rejection has to live in
+ * the policy layer. Measured surgical: the only gate that moves is the grade, and
+ * `D_exec` rises only to 8.6271 — still under the seam budget, so this control isolates
+ * the grade rule from the seam law.
+ */
+const PORTAL_DEBUT_FORCED_GRADE: Level = {
+  ...PORTAL_DEBUT_BOARD,
+  phaseAWalls: [[3, 1]],
+  phaseBWalls: [
+    [3, 0],
+    [3, 2],
+  ],
+};
+
+/**
+ * **N5** — `gate-portal-seam-law-execution-axis`, and deliberately **not** surgical: the
+ * seam law's *boundary* control. The board is the shipped `l010` re-labelled `id: 11` —
+ * i.e. "a level sitting exactly at the published budget, declared as the M2 debut". Its
+ * measured `D_exec` is **13.642857 ≥ 13.64**, so the seam gate fails by 0.002857, and the
+ * three portal-construction gates fail with it (the board carries no channel at all).
+ *
+ * That coupling is the point of the control: it shows the budget is the *number that was
+ * published* and not a flattering rounding — a board one move-hair above the bound is
+ * rejected by name. A surgical variant was searched for and does not exist: adding dead
+ * pockets to `l011` (which would raise `D_exec` without touching the construction gates)
+ * was measured to produce `deadStates = 0` and `T = 0` — i.e. no `D_exec` movement at all
+ * — so the honest boundary control is the one that fails several gates.
+ *
+ * (`dual-phase-tiles` on this board reports UNSATISFIABLE — a proved-unsatisfiable
+ * *escalation*, not a failure, because the board is portal-free and measured 0. §5
+ * re-asserts the whitelist over every control board in this file.)
+ */
+const PORTAL_BUDGET_BOUNDARY_AS_DEBUT: Level = { ...shippedBoard(10), id: 11 };
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 1. Coverage — typed by the inventory, measured by the analyzer
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -315,6 +446,11 @@ const NEGATIVE_CONTROLS: Readonly<Record<PolicyViolationCode, readonly Level[]>>
     "gate-no-solution-with-switches-off": [AHA_LESSON_WITHOUT_FUNNEL],
     "gate-shortest-solution-presses-switch-and-crosses-door": [
       AHA_LESSON_WITH_BYPASS,
+      // LV-008: the *same* gate implementation, reached from a channel-bearing board.
+      // The portal debut reuses gate (ii) rather than re-implementing it, so the code
+      // needs a control of its own on M2 content: this one fails gate (ii) alone (the
+      // par route teleports and never crosses the door the switch drives).
+      PORTAL_DEBUT_DOOR_BYPASSED,
     ],
     "gate-refused-then-entered": [
       STATIC_BOARD_AS_AHA,
@@ -323,6 +459,17 @@ const NEGATIVE_CONTROLS: Readonly<Record<PolicyViolationCode, readonly Level[]>>
     "gate-dual-phase-tiles": [AHA_LESSON_WITH_INERT_PORTAL],
     "gate-single-door-one-switch-funnel": [AHA_LESSON_WITH_TWO_DOORS],
     "gate-aha-par-cap": [AHA_LESSON_OVER_PAR_CAP],
+    // ── LV-008 — the M2 (portal) debut gates (one mutation each, off l011) ────
+    "gate-portal-pair-single-opposite-colour": [
+      PORTAL_DEBUT_WITH_SECOND_PAIR,
+      PORTAL_DEBUT_WITH_SAME_PHASE_PAIR,
+    ],
+    "gate-portal-crossing-on-every-par-route": [
+      PORTAL_DEBUT_WITH_DEAD_CHANNEL,
+    ],
+    "gate-portal-par-cap": [PORTAL_DEBUT_OVER_PAR_CAP],
+    "gate-portal-teaching-grade-below-offered": [PORTAL_DEBUT_FORCED_GRADE],
+    "gate-portal-seam-law-execution-axis": [PORTAL_BUDGET_BOUNDARY_AS_DEBUT],
   };
 
 describe("LV-007A · m-2 — every policy code has a negative control that fails when the check is disabled", () => {
@@ -496,6 +643,143 @@ describe("LV-007B · n-13 — `switch-without-targets` rejects M3 content no doo
       expect(auditLevel(shippedBoard(id)).violations, `l${id}`).toEqual([]);
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2c. LV-008 — the M2 debut's gates stated in their own words (the shipped board
+//     is accepted, every control fails by name, and the coupling is admitted)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("LV-008 — the portal debut's gates have teeth, and the shipped l011 keeps them all", () => {
+  it("the shipped l011 is accepted: eight gates, all PASS, no violation", () => {
+    const audit = auditLevel(PORTAL_DEBUT_BOARD);
+    expect(audit.lesson?.obligation).toBe("portal-aha-2");
+    expect(audit.gates.map((gate) => `${gate.id}:${gate.status}`)).toEqual([
+      "dual-phase-tiles:PASS",
+      "shortest-solution-presses-switch-and-crosses-door:PASS",
+      "refused-then-entered:PASS",
+      "portal-pair-single-opposite-colour:PASS",
+      "portal-crossing-on-every-par-route:PASS",
+      "portal-par-cap:PASS",
+      "portal-teaching-grade-below-offered:PASS",
+      "portal-seam-law-execution-axis:PASS",
+    ]);
+    expect(audit.violations).toEqual([]);
+  });
+
+  it("gate 4 rejects ONE channel only — the phase clause and the count clause are both live", () => {
+    // Two controls, two clauses: N1a adds a pair in the *other* phase (the "two
+    // mechanics" reading), N1b adds one in the *same* phase (the "one channel is one
+    // concept" reading). Both are validator-clean and otherwise gate-clean, so the
+    // count is the only complaint either way.
+    for (const board of [
+      PORTAL_DEBUT_WITH_SECOND_PAIR,
+      PORTAL_DEBUT_WITH_SAME_PHASE_PAIR,
+    ]) {
+      expect(validateLevel(board).ok, "the extra pair itself is legal").toBe(true);
+      expect(board.portals.length).toBe(2);
+      const audit = auditLevel(board);
+      expect(
+        audit.gates.filter((gate) => gate.status === "FAIL").map((gate) => gate.id),
+      ).toEqual(["portal-pair-single-opposite-colour"]);
+      expect(audit.violations.map((v) => v.code)).toEqual([
+        "gate-portal-pair-single-opposite-colour",
+      ]);
+      // …and the shipped board, whose *only* difference is the missing second pair, is
+      // accepted: the control is not passing because the shape is rejected wholesale.
+      expect(PORTAL_DEBUT_BOARD.portals.length).toBe(1);
+      expect(
+        auditLevel(PORTAL_DEBUT_BOARD).gates.find(
+          (gate) => gate.id === "portal-pair-single-opposite-colour",
+        )?.status,
+      ).toBe("PASS");
+    }
+  });
+
+  it("gate 5 rejects a channel that is dead on the route, and admits the coupling", () => {
+    const audit = auditLevel(PORTAL_DEBUT_WITH_DEAD_CHANNEL);
+    const crossing = audit.gates.find(
+      (gate) => gate.id === "portal-crossing-on-every-par-route",
+    );
+    expect(crossing?.status).toBe("FAIL");
+    expect(crossing?.detail).toContain("routes=1");
+    expect(crossing?.detail).toContain("teleporting arrival (|Δposition| ≠ 1)=0");
+    expect(crossing?.detail).toContain("routes entering an active portal end=0");
+    // Honest coupling, stated rather than hidden: a bypass *is* an all-ignore route, so
+    // the unit gate fails with the crossing gate (see §3 for the same shape on Aha #1).
+    expect(audit.violations.map((v) => v.code)).toEqual([
+      "gate-shortest-solution-presses-switch-and-crosses-door",
+      "gate-portal-crossing-on-every-par-route",
+    ]);
+    // The mirror image is surgical, and it is the extraction's own control: with the
+    // channel back on the route (`activePhase: "B"`), gate (ii) is the single failure —
+    // so gate 5 is not a second name for gate (ii).
+    const doorBypass = auditLevel(PORTAL_DEBUT_DOOR_BYPASSED);
+    expect(
+      doorBypass.gates
+        .filter((gate) => gate.status === "FAIL")
+        .map((gate) => gate.id),
+    ).toEqual(["shortest-solution-presses-switch-and-crosses-door"]);
+    expect(
+      doorBypass.gates.find(
+        (gate) => gate.id === "portal-crossing-on-every-par-route",
+      )?.status,
+    ).toBe("PASS");
+  });
+
+  it("gate 6 reads the authored AND the measured par, and gate 7 measures the walking world", () => {
+    const cap = auditLevel(PORTAL_DEBUT_OVER_PAR_CAP);
+    expect(
+      cap.gates.filter((gate) => gate.status === "FAIL").map((gate) => gate.id),
+    ).toEqual(["portal-par-cap"]);
+    expect(
+      cap.gates.find((gate) => gate.id === "portal-par-cap")?.detail,
+    ).toContain("par=5 (solver shortest=4) cap=4");
+
+    // Gate 7's two branches are both reachable: the shipped board's walking world still
+    // solves (below OFFERED), the sealed board's does not (FORCED, forbidden).
+    expect(
+      auditLevel(PORTAL_DEBUT_BOARD).gates.find(
+        (gate) => gate.id === "portal-teaching-grade-below-offered",
+      )?.detail,
+    ).toContain("portal-free world (same board, portals: []): solvable=true");
+    const forced = auditLevel(PORTAL_DEBUT_FORCED_GRADE);
+    expect(
+      forced.gates.filter((gate) => gate.status === "FAIL").map((gate) => gate.id),
+    ).toEqual(["portal-teaching-grade-below-offered"]);
+    expect(
+      forced.gates.find(
+        (gate) => gate.id === "portal-teaching-grade-below-offered",
+      )?.detail,
+    ).toContain("solvable=false");
+    // …and the board really is one step from legal: the validator accepts it with the
+    // parity warnings the LEVEL layer owns (a warning is not a gate).
+    expect(validateLevel(PORTAL_DEBUT_FORCED_GRADE).ok).toBe(true);
+    expect(validateLevel(PORTAL_DEBUT_FORCED_GRADE).warnings.length).toBe(3);
+  });
+
+  it("gate 8 is the seam law's boundary control — it fails at 13.642857 ≥ 13.64", () => {
+    const audit = auditLevel(PORTAL_BUDGET_BOUNDARY_AS_DEBUT);
+    const seam = audit.gates.find(
+      (gate) => gate.id === "portal-seam-law-execution-axis",
+    );
+    expect(seam?.status).toBe("FAIL");
+    expect(seam?.detail).toContain("Dexec=13.6429");
+    expect((audit.difficulty.Dexec as number).toFixed(2)).toBe("13.64");
+    // Everything except the seam gate and the three construction gates passes: the
+    // board is a legitimate L10-class puzzle wearing the debut's id, which is exactly
+    // why the seam law cannot be satisfied by building a bad debut. (The grade gate
+    // passes vacuously here — the board carries no portals, so "the portal-free world"
+    // *is* the board — which is a fact about the control, recorded rather than hidden.)
+    expect(
+      audit.gates.filter((gate) => gate.status === "PASS").map((gate) => gate.id),
+    ).toEqual([
+      "shortest-solution-presses-switch-and-crosses-door",
+      "refused-then-entered",
+      "portal-teaching-grade-below-offered",
+    ]);
+    expect(PORTAL_BUDGET_BOUNDARY_AS_DEBUT.portals).toEqual([]);
   });
 });
 
@@ -759,12 +1043,16 @@ const POLICY_SOURCE = readFileSync(
 );
 
 describe("LV-007A · OQ4 — a documented load-bearing latch must be measurably load-bearing", () => {
-  it("the obligation lives on the lesson rows: L7–L10 `required`, L6 `exempt`, L1–L5 none", () => {
+  it("the obligation lives on the lesson rows: L7–L10 `required`, L6 + L11 `exempt`, L1–L5 none", () => {
     const row = (levelId: number) =>
       DOCUMENTED_LESSONS.find((entry) => entry.levelId === levelId);
     // The dip is recorded **on the row** (with the §2 L6 + §6 evidence) precisely so
-    // that no check has to know that "6" is special.
+    // that no check has to know that "6" is special. L11 repeats the same construction
+    // for the second mechanic seam: the M2 debut's latch sits on the only par route, but
+    // the walking world still finishes, so its row is `exempt` for the same documented
+    // reason (the debut teaches *below OFFERED* — demonstrated, not demanded).
     expect(row(6)?.switchRequired).toBe("exempt");
+    expect(row(11)?.switchRequired).toBe("exempt");
     for (const id of [7, 8, 9, 10])
       expect(row(id)?.switchRequired, `L${id}`).toBe("required");
     for (const id of [1, 2, 3, 4, 5])

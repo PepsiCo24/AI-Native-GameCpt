@@ -245,7 +245,7 @@ describe("LV-007B · item 2 — the shipped latch levels are orderable latches",
     const latched = SHIPPED_IDS.filter(
       (id) => solve(shippedBoard(id)).refusedThenEnteredTiles > 0,
     );
-    expect(latched).toEqual([6, 7, 8, 9, 10]);
+    expect(latched).toEqual([6, 7, 8, 9, 10, 11]);
     for (const id of latched) {
       const result = solve(shippedBoard(id));
       expect(result.refusedBeforeEnteredTileList, `l${id}`).toEqual(
@@ -333,6 +333,10 @@ const ORDERED_PINS: Readonly<
   8: { unordered: ["3,1"], ordered: ["3,1"] },
   9: { unordered: ["2,2", "4,1"], ordered: ["2,2", "4,1"] },
   10: { unordered: ["4,1"], ordered: ["4,1"] },
+  // LV-008 — the M2 debut: the door tile (5,0) is clicked-and-refused by the walking
+  // world and accepted on the par route (the teleport is what puts the player next to it
+  // in phase A), so both forms report the same single tile.
+  11: { unordered: ["5,0"], ordered: ["5,0"] },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
