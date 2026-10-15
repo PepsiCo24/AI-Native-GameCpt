@@ -35,7 +35,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 
 import type { Level } from "@/core/level";
 import { isPlayerEmbedded, solidAt } from "@/core/rules/solid";
@@ -284,23 +284,53 @@ describe("the renderer maps the core verdict to paint (wallRenderState seam)", (
  * 4 — the layer home, statically (ADR ruling 4, engineering micro-ticket 6)
  * ──────────────────────────────────────────────────────────────────────────── */
 
-/** Module specifiers in a source text (`from "…"`, `import(…)`, `require(…)`). */
+/**
+ * Module specifiers in a source text — **every form a dodge could take**:
+ * `from "…"` (static import/export), `import("…")` (dynamic), `import "…"`
+ * (bare side-effect) and `require("…")` (CJS escape hatch).
+ *
+ * RV-007 (QA-005c) caught the gap: the reader only knew `from` and the dynamic
+ * form, so a boundary violation written as `import "@/game/renderer/…";` — which
+ * is the idiomatic way to import a module for its side effects — would not have
+ * been seen at all. The scan's value is exactly as good as the pattern list here.
+ */
 function specifiers(text: string): string[] {
+  const patterns = [
+    /\bfrom\s*["']([^"']+)["']/g,
+    /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g,
+    /\bimport\s*["']([^"']+)["']/g,
+    /\brequire\s*\(\s*["']([^"']+)["']\s*\)/g,
+  ];
   const out: string[] = [];
-  for (const match of text.matchAll(/\bfrom\s*["']([^"']+)["']/g)) {
-    if (match[1] !== undefined) out.push(match[1]);
-  }
-  for (const match of text.matchAll(/\bimport\s*\(\s*["']([^"']+)["']\s*\)/g)) {
-    if (match[1] !== undefined) out.push(match[1]);
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      if (match[1] !== undefined) out.push(match[1]);
+    }
   }
   return out;
 }
 
+/**
+ * Every `.ts` file under `src/<relativeDir>`, **recursively**.
+ *
+ * RV-007 (QA-005c): the previous one-level `readdirSync` + `endsWith(".ts")` walk
+ * stopped covering a layer the moment it grew a subdirectory
+ * (`src/game/systems/foo/bar.ts` was invisible), so a boundary test whose coverage
+ * quietly depends on the filesystem's depth could go green with a hole in it.
+ * Declaration files aren't implementation text and hidden entries are skipped.
+ */
 function tsFilesIn(relativeDir: string): string[] {
-  const dir = join(SRC_DIR, relativeDir);
-  return readdirSync(dir)
-    .filter((name) => name.endsWith(".ts"))
-    .map((name) => join(dir, name));
+  const walk = (dir: string): string[] => {
+    const out: string[] = [];
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith(".")) continue;
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) out.push(...walk(path));
+      else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".d.ts")) out.push(path);
+    }
+    return out;
+  };
+  return walk(join(SRC_DIR, relativeDir)).sort();
 }
 
 describe("layer homes (ADR-architecture-0003 ruling 4)", () => {
@@ -314,6 +344,30 @@ describe("layer homes (ADR-architecture-0003 ruling 4)", () => {
       }
     }
     expect(violations).toEqual([]);
+  });
+
+  it("the boundary scan is recursive and knows every import form (non-vacuous)", () => {
+    // (a) Depth: `src/game/renderer/objects/` exists, so a one-level walk — the
+    //     version RV-007 flagged — provably could not have produced this path.
+    const renderer = tsFilesIn("game/renderer");
+    expect(renderer.length, "the renderer layer was actually scanned").toBeGreaterThan(0);
+    expect(
+      renderer.some((file) => file.includes(`${sep}objects${sep}`)),
+      "the walk reaches nested subdirectories",
+    ).toBe(true);
+
+    // (b) Form: each pattern the scanner promises to read, exercised with the very
+    //     specifier shape a boundary violation would use.
+    const dodge = "@/game/renderer/objects/actor";
+    for (const sample of [
+      `import x from "${dodge}";`,
+      `export * from "${dodge}";`,
+      `const x = await import("${dodge}");`,
+      `import "${dodge}";`,
+      `const x = require("${dodge}");`,
+    ]) {
+      expect(specifiers(sample), `the scanner reads: ${sample}`).toContain(dodge);
+    }
   });
 
   it("`cell-state.ts` no longer defines the predicate; core does, via `solidAt`", () => {
