@@ -161,8 +161,13 @@ L10-L11 seams + the AR-0005b ordered companion `refusedBeforeEnteredTiles` with 
 **CLOSED & MERGED (`600c5d4`)** — 5 items, disk-verified (17 files/303/3 re-run; pruned≡exhaustive pinned; companion
 ships report-only, gates still read unordered). Ruling satisfied: LV-007B landed BEFORE L11-L20 authoring; LV-008
 unblocked modulo GD-008's gate-(iii) reader decision. Headline escalation: L5→L6 `D` seam measured **+8.53** vs the
-−2..−3 dip law — **GD-008 dispatched** (worktree `…/gd-008-dip-law`, base `600c5d4`: dip-law ruling + §3 (iii)
-reader + ADR-0009 Context-5 closure). The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
+−2..−3 dip law — **GD-008 — CLOSED & MERGED (`c68afac`)**: three rulings landed, every published number
+re-derived by me from live solver output (both derivations, 10/10 identical; see item 36). **LV-007C** (Level AI +
+Solver, background, worktree `…/lv-007c-ordered-reader`, base `c68afac`) — gate-(iii) ordered-reader swap in
+`policy.ts` (+ trapped-refusal flip control proving the swap has teeth) + `D_exec` report column + level-difficulty
+§3 pre-D3 table reconciliation to V0.6. **RV-006** (Reviewer, background, read-only detached at `c68afac`) —
+post-merge audit of the LV-007B slice (pruning soundness attack, difficulty-definition fidelity, companion
+equivalence check, dump backward-compat), findings fix-forward per the RV-004 pattern. The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
 firing on portal boards are now in. **QA-005 re-scoped**: Playwright now
 **installed** (devDep + chromium v1248, installed by the Orchestrator as sole package.json writer) and all dynamic
 frames already captured (see item 28). Remaining QA-005 = the permanent spec only: `playwright.config` +
@@ -553,6 +558,25 @@ and a path must be quiescent before dispatch.**
     **Docs+GitHub** (submission docs' "D pending" rows → measured-with-provisional-weights), **RV-006** read-only audit
     of the pruning+difficulty diffs (post-merge pattern of RV-004 — next free slot). L6–L10 registry unlock stays with
     the R-002 merge exactly as GD sequencing expects.
+36. **GD-008 — RETURNED, INDEPENDENTLY RE-DERIVED & MERGED (`c68afac`).** Three rulings, docs-only, boundary exactly
+    4 GD-owned files. Ruling 1 (the headline): the −2..−3 `D`-dip clause is **falsified by its own measurement** and
+    proven unreachable-by-construction, so GD withdrew it **unfitted** (no weight tuned to chase a target — AGENTS §7
+    culture held) and re-anchored the valley on the execution axis `D_exec = D − w5·M` (`= L + 3B` inside the §4
+    region): seam law (debut strictly below previous block's `D_exec` peak; budget form `ΔD < w5·ΔM`), sawtooth on
+    `D_exec`, felt-half explicitly a labelled hypothesis for playtest. **My verification**: recomputed all ten
+    `D_exec` values BOTH ways (D−5M and L+3B) from live `solve-levels` output at `67f69dc` — 10/10 exact
+    (9.00/10.06/10.29/10.58/10.33/8.86/7.75/10.50/12.14/13.64); L5→L6 seam −1.47 reproduced; L11 falsifiable
+    prediction pre-registered BEFORE any candidate exists (`D_exec(L11) < 13.64` ⇔ `D < 33.64`, par ≤ 4, one
+    opposite-color portal pair) — GD-008's hardest anti-gaming move, now frozen into LV-008's generator law.
+    Ruling 2: gate (iii) spec reader **switched to ordered** `refusedBeforeEnteredTiles ≥ 1` today (harmless on
+    L1–L10 — measured identical both ways — but closes the trapped-refusal class before portals make divergence
+    likelier); code reader swap dispatched as **LV-007C** with the flip-control requirement; pipeline §8.5 leg
+    deliberately stays unordered (architecture-0002 A3, no re-merge). Ruling 3: ADR-0009 Context-5 deferral closed
+    by dated closure line from the ADR author. Standing queues from it: PA Stage-2 brief must add the first-show
+    friction clause with the threshold frozen BEFORE the cohort (T6); `level-difficulty.md` §3's pre-D3 table
+    (Phase Door L21 / Portal L36) reconciled by LV-007C. Convention note (mine, ruling-by-action): role-local ADRs
+    use `architecture-*` / `design-*` families; the plain `NNNN-*.md` run stays reserved for the locked core-rule
+    sequence 0001–0009. Post-merge soundness: RV-006 dispatched to audit LV-007B fix-forward.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
