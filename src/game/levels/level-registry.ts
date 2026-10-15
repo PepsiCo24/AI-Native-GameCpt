@@ -125,6 +125,26 @@ export function startIndexForLevel(levels: readonly Level[], requested: number |
   return index < 0 ? 0 : index;
 }
 
+/**
+ * `L1–L10` — the **shipped ladder's own range**, derived from the playable list.
+ *
+ * The end panel's copy must name the ladder the player actually cleared, so it is
+ * computed from the registry rather than written down: QA-005 pinned the stale
+ * literal `L1–L5` that outlived the ship of L6–L10 (TICKET-QA-005-2 — the panel
+ * claimed the prototype ended five levels early while ten were on the board).
+ * Ids, not array positions, so a non-contiguous dataset still reads honestly.
+ *
+ * The empty case cannot be reached: `loadPlayableLevels()` throws rather than
+ * returning zero levels, and `GameSession` refuses to be constructed with none.
+ */
+export function ladderLabelOf(levels: readonly Level[]): string {
+  const first = levels[0];
+  const last = levels[levels.length - 1];
+  if (first === undefined || last === undefined) return "L—";
+  if (first.id === last.id) return `L${String(first.id)}`;
+  return `L${String(first.id)}–L${String(last.id)}`;
+}
+
 /** Validated levels in play order, or a hard failure if the slice is empty. */
 export function loadPlayableLevels(): readonly Level[] {
   const { levels, rejected } = loadLevels();

@@ -38,10 +38,17 @@ import type { GameSession } from "@/game/systems/session";
 import { PLACEHOLDER_SLOTS } from "@/game/theme/assets";
 import { cssVars, flipTimings, HUD_FLAGS, LAYOUT, theme } from "@/game/theme/tokens";
 
-/** The three actions the DOM can dispatch, plus one flow query. */
+/** The three actions the DOM can dispatch, plus two flow queries. */
 export interface HudHooks extends AppIntents {
   /** `false` on the last prototype level ⇒ the dialog shows the end panel. */
   readonly hasNextLevel: () => boolean;
+  /**
+   * The shipped ladder's own range (`L1–L10`), derived from the level registry by
+   * the composition root — never a literal in this file. The end panel names what
+   * the player actually cleared (TICKET-QA-005-2: the copy said `L1–L5` for a
+   * registry that ships ten levels).
+   */
+  readonly shippedLadder: () => string;
 }
 
 export interface HudConfig {
@@ -343,9 +350,13 @@ export class Hud {
     const moves = movesLabelOf(moveCount, level.par);
 
     // End of the playable slice reuses the same dialog with different copy — §0.5
-    // forbids adding a screen, and §1's inventory is 1 screen + 1 dialog.
+    // forbids adding a screen, and §1's inventory is 1 screen + 1 dialog. The
+    // ladder range is read from the registry's own list, so the panel cannot claim
+    // a shorter prototype than the one that ships (TICKET-QA-005-2).
     const title = hasNext ? `${levelLabelOf(level)} cleared` : "原型结束 / Prototype over";
-    const body = hasNext ? moves : `L1–L5 cleared · ${levelLabelOf(level)}: ${moves}`;
+    const body = hasNext
+      ? moves
+      : `${this.hooks.shippedLadder()} cleared · ${levelLabelOf(level)}: ${moves}`;
     this.dialogTitle.textContent = title;
     this.dialogBody.textContent = body;
     this.nextButton.hidden = !hasNext;
