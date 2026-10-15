@@ -25,6 +25,11 @@
 >    inter-rater rule) is **unchanged and remains in force**.
 > 4. The print-and-fill field instrument for the current build is
 >    **`stage2-field-sheet.md`** (PA-004): per-column definitions, code-event mapping, OBS-1…OBS-10.
+> 5. **PA-005 (2026-10-15):** the §9.1 BUT table is **filled and committed** (build `41d5a4b` —
+>    **T6's clock has started**), and the OBS-6 one-sentence recall is **upgraded to scored (b)
+>    sub-metric b-7** (`playtest-log.md` §9.5 — L5 forced instance only; the body's §1.4 "four
+>    sub-metrics" count is stale). Table C is frozen **bilingual** (zh 正式脚本 + en origin); Table F
+>    pre-fills **(a′)/(c′) = `NOT TESTABLE ON THIS BUILD`**. §2's coding manual is still unchanged.
 > ---
 
 ---
