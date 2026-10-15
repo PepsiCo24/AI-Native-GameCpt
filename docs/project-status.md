@@ -148,11 +148,14 @@ families; tokens.ts byte-clean). My own re-run: tsc 0 · vitest **18 files / 273
 
 **UA-0008b — CLOSED & MERGED (`e744834`)**: ui-ux V0.8.1, §3.3b Entry 2 landed (see item 33).
 
-**UA-0008c** (UI / Art Director, background) — the LAST R-002 merge gate: R7/R-Z6 M3-integration ruling
-(re-tune `obj.switch` vs documented exemption with playtest-watch + content-loss clauses) + m-10 graphics-count
-7→10 + retained-ink definition pin + "from L21 on" pre-D3 schedule sweep + Entry-2 board-size typo. Worktree
-`…/ua-0008c-r7-gate` (base `e744834`), docs/ui-ux.md only. If it rules re-tune, an engineer micro-ticket
-(tokens.ts + parity pin) lands with/immediately after the R-002 merge per architecture §9.1 change flow.
+**UA-0008c — CLOSED & MERGED (`1baf751`)**: ui-ux V0.8.2 — R7/R-Z6 M3-integration gate **closed by documented
+exemption** (values frozen, five cited grounds with ±0.01 sanity-gated independent recomputation, binding
+observation + same-cell content clauses, pre-specified §9.1-rule-3 re-tune path, zero engineer tickets) + m-10
+count 7→10 + retained-ink def-A pin + pre-D3 L21 sweep. Both open items I ruled: OQ① mobile cell pitch — ground
+truth `grid-mapping.ts:71` `floor(boardSide / max(width,height))` → l008 5×4=**78**, l009 5×5=**78**, l010 6×4=65
+(item-6's "65 for l9" is the capture-script's column-count label, WRONG; header math right) — routed to
+**UA-0008d**; OQ③ content-clause binds SAME-CELL only, adjacency under observation — **approved** (an
+adjacency-binding would void the already-shipping passing l009 at birth).
 
 **LV-007A — MERGED (`1225b35`) & disk-verified** (tsc 0, vitest 14 files / 211 passed / 3 skipped, solver 10/10,
 validate 10/10+10, generator 5/5+3/3, zero id-exemption hardcodes). **LV-007B** (B/T/R to D, n-11 route pruning +
@@ -162,12 +165,20 @@ L10-L11 seams + the AR-0005b ordered companion `refusedBeforeEnteredTiles` with 
 ships report-only, gates still read unordered). Ruling satisfied: LV-007B landed BEFORE L11-L20 authoring; LV-008
 unblocked modulo GD-008's gate-(iii) reader decision. Headline escalation: L5→L6 `D` seam measured **+8.53** vs the
 −2..−3 dip law — **GD-008 — CLOSED & MERGED (`c68afac`)**: three rulings landed, every published number
-re-derived by me from live solver output (both derivations, 10/10 identical; see item 36). **LV-007C** (Level AI +
-Solver, background, worktree `…/lv-007c-ordered-reader`, base `c68afac`) — gate-(iii) ordered-reader swap in
-`policy.ts` (+ trapped-refusal flip control proving the swap has teeth) + `D_exec` report column + level-difficulty
-§3 pre-D3 table reconciliation to V0.6. **RV-006** (Reviewer, background, read-only detached at `c68afac`) —
-post-merge audit of the LV-007B slice (pruning soundness attack, difficulty-definition fidelity, companion
-equivalence check, dump backward-compat), findings fix-forward per the RV-004 pattern. The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
+re-derived by me from live solver output (both derivations, 10/10 identical; see item 36). **LV-007C — CLOSED & MERGED (`9dd92ce`)**, disk-verified (17 files/311/3 re-run; both iron proofs landed:
+L1–L10 byte-identical, trapped-refusal pocket flips PASS→violation). Its OQ1 ruled: the **narrow reading is
+correct** — only gate (iii) switches; `lesson-latch-dynamism`/gate (ii)-refusal-half/§8.5 stay unordered per
+A3 (no ADR amendment). OQ2 (double V0.4 rows) accepted per the level-design V0.6 precedent. **RV-006 — RETURNED: NO BLOCKER / NO MAJOR** (my death-on-restart autopsy was a FALSE ALARM — the
+audit runs mutations in `/private/rv006-mut`, leaving the worktree pristine; lesson: read-only agents
+are judged by report, not footprint). Verdict: LV-007B merge stands; 12/12 mutations KILLED + independent
+1,284-board/3,852-check naive-oracle equivalence (pruned≡exhaustive≡ground-truth, 0 mismatches); GD-008 anchors
+all recomputed exact. Findings routed: **MINOR-2** (stale bfs.ts gate-(iii) comment) **already closed on disk** by
+LV-007C's own rewrite (verified on develop); **MINOR-1** (46/2000 vs 0.9% vs 18/2000 divergence numbers cited
+across docs without generator labels) → **LV-007D micro + AR-0006** (OQ1: in-repo harness vs unify citations);
+NOTE-1..5 → QA archive (`rv006-mut/` logs) + backlog. Worktree removed. Three new tickets live: **LV-008** (L11 first-portal authoring
+against the frozen pre-registered law — `D_exec<13.64`, par≤4, one opposite-color pair, no false routes; ≥20
+candidates, program proves, accept/reject never repair), **UA-0008d** (l9→78 px attribution fix + docs/assets
+pre-D3 L36 sweep from LV-007C OQ3), **DG-002** (iteration-log entries for GD-008/UA-0008c/R-002/LV-007C). The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
 firing on portal boards are now in. **QA-005 re-scoped**: Playwright now
 **installed** (devDep + chromium v1248, installed by the Orchestrator as sole package.json writer) and all dynamic
 frames already captured (see item 28). Remaining QA-005 = the permanent spec only: `playwright.config` +
@@ -576,7 +587,60 @@ and a path must be quiescent before dispatch.**
     friction clause with the threshold frozen BEFORE the cohort (T6); `level-difficulty.md` §3's pre-D3 table
     (Phase Door L21 / Portal L36) reconciled by LV-007C. Convention note (mine, ruling-by-action): role-local ADRs
     use `architecture-*` / `design-*` families; the plain `NNNN-*.md` run stays reserved for the locked core-rule
-    sequence 0001–0009. Post-merge soundness: RV-006 dispatched to audit LV-007B fix-forward.
+    sequence 0001–0009. Post-merge soundness: dispatched RV-006 to audit LV-007B fix-forward.
+37. **UA-0008c — RETURNED & MERGED (`1baf751`): ui-ux V0.8.2, the R-002 last gate CLOSED by documented exemption.**
+    R7/R-Z6 M3-integration ruling (b): `obj.switch` stays A `#7A5AA0`/B `#C79BE8` — no re-tune, no engineer ticket,
+    zero frozen-value moves; five cited grounds (structure axis; V0.8 glyph non-color channel; switch∩wall=∅ on all
+    five boards per-level; Entry 1/2 frames pass both phases; **no legal landing zone** — exact band algebra: every
+    reachable CR band is occupied by pinned load-bearing tokens), all numbers sanity-gated at ±0.01 against published
+    rows before use. Two BINDING clauses: observation (Stage-2 confusion triggers re-open via the pre-specified
+    §9.1-rule-3 spec+code+pin same-batch path) + content (any SAME-CELL switch∩wall voids the exemption for that
+    board — adjacency stays legal/observed). Cleanup bundle: m-10 graphics-count 7→10 (retired three historical "7"s
+    marked pre-R-002), retained-ink def-A pin + the 1.5987 re-opener closure line, "from L21" → L6 pre-D3 sweep
+    (×6 live refs + two stale "optional M3" premises corrected to CORE). My rulings on its OQs: **① mobile pitch —
+    ground truth is the shipped renderer** `grid-mapping.ts:71` `cellSize = floor(boardSide / max(width,height))`
+    (longest side, NOT column count): l008 5×4→**78**, l009 5×5→**78**, l010 6×4→**65** — Entry-2 item-6's "65 for
+    l9" traces to my capture script's column-count label (the PNGs are fine; header math "390/maxDim" was right);
+    routed to UA-0008d with the assets L36 sweep. **③ content-clause binds same-cell only — APPROVED** (binding on
+    adjacency would void the already-shipping, frame-passing l009 at birth).
+38. **R-002+R-002b — MERGED (`c6af636`): L6–L10 UNLOCKED IN THE PLAYABLE REGISTRY. The biggest gameplay-visible
+    merge of this project.** Door/switch/portal painters on the registry L4 containers (graphics-count now 10),
+    phantom-walk L4–L5 → doors+switch paired unit L6–L10 per ADR-0009 D3, Aha #1 now actually reachable by players;
+    M-1 fixed (8 canvas-read `obj.*` tokens on the 60–200 ms cross-fade row + derived-coverage suite); RV-005 batch
+    m-1/3/5/6/7/8/9 closed (worst in-contract corner 1.5797, ±0.01 tripwire). Boundary pre-merge: 15 commits,
+    20 files, all `src/game/** + tests/**`. **Merged-tree battery (main tree, full integration — never run together
+    before): tsc 0 · vitest 22 files / 408 passed / 3 skipped · solver 10/10 PASS (one pre-registered escalation) ·
+    validate 10/10 + negatives by name · vite build ✓**; CI green through `9dd92ce`. **Trusted-input recapture on
+    merged develop** (`dyn-merged/`, 15 frames + log, `pageErrors: []`): the R-002b registry/cell-state refactor
+    is now proven in pixels, not just unit-tested — refusal frozen at moves 2, press-beat + open-door occupancy +
+    L6 par-4 dip win + L8 par-6 win + L10 mid-route + mobile 390 trio. Known label wart: the mobile script's
+    `cellPx` prints the column-count assumption (65 for l9) — superseded by item 37①'s renderer ground truth.
+39. **LV-007C — RETURNED, VERIFIED & MERGED (`9dd92ce`).** Disk re-run: tsc 0 · 17 files/311/3 · solver PASS +
+    exactly 1 escalation · validate/generator green. Both iron proofs landed: L1–L10 byte-identical (only gate
+    (iii)'s own label/detail line changed + pure additions) and the trapped-refusal pocket flips PASS→violation
+    (the switch has teeth; one-control-per-code inventory intact as a typed Record + source scan). Its OQ1 I ruled
+    as the **correct narrow reading**: gate (iii) alone switches; `lesson-latch-dynamism`, gate (ii)'s refusal half
+    and §8.5's generation leg deliberately stay unordered (A3, two legs not re-stitched) — if GD later wants the
+    lesson reader switched it needs an ADR amendment, not a reader edit. OQ2 (double V0.4 changelog rows) accepted
+    per the level-design V0.6 precedent. §3 stale rows (Phase Door L21 / Portal L36 / pre-measurement absolute D
+    bands) withdrawn BY NAME with the measured record alongside — the difficulty doc no longer contradicts ADR-0009.
+    New visible handoff from its OQ4: "door targeted by more than one switch ⇒ review flag" is still unimplemented
+    (no warning, no policy code) → queued.
+40. **RV-006 — RETURNED: LV-007B audit CLEAN (0 BLOCKER / 0 MAJOR, merge stands).** Independent evidence, not
+    their pins: naive ground-truth enumerator driven through the frozen rule layer over **1,284 boards / 3,852
+    par-checks** (4×4 exhaustive latch space + 400 seeded boards incl. opposite-color portals and mixed latches):
+    pruned ≡ exhaustive ≡ naive, **0 mismatches**; memo key proven injective and covers every field the rules read;
+    refusal-is-identity is reference-level (portal only fires after step 1) so lookahead's reuse is sound;
+    `RouteEnumerationError` deterministic across processes, zero env leakage in messages. 12/12 mutations KILLED
+    (incl. memo-key downgrade, off-by-one horizon, budget-not-charging-lookahead, silent-truncation, B:=bRaw,
+    T-swap, ordered:=unordered, direction inversion, n-13 removal, UNSATISFIABLE guard dilution, refusal-as-wait-
+    edge ×2). GD-008's published anchors recomputed exact from live output (9.000000/13.642857/−1.471264/+8.528736;
+    `D−5M ≟ L+3B` holds 10/10 to <1e-12 with T≡R≡0 strictly). Two process lessons for the studio: NOTE-4 (relative
+    equivalence tests MUST coexist with absolute route-count pins — under M11 both walks are consistently wrong and
+    the equivalence pin stays green) and NOTE-3 (cost read-outs marked "never a gate" are load-bearing — the only
+    thing killing M12). MINOR-2 already fixed on disk by LV-007C (verified); MINOR-1 (divergence numbers 46/2000
+    vs 0.9% vs 18/2000 cited without generator labels across pipeline/design/ADR docs) → **LV-007D micro folded
+    into AR-0006 queue** with RV's OQ1 (bring the harness in-repo vs unify citations — Architect+LV countersign).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
