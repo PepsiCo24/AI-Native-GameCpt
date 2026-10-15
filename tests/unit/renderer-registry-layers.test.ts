@@ -31,9 +31,16 @@ import {
   doorTilesOf,
   isPlayerAt,
   isPlayerEmbedded,
+  portalIsActive,
   portalTilesOf,
   switchTilesOf,
 } from "@/game/renderer/cell-state";
+import {
+  doorParts,
+  doorStubWidth,
+  DOOR_FOOTPRINT,
+} from "@/game/renderer/objects/door";
+import { PORTAL_SWIRL_ARCS } from "@/game/renderer/objects/portal";
 import {
   assertLayerOrder,
   assertLayerStack,
@@ -45,10 +52,16 @@ import {
 } from "@/game/renderer/layers";
 import type { ObservedLayer } from "@/game/renderer/layers";
 import { L4_ORDER, L4_SLOT, TILE_OBJECTS } from "@/game/renderer/objects/registry";
-import type { TileObjectKind, TileObjectSpec } from "@/game/renderer/objects/registry";
-import { theme, toInt } from "@/game/theme/tokens";
+import type {
+  TileObjectKind,
+  TileObjectSpec,
+  TileObjectTransition,
+} from "@/game/renderer/objects/registry";
+import { easeOutQuad } from "@/game/renderer/objects/actor";
+import { switchPressEmphasis } from "@/game/renderer/objects/switch";
+import { cellRadius, lerpColorInt, theme, toInt } from "@/game/theme/tokens";
 import { loadLevels } from "@/game/levels/level-registry";
-import { makeLevel, door, portal } from "../helpers/fixtures";
+import { makeLevel, door, portal, switchDef } from "../helpers/fixtures";
 import { RecordingGraphics } from "../helpers/graphics-recorder";
 
 /** The tile classes §3.1d's table gives an L4 slot — the wall has no spec entry (R-E6). */
@@ -425,5 +438,263 @@ describe("cell-state — the door 'occupied' flag is one tile-scoped predicate (
     // board-wide `playerEmbedded` flag would have got wrong.
     expect(doorIsOccupiedNow(level, embedded, { x: 3, y: 3 })).toBe(false);
     expect(doorIsOpenNow(level, embedded, { x: 3, y: 3 })).toBe(false); // closed, and empty
+  });
+});
+
+/* ──────────────────────────────────────────────────────────────────────────────
+ * RV-005 m-3 — §6.2's per-tile transition wiring at **mid-progress**.
+ *
+ * The V0.7 suite only ever handed a painter `{ prev: null, objectMix: 1,
+ * occupied: 1 }` (the settled board) or compared a settled board against one, so
+ * every mutation of the *interpolating* half of a painter survived: M14 (door bars
+ * snap closed→open instead of retracting), M9 (the press beat fires on every flip,
+ * not only on the flip that toggled the latch) and M10 (the portal swirl is always
+ * drawn, which kills §3.1c's primary channel the moment M2 ships a portal level).
+ *
+ * Each case below therefore builds a **0.5 mid-transition** from states that real
+ * moves produced — never a hand-built `levelState` record — and asserts the
+ * intermediate value is strictly between the two ends, not merely "not equal".
+ * ────────────────────────────────────────────────────────────────────────────── */
+
+describe("registry transition wiring — §6.2 mixes at mid-progress (RV m-3)", () => {
+  const CELL = 56;
+
+  const specOf = (kind: TileObjectKind): TileObjectSpec => {
+    const spec = TILE_OBJECTS.find((candidate) => candidate.kind === kind);
+    if (spec === undefined) throw new Error(`no registry spec for ${kind}`);
+    return spec;
+  };
+
+  /** Paint one tile through the **shipped** registry spec, exactly as `board-view` does. */
+  function paintSpec(
+    spec: TileObjectSpec,
+    level: Level,
+    tile: Vec,
+    gs: ReturnType<typeof initialState>,
+    transition: TileObjectTransition,
+  ): RecordingGraphics {
+    const g = new RecordingGraphics();
+    const tokens = theme(gs.phase);
+    spec.paint({
+      g,
+      rect: { x: 0, y: 0, w: CELL, h: CELL },
+      radius: cellRadius(CELL),
+      tile,
+      cssScale: 1,
+      theme: tokens,
+      timeMs: 0,
+      level,
+      gs,
+      transition,
+      knockout: toInt(tokens.ground.cell),
+    });
+    return g;
+  }
+
+  const rect = { x: 0, y: 0, w: CELL, h: CELL };
+  const doorTile: Vec = { x: 1, y: 1 };
+  const switchTile: Vec = { x: 0, y: 0 };
+
+  /** d1 is a blue door that s1 toggles; s1 is one step up, so both ends are reachable. */
+  const level = makeLevel({
+    player: [0, 1],
+    goal: [4, 4],
+    doors: [door("d1", "blue", [[1, 1]])],
+    switches: [switchDef("s1", [0, 0], "A", ["d1"])],
+  });
+  const closed = initialState(level); // A: d1 closed, s1 off
+  const afterUp = applyMoveToGameState(level, closed, move("up")); // B: s1 toggled on ⇒ d1 open
+  const backDown = applyMoveToGameState(level, afterUp, move("down")); // A: s1 still on ⇒ d1 open
+
+  it("fixture sanity: both ends are states the shipped reducer produced", () => {
+    expect(closed.phase).toBe("A");
+    expect(doorIsOpenNow(level, closed, doorTile)).toBe(false);
+    expect(afterUp.phase).toBe("B");
+    expect(afterUp.levelState.switchesOn["s1"]).toBe(true);
+    expect(backDown.phase).toBe("A");
+    expect(doorIsOpenNow(level, backDown, doorTile)).toBe(true);
+    expect(afterUp).not.toBe(closed);
+    expect(backDown).not.toBe(afterUp);
+  });
+
+  it("door: the bars retract continuously at objectMix 0.5 — neither snapped closed nor open (M14)", () => {
+    const spec = specOf("door");
+    const width = (g: RecordingGraphics): number[] =>
+      g.of("fillRect").map((call) => call.args[2] as number);
+
+    const shut = paintSpec(spec, level, doorTile, closed, { prev: null, objectMix: 1, occupied: 1 });
+    const open = paintSpec(spec, level, doorTile, backDown, { prev: null, objectMix: 1, occupied: 1 });
+    const mid = paintSpec(spec, level, doorTile, backDown, {
+      prev: closed,
+      objectMix: 0.5,
+      occupied: 1,
+    });
+
+    // The ends: 3 rows × 2 flush halves (closed), 4 corner stubs and a vanished middle
+    // row (open).
+    expect(width(shut)).toHaveLength(6);
+    expect(width(open)).toHaveLength(4);
+    // Mid-retraction every row still has ink — the middle bar has not reached zero yet.
+    expect(width(mid)).toHaveLength(6);
+
+    // Exact arithmetic: the shipped construction at retract 0.5, row by row.
+    const half = doorParts(rect, cellRadius(CELL), CELL, 1, 0.5);
+    expect(width(mid)).toEqual(half.bars.flatMap((bar) => [bar.leftWidth, bar.rightWidth]));
+
+    // The mutation killers: a painter that ignored `objectMix` would emit either the
+    // closed half or the open stub for every row.
+    const closedHalf = doorParts(rect, cellRadius(CELL), CELL, 1, 0).bars[0]!.leftWidth;
+    const stub = doorStubWidth(CELL * DOOR_FOOTPRINT);
+    expect(width(shut)).toEqual(Array.from({ length: 6 }, () => closedHalf));
+    expect(stub).toBeLessThan(closedHalf);
+    expect(width(mid)[0]!).toBeLessThan(closedHalf);
+    expect(width(mid)[0]!).toBeGreaterThan(stub);
+    // …and the middle row (index 2/3) is strictly between "gone" and "full".
+    expect(width(mid)[2]!).toBeGreaterThan(0);
+    expect(width(mid)[2]!).toBeLessThan(closedHalf);
+    expect(width(open)).not.toContain(closedHalf);
+
+    // The frame is the identity channel: byte-identical in all three states (R-D3).
+    expect(mid.of("strokeRoundedRect")[0]!.args).toEqual(shut.of("strokeRoundedRect")[0]!.args);
+    expect(mid.of("strokeRoundedRect")[0]!.stroke).toBe(shut.of("strokeRoundedRect")[0]!.stroke);
+  });
+
+  it("door: the R-D7 interior drop rides the raw occupied row, eased once by the painter", () => {
+    // A second fixture: enter the blue door while it is open (phase B) and let the flip
+    // close it around the player — the only legal way to stand inside a closed door.
+    const insideLevel = makeLevel({
+      startPhase: "B",
+      player: [0, 1],
+      goal: [4, 4],
+      doors: [door("d1", "blue", [[1, 1]])],
+    });
+    const before = initialState(insideLevel);
+    const inside = applyMoveToGameState(insideLevel, before, move("right"));
+    expect(doorIsOpenNow(insideLevel, before, doorTile)).toBe(true);
+    expect(doorIsOpenNow(insideLevel, inside, doorTile)).toBe(false);
+    expect(doorIsOccupiedNow(insideLevel, inside, doorTile)).toBe(true);
+
+    const spec = specOf("door");
+    const full = toInt(theme(inside.phase).obj.doorBlue);
+    const dropped = toInt(theme(inside.phase).obj.doorBlueOccupied);
+
+    const settled = paintSpec(spec, insideLevel, doorTile, inside, {
+      prev: null,
+      objectMix: 1,
+      occupied: 1,
+    });
+    expect(settled.of("fillRect")[0]!.fill).toBe(dropped);
+
+    // `occupied: 0.5` is the RAW row progress; the painter applies `easeOutQuad` on top
+    // (board-view.ts's `occupiedProgress` deliberately does not ease it), so the drop is
+    // 0.75 of the way — strictly between full strength and the occupied token.
+    const mid = paintSpec(spec, insideLevel, doorTile, inside, {
+      prev: before,
+      objectMix: 1,
+      occupied: 0.5,
+    });
+    const expected = lerpColorInt(full, dropped, easeOutQuad(0.5));
+    expect(mid.of("fillRect")[0]!.fill).toBe(expected);
+    expect(mid.of("fillRect")[0]!.fill).not.toBe(full);
+    expect(mid.of("fillRect")[0]!.fill).not.toBe(dropped);
+    // The frame keeps the full door token at every point of the drop (R-D7).
+    expect(mid.of("strokeRoundedRect")[0]!.stroke).toBe(full);
+  });
+
+  it("switch: the press beat fires only on this move's toggle, at the mid-point of the occupied row (M9)", () => {
+    const spec = specOf("switch");
+    const outlineWidth = (g: RecordingGraphics): number =>
+      g.of("strokeRoundedRect")[0]!.strokeWidth as number;
+
+    // This move toggled s1 (off → on) and the beat is at its midpoint.
+    const toggled = paintSpec(spec, level, switchTile, afterUp, {
+      prev: closed,
+      objectMix: 1,
+      occupied: 0.5,
+    });
+    expect(switchPressEmphasis(0.5)).toBe(1);
+    expect(outlineWidth(toggled)).toBe(3);
+
+    // A later flip that leaves the latch alone (on → on): the beat must NOT fire, which
+    // is the mutation M9 ("every flip presses"). Same occupied progress.
+    const notToggled = paintSpec(spec, level, switchTile, backDown, {
+      prev: afterUp,
+      objectMix: 1,
+      occupied: 0.5,
+    });
+    expect(outlineWidth(notToggled)).toBe(2);
+    // …and the two states really do differ only in the latch history, not in the latch:
+    expect(afterUp.levelState.switchesOn["s1"]).toBe(backDown.levelState.switchesOn["s1"]);
+
+    // The dot is the on/off channel and rides `objectMix`, not the beat.
+    const dot = (g: RecordingGraphics): number =>
+      g.of("fillCircle")[1]!.fillAlpha as number;
+    expect(dot(paintSpec(spec, level, switchTile, afterUp, { prev: closed, objectMix: 1, occupied: 1 }))).toBe(1);
+    expect(dot(paintSpec(spec, level, switchTile, afterUp, { prev: closed, objectMix: 0.5, occupied: 1 }))).toBe(0.5);
+    // At rest the beat is silent whatever the occupied row says (R-C8).
+    expect(outlineWidth(paintSpec(spec, level, switchTile, afterUp, { prev: null, objectMix: 1, occupied: 1 }))).toBe(2);
+  });
+
+  it("portal: the swirl exists only while the portal is active — a latent M10 is pinned anyway", () => {
+    // No shipped level carries a portal (L6–L10 assert `portals: []` elsewhere in the
+    // suite), so this is the only place the wiring can be gated at all: M2 shipping a
+    // portal level without this test would ship a dead §3.1c primary channel.
+    const portalLevel = makeLevel({
+      player: [0, 0],
+      goal: [4, 4],
+      portals: [portal("p1", [1, 1], [3, 3], "A")],
+    });
+    const active = initialState(portalLevel); // phase A = p1's activePhase
+    const inactive = applyMoveToGameState(portalLevel, active, move("right")); // phase B
+
+    expect(active.phase).toBe("A");
+    expect(inactive.phase).toBe("B");
+    expect(portalIsActive(portalLevel, active, doorTile)).toBe(true);
+    expect(portalIsActive(portalLevel, inactive, doorTile)).toBe(false);
+
+    const spec = specOf("portal");
+    const settledInactive = paintSpec(spec, portalLevel, doorTile, inactive, {
+      prev: null,
+      objectMix: 1,
+      occupied: 1,
+    });
+    // THE mutation M10 killer: settled and inactive ⇒ no swirl at all, and the outline
+    // is the muted 80/20 token.
+    expect(settledInactive.of("arc")).toEqual([]);
+    expect(settledInactive.of("strokePath")).toHaveLength(1);
+    expect(settledInactive.of("strokePath")[0]!.stroke).toBe(
+      toInt(theme("B").obj.portalEcho),
+    );
+
+    const settledActive = paintSpec(spec, portalLevel, doorTile, active, {
+      prev: null,
+      objectMix: 1,
+      occupied: 1,
+    });
+    expect(settledActive.of("arc")).toHaveLength(PORTAL_SWIRL_ARCS.length);
+
+    // Mid-flip the swirl is present but partially transparent, in *both* directions,
+    // and the outline sits strictly between the muted and the full token.
+    for (const [gs, prev] of [
+      [active, inactive],
+      [inactive, active],
+    ] as const) {
+      const mid = paintSpec(spec, portalLevel, doorTile, gs, {
+        prev,
+        objectMix: 0.5,
+        occupied: 1,
+      });
+      expect(mid.of("arc")).toHaveLength(PORTAL_SWIRL_ARCS.length);
+      for (const call of mid.of("strokePath").slice(1)) {
+        expect(call.strokeAlpha).toBeCloseTo(0.5, 10);
+      }
+      const tokens = theme(gs.phase);
+      const stroke = mid.of("strokePath")[0]!.stroke;
+      expect(stroke).toBe(
+        lerpColorInt(toInt(tokens.obj.portalEcho), toInt(tokens.obj.portal), 0.5),
+      );
+      expect(stroke).not.toBe(toInt(tokens.obj.portalEcho));
+      expect(stroke).not.toBe(toInt(tokens.obj.portal));
+    }
   });
 });
