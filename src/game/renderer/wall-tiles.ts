@@ -18,10 +18,10 @@
  * broke the glyph lookup — the parameter is `tokens`, the lookup is `theme()`.
  */
 
-import type Phaser from "phaser";
 import type { Phase } from "@/core/state/phase";
 import type { Vec } from "@/core/state/types";
 import type { Rect } from "@/game/renderer/grid-mapping";
+import type { Graphics2D } from "@/game/renderer/objects/graphics2d";
 import type { WallTile, WallRenderState } from "@/game/renderer/cell-state";
 import {
   ghostLook,
@@ -134,7 +134,7 @@ export class WallTileView {
   }
 
   paint(
-    g: Phaser.GameObjects.Graphics,
+    g: Graphics2D,
     rect: Rect,
     radius: number,
     cellSizeCss: number,

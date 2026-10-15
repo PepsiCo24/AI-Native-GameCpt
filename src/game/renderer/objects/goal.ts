@@ -9,8 +9,8 @@
  * Nothing else in the renderer idles, including `wallEcho` (R-E5).
  */
 
-import type Phaser from "phaser";
 import type { Rect } from "@/game/renderer/grid-mapping";
+import type { Graphics2D } from "@/game/renderer/objects/graphics2d";
 import { toInt } from "@/game/theme/tokens";
 import type { ThemeTokens } from "@/game/theme/tokens";
 
@@ -28,7 +28,7 @@ export function goalPulseScale(timeMs: number): number {
 }
 
 export interface GoalPaintContext {
-  readonly g: Phaser.GameObjects.Graphics;
+  readonly g: Graphics2D;
   readonly rect: Rect;
   readonly cssScale: number;
   readonly theme: ThemeTokens;

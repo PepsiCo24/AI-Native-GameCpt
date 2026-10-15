@@ -1,5 +1,5 @@
 /**
- * Level registry — loads the authored L1–L5 files and **validates every one**
+ * Level registry — loads the authored L1–L10 files and **validates every one**
  * before it can reach the board.
  *
  * `docs/architecture.md` §7 / ADR-0004: schema → rule validation → (solver, at CI
@@ -23,6 +23,11 @@ import l002 from "@/levels/l002.json";
 import l003 from "@/levels/l003.json";
 import l004 from "@/levels/l004.json";
 import l005 from "@/levels/l005.json";
+import l006 from "@/levels/l006.json";
+import l007 from "@/levels/l007.json";
+import l008 from "@/levels/l008.json";
+import l009 from "@/levels/l009.json";
+import l010 from "@/levels/l010.json";
 
 interface LevelSource {
   readonly file: string;
@@ -36,6 +41,15 @@ export const LEVEL_SOURCES: readonly LevelSource[] = [
   { file: "l003.json", raw: l003 },
   { file: "l004.json", raw: l004 },
   { file: "l005.json", raw: l005 },
+  // L6–L10 unlock the doors + switch mechanics (`docs/level-design.md`): the
+  // painter seam above was built first, so unlocking is this data edit and
+  // nothing else. They are the same shape of input as L1–L5 — read-only files,
+  // validated through `validateLevel` before a board may see them.
+  { file: "l006.json", raw: l006 },
+  { file: "l007.json", raw: l007 },
+  { file: "l008.json", raw: l008 },
+  { file: "l009.json", raw: l009 },
+  { file: "l010.json", raw: l010 },
 ];
 
 export interface LoadReport {

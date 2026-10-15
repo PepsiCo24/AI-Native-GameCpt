@@ -20,10 +20,11 @@
  * over the ground. R-E4: a ghost may never out-contrast or out-size a solid wall.
  */
 
-import type Phaser from "phaser";
 import type { Rect } from "@/game/renderer/grid-mapping";
 import { lerpColorInt, toInt } from "@/game/theme/tokens";
 import type { PhaseGlyph, ThemeTokens } from "@/game/theme/tokens";
+import type { Graphics2D } from "@/game/renderer/objects/graphics2d";
+import { paintPhaseGlyph } from "@/game/renderer/objects/glyph";
 
 /** Every value the painter needs; all numbers are device px or plain fractions. */
 export interface WallLook {
@@ -41,7 +42,7 @@ export interface WallLook {
 }
 
 export interface WallPaintContext {
-  readonly g: Phaser.GameObjects.Graphics;
+  readonly g: Graphics2D;
   /** Cell rect (device px) — the wall is centered inside it. */
   readonly rect: Rect;
   readonly radius: number;
@@ -125,12 +126,14 @@ export function lerpLook(from: WallLook, to: WallLook, t: number): WallLook {
  * owning phase is named without colour, which is the redundant channel that lets
  * `wall ↔ wallEcho` and the door pair survive CVD simulation (§7.4).
  *
- * The crescent is drawn as a knockout disc plus a "punch" filled with the wall's
- * own current fill colour, so partial-notchAlpha transitions stay artifact-free
- * (at `alpha = 0` the punch is indistinguishable from the tint underneath).
+ * The shape itself lives in `objects/glyph.ts` (the R-E8 "one code path" rule
+ * applied to the glyph the door also uses); this function is only the ghost's
+ * argument set — `cellSize * 0.30` box, knock out to the cell ground, cross-faded
+ * by `notchAlpha`, `punch` = the wall's own current fill so a partial alpha stays
+ * artifact-free.
  */
 function paintNotch(
-  g: Phaser.GameObjects.Graphics,
+  g: Graphics2D,
   cx: number,
   cy: number,
   box: number,
@@ -139,26 +142,7 @@ function paintNotch(
   fill: number,
   alpha: number,
 ): void {
-  g.fillStyle(knockout, alpha);
-  if (glyph === "sun") {
-    g.fillCircle(cx, cy, box * 0.26);
-    g.lineStyle(box * 0.07, knockout, alpha);
-    for (let i = 0; i < 8; i += 1) {
-      const angle = (i / 8) * Math.PI * 2;
-      const inner = box * 0.36;
-      const outer = box * 0.5;
-      g.lineBetween(
-        cx + Math.cos(angle) * inner,
-        cy + Math.sin(angle) * inner,
-        cx + Math.cos(angle) * outer,
-        cy + Math.sin(angle) * outer,
-      );
-    }
-    return;
-  }
-  g.fillCircle(cx, cy, box * 0.42);
-  g.fillStyle(fill, 1);
-  g.fillCircle(cx + box * 0.2, cy - box * 0.12, box * 0.38);
+  paintPhaseGlyph(g, { cx, cy, box, glyph, ink: knockout, punch: fill, alpha });
 }
 
 /**
