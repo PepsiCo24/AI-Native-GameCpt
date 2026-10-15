@@ -197,6 +197,23 @@ This is the primary evidence source for the "AI collaboration & iteration proces
 
 ---
 
+## ITER-0011 — LV-007C: the ordered reader lands **with teeth**, `D_exec` gets published, and the stale pre-D3 schedule is withdrawn **by name**
+
+- **Date:** 2026-10-15
+- **Version:** solver code + difficulty docs — merge `9dd92ce`, 11 files (+664 / −147): `policy.ts` gate (iii), `difficulty.ts` `Dexec`, `level-difficulty.md` **V0.4**, solver suite. No rule change; `D`'s published values byte-identical to V0.3.
+- **Hypothesis (the one tested):** GD-008's ruling 2 switched gate (iii)'s **spec** reader to the ordered `refusedBeforeEnteredTiles` (ITER-0008) and named the enforcement-code switch as this ticket; ADR-design-0001's own (−) consequence named the second: `level-difficulty.md` §3 still carried the pre-ADR-0009 schedule. Do the two land without collateral?
+- **Observed Problem:** until this ticket, the enforcement reader still judged gate (iii) on the **unordered** metric — meaning the spec's new law was, in code, the old law; and §3's old table still offered "dip to 5–6 at L21–L25 / portal dip at L36" with absolute pre-measurement `D` bands to anyone who read it — a schedule ADR-0009 killed and numbers measurement killed.
+- **AI Analysis:** The switch needed **proof of teeth**, not a field rename: the suite pins it with a divergent-board negative control (§8.3's one-control-per-code rule) — the **trapped-refusal pocket**, where the unordered reader saw a beat that no play trace can ever show, must flip from PASS to violation under the ordered reader. And the narrow reading had to be **deliberate**: the merge message spells it out — `lesson-latch-dynamism`, gate (ii)'s refusal half and pipeline §8.5's acceptance leg **stay unordered by design** (ADR-architecture-0002 A3: they carry board-level history-dependence, a different job from the Aha-beat gate); a spec switch is not a license to switch every reader. The Orchestrator ruled the narrow reading correct at merge.
+- **Change (merged `9dd92ce`):**
+  1. **Gate (iii) enforcement now reads `refusedBeforeEnteredTiles ≥ 1`**, with the trapped-refusal negative control flipping **PASS → violation** — the teeth are pinned, and the class GD-008 closed on paper is closed in code before portal boards make divergence likelier.
+  2. **`Dexec` published as a solver column** (`difficulty.ts`): computed **from the formula's own non-`M` terms** — independently of the `D − w5·M` subtraction — and the CLI prints **both forms** so the identity is checked by the reader (`difficultyExec Dexec=13.64 = D(28.64) − 5·M(3) = 1·L(9) + 3·B(1.5476) + 4·T(0) + 2·R(0)`); the suite pins both forms **and** the `L + 3·B` collapse inside the acceptance region (bidirectional cross-check), `D_exec = null` ⟺ `D = null`. This takes ADR-design-0001's convenience ticket: no reader has to do the subtraction anymore.
+  3. **`level-difficulty.md` V0.4 §3 re-keyed to the V0.6 execution-axis law** — the stale rows are **withdrawn by name, kept as a table**, not deleted, so no later reader can "re-discover" them: each pre-V0.6 row carries why it has no force (door at L21 → M1+M3 ship at **L6** as one unit, L21–L25 is an `M`-plateau with no debut and hence no dip; portal dip at L36 → L11; absolute bands → pre-measurement). The only numbers with legal force: **L1–L10 measured + L11 pre-registered**.
+- **Test:** the merge-state suite (chain green through `9dd92ce`, same headline numbers as ITER-0010's Orchestrator re-run — 22 files / 408 passed / 3 skipped); the new test mass is itself the pin: flip control, both-form `Dexec` identity, §3 withdrawn-rows reconciliation. Ownership: the whole merge is solver/ownership files + `docs/level-difficulty.md`.
+- **Result:** One axis-law, one schedule, one reader semantics across spec and code: the GD-008 ruling is now enforced by a program, not a paragraph. The difficulty record carries **zero stale pre-D3 numbers on disk** — the few that sleep on (V0.7's commit-pinned "7", the historical quotes) are annotated as dated history by the same discipline.
+- **Next Decision:** LV-008's generator now faces the pre-registered L11 acceptance **as code**, not prose; RV-006 audits LV-007B/C fix-forward; PA's Stage-2 brief freezes the debut-friction thresholds before the cohort (T6) — the felt half of ITER-0008's valley stays a labelled hypothesis until real players answer.
+
+---
+
 <!-- Template for future entries:
 
 ## ITER-0007 — first playable vertical slice: the game runs in a browser, and the fill axis survives real pixels
