@@ -891,7 +891,27 @@ and a path must be quiescent before dispatch.**
     (that IS the Entry-3 portal-capture window — one setup serves both). **GD-010 dispatched** into the free slot
     (L11 law OUTCOME annotation with byte-preservation proof, line-115 tail fix, A3 non-firing record `[5,0]`, OQ1
     par-HUD ruling — decision by GD, landing in ui-ux deferred to UA). Live: QA-005b, RV-007, GD-010 = 3/3. PA-006
-    worktree + branch pruned; iteration-log RF-1 entry = DG-004. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+    worktree + branch pruned; iteration-log RF-1 entry = DG-004.
+57. **GD-010 MERGED + CI discriminating experiment READS: mixed cloud shape — two rulings.** GD-010 (`43f1d84` →
+    merge `081b9cc`): frozen §6 clause **byte-preserved under the OUTCOME annotation** — proof not taken on trust: I
+    re-hashed the paragraph at `b6a702b` vs tip (`ea72befc…` identical); line-115 tail now names the landed ordered
+    reader (substance of the old bullet verified intact on the + side: 46/2000, LV-007C, §8.5-unordered doctrine all
+    present); **ADR-design-0002** records the promotion trigger's measured non-firing (triple-sourced `[5,0]`,
+    pre-specified re-opener, no-vibes clause) — approved here per AGENTS §4; **GD-OQ1 par-in-HUD REFUSED** from locked
+    doctrine (§9 show-don't-tell, board-is-the-teacher, §12 no-punishment, §0.5 no-new-screens) with an
+    evidence-only re-entry; `ui-ux.md` untouched (filing = UA's pen → UA-0009 dispatched: OQ1 closure, end-panel
+    string shape sign-off, transient-observability wording now that QA-005 gave the arcs a terminal verdict, SW/R7
+    observation note). **The cloud e2e re-run (same commit) finished: 9 failed vs 13 first time — the sets differ.**
+    Decomposition: the 7 count/dataset failures persist (registry-10-vs-dataset-11 — die with the chain merge, as
+    planned); `transient.spec.ts:116/:257` failed BOTH runs ⇒ deterministic cloud shape (software GL ~4× slower:
+    self-calibrating budgets like `gridMs < 60` observed at 31 ms locally simply go bankrupt there — the
+    calibration fails its own guard); refusal/mobile-swipe membership drifted run-to-run ⇒ intermittent tail. Two
+    rulings: **(1)** `--retries=1` in the CI job ONLY — a case that passes on retry reports FLAKY (Playwright's
+    distinct state) and every FLAKY must be named in a follow-up ticket; local stays zero-retry per QA-005's
+    discipline. No more silent-red blocking a required gate, and no more hiding either. **(2)** QA-005c ticket
+    grows: transient-class runner tolerance (calibrate-or-annotate, decision by evidence from BOTH cloud runs now on
+    file) + the narration refresh + `reuseExistingServer:false`. Gate stays REQUIRED — two rulings, one
+    experiment, zero demotions. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
