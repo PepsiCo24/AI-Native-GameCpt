@@ -22,13 +22,12 @@
  */
 
 import type { Level } from "@/core/level";
-import { phaseView } from "@/core/rules/solid";
+import { isPlayerEmbedded, phaseView } from "@/core/rules/solid";
 import type { Direction } from "@/core/state/move";
 import { move } from "@/core/state/move";
 import type { Phase } from "@/core/state/phase";
 import { applyMoveToGameState, initialState, isGoal, toSearchState } from "@/core/state/transitions";
 import type { GameState, Vec } from "@/core/state/types";
-import { isPlayerEmbedded } from "@/game/renderer/cell-state";
 import { EventBus } from "@/game/systems/event-bus";
 
 /** What happened to one logical `MOVE(dir)`. */
@@ -106,7 +105,12 @@ export class GameSession {
     return this.gs.moveCount;
   }
 
-  /** `true` when the player legally stands inside a tile solid in the current phase (R-C13). */
+  /**
+   * `true` when the player legally stands inside a tile solid in the current phase
+   * (R-C13). Core's rule (`@/core/rules/solid` → `solidAt`) — gameplay owns no
+   * copy of the predicate and no `systems → renderer` edge exists for it
+   * (ADR-architecture-0003 ruling 4).
+   */
   get playerEmbedded(): boolean {
     return isPlayerEmbedded(this.currentLevel, this.gs);
   }

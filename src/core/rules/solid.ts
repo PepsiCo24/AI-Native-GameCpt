@@ -19,7 +19,7 @@
 
 import type { DoorDef, Level, PortalDef, SwitchDef } from "@/core/level";
 import type { Phase } from "@/core/state/phase";
-import type { DoorsOpen, PhaseView, Vec } from "@/core/state/types";
+import type { DoorsOpen, GameState, PhaseView, Vec } from "@/core/state/types";
 
 /** A level-data coordinate, `[x, y]`, 0-indexed from the top-left (`docs/level-design.md` §1). */
 type TileTuple = readonly [number, number];
@@ -162,6 +162,32 @@ export function solidAt(
   if (isWallSolidAt(level, phase, p)) return true;
   if (isClosedDoorAt(level, doorsOpen, p)) return true;
   return false;
+}
+
+/**
+ * **R-C13 / ADR-0008 clause 3 — is the player standing inside a tile that blocks
+ * entry in the current phase?**
+ *
+ * This is *rule* semantics, not appearance, so its home is here
+ * (ADR-architecture-0003 ruling 4, closing RV-005 n-6). Under Option B the
+ * embedded state is a legal, stable one: the player is never crushed, pushed or
+ * randomly moved, and every outward step is judged by the ordinary entry rule —
+ * so the tile can always be left.
+ *
+ * It is answered by the **one** solidity truth, {@link solidAt}, never beside it:
+ * a wall solid in the current phase and a door closed in the current phase are the
+ * same verdict here, exactly as they are for entry (ADR-0008 clause 5 — "doors
+ * share wall semantics"). `solidAt` is a complete entry test on its own, so no
+ * second wall/door expression exists in this module or anywhere downstream.
+ *
+ * The renderer receives this verdict as an **input** — `wallRenderState(level, gs,
+ * tile, playerEmbedded)` — and maps it to paint; it owns no copy of the question.
+ *
+ * (`solidAt` fail-closes an out-of-bounds tile; the player position is always
+ * in-bounds by invariant, so that branch is unreachable from here.)
+ */
+export function isPlayerEmbedded(level: Level, gs: GameState): boolean {
+  return solidAt(level, gs.phase, gs.levelState.doorsOpen, gs.playerPosition);
 }
 
 /** Portal definitions active while `phase` is current (M2, ADR-0008 clause 6). */

@@ -94,13 +94,14 @@ test.describe("keyboard frame window", () => {
     expect(state.moves, "a single press is never replayed").toBe(1);
   });
 
-  test.fail(
+  test(
     "two press/release cycles inside one frame window must be exactly two moves",
     async ({ page }) => {
-      // Known defect: Phaser re-walks its whole keyboard queue on every DOM key
-      // event and empties it only on POST_RENDER, so the `R` is applied again
-      // while the `L` is still in the queue. Expected to fail until the WeakSet
-      // dedupe lands in `src/game/input/input-map.ts` (see the file header).
+      // Fixed at the call site (R-004b): Phaser re-walks its whole keyboard queue
+      // on every DOM key event and empties it only a frame later, so `attachInput`
+      // now consumes the *same* event object at most once — `createKeyActionHandler`
+      // in `src/game/input/key-handler.ts` holds the WeakSet. The pin is gone; this
+      // is now an ordinary passing assertion.
       await openLevel(page, levelUrl(2));
 
       await burstPairs(page, ["ArrowRight", "ArrowLeft"]);

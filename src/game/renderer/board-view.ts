@@ -61,15 +61,11 @@
 
 import Phaser from "phaser";
 import type { Level } from "@/core/level";
+import { isPlayerEmbedded } from "@/core/rules/solid";
 import type { Direction } from "@/core/state/move";
 import type { Phase } from "@/core/state/phase";
 import type { GameState, Vec } from "@/core/state/types";
-import {
-  isPlayerAt,
-  isPlayerEmbedded,
-  wallRenderState,
-  wallTilesOf,
-} from "@/game/renderer/cell-state";
+import { isPlayerAt, wallRenderState, wallTilesOf } from "@/game/renderer/cell-state";
 import type { WallTile } from "@/game/renderer/cell-state";
 import {
   cellAtPoint,

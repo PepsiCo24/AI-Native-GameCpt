@@ -44,7 +44,7 @@ const REFS = loadReferenceLevels();
 
 test.describe("par route → win → HUD contract", () => {
   test(`the shipped dataset is ${String(EXPECTED_LEVEL_COUNT)} levels and every one is solvable`, () => {
-    expect(REFS.map((ref) => ref.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(REFS.map((ref) => ref.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
     for (const ref of REFS) {
       expect(ref.route.length, `L${String(ref.id)} route length`).toBe(ref.par);
       expect(ref.legs[ref.legs.length - 1]?.state.player, `L${String(ref.id)} ends on the goal`).toEqual(
@@ -144,13 +144,12 @@ test.describe("par route → win → HUD contract", () => {
     expect(state.moves).toBe(0);
   });
 
-  test.fail(
+  test(
     "the last level's dialog must not claim the prototype ends at L5",
     async ({ page }) => {
-      // Known stale copy: `hud.ts` builds the end panel's body as
-      // `L1–L5 cleared · <level>: <moves>`, which was true when the playable slice
-      // was five levels (R-002) and is not true now that the registry ships ten.
-      // Expected to fail until the copy is updated; the owner is the HUD's writer.
+      // Fixed (R-004b): `hud.ts` now reads the ladder range from the registry's own
+      // list (`ladderLabelOf`), so the end panel names the levels that shipped
+      // instead of the stale `L1–L5` prototype literal. Pin removed.
       await openLevel(page, levelUrl(EXPECTED_LEVEL_COUNT));
       await pressRoute(page, refOf(REFS, EXPECTED_LEVEL_COUNT).route);
       await expect(page.locator(".ps-overlay")).toBeVisible();
