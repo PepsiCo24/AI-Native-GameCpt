@@ -8,6 +8,24 @@
 > **Standing evidence label (ui-ux R-P7):** every Stage-2 build is program-drawn vector tokens =
 > `placeholder art`. No conclusion about the *final* art's readability may be drawn from this round;
 > §3.3 is re-run after GATE A integration.
+>
+> ---
+> **⚠ CORRECTION BANNER (PA-004, 2026-10-15 — read before using the body below; the body is kept
+> unrevised as the PA-002-era record, same treatment as ADR-0008's banner):**
+> 1. **GATE D is DECIDED** (2026-10-14, human, **D3 "mechanics forward"** — ADR-0009). §1.3's
+>    "not yet decided" precondition note is stale; (a′)/(c′) now block on **level content shipping +
+>    the Solver gate** (door+switch L6–L10; opposite-colour portals L11+), not on a decision.
+> 2. **Hypothesis alphabet:** the body's **(a1)/(a2)/(c)** are **withdrawn**. Canonical letters are
+>    **(a′) / (b) / (c′) / (d′)** per **ADR-0009 Decision 8**; the do-not-delete mapping is
+>    `playtest-log.md` §9.1. Where the body says "(a1)" read **(b)**; "(a2)" splits to **(a′)+(c′)**;
+>    "(c)" survives as the **(d′)** battery (c-1…c-10 → d′-1…d′-10, values untouched).
+> 3. **§1.4's absorption of (b) into (a1) is REVERSED:** (b) is standalone again (ADR-0008 (b)
+>    unchanged), load-bearing earlier at **L4–L5** — and on the shipped build its forced instance is
+>    **`l005`** (l004 = offered). §2's coding manual (C1–C9, R1–R6, G1–G5, M14/M15 windows,
+>    inter-rater rule) is **unchanged and remains in force**.
+> 4. The print-and-fill field instrument for the current build is
+>    **`stage2-field-sheet.md`** (PA-004): per-column definitions, code-event mapping, OBS-1…OBS-10.
+> ---
 
 ---
 
