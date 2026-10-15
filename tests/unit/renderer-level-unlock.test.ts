@@ -245,26 +245,81 @@ describe("R-T6 hover — the ring appears only where the core accepts the move",
   });
 
   it("the hover predicate agrees with the reducer on every step of every unlocked level", () => {
+    // RV-005 m-8: this test used to probe on the LIVE session with `move()` + `undo()`.
+    // `applyMoveToGameState` refuses every move once `status === "won"` and `undo()`
+    // requires `status === "playing"`, so the first probe whose move happened to be the
+    // winning one latched the level: every later step degenerated into
+    // "movePreview is false because the session is won" (still asserted as a refusal,
+    // still green) while `expect(session.isWon)` at the end passed anyway. All five
+    // levels passed **for the wrong reason**, and the last third of every path was never
+    // validated.
+    //
+    // The probe therefore runs on a **clone** — a second `GameSession` replayed to the
+    // same step — so the probe may win without touching the session under test. The
+    // path is then walked for real, and every step is pinned: exactly one move per step,
+    // and no win before the last one.
     for (const id of [6, 7, 8, 9, 10]) {
-      const session = new GameSession(levels, { startIndex: startIndexForLevel(levels, id) });
-      const path = shortestPath(levelById(id));
-      for (const dir of path) {
+      const level = levelById(id);
+      const startIndex = startIndexForLevel(levels, id);
+      const session = new GameSession(levels, { startIndex });
+      const path = shortestPath(level);
+      const where = (index: number): string => `level ${String(id)} step ${String(index + 1)}`;
+
+      path.forEach((dir, index) => {
+        // A clone at the same step: replay the prefix on a fresh session. (`toEqual`
+        // rather than `toBe`: the point is that the replay lands on the same state, and
+        // a divergence here would itself be the bug.)
+        const probe = new GameSession(levels, { startIndex });
+        for (const replay of path.slice(0, index)) probe.move(replay);
+        expect(probe.state, where(index)).toEqual(session.state);
+
         for (const candidate of ["up", "down", "left", "right"] as const) {
           // `movePreview` is R-T6's question; a hover may only be granted where it
           // answers `true`, and a refusal must never move or flip anything.
-          const accepted = session.movePreview(candidate);
-          const snapshot = session.state;
+          const accepted = probe.movePreview(candidate);
+          const snapshot = probe.state;
           if (accepted) {
-            expect(session.move(candidate)).not.toBe("illegal");
-            session.undo();
+            expect(probe.move(candidate), `${where(index)} via ${candidate}`).not.toBe(
+              "illegal",
+            );
           } else {
-            expect(session.move(candidate)).toBe("illegal");
-            expect(session.state).toBe(snapshot);
+            expect(probe.move(candidate), `${where(index)} via ${candidate}`).toBe("illegal");
+            expect(probe.state, `${where(index)} via ${candidate}`).toBe(snapshot);
           }
         }
-        session.move(dir);
-      }
+
+        // The session under test walks the path: one move per step, and it must not be
+        // won before the final one — the early latch is the regression this pins.
+        expect(session.isWon, `${where(index)} was already won`).toBe(false);
+        expect(session.move(dir), where(index)).toBe(index === path.length - 1 ? "won" : "moved");
+        expect(session.moveCount, where(index)).toBe(index + 1);
+      });
+
       expect(session.isWon).toBe(true);
+      expect(session.moveCount).toBe(path.length);
+      expect(session.playerPosition).toEqual({ x: level.goal[0], y: level.goal[1] });
     }
+  });
+
+  it("the latch that made the live probe unsound is real: post-win moves refuse and undo is locked", () => {
+    // The premise the clone rests on, pinned rather than assumed. A won `GameState` is
+    // frozen by core (`applyMoveToGameState` returns the same reference), `undo` needs
+    // `status === "playing"`, and `GameSession.canUndo` therefore goes false — which is
+    // exactly why a probe that wins on the live session can never be rolled back, and
+    // why the old test's remaining steps were silently skipped instead of failing.
+    const session = new GameSession(levels, { startIndex: startIndexForLevel(levels, 6) });
+    for (const dir of shortestPath(levelById(6))) session.move(dir);
+    expect(session.isWon).toBe(true);
+    expect(session.canUndo).toBe(false);
+    expect(session.undo()).toBe(false);
+
+    const frozen = session.state;
+    const moves = session.moveCount;
+    for (const candidate of ["up", "down", "left", "right"] as const) {
+      expect(session.movePreview(candidate)).toBe(false);
+      expect(session.move(candidate)).toBe("illegal");
+      expect(session.state).toBe(frozen);
+    }
+    expect(session.moveCount).toBe(moves);
   });
 });
