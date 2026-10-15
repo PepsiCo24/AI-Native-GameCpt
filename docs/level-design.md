@@ -237,10 +237,16 @@ anything else this section would have rejected it on P1/P2/P3.
 - At a **non-seam block** (L16–L25 latch fluency, L26–L35, L36–L45): no dip, no P1 pin; `Δpar ≥ 2`
   within the block and the block-open must clear the previous peak **on `D_exec`** (§3.4/§3.5) — par is
   the construction proxy, `D_exec` remains the law's primary quantity.
-- **Forward consequence, already forced (labelled derived, conditional):** `D_exec(L16) > D_exec(L15)
-  = 14.969697` (§3.5 ordering) with `3·B ≤ 5.0625` ⇒ `par(L16) ≥ 10`. Conditional on L15 shipping at
-  its measured value **and** on the V0.1 weights; a playtest re-calibration of `w1/w2` moves this
-  consequence and nothing else in §6.1.1 (par itself is weightless and survives re-calibration).
+- **Forward consequence, already forced (labelled derived, conditional):** §3.5's ordering requires
+  `D_exec(L16) > D_exec(L15) = 14.969697`, and `D_exec = par + 3·B`, so the measured `B` band bounds
+  `par(L16)` from **both** sides: **necessary** — best case `3·B = 5.0625` ⇒ `par(L16) ≥ 10` (par 9
+  tops out at `9 + 5.0625 = 14.0625 < 14.969697`, so par 9 cannot clear L15); **sufficient for any `B`
+  in the band** — worst case `3·B = 3.750` ⇒ `par(L16) ≥ 12`. So a par-10 or par-11 L16 is *admissible
+  only if it carries above-average branching* (`par 10` needs `B > 1.656566`, i.e. above L15's own
+  measured `B`; `par 11` needs `B > 1.323232`). Publish both bounds to the L16 author; do not read
+  `≥ 10` as "≥ 10 is enough". Conditional on L15 shipping at its measured value **and** on the V0.1
+  weights; a playtest re-calibration of `w1/w2` moves these consequences and nothing else in §6.1.1
+  (par itself is weightless and survives re-calibration).
 - **Self-correcting guard:** P2's guarantee holds only while `B` stays inside its measured band
   [1.2500, 1.6875]. If a future board measures `B` outside it, `Δpar ≥ 2` no longer implies a
   monotonic `D_exec` ramp and the ramp must be re-checked **on `D_exec` directly**. Report the
