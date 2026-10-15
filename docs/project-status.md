@@ -176,15 +176,16 @@ all recomputed exact. Findings routed: **MINOR-2** (stale bfs.ts gate-(iii) comm
 LV-007C's own rewrite (verified on develop); **MINOR-1** (46/2000 vs 0.9% vs 18/2000 divergence numbers cited
 across docs without generator labels) → **LV-007D micro + AR-0006** (OQ1: in-repo harness vs unify citations);
  NOTE-1..5 → QA archive (`rv006-mut/` logs) + backlog. Worktree removed. Since then: **UA-0008d — CLOSED & MERGED
- (`4d9dde9`)**, **DG-002 — CLOSED & MERGED (`9bae42c`)**, **DG-002b — CLOSED & MERGED (`9bcbf91`)** (items 41–43)
- and **AR-0006 — CLOSED & MERGED (`39a96fc`)** (item 44).
+ (`4d9dde9`)**, **DG-002 — CLOSED & MERGED (`9bae42c`)**, **DG-002b — CLOSED & MERGED (`9bcbf91`)**,
+ **AR-0006 — CLOSED & MERGED (`39a96fc`)** (item 44) and **GD-009 — CLOSED & MERGED (`5972031`)** (item 45).
  Live now: **LV-008** (L11 first-portal
  authoring against the frozen pre-registered law — `D_exec<13.64`, par≤4, one opposite-color pair, no false
  routes; ≥20 candidates, program proves, accept/reject never repair), **QA-005** (permanent Playwright
  e2e: trusted-input l1→l10 walks + refusal-freeze triples + the transient-frame physics adjudication with a written
- terminal verdict either way; own server :5198, CI-green ruling, vitest 22/408/3 only-up), **GD-009** (AR-0006 R1's
- GD half: level-design §3 citations → 46/2000 + the approved one-parenthesis `historical` annotation on ADR-0009
- Context-5's closing line + R5-alignment check, expected no-op). The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
+ terminal verdict either way; own server :5198, CI-green ruling, vitest 22/408/3 only-up), **DG-003** (facade
+ canonization: README's stale "not yet playable"/"rendering not yet" cleared against the merged reality +
+ submission-docs D-pending→measured with the pre-registration narrative + a submission-gap inventory listed-not-fixed).
+ The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
 firing on portal boards are now in. **QA-005 re-scoped**: Playwright now
 **installed** (devDep + chromium v1248, installed by the Orchestrator as sole package.json writer) and all dynamic
 frames already captured (see item 28). Remaining QA-005 = the permanent spec only: `playwright.config` +
@@ -712,6 +713,35 @@ and a path must be quiescent before dispatch.**
     ("OPEN_QUESTION to Architect") rest to landed, and the architecture §3 scripts row re-synced when the l11 generator
     ships; **R-004** (name reserved) = ADR-0003 R4 six-step ticket, queued behind QA-005 (its test repoints must not
     race QA's in-flight tests/** work). Three live: LV-008 · QA-005 · GD-009.
+45. **GD-009 — RETURNED & MERGED (`5972031`): citation canonization GD-half, verified line-by-line before merge.**
+    level-design V0.7 §3 gate-(iii) live sentence now cites the single citable **46/2000 (2.3 %) with its pin
+    reference** (`ordered-companion.test.ts` §5, issued wording verbatim); ADR-0009 Context-5's closure line carries
+    the approved in-place `historical` parenthesis for 18/2000 (b65e465 harness, generator never committed; the
+    double-parenthesis awkwardness is the price of the zero-surrounding-change constraint I imposed — accepted);
+    ticket 3 = **confirmed no-op** (§1 already matches R5 verbatim, no edit manufactured). My verification caught a
+    grep-trap of my own (`grep -c` returning 0 broke my `&&` chain — re-probed with `;`); my verification ALSO
+    surfaced a NEW staleness: §3 line-115's tail "Until the policy-code reader lands … enforcement keeps reading
+    unordered" is a GD-008-era sentence **overtaken by LV-007C's landing** — the mirror image of RV-006's MINOR-2
+    (docs out-staled by later code, not code by docs). Routing decision: do NOT dispatch a one-line ticket — the
+    L11 block ruling (A3 ordered/unordered, lands at L11 acceptance) edits this exact sentence anyway; folded into
+    that GD ticket's scope, recorded here so it cannot be lost. Also my ruling on their risk ②: `iteration-log.md:208`
+    is a dated log entry — R1's changelog carve-out applies by class; **no edit**, question closed (passed into DG-003's
+    brief as a do-not-re-raise). **DG-003 dispatched** into the open slot — README/submission facade: line 25 still
+    claims "browser rendering (RENDER-001) not yet" and line 29 "not yet playable" (both falsified by `1cafe21` and
+    `c6af636` + 22/408/3 + dyn-merged pixels), the "still open" paragraph must separate TRUE opens (human cohort never
+    run, weights provisional, par-HUD OQ1, L11 pre-registration under test, revision art) from dead ones (9/200 closed,
+    SOLVER-001 absorbed into the standing pipeline, RENDER-001 shipped); plus submission-docs D-pending→measured with
+    the **pre-registration narrative** as the flagship AI-native proof, and a submission-gap inventory listed not fixed.
+    Three live: LV-008 · QA-005 · DG-003.
+46. **Orchestrator pre-work landed between returns** (no agents involved): ① Stage-2 frozen-material provenance —
+    sha256 of all 31 frames (`dyn-merged/` 16 entries first = the trusted core set; pre-refactor `dyn/` rows kept below
+    marked as superseded history) + `stage2-freeze-note.md` in the evidence dir: the L11 pair-frames append ONLY after
+    LV-008 accept + R-003 unlock + Entry-3 capture, thresholds freeze before first tester (GD-008 clause carried into
+    the PA-006 brief draft). ② Level addressing verified: `?level=N` URL query (capture.cjs:40) — Entry-3 for L11 has
+    no structural blocker, only the unlock. ③ R-003 shape pre-verified against the shipped registry: explicit imports
+    by design (`level-registry.ts:10-30` comment: no Vite glob, tsconfig has no `vite/client` types) → the ticket is
+    two data lines (`import l011` + entry) + the unlock test's registry-contents re-pin; deliberately held until the
+    accepted `l011.json` exists.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
