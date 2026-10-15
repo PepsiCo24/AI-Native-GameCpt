@@ -152,12 +152,15 @@ Worktree `…/ua-0008-painter-rulings` (base `1225b35`), docs-owned files only.
 validate 10/10+10, generator 5/5+3/3, zero id-exemption hardcodes). **LV-007B** (B/T/R to D, n-11 route pruning +
 maxRouteVisits, n-13 switch-without-targets, m-8/9/10 doc lines, first real D-dip verification at L5-L6 /
 L10-L11 seams) queued; **ruling: LV-007B lands BEFORE L11-L20 authoring** (n-11 is a hard prerequisite for 7x7
-long-par boards; gate (iv) machinery needs it to fire on portal boards). **QA-005 ticket raised**: add Playwright
-(devDep + browsers), trusted-input E2E for L8 refuse/press/cross + victory dialog, and page.screenshot dynamic
-frames (refusal arc / standing-on-open-door) that the OpenCode webview could not deliver (keydown never reached the
-game; see orch-smoke manifest). Deferred GD question: 'below OFFERED' as a named teaching grade stays descriptive.
+long-par boards; gate (iv) machinery needs it to fire on portal boards). **QA-005 re-scoped**: Playwright now
+**installed** (devDep + chromium v1248, installed by the Orchestrator as sole package.json writer) and all dynamic
+frames already captured (see item 28). Remaining QA-005 = the permanent spec only: `playwright.config` +
+`tests/e2e/**` trusted-input walks pinning L8 refuse/press/cross + par-4/6 solves + victory, and the CI decision
+(browser download job vs explicit skip). Deferred GD question: 'below OFFERED' as a named teaching grade stays descriptive.
 
-**QA-004** (QA Engineer, background) — independent second-implementation reproduction of the ART-INTAKE audit
+**QA-004 — CLOSED per item-27 timeout policy** (silent past R-002's return, zero disk footprint — expected shape
+for a read-only task; corrigendum power lapsed, committed `art-audit.py` keeps reproduction open to anyone).
+Original brief: independent second-implementation reproduction of the ART-INTAKE audit
 numbers (`audit.json`) + suite regression, read-only, no commits. It can now only trigger a **corrigendum** to
 `docs/assets/art-acceptance-2026-10-15.md`, not reopen a ruling. Everything else has returned; the art intake docs
 and **all 11 candidate PNGs + audit evidence are committed** (`0a88d0c`, `cd2054e` — storage ruling executed under
@@ -412,6 +415,16 @@ and a path must be quiescent before dispatch.**
     holds at ≤3 concurrent. What delegation cannot remove: **the Asset Gate generator itself** (image generation lives in
     the user's Codex channel — req-08/11 P0 remains user-side) and **the 10 non-developer playtest cohort** (BUT/PA
     protocol forbids agent-as-player substitution). Everything else is moving on my judgment.
+28. **Dynamic frames captured — Playwright infra landed (2026-10-15).** AGENTS.md's declared stack always included
+    Playwright but it had never been installed; the OpenCode webview's keydown failure was environmental, not a game
+    defect. Installed `@playwright/test` + chromium v1248 (main tree, sole-writer package.json), then walked
+    L6/L8/L10 with **trusted input** (`qa-capture/capture.cjs` → `…/orch-smoke-2026-10-15/dyn/`, 12 PNG +
+    `capture-log.json`, manifest ADDENDUM). Headline evidence: **refusal frame** (third R on L8 held — moves stayed 2,
+    phase 白昼 unchanged, arc mid-animation: the locked illegal-move contract proven in pixels), press beat on `s1`,
+    **standing on the latched-open door** (R-Z7 occupancy state, moves 5), par-6 win + victory dialog, L6 dip solved
+    par-4 on the natural path, L10 mid-route. This **supersedes UA-0008's static-set constraint** — a fresh-session
+    **UA-0008b vision addendum** will judge the dynamic vocabulary after UA-0008 returns (new-session lesson holds).
+    QA-004 formally closed (above). Concurrency: RV-005 + UA-0008 + AR-0005b live; LV-007B queued for first return.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
