@@ -21,6 +21,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { Level } from "@/core/level";
+import { isPlayerEmbedded } from "@/core/rules/solid";
 import type { Phase } from "@/core/state/phase";
 import { move } from "@/core/state/move";
 import { applyMoveToGameState, initialState } from "@/core/state/transitions";
@@ -30,7 +31,6 @@ import {
   doorIsOpenNow,
   doorTilesOf,
   isPlayerAt,
-  isPlayerEmbedded,
   portalIsActive,
   portalTilesOf,
   switchTilesOf,
