@@ -18,17 +18,24 @@
  * 1. **every `requestAnimationFrame` stamp.** Phaser steps the scene once per
  *    frame and stamps that step with the frame's rAF timestamp
  *    (`TimeStep.step(time)` → `Clock.update(time)`), so these are *the game's own*
- *    frame times, measured rather than assumed.
+ *    frame times, measured rather than assumed. The wall time at which each
+ *    frame's callbacks actually ran is recorded beside the stamp (`ranAt`), which
+ *    is what proves *which* step an input saw.
  * 2. **every DOM input event**, in the capture phase on `window`, with its
- *    `performance.now()` time (`rAF` stamps share that clock), its coordinates,
- *    its pointer type and the touch counts. Order and coordinates are recorded as
- *    delivered — a fix that "makes the test pass" by assuming the events arrived
- *    cannot hide behind it.
+ *    `performance.now()` time (`rAF` stamps share that clock), its index into the
+ *    frame log at the instant the listener ran (`frameIndex` — the step
+ *    `scene.time.now` held), its coordinates, its pointer type and the touch
+ *    counts. Order and coordinates are recorded as delivered — a fix that "makes
+ *    the test pass" by assuming the events arrived cannot hide behind it.
  *
  * Between them those two logs settle the model in `helpers/frame-model.ts`:
- * `bracketFrames` turns a recorded event time into the game-clock value the input
- * handler saw, and `framesSpanned` turns two event times into the **quantised**
- * game-clock duration of a gesture.
+ * `frameIndex` names the step an input handler actually saw (the observer's own
+ * execution order, `scene.time.now` ≡ the stamp of the last frame pushed), and
+ * `framesSpanned` turns two recorded indices into the **quantised** game-clock
+ * duration of a gesture. QA-005f: the *wall* timestamp of an event is recorded
+ * too, but it is evidence, not the attribution — comparing it against frame stamps
+ * mis-picks the step whenever a callback lags its own stamp (see
+ * `frame-model.ts`'s header).
  *
  * The observer is installed with `addInitScript` (before the app boots) and is
  * purely additive: one array push per frame and one per event.
@@ -37,7 +44,7 @@
 import { expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-import { framesSpanned, medianFrameGap } from "./frame-model";
+import { attributionHolds, framesSpanned, medianFrameGap } from "./frame-model";
 
 /** One recorded DOM input event (or a `probeMark` label), page-clock ordered. */
 export interface ProbeEvent {
@@ -45,6 +52,17 @@ export interface ProbeEvent {
   readonly kind: string;
   /** `performance.now()` at the moment the listener ran — the `rAF` clock. */
   readonly t: number;
+  /**
+   * The index, in `ProbeSnapshot.frames`, of the last frame that had **run** when
+   * this listener ran — i.e. the step `scene.time.now` held at that instant.
+   * `-1` when no frame had run yet.
+   *
+   * This is the QA-005f attribution: an execution fact recorded in the page, never
+   * an inference from comparing `t` against frame stamps (a stamp is the frame's
+   * *scheduled* time; a loaded runner can run the step after an event that lands on
+   * its stamp).
+   */
+  readonly frameIndex: number;
   /** Page coordinates of the first changed touch / the pointer, else `null`. */
   readonly x: number | null;
   readonly y: number | null;
@@ -72,6 +90,7 @@ export interface ProbeEvent {
 interface RecordedEvent {
   kind: string;
   t: number;
+  frameIndex: number;
   x: number | null;
   y: number | null;
   pointerType: string | null;
@@ -87,6 +106,12 @@ export interface ProbeSnapshot {
   readonly now: number;
   /** Every `requestAnimationFrame` stamp the page produced (oldest first). */
   readonly frames: readonly number[];
+  /**
+   * `performance.now()` at which each frame's callbacks actually ran — parallel to
+   * `frames`, same indices. The stamps are the game clock; these prove the
+   * attribution ({@link import("./frame-model").attributionHolds}).
+   */
+  readonly ranAt: readonly number[];
   /** Every recorded event (oldest first). */
   readonly events: readonly ProbeEvent[];
 }
@@ -106,23 +131,38 @@ export async function installProbe(page: Page): Promise<void> {
     // The page-side record shape is declared once at module scope
     // (`RecordedEvent`), so `probeMark` and `probeSnapshot` cannot drift from it.
     const holder = window as unknown as {
-      __psProbe?: { frames: number[]; events: RecordedEvent[] };
+      __psProbe?: { frames: number[]; ranAt: number[]; events: RecordedEvent[] };
     };
     if (holder.__psProbe !== undefined) return; // idempotent per document anyway
 
     const frames: number[] = [];
+    const ranAt: number[] = [];
     const events: RecordedEvent[] = [];
-    holder.__psProbe = { frames, events };
+    holder.__psProbe = { frames, ranAt, events };
 
-    const record = (event: RecordedEvent): void => {
+    // `frames` and `ranAt` are shifted together at the cap, so a recorded
+    // `frameIndex` names the same frame as long as no shift happened between the
+    // event and the snapshot. A page old enough to shift (4000 frames) would make an
+    // earlier index stale, which `attributionHolds` reports as a failure rather than
+    // a silently wrong window; every arm here records and snapshots inside seconds.
+    const record = (event: Omit<RecordedEvent, "frameIndex">): void => {
       if (events.length >= MAX_EVENTS) events.shift();
-      events.push(event);
+      // The QA-005f attribution: the step `scene.time.now` holds right now is the
+      // stamp of the last frame whose callback has run — the log's own order.
+      events.push({ ...event, frameIndex: frames.length - 1 });
     };
 
     // ── 1. the runner's own frame grid ───────────────────────────────────────
     const frameLoop = (timestamp: number): void => {
       frames.push(timestamp);
-      if (frames.length > MAX_FRAMES) frames.shift();
+      // When this frame's callbacks actually ran: the stamp above is the frame's
+      // *scheduled* time and can lag it on a loaded runner, so the pair is what
+      // proves which step an input handler saw.
+      ranAt.push(performance.now());
+      if (frames.length > MAX_FRAMES) {
+        frames.shift();
+        ranAt.shift();
+      }
       window.requestAnimationFrame(frameLoop);
     };
     window.requestAnimationFrame(frameLoop);
@@ -201,13 +241,14 @@ export async function installProbe(page: Page): Promise<void> {
 export async function probeMark(page: Page, label: string): Promise<void> {
   await page.evaluate((text: string) => {
     const holder = window as unknown as {
-      __psProbe?: { events: RecordedEvent[] };
+      __psProbe?: { frames: number[]; events: RecordedEvent[] };
     };
     const probe = holder.__psProbe;
     if (probe === undefined) throw new Error("[probe] installProbe() was not called first");
     probe.events.push({
       kind: "mark",
       t: performance.now(),
+      frameIndex: probe.frames.length - 1,
       x: null,
       y: null,
       pointerType: null,
@@ -224,13 +265,14 @@ export async function probeMark(page: Page, label: string): Promise<void> {
 export async function probeSnapshot(page: Page): Promise<ProbeSnapshot> {
   return page.evaluate(() => {
     const holder = window as unknown as {
-      __psProbe?: { frames: number[]; events: RecordedEvent[] };
+      __psProbe?: { frames: number[]; ranAt: number[]; events: RecordedEvent[] };
     };
     const probe = holder.__psProbe;
     if (probe === undefined) throw new Error("[probe] installProbe() was not called first");
     return {
       now: performance.now(),
       frames: probe.frames.slice(),
+      ranAt: probe.ranAt.slice(),
       events: probe.events.slice(),
     };
   });
@@ -281,6 +323,12 @@ export function describeEvents(events: readonly ProbeEvent[]): string {
  * it: how many of each event arrived, in which order, at which coordinates, and
  * how many of the runner's own frames the whole gesture spanned.
  *
+ * (QA-005f) `span` is the difference of the two events' recorded frame indices —
+ * the steps that had *actually run* at each handler — never a comparison of event
+ * times against frame stamps, which mis-counts on a runner whose callbacks lag
+ * their own stamps (see `frame-model.ts`'s header). `attribution` carries the
+ * proof that both indices are the steps the handlers saw.
+ *
  * ── Why this exists ─────────────────────────────────────────────────────────
  * `mobile.mobile.spec.ts` R-T4 asks "a swipe ≥ 24 px within 500 ms of game time
  * is a MOVE on its dominant axis". Two things can make that claim fail, and they
@@ -312,8 +360,17 @@ export interface GestureEvidence {
   readonly order: string;
   /** Frames the gesture spanned on the runner's grid (`-1` when incomplete). */
   readonly span: number;
+  /** The frame index the `touchstart` handler saw (`-1` when incomplete). */
+  readonly startIndex: number;
+  /** The frame index the `touchend` handler saw (`-1` when incomplete). */
+  readonly endIndex: number;
   /** The runner's median frame interval over the recorded stamps, in ms. */
   readonly gridMs: number;
+  /**
+   * `true` iff `ranAt` proves both indices are the steps those handlers saw
+   * (`ranAt[k] <= t < ranAt[k+1]`) — the QA-005f self-check on the span below.
+   */
+  readonly attribution: boolean;
   /**
    * The gesture's **game-clock** duration, in ms — `span × gridMs`.
    *
@@ -335,8 +392,14 @@ export function gestureEvidence(snapshot: ProbeSnapshot, label: string): Gesture
   const moves = touches.filter((event) => event.kind === "touchmove").length;
   const ends = touches.filter((event) => event.kind === "touchend").length;
   const gridMs = medianFrameGap(snapshot.frames);
-  const span =
-    start === null || end === null ? -1 : framesSpanned(snapshot.frames, start.t, end.t);
+  const startIndex = start?.frameIndex ?? -1;
+  const endIndex = end?.frameIndex ?? -1;
+  const span = framesSpanned(startIndex, endIndex);
+  const attribution =
+    start !== null &&
+    end !== null &&
+    attributionHolds(snapshot.ranAt, start.t, start.frameIndex) &&
+    attributionHolds(snapshot.ranAt, end.t, end.frameIndex);
   return {
     events,
     touches,
@@ -346,9 +409,12 @@ export function gestureEvidence(snapshot: ProbeSnapshot, label: string): Gesture
     moves,
     ends,
     order: touches.map((event) => event.kind.replace("touch", "")).join(","),
-    span,
+    span: start === null || end === null ? -1 : span,
+    startIndex,
+    endIndex,
     gridMs,
-    gameMs: span < 0 ? -1 : span * gridMs,
+    attribution,
+    gameMs: start === null || end === null ? -1 : span * gridMs,
   };
 }
 
@@ -376,6 +442,14 @@ export function expectGestureDelivered(
   expect(evidence.order, `${label}: delivered in gesture order — start, then move(s), then end (${digest})`).toMatch(
     /^start(?:,move)*,end$/,
   );
+  // (QA-005f) …and the **span's attribution is real**: the observer's two indices
+  // are the steps the handlers saw, proved against the wall clock at which those
+  // frames actually ran. Without this, a span measured by comparing event times
+  // against frame *stamps* could silently mis-count on a lagging runner.
+  expect(
+    evidence.attribution,
+    `${label}: the observer's frame indices are the steps the handlers saw (ranAt[k] <= t < ranAt[k+1]) — the span below is an execution fact, not a stamp comparison (startIndex=${String(evidence.startIndex)}, endIndex=${String(evidence.endIndex)})`,
+  ).toBe(true);
 
   const aimedAt = (event: ProbeEvent | null, wanted: { readonly x: number; readonly y: number }): boolean =>
     event !== null &&

@@ -86,6 +86,10 @@ async function gestureMark(page: Page, name: string): Promise<string> {
  * 2. it fit inside **R-T4's own 500 ms window of *game* time**, which is what the
  *    input handler actually compares (`scene.time.now` is quantised to the
  *    runner's frame grid, so a slow grid can turn a delivered swipe into a tap).
+ *    (QA-005f) That span is the difference of the two events' recorded frame
+ *    *indices* — the steps the handlers actually saw — not a comparison of event
+ *    times against frame stamps, and `expectGestureDelivered` asserts the
+ *    attribution channel that licenses it.
  *
  * Without (1) and (2) a red `moves` counter has two possible readings — the rules
  * refused the gesture, or the driver never produced a usable one — and the
@@ -106,7 +110,7 @@ async function expectSwipeDelivered(
   // One evidence line per gesture: what the page actually received, and how the
   // runner's own grid quantised it — the measurement this branch rests on.
   console.log(
-    `[QA-005d] mobile.mobile.spec.ts gesture — ${label}: gridMs=${evidence.gridMs.toFixed(1)} span=${String(evidence.span)} gameElapsedMs=${evidence.gameMs.toFixed(0)} maxMs=${String(LAYOUT.swipeMaxMs)} movesDelivered=${String(evidence.moves)} delivered=${describeEvents(evidence.touches)}`,
+    `[QA-005d] mobile.mobile.spec.ts gesture — ${label}: gridMs=${evidence.gridMs.toFixed(1)} startIndex=${String(evidence.startIndex)} endIndex=${String(evidence.endIndex)} span=${String(evidence.span)} gameElapsedMs=${evidence.gameMs.toFixed(0)} maxMs=${String(LAYOUT.swipeMaxMs)} attribution=${evidence.attribution ? "ok" : "BROKEN"} movesDelivered=${String(evidence.moves)} delivered=${describeEvents(evidence.touches)}`,
   );
   return evidence;
 }
