@@ -138,9 +138,11 @@ come from CDP/Playwright events, never from dispatched synthetic events.**
 
 ## In progress (background agents)
 
-**RV-005 — RETURNED** (verdict: merge-after-correction, NO BLOCKER; full report in Orchestrator session, key
-numbers preserved in item 31). Its fix batch went back to the R-002 session as **R-002b** (background): M-1
-`obj.*` cross-fade regression + m-3/m-5/m-6/m-7/m-8/m-1/m-9 quality items; tokens untouched (M-2 is UA turf).
+**RV-005 — RETURNED** (verdict: merge-after-correction, NO BLOCKER; numbers preserved in item 31). Its fix batch
+went back to the R-002 session as **R-002b — RETURNED & DISK-VERIFIED** (9 commits `d69ed41..db00556`: M-1 fixed on
+the tokens row with derived-coverage theme-mix pins; m-3/5/6/7/8/1/9 all closed, m-5 re-scoped reporting BOTH corner
+families; tokens.ts byte-clean). My own re-run: tsc 0 · vitest **18 files / 273 / 3** · solver 10/10 · build ✓.
+**R-002 merge gate now = UA-0008c's R7 ruling, nothing else.**
 
 **UA-0008 — CLOSED & MERGED (`36a3b06`)**: ui-ux V0.8 + manifest V0.5.2, all four rulings landed (see item 30).
 
@@ -156,8 +158,12 @@ numbers preserved in item 31). Its fix batch went back to the R-002 session as *
 validate 10/10+10, generator 5/5+3/3, zero id-exemption hardcodes). **LV-007B** (B/T/R to D, n-11 route pruning +
 maxRouteVisits, n-13 switch-without-targets, m-8/9/10 doc lines, first real D-dip verification at L5-L6 /
 L10-L11 seams + the AR-0005b ordered companion `refusedBeforeEnteredTiles` with its L11 trigger folded in)
-**DISPATCHED** (worktree `…/lv-007b-metrics`, base `95bd2c7`); **ruling: LV-007B lands BEFORE L11-L20 authoring** (n-11 is a hard prerequisite for 7x7
-long-par boards; gate (iv) machinery needs it to fire on portal boards). **QA-005 re-scoped**: Playwright now
+**CLOSED & MERGED (`600c5d4`)** — 5 items, disk-verified (17 files/303/3 re-run; pruned≡exhaustive pinned; companion
+ships report-only, gates still read unordered). Ruling satisfied: LV-007B landed BEFORE L11-L20 authoring; LV-008
+unblocked modulo GD-008's gate-(iii) reader decision. Headline escalation: L5→L6 `D` seam measured **+8.53** vs the
+−2..−3 dip law — **GD-008 dispatched** (worktree `…/gd-008-dip-law`, base `600c5d4`: dip-law ruling + §3 (iii)
+reader + ADR-0009 Context-5 closure). The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
+firing on portal boards are now in. **QA-005 re-scoped**: Playwright now
 **installed** (devDep + chromium v1248, installed by the Orchestrator as sole package.json writer) and all dynamic
 frames already captured (see item 28). Remaining QA-005 = the permanent spec only: `playwright.config` +
 `tests/e2e/**` trusted-input walks pinning L8 refuse/press/cross + par-4/6 solves + victory, and the CI decision
@@ -508,6 +514,45 @@ and a path must be quiescent before dispatch.**
     QA-005 scope now also carries: arc re-sampling protocol, beat multi-sample, 320px viewport
     run, flip mid-swap note, 42–44 CSS standing note. **Merge-gate math**: R-002 = R-002b (M-1 fix, in flight) +
     UA-0008c R7 ruling; nothing else outstanding.
+34. **R-002b — RETURNED & DISK-VERIFIED (9 commits `d69ed41..db00556`, gate green on my own re-run: tsc 0 ·
+    vitest 18 files / 273 / 3 · solver 10/10 PASS one pre-existing escalation · build ✓ · `theme/tokens.ts` and
+    `docs/**` byte-clean vs base).** M-1 fixed exactly at RV's named location (tokens row, not the staggered
+    `objectMix`) covering all 8 canvas-read `obj.*` tokens; new theme-mix suite **derives its coverage set from the
+    shipped token maps** (a future per-phase token read by any painter goes red automatically) — M21 mutation now
+    dies naming `goal at t=0.1 still equals the B value`; m-3 mid-progress wiring pins kill M14/M9/M10; m-8 clone
+    probe un-swallows the hover test's last step (proved: `expected 4 to be 1` pre-fix); m-1 probe now really fails
+    tsc (reproduces both directions); m-6/m-7/m-9 clean. **m-5 corner grid (feeds UA-0008c/c)**: all 8 in-contract
+    corners pass both bands; worst = 40 px/cssScale-2/blue **1.5797** (margin 0.0297 — a tripwire test forbids any
+    corner within 0.01 of a band); crescent worse than sun and cs2 worse than cs1 in every pair; below-floor family
+    measured as the R-T5 argument (open door = 95 % of closed mass at device-40). **Cross-fade pixel-trajectory
+    probe (mine)**: CDP screenshot round-trip ≈670 ms regardless of clip AND `toDataURL` is all-black on the WebGL
+    buffer → the 60–200 ms window is uncatchable from the outside; burst (20 frames) DID prove end-state exactness —
+    every token lands on its precise phase-B endpoint, zero A residue, door ink 13684→7366 matches bar contraction,
+    `pageErrors: []`. Mid-frame trajectory formally handed to QA-005 with both hard numbers (`xfade2/` + manifest
+    ADDENDUM). R-002b's DESIGN_IMPACT wording asks (§6.2 row-membership, R-C10 "same token not same value" sentence,
+    R-T5 floor citation) + its OQ1/OQ2 (cssScale reading, worst-corner naming) → **UA-0008c addendum batch after its
+    R7 ruling**; OQ3 (renderer-* absorption) already inside QA-005; OQ4 (`graphics2d.ts` type-only module vs runtime
+    probe export) → **AR-0006 queue** with n-6. **R-002 merge gate = UA-0008c only.**
+35. **LV-007B — RETURNED, DISK-VERIFIED & MERGED (`600c5d4`).** Boundary: exactly 11 files, all inside solver/doc/
+    test ownership; my re-run: tsc 0 · vitest **17 files / 303 / 3** · solver PASS + 1 escalation · validate 10/10 +
+    negatives by name · generator 5/5 MATCH byte-identical. n-11: exact finishability pruning (memoized lookahead,
+    portal-safe) + own `maxRouteVisits` budget that **raises** `RouteEnumerationError` instead of silently truncating
+    (the real bug was the walk reading the state-cap key); pruned ≡ exhaustive pinned on all ten levels + synthetics;
+    a 7×7 par-20 board that died at the old default now enumerates. Companion `refusedBeforeEnteredTiles` ships
+    REPORT-ONLY (gates (iii)/§8.5 still read unordered — LV-007A's typed inventory untouched); trapped-refusal control
+    measures unordered 1 / ordered 0 as AR predicted; sweep says 46/2000 diverge. n-13 `switch-without-targets` joined
+    the inventory with a control proving it is not `switch-never-fires` (the switch really fires). **Difficulty module
+    measured**: L1–L10 `D` = 14.00/15.06/15.29/15.58/15.33/23.86/22.75/25.50/27.14/28.64 (weights 1,3,4,2,5 provisional);
+    inside §4's acceptance region `T≡0∧R≡0 ⇒ D = L+3B+5M` (w3/w4 inert); `B < B_raw` everywhere (~⅓ of apparent
+    branching dominated). **The headline design escalation: L5→L6 seam is +8.53 where the dip law demands −2..−3,
+    and unreachable by construction under current weights (introducing a mechanic eats +5·ΔM).** LV refused to tune
+    or reword to hide it — published in §5.2, and the decision (normalized-D / re-axis / retire / principled
+    re-weight) is dispatched to **GD-008** together with the gate-(iii) reader choice and ADR-0009 Context-5 closure.
+    Queued from its OQs: **AR-0006** (architecture §55 cites the never-existing `scripts/generate-levels`; §8 should
+    record the companion as shipped; validator-vs-policy home for n-13; persist-accepted-metrics decision),
+    **Docs+GitHub** (submission docs' "D pending" rows → measured-with-provisional-weights), **RV-006** read-only audit
+    of the pruning+difficulty diffs (post-merge pattern of RV-004 — next free slot). L6–L10 registry unlock stays with
+    the R-002 merge exactly as GD sequencing expects.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
