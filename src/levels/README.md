@@ -20,17 +20,19 @@
 | `l009.json` | 9 | 5 × 5 | `(2,1)`, `(2,3)`, `(3,0)` / `(2,0)`, `(2,4)` | `d1` red `(2,2)`, `d2` blue `(4,1)` / `s1` `(0,1)` A → `d1`, `s2` `(3,1)` B → `d2` | 8 | two doors + two switches: `s2` sits **behind** `d1` (ordered plan) |
 | `l010.json` | 10 | 6 × 4 | `(1,2)` / `(5,0)`, `(5,2)` | `d1` red `(4,1)` / `s1` `(2,3)` B → `d1` | 9 | gate check: permanent M0 geometry + phantom walk + latch, planned together |
 
-### 0b. Measured solver facts (2026-10-15, LV-006)
+### 0b. Measured solver facts (2026-10-15, LV-006 · obligations re-pinned by LV-007A)
 
 `node_modules/.bin/tsx scripts/solve-levels.ts` prints these per run; `docs/level-difficulty.md` §5.1 holds the full table.
 
 | id | shortest | reachable states | `refusedThenEnteredTiles` | `dualPhaseTiles` | `parRoutes` / `embedRoutes` | switch required | Aha gates |
 |---|---|---|---|---|---|---|---|
-| 6 | 4 | 29 | 1 `[3,1]` | 0 | 1 / 1 | **no** (dip: un-switched world solves in 6) | — |
-| 7 | 4 | 12 | 1 `[1,1]` | 0 | 2 / 2 | yes | — |
-| 8 | 6 | 34 | 1 `[3,1]` | 0 | 6 / 6 | yes | (i)(ii)(iii) PASS · (iv) UNSATISFIABLE before L11 (§4) |
-| 9 | 8 | 58 | 2 `[2,2] [4,1]` | 0 | 2 / 2 | yes | — |
-| 10 | 9 | 42 | 1 `[4,1]` | 0 | 36 / 36 | yes | — |
+| 6 | 4 | 29 | 1 `[3,1]` | 0 | 1 / 1 | **no** (dip: un-switched world solves in 6 — documented `switchRequired: "exempt"`) | — |
+| 7 | 4 | 12 | 1 `[1,1]` | 0 | 2 / 2 | yes (**obligation**) | — |
+| 8 | 6 | 34 | 1 `[3,1]` | 0 | 6 / 6 | yes (**obligation**) | (i)(ii)(iii) PASS · (iv) UNSATISFIABLE before L11 · (v)(vi) PASS (§4) |
+| 9 | 8 | 58 | 2 `[2,2] [4,1]` | 0 | 2 / 2 | yes (**obligation**) | — |
+| 10 | 9 | 42 | 1 `[4,1]` | 0 | 36 / 36 | yes (**obligation**) | — |
+
+- **The `switch required` column is an obligation, not a note** (LV-007A, OQ4 ruling): `@/core/solver/policy` reads it from the lesson row (`DOCUMENTED_LESSONS[].switchRequired`) and rejects a level documented as a load-bearing latch whose goal is still reachable with every switch OFF — code `lesson-switch-required`. **L6 is the only level exempt** (an explicit `"exempt"` row backed by the §6 dip, with the measured `allOffGoalReachable = true`), and the check never reads a level id, so relabelling L6's board as L7 is rejected while the shipped `l006.json` stays clean.
 
 - **Validation is proven** for all ten: `node scripts/validate-levels.ts` → `10/10 level files ok`, exit code 0 (negative self-tests 10/10 rejected by name).
 - **Solvability, `par` and the level policy are proven** for all ten: `node_modules/.bin/tsx scripts/solve-levels.ts` → `10/10 PASS`, `RESULT: PASS` (plus one ESCALATION, §4).
@@ -46,7 +48,9 @@ node_modules/.bin/tsx scripts/author-lv006-candidates.ts   # L6-L10 families: ac
 node_modules/.bin/tsx scripts/validate-levels.ts <other-levels-dir>   # or LEVELS_DIR=…
 ```
 
-`tsx` is a dev dependency of this workspace (`package.json`), so both gates run without a build step. `scripts/validate-levels.ts` additionally documents that it can run under Node's native type stripping. Exit code is **non-zero** if any level fails, if a negative self-test is wrongly accepted, or if two level files share an `id`. Failing levels are **rejected, never auto-repaired** (ADR-0004). `scripts/solve-levels.ts` also exits non-zero on a policy violation (`@/core/solver/policy`), on a `par` mismatch, on a dead/unrecoverable state, or on a FAILing named gate; a gate that is *unsatisfiable as written* is printed under ESCALATIONS (§4) instead of being counted as a pass.
+`tsx` is a dev dependency of this workspace (`package.json`), so both gates run without a build step. `scripts/validate-levels.ts` additionally documents that it can run under Node's native type stripping. Exit code is **non-zero** if any level fails, if a negative self-test is wrongly accepted, or if two level files share an `id`. Failing levels are **rejected, never auto-repaired** (ADR-0004). `scripts/solve-levels.ts` also exits non-zero on a policy violation (`@/core/solver/policy` — the inventory is `POLICY_VIOLATION_CODES`, with one negative control per code in `tests/solver/policy-negative-controls.test.ts`: disabling any one check turns the suite RED), on a `par` mismatch, on a dead/unrecoverable state, or on a FAILing named gate; a gate that is *unsatisfiable as written* (only `dual-phase-tiles`, before L11 — pinned as the single legitimate escalation channel) is printed under ESCALATIONS (§4) instead of being counted as a pass.
+
+The policy layer checks both content laws and the ladder's documented lessons, including the **`switchRequired` obligation on L7–L10** (`lesson-switch-required`) and the **§3 Aha construction bullets** as named gates (v) `single-door-one-switch-funnel` and (vi) `aha-par-cap`; `docs/ai-native-pipeline.md` §8.3–§8.5 is the record.
 
 ## 2. Per-level manual derivation (hypothesis, for SOLVER-001 to falsify)
 
@@ -283,7 +287,7 @@ The LV-004 metric is correct for both (its definition is `solidAt`, `docs/archit
 | `docs/level-design.md` §2–§3 L5 (Aha #1) | "greedy straight line refused at the last jump; a visible side step changes the parity; the refusing wall itself becomes the route" | **UNREACHABLE in M0** by F2. `l005.json` keeps the refusal + side-step + `par ≤ 6` shape and makes the goal reachable *only* through an echo tile, but the refusing tile `(3,1)` is still never enterable. The ladder's stated Aha is not delivered. |
 | `docs/level-design.md` §1 example | `par: 6` for `player [0,1] / goal [4,1] / phaseAWalls [[2,0]] / phaseBWalls [[3,1]]` | **inconsistent with its own prose**: the prose (and F1/F2) give `R,R,R,R` = **4** moves (the echo `(3,1)` is entered on move 3, a phase-A step). `par` must be re-derived by SOLVER-001. The example also contains `(2,0)`, which is `d = 3` (odd) in a `phaseAWalls` list → never enterable decoration. |
 | `docs/level-design.md` §2 L9 | "switches listen only in their `activePhase`; arriving on the wrong phase does nothing" — a **timing** lesson ("which step do I press on?") | **UNCONSTRUCTIBLE pre-L11**, by F2/F3: arrival at a fixed tile happens in exactly one phase, so there is no such thing as "arriving on the wrong phase" on a portal-free board. A switch is either **always** current on its tile (a working latch) or **never** current (dead data, now rejected by the policy as `switch-never-fires`). `l009.json` therefore ships the *constructible* interaction the dispatch asked for — two doors, two switches, the second switch behind the first door, so the **order** of the presses is forced by geometry (§2b) — and this row records the deviation rather than pretending the timing lesson exists. |
-| Dispatch LV-006 criterion 4 (Aha #1 gate (iv)) | "`dualPhaseTiles ≥ 1` on L8" | **UNSATISFIABLE on any portal-free board** (ADR-0009 decision 1, checkerboard invariant: a switch never relocates the player, so `dualPhaseTiles ≡ 0`; already pinned by `tests/solver/dynamism-metrics.test.ts`). Gate (iv) is implemented and reported by `scripts/solve-levels.ts` as `UNSATISFIABLE` with its proof, and `dualPhaseTiles === 0` is pinned as the proven value. The gate is not dropped, not softened, and no portal is smuggled in — ADR-0009 schedules M2 at L11. Escalated in `docs/ai-native-pipeline.md` §8.5. |
+| Dispatch LV-006 criterion 4 (Aha #1 gate (iv)) | "`dualPhaseTiles ≥ 1` on L8" | **UNSATISFIABLE on any portal-free board** (ADR-0009 decision 1, checkerboard invariant: a switch never relocates the player, so `dualPhaseTiles ≡ 0`; already pinned by `tests/solver/dynamism-metrics.test.ts`). Gate (iv) is implemented and reported by `scripts/solve-levels.ts` as `UNSATISFIABLE` with its proof, and `dualPhaseTiles === 0` is pinned as the proven value. The gate is not dropped, not softened, and no portal is smuggled in — ADR-0009 schedules M2 at L11. Escalated in `docs/ai-native-pipeline.md` §8.5. **Corrected law (Orchestrator adjudication, recorded in §8.5):** pre-L11 acceptance is carried by the *measured latch* — `refusedThenEnteredTiles ≥ 1` (ADR-0009 decision 4) — and gate (iv) is the L11+ acceptance criterion, so `l008.json` passes (i)(ii)(iii) with printed proofs. Since LV-007A the `UNSATISFIABLE` verdict also needs **both** facts (portal-free **and** a measured 0): a portal-bearing board measuring 0 is a loud FAIL, and `dual-phase-tiles` is pinned as the only gate allowed to escalate. |
 
 Cheapest mechanical fixes for the design team to consider (**none of them mine to decide** — ADR-0008 is human-approved core rule; M1/M2 scope belongs to the Game Designer):
 

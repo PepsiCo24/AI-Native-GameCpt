@@ -23,8 +23,11 @@
  *    solver proof). A level the docs call a *forced* phantom walk must FORCE one
  *    (`embedForced`); one documented as *offering* it must offer it and not force
  *    it; a level documented as teaching the latch must actually be
- *    history-dependent (`refusedThenEnteredTiles > 0`); the **Aha #1** level must
- *    satisfy the named gates of `docs/level-design.md` §3 one by one.
+ *    history-dependent (`refusedThenEnteredTiles > 0`); a level whose docs promise
+ *    the latch is **load-bearing** must be measurably so
+ *    ({@link DocumentedLesson.switchRequired}, L7–L10, with the documented L6 dip
+ *    recorded *on its row* as `"exempt"`); the **Aha #1** level must satisfy the
+ *    named gates of `docs/level-design.md` §3 one by one.
  *
  * Why `src/core/solver/**` and not `src/core/level/**`: these checks *consume
  * solver metrics*, so putting them in the level layer would point the dependency
@@ -73,29 +76,54 @@ export interface DocumentedLesson {
   readonly lesson: string;
   /** The solver-checkable obligation, or `null` when the lesson is not falsifiable. */
   readonly obligation: LessonObligation | null;
+  /**
+   * The level's obligation about `switchRequired` (docs/level-design.md §3 condition
+   * (i), generalised to **L7–L10** by the Orchestrator ruling recorded in
+   * `docs/ai-native-pipeline.md` §8.5):
+   *
+   * - `"required"` — the latch must be **load-bearing**: the goal has to be
+   *   unreachable with every switch OFF (`allOffGoalReachable === false`), else
+   *   `auditLevel` emits `lesson-switch-required`. This is an obligation on the
+   *   *documented* level, so a future candidate cannot quietly weaken the shipped
+   *   `switchRequired = true` values.
+   * - `"exempt"` — the **documented dip**: `docs/level-design.md` §2 L6 + §6 record
+   *   that the block-opening level teaches the latch on the natural path while its
+   *   un-switched world still solves in 6. The exemption lives here, **on the row**,
+   *   so it can never be re-read as "L6 is special because it is L6"; the check
+   *   below reads this field and never the level id.
+   * - `null` — no obligation (the level carries no latch lesson at all).
+   */
+  readonly switchRequired: SwitchRequiredObligation;
   /** Where the lesson is documented (so the check is traceable, not invented). */
   readonly evidence: string;
 }
 
+/** See {@link DocumentedLesson.switchRequired}. */
+export type SwitchRequiredObligation = "required" | "exempt" | null;
+
 /**
  * The shipped ladder's documented lessons, L1–L10.
  *
- * `docs/level-design.md` V0.4 §2 (ladder) + §3 (Aha #1 construction) +
- * `src/levels/README.md` §0 (per-level lesson column, LV-006) are the sources.
- * Adding a level without a row here is caught by the suite (`l0NN has no
- * documented lesson row`), so the table cannot silently drift from the dataset.
+ * `docs/level-design.md` **V0.5** §2 (ladder, synced with ADR-0009 + the gate (iv)
+ * ruling) + §3 (Aha #1 construction, construction bullets included) + §6 (the
+ * block-opening dip) + `src/levels/README.md` §0/§2b (per-level lesson column and
+ * solver-proven derivations, LV-006) are the sources. Adding a level without a row
+ * here is caught by the suite (`l0NN has no documented lesson row`), so the table
+ * cannot silently drift from the dataset.
  */
 export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
   {
     levelId: 1,
     lesson: "literacy: tap → move, the world flashes (no dynamism claim)",
     obligation: null,
+    switchRequired: null,
     evidence: "docs/level-design.md §2 L1",
   },
   {
     levelId: 2,
     lesson: "literacy: the flip happens because I moved",
     obligation: null,
+    switchRequired: null,
     evidence: "docs/level-design.md §2 L2",
   },
   {
@@ -103,18 +131,21 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
     lesson:
       "first refusal: a permanent (parity-dead) wall, never a timing gate",
     obligation: null,
+    switchRequired: null,
     evidence: "docs/level-design.md §2 L3 + ADR-0009",
   },
   {
     levelId: 4,
     lesson: "phantom walk, OFFERED (an echo-free route of the same par exists)",
     obligation: "phantom-walk-offered",
+    switchRequired: null,
     evidence: "docs/level-design.md §2 L4 + LV-004 re-measurement",
   },
   {
     levelId: 5,
     lesson: "phantom walk, FORCED (the goal's only approach is an echo)",
     obligation: "phantom-walk-forced",
+    switchRequired: null,
     evidence: "docs/level-design.md §2 L5 + LV-004 re-measurement",
   },
   {
@@ -122,35 +153,50 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
     lesson:
       "M1+M3 debut: the latch — what I step on changes the world, and it stays changed",
     obligation: "latch-dynamism",
-    evidence: "docs/level-design.md §2 L6 + §6 (block-opening dip)",
+    // The documented dip: §2 L6 + §6 record `switchRequired = false` as the
+    // deliberate price of teaching the latch on the natural path, so the level is
+    // exempt from the L7–L10 obligation — and is **never scored as FORCED**.
+    switchRequired: "exempt",
+    evidence:
+      "docs/level-design.md §2 L6 + §6 (block-opening dip: switchRequired=false recorded as a concession)",
   },
   {
     levelId: 7,
     lesson: "the detour-to-switch: I go out of my way to change the world",
     obligation: "latch-dynamism",
-    evidence: "docs/level-design.md §2 L7",
+    switchRequired: "required",
+    evidence: "docs/level-design.md §2 L7 + §3 condition (i)",
   },
   {
     levelId: 8,
     lesson:
       "Aha #1 (the latch): the door that refused the greedy line opens and stays open",
     obligation: "latch-aha-1",
-    evidence: "docs/level-design.md §2 L8 + §3 (named Solver conditions)",
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §2 L8 + §3 (named Solver conditions (i)–(vi)) + src/levels/README.md §2b L8",
   },
   {
     levelId: 9,
     lesson:
       "two doors + two switches: the second switch is behind the first door (ordered plan)",
     obligation: "latch-dynamism",
+    switchRequired: "required",
+    // RV-004 n-15: the pointer used to cite "§6 of the pipeline record", which is
+    // not where the LV-006 record lives, and the §2 wording it cited has since been
+    // re-worded by V0.5. Pointers now name the re-worded text and the recorded
+    // deviation (the pre-L11-unconstructible "switch timing" lesson).
     evidence:
-      "docs/level-design.md §2 L9/L10 (LV-006 authoring note, §6 of the pipeline record)",
+      "docs/level-design.md §2 L9 + §5 (V0.5 re-word) · src/levels/README.md §2b L9 + §4 (pre-L11 deviation)",
   },
   {
     levelId: 10,
     lesson:
       "gate check: permanent M0 geometry + the phantom walk + the latch, planned together",
     obligation: "latch-dynamism",
-    evidence: "docs/level-design.md §2 L10 + LV-006 pipeline record",
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §2 L10 + §5 · src/levels/README.md §2b L10 · docs/ai-native-pipeline.md §8",
   },
 ];
 
@@ -475,6 +521,7 @@ export type PolicyViolationCode =
   | "lesson-phantom-walk-forced"
   | "lesson-phantom-walk-offered"
   | "lesson-latch-dynamism"
+  | "lesson-switch-required"
   | `gate-${AhaGateId}`;
 
 export const POLICY_VIOLATION_CODES: readonly PolicyViolationCode[] = [
@@ -483,6 +530,7 @@ export const POLICY_VIOLATION_CODES: readonly PolicyViolationCode[] = [
   "lesson-phantom-walk-forced",
   "lesson-phantom-walk-offered",
   "lesson-latch-dynamism",
+  "lesson-switch-required",
   "gate-no-solution-with-switches-off",
   "gate-shortest-solution-presses-switch-and-crosses-door",
   "gate-refused-then-entered",
@@ -556,6 +604,15 @@ export function auditLevel(
   const lesson = documentedLesson(level.id);
   const violations: PolicyViolation[] = [];
 
+  // The all-OFF subgraph is measured **once** per level, before any check reads it
+  // (LV-007A): it feeds the `switchRequired` obligation below, the returned audit
+  // record, and — for an Aha #1 level — gate (i) inside `latchAhaGates`.
+  const allOffReachable =
+    level.switches.length === 0
+      ? null
+      : goalReachableWithAllSwitchesOff(level, graph);
+  const allOffStates = allOffStateCount(level, graph);
+
   // ── M1 never ships alone (ADR-0009 decision 4) ─────────────────────────────
   const fired = firingSwitches(level, graph);
   const targetedDoors = new Set<string>();
@@ -623,6 +680,29 @@ export function auditLevel(
       default:
         break;
     }
+
+    // ── the `switchRequired` obligation (LV-007A, OQ4 ruling) ────────────────
+    //
+    // `docs/level-design.md` §3 condition (i) asks the Aha #1 door to *refuse* the
+    // un-switched approach; the Orchestrator ruling recorded in
+    // `docs/ai-native-pipeline.md` §8.5 generalises that from L8 to **every**
+    // documented latch level, L7–L10. The obligation lives on the lesson row
+    // ({@link DocumentedLesson.switchRequired}), so this check reads the *documented
+    // promise*, never the level id: L6's recorded dip is an explicit `"exempt"` row
+    // and is therefore the one level that may keep `switchRequired = false`. A
+    // re-authored candidate with an id ≥ 7 can no longer quietly weaken the shipped
+    // value — it is rejected by name instead.
+    if (lesson.switchRequired === "required" && allOffReachable !== false) {
+      violations.push({
+        code: "lesson-switch-required",
+        detail:
+          `documented as a latch level whose switch is load-bearing (${lesson.evidence}) but the goal is still reachable ` +
+          `with every switch OFF (all-off subgraph: ${String(allOffStates)}/${result.reachableStates} reachable state(s), ` +
+          `goal reachable inside it = ${String(allOffReachable)}): the latch is decorative, so the level teaches the ` +
+          `latch lesson without ever requiring it. Re-author the board, or have the Game Designer record the dip — ` +
+          `never relax this check.`,
+      });
+    }
   }
 
   const gates =
@@ -642,11 +722,8 @@ export function auditLevel(
     lesson,
     result,
     embeds,
-    allOffGoalReachable:
-      level.switches.length === 0
-        ? null
-        : goalReachableWithAllSwitchesOff(level, graph),
-    allOffReachableStates: allOffStateCount(level, graph),
+    allOffGoalReachable: allOffReachable,
+    allOffReachableStates: allOffStates,
     gates,
     violations,
   };

@@ -36,6 +36,7 @@ import type { Level } from "@/core/level";
 import { validateLevel } from "@/core/level";
 import type { PolicyViolationCode } from "@/core/solver/policy";
 import {
+  DOCUMENTED_LESSONS,
   POLICY_VIOLATION_CODES,
   auditLevel,
   firingSwitches,
@@ -226,6 +227,19 @@ const AHA_LESSON_WITH_TWO_DOORS: Level = {
  */
 const AHA_LESSON_OVER_PAR_CAP: Level = { ...shippedBoard(8), par: 9 };
 
+/**
+ * The documented **dip**, used as a negative control by re-labelling (LV-007A ·
+ * OQ4 ruling): `l006`'s shipped board is solver-verified
+ * `refusedThenEnteredTiles = 1`, so it genuinely teaches the latch and
+ * `lesson-latch-dynamism` is satisfied — but its un-switched world still solves
+ * (6, the §6 dip), i.e. `allOffGoalReachable === true`. As **L7** that board
+ * carries a lesson row whose `switchRequired` is `"required"`, so the documented
+ * promise and the measurement disagree and *that* is the one and only complaint.
+ * Nothing else is wrong with it (`par`, gates and the latch lesson all still
+ * hold), which is what makes this control surgical.
+ */
+const REQUIRED_LESSON_WITH_DECORATIVE_LATCH: Level = { ...shippedBoard(6), id: 7 };
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Coverage — typed by the inventory, measured by the analyzer
 // ─────────────────────────────────────────────────────────────────────────────
@@ -245,6 +259,7 @@ const NEGATIVE_CONTROLS: Readonly<Record<PolicyViolationCode, readonly Level[]>>
       OFFERED_LESSON_WITH_FORCED_BOARD,
     ],
     "lesson-latch-dynamism": [LATCH_LESSON_WITH_STATIC_BOARD],
+    "lesson-switch-required": [REQUIRED_LESSON_WITH_DECORATIVE_LATCH],
     "gate-no-solution-with-switches-off": [AHA_LESSON_WITHOUT_FUNNEL],
     "gate-shortest-solution-presses-switch-and-crosses-door": [
       AHA_LESSON_WITH_BYPASS,
@@ -564,13 +579,85 @@ describe("LV-007A · m-5 — UNSATISFIABLE is whitelisted to `dual-phase-tiles`"
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 6. No silent code — the inventory cannot drift from the source
+// 7. LV-007A · OQ4 ruling — `switchRequired` is an obligation *on the documented
+//    level*, and the L6 dip is a row rather than a level id
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** `policy.ts` as text — used by the scans in §7 (no id special case) and §8. */
 const POLICY_SOURCE = readFileSync(
   fileURLToPath(new URL("../../src/core/solver/policy.ts", import.meta.url)),
   "utf8",
 );
+
+describe("LV-007A · OQ4 — a documented load-bearing latch must be measurably load-bearing", () => {
+  it("the obligation lives on the lesson rows: L7–L10 `required`, L6 `exempt`, L1–L5 none", () => {
+    const row = (levelId: number) =>
+      DOCUMENTED_LESSONS.find((entry) => entry.levelId === levelId);
+    // The dip is recorded **on the row** (with the §2 L6 + §6 evidence) precisely so
+    // that no check has to know that "6" is special.
+    expect(row(6)?.switchRequired).toBe("exempt");
+    for (const id of [7, 8, 9, 10])
+      expect(row(id)?.switchRequired, `L${id}`).toBe("required");
+    for (const id of [1, 2, 3, 4, 5])
+      expect(row(id)?.switchRequired, `L${id}`).toBeNull();
+  });
+
+  it("every level documented as `required` really is: unreachable with all switches OFF", () => {
+    // The obligation is not aspirational: the four rows are checked against the
+    // shipped boards' measured all-OFF subgraph, so the values the L7–L10 rows
+    // declare are what the dataset actually delivers.
+    for (const id of [7, 8, 9, 10]) {
+      const audit = auditLevel(shippedBoard(id));
+      expect(audit.allOffGoalReachable, `l${String(id).padStart(3, "0")}`).toBe(
+        false,
+      );
+      expect(audit.violations, `l${String(id).padStart(3, "0")}`).toEqual([]);
+    }
+  });
+
+  it("the dip is a row, not an id: l006 ships while the very same board as L7 is rejected", () => {
+    const dip = auditLevel(shippedBoard(6));
+    expect(dip.lesson?.switchRequired).toBe("exempt");
+    expect(dip.allOffGoalReachable).toBe(true); // the dip, measured — not a claim
+    expect(dip.violations).toEqual([]);
+
+    // Same board, same metrics (the latch is real: refusedThenEnteredTiles = 1),
+    // different documented promise ⇒ rejected by name.
+    const promoted = auditLevel(REQUIRED_LESSON_WITH_DECORATIVE_LATCH);
+    expect(REQUIRED_LESSON_WITH_DECORATIVE_LATCH.id).toBe(7);
+    expect(promoted.result.refusedThenEnteredTiles).toBe(1);
+    expect(promoted.allOffGoalReachable).toBe(true);
+    expect(promoted.violations.map((v) => v.code)).toEqual([
+      "lesson-switch-required",
+    ]);
+    expect(promoted.violations[0]?.detail).toContain(
+      "goal reachable inside it = true",
+    );
+  });
+
+  it("the exemption covers `switchRequired` only, never the latch lesson itself", () => {
+    // l006 is exempt from the *load-bearing* obligation (the documented price of
+    // teaching the latch on the natural path), and from nothing else: the static
+    // board carrying id 6 is still rejected by `lesson-latch-dynamism`.
+    const staticBoard = auditLevel(LATCH_LESSON_WITH_STATIC_BOARD);
+    expect(staticBoard.lesson?.switchRequired).toBe("exempt");
+    expect(staticBoard.violations.map((v) => v.code)).toEqual([
+      "lesson-latch-dynamism",
+    ]);
+  });
+
+  it("policy.ts decides from the row, never from the level id", () => {
+    // The ruling's explicit requirement: no `id === 6` special case. A source-level
+    // guard would be a second truth source for the dip, and the row is the one the
+    // docs are checked against.
+    expect(POLICY_SOURCE).not.toMatch(/\bid\s*===\s*6\b/);
+    expect(POLICY_SOURCE).toContain('switchRequired === "required"');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. No silent code — the inventory cannot drift from the source
+// ─────────────────────────────────────────────────────────────────────────────
 
 describe("LV-007A · m-2 — policy.ts emits no code that the inventory does not declare", () => {
   it("every literal `code:` and every named-gate id is in POLICY_VIOLATION_CODES", () => {
