@@ -1,6 +1,6 @@
 /**
- * Standing e2e — **the keyboard frame-window defect** (QA-005, reported as a
- * micro-ticket; *not* fixed here — `src/**` is not QA's to change).
+ * Standing e2e — **the keyboard frame-window defect** (QA-005; fixed by R-004b at
+ * the call site, so this file is now the regression record with no pins left).
  *
  * ── Reproduce → Root cause → Fix → Regression ────────────────────────────────
  *
@@ -56,12 +56,16 @@
  * };
  * ```
  *
- * **Regression.** The `test.fail()` test below asserts the *correct* count. When
- * the fix lands the test starts failing with "expected to fail but passed", which
- * is the signal to delete the annotation — the pin cannot silently rot. A second,
- * unfixed test pins the suite's own isolation: the 2-frame-paced press helper
- * must keep producing exactly one move per press, because it is what makes every
- * other file in this suite measure *rules* rather than frame boundaries.
+ * **Regression (landed).** The second test below is the regression pin and is now
+ * an **ordinary passing assertion**: R-004b stores the handled events in a
+ * `WeakSet` at the call site, so the two pairs in one frame window are exactly two
+ * moves (`Expected: 2, Received: 5` before the fix). There is no `test.fail()`
+ * anywhere in this suite any more — the annotation is deleted exactly when the fix
+ * lands, never left to rot. The surrounding tests stay as the islands around the
+ * pin: one pair in one window is one move, the same burst spread across frames is
+ * applied once per pair, and the 2-frame-paced press helper must keep producing
+ * exactly one move per press, because it is what makes every other file in this
+ * suite measure *rules* rather than frame boundaries.
  */
 
 import { expect, test } from "@playwright/test";
