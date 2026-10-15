@@ -840,7 +840,26 @@ and a path must be quiescent before dispatch.**
     multi-switch-door validator warning); **DG-004 scope grows**: evidence-in-repo + live-URL lines + ITER-0012
     mirror (LV-008's AGENTS §6 obligation is Docs' pen) + the demo-video gap note; QA-005b portal e2e after R-003;
     **LV-009 L12–L15** per G1 stretch — OQ2 first (per-level seeded script vs bulk generator). LV-008 worktree
-    pruned post-merge (the clause-by-clause record above is the review). Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+    pruned post-merge (the clause-by-clause record above is the review).
+54. **R-003 VERIFIED + HELD AS CHAIN-BASE (unmerged on purpose) — and the e2e gate caught ME red-handed.**
+    R-003 (`f484e23`) disk-proved: board blob `b09a77bc…` byte-identical to develop at GIT-OBJECT level (author ≠
+    unlocker, not merely claimed); registry = the two data lines in the L6–L10 pattern; branch battery my own run:
+    tsc 0 · vitest 23 files / **452** / 3 (only-up) · validator 11/11 · real-browser `?level=11` smoke green (HUD
+    flip cadence, 0 errors). Its tip's suite fails exactly 4 — all from ONE QA-owned constant, and R-003 correctly
+    refused to touch it. **But the first cloud CI run of the required e2e job (`7f941b5`) failed 13/80 — and 7 of
+    them are MY miss at the LV-008 merge**: the suite iterates the DATASET (11 files on disk) while the constant
+    says 10; I trusted the cloud gate instead of re-running Playwright locally after that merge, and the gate
+    recorded it faithfully. Fault mine, recorded not smoothed. Classification of the 13: **(a) 7 count/dataset**
+    — die with the chain merge (registry 11 + `EXPECTED_LEVEL_COUNT` re-pin; QA-005b's acceptance already requires
+    the full suite zero-red-except-pins at its tip); **(b) 6 timing-class** (transient P1+P2, mobile swipe, refusal
+    L3/L4/L9) — the contended-runner surface QA-005 warned about (13.4 min cloud vs 3.4 min local = ~4× slower,
+    self-calibrating budgets `gridMs < 60` plausibly blown). Discriminating experiment fired: full re-run of the
+    FAILED JOB ONLY on the same commit — same six ⇒ deterministic cloud shape (needs QA-005c runner-tolerance
+    ticket or recorded cloud-skip rationale), different ⇒ flakes. **Until that evidence lands, the e2e job stays
+    required** (a gate is not demoted because it worked). **QA-005b dispatched as CHAIN branch based directly on
+    `f484e23`**: one merge lands both atomic commits together, no red window for the registry-class failures; hard
+    conflict boundary enforced (R-004b live-owns the two pin files + all `src/**`; playthrough header prose = KNOWN
+    DEFER). DG-004 scope grows: iteration-log mirror now carries the R-003 line too. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
