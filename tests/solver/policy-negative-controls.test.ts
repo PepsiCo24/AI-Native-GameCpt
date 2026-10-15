@@ -228,6 +228,28 @@ const AHA_LESSON_WITH_TWO_DOORS: Level = {
 const AHA_LESSON_OVER_PAR_CAP: Level = { ...shippedBoard(8), par: 9 };
 
 /**
+ * A switch nobody reads (LV-007B item 4 · n-13): `s1` sits on `(1,1)`, d = 1 ⇒
+ * entered in phase A (ADR-0009 decision 1), which is exactly its `activePhase`, so
+ * the toggle **really happens** — `applyMove` flips `switchesOn` whether or not the
+ * switch has targets. That is why `switch-never-fires` cannot catch this board: the
+ * latch is live. What makes it invalid is that `doors[]` is empty, so the switch
+ * changes nothing at all.
+ *
+ * The board is schema- and rule-legal *with a warning* — the frozen validator says
+ * `switches[0] "s1" has no targets — the switch can never change anything (inert)`
+ * and returns `ok: true`. That difference is the point of the control: a warning is
+ * not a gate, so the rejection has to live in the policy layer.
+ */
+const SWITCH_WITHOUT_TARGETS: Level = makeLevel({
+  id: 900,
+  width: 5,
+  height: 3,
+  player: [0, 1],
+  goal: [4, 1],
+  switches: [switchDef("s1", [1, 1], "A", [])],
+});
+
+/**
  * The documented **dip**, used as a negative control by re-labelling (LV-007A ·
  * OQ4 ruling): `l006`'s shipped board is solver-verified
  * `refusedThenEnteredTiles = 1`, so it genuinely teaches the latch and
@@ -252,6 +274,7 @@ const REQUIRED_LESSON_WITH_DECORATIVE_LATCH: Level = { ...shippedBoard(6), id: 7
 const NEGATIVE_CONTROLS: Readonly<Record<PolicyViolationCode, readonly Level[]>> =
   {
     "door-without-switch": [DOOR_WITHOUT_SWITCH],
+    "switch-without-targets": [SWITCH_WITHOUT_TARGETS],
     "switch-never-fires": [INERT_SWITCH],
     "lesson-phantom-walk-forced": [FORCED_LESSON_WITHOUT_ECHO],
     "lesson-phantom-walk-offered": [
@@ -374,6 +397,73 @@ describe("LV-007A · m-2 — each control is paired with the shipped board it mu
         `id=${board.id} must really fail a named gate`,
       ).toBeGreaterThan(0);
     }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2b. LV-007B · item 4 (n-13) — a switch nobody reads
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("LV-007B · n-13 — `switch-without-targets` rejects M3 content no door reads", () => {
+  it("the board is rejected by exactly that code, and the switch really does fire", () => {
+    const audit = auditLevel(SWITCH_WITHOUT_TARGETS);
+    expect(audit.violations.map((v) => v.code)).toEqual([
+      "switch-without-targets",
+    ]);
+    expect(audit.result.solvable).toBe(true);
+
+    // The two facts that make this a *separate* check rather than a second name for
+    // `switch-never-fires`: the toggle happens (so no firing test can see the
+    // defect), and the board's `doors[]` is empty (so nothing can read it).
+    expect(
+      firingSwitches(
+        SWITCH_WITHOUT_TARGETS,
+        explore(SWITCH_WITHOUT_TARGETS),
+      ).has("s1"),
+    ).toBe(true);
+    expect(SWITCH_WITHOUT_TARGETS.doors).toEqual([]);
+
+    // …and the message says what to do, not only that something is wrong.
+    expect(audit.violations[0]?.detail).toContain("has no targets");
+    expect(audit.violations[0]?.detail).toContain("ADR-0009 decision 4");
+  });
+
+  it("one field decides: the same board with a target door is accepted", () => {
+    // Discrimination, the same shape §2 uses: identical board, identical switch,
+    // identical position — only `targets` differs. A check that rejected the
+    // *shape* (a switch on a decorative tile) would fail this.
+    const wired: Level = {
+      ...SWITCH_WITHOUT_TARGETS,
+      doors: [door("d1", "blue", [[3, 0]])],
+      switches: [switchDef("s1", [1, 1], "A", ["d1"])],
+    };
+    expect(validateLevel(wired).ok).toBe(true);
+    expect(auditLevel(wired).violations).toEqual([]);
+  });
+
+  it("the frozen validator only WARNS about this shape — the gate is the policy layer", () => {
+    // Stated because the two layers disagree on purpose (schema = shape contract,
+    // policy = content law): if the validator ever becomes the rejecting layer, this
+    // control has to move with it rather than silently duplicate it.
+    const validated = validateLevel(SWITCH_WITHOUT_TARGETS);
+    expect(validated.ok).toBe(true);
+    expect(
+      validated.warnings.some((warning) =>
+        warning.includes('"s1" has no targets'),
+      ),
+      `validator warnings: ${validated.warnings.join(" | ")}`,
+    ).toBe(true);
+  });
+
+  it("no shipped level carries a targetless switch", () => {
+    const offenders: string[] = [];
+    for (const id of SHIPPED_IDS) {
+      for (const sw of shippedBoard(id).switches) {
+        if (sw.targets.length === 0) offenders.push(`l${id}:${sw.id}`);
+      }
+      expect(auditLevel(shippedBoard(id)).violations, `l${id}`).toEqual([]);
+    }
+    expect(offenders).toEqual([]);
   });
 });
 

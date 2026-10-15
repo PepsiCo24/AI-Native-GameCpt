@@ -19,6 +19,11 @@
  *    carries one negative control per entry — a board that must be rejected **by
  *    that exact name** — plus a source scan that fails when a code is added
  *    without a control. The schema stays a shape contract, not a design policy.
+ *    The **mirror** is enforced here too (LV-007B item 4, n-13): a `switches[]`
+ *    entry with an empty `targets` list is rejected as `switch-without-targets`.
+ *    Such a switch really does fire, so no firing test can catch it; what is wrong
+ *    is that no door reads it — M3 content that changes nothing. `validateLevel`
+ *    only *warns* about that shape, and a warning is not a gate.
  * 2. **A documented lesson must be program-true** (`AGENTS.md` §7: levels ⇒
  *    solver proof). A level the docs call a *forced* phantom walk must FORCE one
  *    (`embedForced`); one documented as *offering* it must offer it and not force
@@ -519,6 +524,7 @@ export interface PolicyViolation {
  */
 export type PolicyViolationCode =
   | "door-without-switch"
+  | "switch-without-targets"
   | "switch-never-fires"
   | "lesson-phantom-walk-forced"
   | "lesson-phantom-walk-offered"
@@ -528,6 +534,7 @@ export type PolicyViolationCode =
 
 export const POLICY_VIOLATION_CODES: readonly PolicyViolationCode[] = [
   "door-without-switch",
+  "switch-without-targets",
   "switch-never-fires",
   "lesson-phantom-walk-forced",
   "lesson-phantom-walk-offered",
@@ -640,6 +647,21 @@ export function auditLevel(
     });
   }
   level.switches.forEach((sw, i) => {
+    // n-13 (LV-007B item 4): a switch with an empty `targets` list is M3 content no
+    // door reads. It *does* fire (`applyMove` toggles `switchesOn` unconditionally),
+    // so `switch-never-fires` cannot catch it — the latch is live and pointless.
+    // `validateLevel` only WARNS about this shape (it is a shape contract, not a
+    // design policy), and that warning is not a gate; the rejection lives here.
+    if (sw.targets.length === 0) {
+      violations.push({
+        code: "switch-without-targets",
+        detail:
+          `switches[${i}] "${sw.id}" has no targets — no doors[] entry reads its state, so it toggles and changes nothing: ` +
+          `decoration wearing a circuit, not M3 content (ADR-0009 decision 4 — the latch must carry a decision; the mirror ` +
+          `of "M1 never ships alone"). Point it at a door whose openness the solution depends on, or drop the switch. ` +
+          `(validateLevel warns about this shape; that warning is not a gate.)`,
+      });
+    }
     if (fired.has(sw.id)) return;
     violations.push({
       code: "switch-never-fires",
