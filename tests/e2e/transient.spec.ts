@@ -63,14 +63,26 @@
  * owed" and received `null`.
  *
  * The claim that survives the jitter is stated *after* the recording, from that
- * recording's own stamps: **if a presented frame fell strictly inside
- * `(startAt, startAt + 90)`, the beat was owed** (so an absent beat is a real
- * failure, named `BEAT-REQUIRED-ABSENT`); **if no frame could, an absent beat is a
+ * recording's own log: **if the step after the trigger ran with a stamp strictly
+ * inside `(startAt, startAt + 90)`, the beat was owed** (so an absent beat is a real
+ * failure, named `BEAT-REQUIRED-ABSENT`); **if no step could, an absent beat is a
  * resolution limit** (`RESOLVE-LIMIT`, with the stamps printed as its
  * justification); and **an observed beat always owes the full pixel shape** —
  * whichever draw the runner produced. The mapping lives in one place,
  * `arcHandling` in `helpers/frame-model.ts`, and every cell of it is unit-proved
  * with synthetic jitter tables in `tests/unit/frame-model.test.ts`.
+ *
+ * ── QA-005f: *which* step the trigger saw is an execution fact ───────────────
+ * QA-005e still derived `startAt` by comparing the keydown's wall time against
+ * frame **stamps** — and a stamp is a frame's *scheduled* time, not the time its
+ * step ran. On the coarse cloud runner (PR #2, `gridMs 85.4`) the step carrying
+ * the stamp the comparison picked had not run yet at the keydown, so the window was
+ * taken from the *following* interval: `stampsInsideWindow=1` → `beat-required-absent`
+ * → red on both attempts, while the interval the keydown really fell inside was a
+ * 90–120 ms one and the game had behaved correctly. The arm now takes the trigger
+ * frame from the observer's own log — `__psProbe.frames.length - 1` at the event,
+ * which *is* `scene.time.now` (proved by `ranAt`, `attributionHolds`) — and asserts
+ * that attribution before classifying. See `helpers/frame-model.ts`'s header.
  *
  * No tooth is traded for this: on a 60 Hz grid short intervals always exist, so an
  * absent beat there still fails loudly; the fabricated coarse pin (P1b) keeps the
@@ -108,7 +120,7 @@ import {
   stopRecorder,
 } from "./helpers/capture";
 import type { CaptureStats, Roi, TransientReport } from "./helpers/capture";
-import { arcHandling, arcImplication, arcVerdict, arcWindow, describeIntervalHistogram, intervalsBelow } from "./helpers/frame-model";
+import { arcHandling, arcImplication, arcVerdict, arcWindow, attributionHolds, describeIntervalHistogram, intervalsBelow } from "./helpers/frame-model";
 import type { ArcHandling, ArcImplication, ArcVerdict, ArcWindow } from "./helpers/frame-model";
 import { installFrameStretcher } from "./helpers/frame-stretch";
 import {
@@ -184,12 +196,20 @@ interface RefusalWalk {
   /** The observer's own `requestAnimationFrame` stamps for this walk. */
   readonly probeFrames: readonly number[];
   /**
-   * The §6.5 window, read **post hoc** from this recording's own stamps (QA-005e):
-   * whether a presented frame could have painted the arc at all.
+   * The §6.5 window, read **post hoc** from this recording's own frame log
+   * (QA-005e/QA-005f): the step the keydown actually saw (`triggerIndex`, an
+   * execution fact proved by `ranAt`) and whether the next step could have painted
+   * the arc at all.
    */
   readonly arc: ArcWindow;
-  /** The frame interval spanning the keydown, in ms — the arc's resolution limit. */
+  /** The frame interval between the trigger step and the next one, in ms. */
   readonly gapMs: number;
+  /**
+   * The refused keydown as the page delivered it: its wall time and the index of
+   * the frame that had run when it fired (`scene.time.now`'s step). The audit trail
+   * behind `arc.startAt`.
+   */
+  readonly trigger: { readonly t: number; readonly frameIndex: number };
   /**
    * The mean-grid arbiter (QA-005d). Exact for the gap it is handed, but **not**
    * decisive for the natural arm since QA-005e: a jittering runner can produce a
@@ -210,15 +230,15 @@ type RefusalArm = "natural-grid" | "fabricated-coarse";
 /**
  * Run the P1 protocol once and return the measurement.
  *
- * ── The model this measures (QA-005d, re-read post hoc by QA-005e) ───────────
+ * ── The model this measures (QA-005d → QA-005e → QA-005f) ────────────────────
  * A refusal is recorded with `denyFeedback(dir, scene.time.now)` **on the DOM
  * keydown** — keyed through Phaser's `KeyboardPlugin`, whose `keydown` emission is
  * synchronous with the DOM event — i.e. between two animation steps, where
- * `scene.time.now` still holds the *previous* frame's stamp (`Tₙ`). `BoardView.update`
+ * `scene.time.now` still holds the *previous* step's stamp (`Tₙ`). `BoardView.update`
  * drops the deny at `time >= startAt + deny.dur`, and it is called with the next
- * step's stamp (`Tₙ₊₁`). So the 90 ms arc is painted **iff a frame stamp falls
- * strictly inside `(Tₙ, Tₙ + 90)`** — equivalently, iff the interval between the two
- * frames that bracket the keydown is shorter than the arc:
+ * step's stamp (`Tₙ₊₁`). So the 90 ms arc is painted **iff a step runs with a stamp
+ * strictly inside `(Tₙ, Tₙ + 90)`** — equivalently, iff the interval between the
+ * trigger step and the step after it is shorter than the arc:
  *
  * ```
  * Tₙ₊₁ - Tₙ < 90  →  p < 1  →  nudge sin(πp)·4·renderScale and the `feedback.deny`
@@ -231,12 +251,15 @@ type RefusalArm = "natural-grid" | "fabricated-coarse";
  * the interval is ~17 ms and the beat is owed; on the 2-core software-GL CI
  * runner the interval straddles 90 ms.
  *
- * The walk therefore measures the interval — from the page's own frame stamps and
- * the delivered keydown (`helpers/probe.ts`) — and reports it. QA-005e's change is
- * that the *branch* is no longer chosen from a pre-measured mean: the stamps of
- * **this** recording decide, after the fact, whether a frame could have painted
- * the arc ({@link ArcWindow}), and that fact plus the observed beat is the whole
- * classification ({@link arcImplication}).
+ * The walk therefore measures **`Tₙ` itself** — not an interval inferred from it.
+ * `Tₙ` is the stamp of the last frame that had run when the keydown fired, which
+ * the observer records as the event's `frameIndex` (`helpers/probe.ts`); deriving
+ * it by comparing the keydown's wall time against frame stamps is what produced the
+ * QA-005f false red, because a stamp is the frame's *scheduled* time.
+ * QA-005e's change is that the *branch* is no longer chosen from a pre-measured
+ * mean: the log of **this** recording decides, after the fact, whether a step could
+ * have painted the arc ({@link ArcWindow}), and that fact plus the observed beat is
+ * the whole classification ({@link arcImplication}).
  *
  * `gridWindowMs` sizes the frame-grid calibration: the default 600 ms is QA-005c's
  * protocol value for a ~60 Hz machine, and the coarse-grid test passes a longer
@@ -297,17 +320,29 @@ async function refusalWalk(
   expect(trigger?.code, "the delivered keydown is the refused direction").toBe(ARROW_KEY.left);
   if (trigger === undefined) throw new Error("[e2e] the refused keydown was not recorded");
 
-  // ── and the classification: the window this recording's own stamps license ──
-  // Both frames bracketing the keydown must have been recorded — the deny's
-  // window opens at the first of them (`scene.time.now` during the keydown) and
-  // closes one frame's worth of stamps later. Their absence is "not measured",
-  // never "no frame inside", so the walk refuses to classify without them.
-  const arc = arcWindow(snapshot.frames, trigger.t, TIMINGS.deny.dur);
+  // ── and the classification: the window this recording's own log licenses ────
+  // Which step the keydown saw is an **execution** fact, recorded in the page: the
+  // observer's `frameIndex` is the last frame that had run when the listener fired,
+  // i.e. the stamp `scene.time.now` held — the value `LevelScene.tryMove` passed to
+  // `denyFeedback(dir, this.time.now)`. It is *not* inferred by comparing the
+  // keydown's wall time against frame stamps: a stamp is the frame's *scheduled*
+  // time and a loaded runner runs that frame's step after an event landing on its
+  // stamp (QA-005f — the false BEAT-REQUIRED-ABSENT of PR #2).
+  expect(
+    attributionHolds(snapshot.ranAt, trigger.t, trigger.frameIndex),
+    `the keydown's recorded frame index (${String(trigger.frameIndex)}) is the step the game clock held, proved by the runner's own run times — \`ranAt[k] <= t < ranAt[k+1]\` (t=${trigger.t.toFixed(1)} ms, ranAt[k]=${(snapshot.ranAt[trigger.frameIndex] ?? Number.NaN).toFixed(1)}, ranAt[k+1]=${(snapshot.ranAt[trigger.frameIndex + 1] ?? Number.NaN).toFixed(1)})`,
+  ).toBe(true);
+
+  // …and the window is read from that index. The trigger step itself cannot paint
+  // the arc (it was already rendered when the deny was recorded), and the only step
+  // that can is the next one — so the walk refuses to classify without a recorded
+  // *next* frame: its absence is "not measured", never "no frame inside".
+  const arc = arcWindow(snapshot.frames, trigger.frameIndex, TIMINGS.deny.dur);
   expect(
     arc,
-    "both frames bracketing the keydown were recorded — the deny's window opens at the first of them (`scene.time.now` during the keydown) and closes at `startAt + 90`",
+    "the step after the keydown was recorded — the window opens at the trigger frame's own stamp (`scene.time.now` during the keydown) and closes at `startAt + 90`, so it needs one frame past the trigger to be decidable at all",
   ).not.toBeNull();
-  if (arc === null) throw new Error("[e2e] the refused keydown was not bracketed");
+  if (arc === null) throw new Error("[e2e] the refused keydown's window was never covered by the frame log");
   const gapMs = arc.gapMs;
 
   const walk: RefusalWalk = {
@@ -321,6 +356,7 @@ async function refusalWalk(
     probeFrames: snapshot.frames,
     arc,
     gapMs,
+    trigger: { t: trigger.t, frameIndex: trigger.frameIndex },
     verdict: arcVerdict(gapMs, TIMINGS.deny.dur),
     shortIntervals: intervalsBelow(snapshot.frames, TIMINGS.deny.dur),
     intervalCount: Math.max(0, snapshot.frames.length - 1),
@@ -328,17 +364,18 @@ async function refusalWalk(
   };
 
   // One evidence line per walk: the CI log carries the *measurement* this test
-  // branches on — the runner's grid, the interval spanning the trigger, and the
-  // verdict — so a RESOLVE-LIMIT (or a pixel pass) is checkable from the log
-  // alone, without the report artefacts.
+  // branches on — the runner's grid, the frame the keydown actually saw, the
+  // interval that spans it, and the verdict — so a RESOLVE-LIMIT (or a pixel pass)
+  // is checkable from the log alone, without the report artefacts.
   console.log(
     `[QA-005d] transient.spec.ts P1 refusal — frames=${String(report.frames)} gridMs=${report.gridMs.toFixed(1)} gapMs=${gapMs.toFixed(1)} denyDurMs=${String(TIMINGS.deny.dur)} verdict=${walk.verdict} onset=${report.onset === null ? "null" : report.onset.toFixed(1)} settled=${report.settledAt === null ? "null" : report.settledAt.toFixed(1)} peakPrevChanged=${String(report.peakPrevChanged)}`,
   );
-  // …and the QA-005e line carries the *post-hoc* facts the arm actually branches
-  // on: the window's absolute stamps, which of them fell inside, and the interval
-  // census. A red can be read from this line without opening the trace.
+  // …and the QA-005e/QA-005f line carries the *post-hoc* facts the arm actually
+  // branches on: which frame the keydown saw (`triggerFrameIndex`), the window's
+  // absolute stamps, which of them fell inside, and the interval census. A red can
+  // be read from this line without opening the trace.
   console.log(
-    `[QA-005e] transient.spec.ts P1 arm=${walk.arm} window=(${arc.startAt.toFixed(1)},${arc.endAt.toFixed(1)}) bracketingGapMs=${gapMs.toFixed(1)} stampsInsideWindow=${String(arc.inside.length)} implication=${arcImplication(arc, report.onset !== null)} handling=${arcHandling(arcImplication(arc, report.onset !== null))} shortIntervals=${String(walk.shortIntervals)}/${String(walk.intervalCount)} histogram=${describeIntervalHistogram(snapshot.frames)}`,
+    `[QA-005e] transient.spec.ts P1 arm=${walk.arm} triggerFrameIndex=${String(arc.triggerIndex)} keydownWallMs=${trigger.t.toFixed(1)} startAt=${arc.startAt.toFixed(1)} nextFrameAt=${arc.nextAt.toFixed(1)} window=(${arc.startAt.toFixed(1)},${arc.endAt.toFixed(1)}) bracketingGapMs=${gapMs.toFixed(1)} stampsInsideWindow=${String(arc.inside.length)} implication=${arcImplication(arc, report.onset !== null)} handling=${arcHandling(arcImplication(arc, report.onset !== null))} shortIntervals=${String(walk.shortIntervals)}/${String(walk.intervalCount)} histogram=${describeIntervalHistogram(snapshot.frames)}`,
   );
 
   return walk;
@@ -448,12 +485,14 @@ async function expectRefusalState(page: Page, walk: RefusalWalk): Promise<void> 
  * The **beat-owed-and-absent** branch (QA-005e) — a real failure, and it must say so
  * in its own words.
  *
- * A presented frame fell strictly inside `(startAt, startAt + 90)`, so
- * `BoardView.paintActor` ran with `this.deny` set at that step and painted the
- * `feedback.deny` ring tint (alpha 0.5) and the nudge. An absent beat therefore
- * cannot be a limit of the machine: the trigger or the recording dropped it. This
- * branch exists so the contradiction fails **loudly, by name, with the stamps** —
- * never as a silent `Received: null` on a prediction whose premise was noise.
+ * The step after the trigger ran with a stamp strictly inside
+ * `(startAt, startAt + 90)`, so `BoardView.paintActor` ran with `this.deny` set at
+ * that step and painted the `feedback.deny` ring tint (alpha 0.5) and the nudge. An
+ * absent beat therefore cannot be a limit of the machine: the trigger or the
+ * recording dropped it. This branch exists so the contradiction fails **loudly, by
+ * name, with the log** — never as a silent `Received: null` on a prediction whose
+ * premise was noise, and never on a window derived from a frame that had not run
+ * (the QA-005f defect this branch is now immune to).
  */
 function expectBeatRequired(walk: RefusalWalk): void {
   const label = armLabel(walk);
@@ -464,10 +503,13 @@ function expectBeatRequired(walk: RefusalWalk): void {
     implication: "beat-required-absent" as ArcImplication,
     handling: arcHandling("beat-required-absent") as ArcHandling,
     reason:
-      "a presented frame fell strictly inside the §6.5 deny window, so the beat was owed — an absent beat is a real failure, not a resolution limit",
+      "the step after the trigger ran with a stamp strictly inside the §6.5 deny window, so the beat was owed — an absent beat is a real failure, not a resolution limit",
     denyDurMs: TIMINGS.deny.dur,
+    trigger: walk.trigger,
     window: {
+      triggerFrameIndex: walk.arc.triggerIndex,
       startAt: walk.arc.startAt,
+      nextAt: walk.arc.nextAt,
       endAt: walk.arc.endAt,
       gapMs: walk.arc.gapMs,
       inside: walk.arc.inside,
@@ -497,8 +539,8 @@ function expectBeatRequired(walk: RefusalWalk): void {
   });
   expect(
     walk.report.onset,
-    `${label}: the recording's own stamps put ${String(walk.arc.inside.length)} frame(s) inside the §6.5 deny window ` +
-      `(deny window (${walk.arc.startAt.toFixed(1)}, ${walk.arc.endAt.toFixed(1)}) ms, bracketing gap ${walk.gapMs.toFixed(1)} ms < deny.dur ${String(TIMINGS.deny.dur)} ms), ` +
+    `${label}: the recording's own frame log puts the step after the trigger (index ${String(walk.arc.triggerIndex)} → ${walk.arc.nextAt.toFixed(1)}) inside the §6.5 deny window ` +
+      `(${walk.arc.startAt.toFixed(1)}, ${walk.arc.endAt.toFixed(1)}) ms — trigger frame ${walk.arc.startAt.toFixed(1)} from the keydown at ${walk.trigger.t.toFixed(1)} ms, interval ${walk.gapMs.toFixed(1)} ms < deny.dur ${String(TIMINGS.deny.dur)} ms), ` +
       `so \`BoardView.paintActor\` painted the \`feedback.deny\` ring tint at that step — yet no beat appeared. ` +
       `This is a real failure (the trigger was dropped or the recorder missed the frame), not a resolution limit. ${justification}`,
   ).not.toBeNull();
@@ -538,7 +580,7 @@ async function expectResolveLimit(
   const label = armLabel(walk);
   const justification = windowJustification(walk);
   const limit =
-    `RESOLVE-LIMIT transient.spec.ts P1 arm=${walk.arm} — ${reason}: no presented frame can fall inside the §6.5 ` +
+    `RESOLVE-LIMIT transient.spec.ts P1 arm=${walk.arm} — ${reason}: no step after the trigger can run with a stamp inside the §6.5 ` +
     `deny window (${walk.arc.startAt.toFixed(1)}, ${walk.arc.endAt.toFixed(1)}) ms, so no pixel evidence can exist ` +
     `on this runner [${mode}]`;
   // Greppable in the CI log, and carried in the report as a named outcome.
@@ -557,8 +599,11 @@ async function expectResolveLimit(
           handling: arcHandling("limit-justified-absent") as ArcHandling,
           reason,
           denyDurMs: TIMINGS.deny.dur,
+          trigger: walk.trigger,
           window: {
+            triggerFrameIndex: walk.arc.triggerIndex,
             startAt: walk.arc.startAt,
+            nextAt: walk.arc.nextAt,
             endAt: walk.arc.endAt,
             gapMs: walk.arc.gapMs,
             inside: walk.arc.inside,
@@ -578,15 +623,15 @@ async function expectResolveLimit(
     ),
   });
 
-  // (1) the justification of the limit — post hoc, from this recording's stamps
+  // (1) the justification of the limit — post hoc, from this recording's own log
   expect(
     walk.arc.frameInWindow,
-    `${label}: no recorded frame stamp may fall inside the window — ${justification}`,
+    `${label}: no step may run with a stamp inside the window — ${justification}`,
   ).toBe(false);
   expect(walk.arc.inside.length, `${label}: the in-window stamp count is what licenses the limit`).toBe(0);
   expect(
     walk.gapMs,
-    `${label}: ${reason}: every frame step is at least the deny row long — ${justification}`,
+    `${label}: ${reason}: the trigger step and the step after it are at least the deny row apart — ${justification}`,
   ).toBeGreaterThanOrEqual(TIMINGS.deny.dur);
   expect(
     walk.report.onset,
@@ -683,21 +728,23 @@ test.describe("P1 — the §6.5 refusal arc (90 ms) is reachable on the frame gr
     const walk = await refusalWalk(page, { arm: "natural-grid" });
     expectRecorderHealthy(walk);
 
-    // ── which claim this natural grid owes (QA-005e) ──────────────────────────
+    // ── which claim this natural grid owes (QA-005e/QA-005f) ──────────────────
     // Not a pre-judged prediction from a pre-measured mean: the arc is painted iff
-    // a frame stamp falls strictly inside its 90 ms window, and *this recording's*
-    // stamps decide after the fact whether one did. Both observations are legal
-    // inputs; each has exactly one handling (`arcHandling`):
+    // the step after the trigger runs with a stamp strictly inside its 90 ms window,
+    // and *this recording's* log decides after the fact whether one did — with the
+    // trigger step itself taken from the observer's execution order, never from a
+    // stamp comparison (QA-005f). Both observations are legal inputs; each has
+    // exactly one handling (`arcHandling`):
     //
-    //   frame inside the window + beat observed  → the full pixel shape (assert-shape)
-    //   frame inside the window + beat absent    → a real failure, by name (fail-loudly)
-    //   no frame inside + beat absent            → the named RESOLVE-LIMIT (resolve-limit)
-    //   no frame inside + beat observed          → the same pixel shape, post hoc
+    //   step inside the window + beat observed  → the full pixel shape (assert-shape)
+    //   step inside the window + beat absent    → a real failure, by name (fail-loudly)
+    //   no step inside + beat absent            → the named RESOLVE-LIMIT (resolve-limit)
+    //   no step inside + beat observed          → the same pixel shape, post hoc
     //
-    // On a 60 Hz machine the window always holds frames, so an absent beat fails
+    // On a 60 Hz machine the window always holds steps, so an absent beat fails
     // loudly here (the 60 Hz teeth are preserved, not negotiated away). On a
-    // cloud runner whose interval jitters around 90 ms, the *stamps* of whichever
-    // draw happened decide — the assertion no longer contradicts itself.
+    // cloud runner whose interval jitters around 90 ms, the log of whichever draw
+    // happened decides — the assertion no longer contradicts itself.
     await expectRefusalOutcome(page, walk, "this runner's own frame grid", "justified");
   });
 
@@ -748,17 +795,18 @@ test.describe("P1 — the §6.5 refusal arc (90 ms) is reachable on the frame gr
       `the interval spanning the trigger (${walk.gapMs.toFixed(1)} ms) is a full frame, so the grid cannot place a frame inside the 90 ms arc`,
     ).toBe("unresolvable-at-grid");
 
-    // (QA-005e) The prediction this pin is allowed to make is now measured, not
-    // assumed: the recording's own stamps contain no frame inside the window, so
-    // "no beat" is physically required on this fabric — at *every* interval, not
-    // just the bracketing one (the stretcher burns once per frame).
+    // (QA-005e/QA-005f) The prediction this pin is allowed to make is measured, not
+    // assumed: the trigger step and the one after it are a full frame apart on the
+    // recording's own log, so "no beat" is physically required on this fabric — at
+    // *every* interval, not just the bracketing one (the stretcher burns once per
+    // frame).
     expect(
       walk.arc.frameInWindow,
-      `the fabricated grid leaves no stamp inside the deny window — ${windowJustification(walk)}`,
+      `the fabricated grid leaves no step inside the deny window — ${windowJustification(walk)}`,
     ).toBe(false);
     expect(
       walk.report.onset,
-      `[QA-005e] transient.spec.ts P1 (fabricated-coarse): the coarse prediction is exact by construction — no presented frame can paint the 90 ms arc, so an onset here would be a real anomaly. ${windowJustification(walk)}`,
+      `[QA-005e] transient.spec.ts P1 (fabricated-coarse): the coarse prediction is exact by construction — no step after the trigger can run with a stamp inside the 90 ms arc, so an onset here would be a real anomaly. ${windowJustification(walk)}`,
     ).toBeNull();
 
     await expectRefusalOutcome(page, walk, "the fabricated coarse grid", "predicted");

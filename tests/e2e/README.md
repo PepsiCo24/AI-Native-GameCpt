@@ -262,8 +262,9 @@ machine.
 > *pre-measured mean* grid to choose which of the two observations to **require**,
 > and on run `38784574025` the mean and the observation contradicted each other in
 > both directions. The interval is still measured, but the branch is now chosen
-> **post hoc** from the recording's own stamps (`arcWindow` → `arcImplication` →
-> `arcHandling`). Read §1.6 before touching this arm.
+> **post hoc** from the recording's own log (`arcWindow` → `arcImplication` →
+> `arcHandling`). Read §1.6, and §1.7 for the attribution fix, before touching this
+> arm.
 
 - **`resolvable` — the pixel teeth are unchanged.** Fresh local evidence:
   `frames=41 gridMs=17.1 gapMs=16.7 verdict=resolvable onset=105.4 settled=213.3
@@ -360,6 +361,15 @@ Evidence (QA-005d; the two changed sites were re-run against a QA-owned vite on
 
 ### 1.6 QA-005e — the natural arm states an implication, not a prediction
 
+> **Superseded in one respect by QA-005f (§1.7).** The implication table below is
+> unchanged and still correct; what QA-005f replaced is **how the window's trigger
+> is found**. This section reads it by comparing the keydown's wall time against
+> frame *stamps*, which is wrong on a loaded runner (a stamp is a frame's *scheduled*
+> time): on the cloud it produced the false `BEAT-REQUIRED-ABSENT` this section's own
+> "Known risk" paragraph predicted as possible. The **contract** below stands; the
+> **attribution** is now the observer's execution order. Read §1.7 before touching
+> this arm.
+
 **The failure.** Run `38784574025` (the docs-only sibling of the green PR #1 run
 `38781672236`) went red on the P1 *natural* arm **twice, in opposite directions**:
 
@@ -394,7 +404,9 @@ recording's own stamps, so `helpers/frame-model.ts` now derives it post hoc:
   (`BoardView.update` clears at `>=`), `inside` = the recorded stamps strictly
   inside, `frameInWindow = inside.length > 0`. `null` when the trigger could not be
   bracketed — "not measured" is never "no frame inside", and the walk refuses to
-  classify without the bracket.
+  classify without the bracket. (QA-005f: the trigger is now the *recorded*
+  `triggerIndex`, so the signature reads `arcWindow(frames, triggerIndex, 90)` —
+  see §1.7.)
 - **`arcImplication(window, beatObserved)`** — four exhaustive classes.
 - **`arcHandling(implication)`** — three handlings. This is the **single** place the
   mapping lives; no arm branches on anything else.
@@ -529,6 +541,146 @@ a run that has not happened.
 
 ---
 
+### 1.7 QA-005f — the trigger step is an execution fact, not a stamp comparison
+
+**The failure (cloud, PR #2 — tip `9eaf7fb`).** The P1 *natural* arm went red on
+**both** attempts with `BEAT-REQUIRED-ABSENT`, i.e. with §1.6's "known risk"
+materialised: the arm concluded a presented step had painted the arc while the
+recorder saw no beat at all.
+
+| attempt | recorder `gridMs` | value-bracket window | stamps inside | `onset` | interval histogram |
+|---|---|---|---|---|---|
+| 1 | 85.4 | (4767.7, 4857.7) | 1 | `null` | `0-30:11 30-60:0 60-90:74 90-120:6 120-180:2 180-300:1` |
+| 2 | 85.1 | (4927.8, 5017.8) | 1 | `null` | `0-30:15 30-60:0 60-90:72 90-120:9 120-180:1 180-300:2` |
+
+A by-design red is a legitimate outcome of a correct design, so the next question
+was **"is the game wrong, or is the measurement?"** It was the measurement — named,
+reproduced and measured locally, not excused.
+
+**Reproduce (local, deterministic).** A fabricated grid that *straddles* 90 ms
+(stretcher 74 ms → 69–70 intervals in the 60–90 band and 30–31 in 90–120, the cloud's
+own shape) reproduces the red on this laptop. Printing the same recording both ways
+— the model's answer and the stamp arithmetic's — is the whole defect on one line:
+
+```
+[QA-005f CENSUS] stretch=74 gridMs=90.2 trueGapMs=100.0 stampsInsideWindow=0 onset=null
+                 implication=limit-justified-absent handling=resolve-limit
+                 valueBracketGapMs=83.3 valueWouldDemandBeat=true
+[QA-005f CENSUS] stretch=74 gridMs=90.2 trueGapMs=83.4  stampsInsideWindow=1 onset=631.4
+                 implication=beat-required-observed handling=assert-shape
+                 valueBracketGapMs=83.3 valueWouldDemandBeat=true
+[QA-005f CENSUS] stretch=86 gridMs=102.2 trueGapMs=100.0 valueBracketGapMs=116.6 valueWouldDemandBeat=false
+```
+
+Same grid, same machine, both branches: the recorder's beat is present exactly when
+the trigger's **own** interval is short (83.4 ms), and absent when it is 100.0 ms —
+while the stamp arithmetic read *83.3 ms* for a recording whose bracketing interval
+was 100.0. Over the census the invariant *a step inside the log's window ⟺ the game
+painted* held **8/8**; the old attribution would have demanded a beat on the
+`onset null` draws. That is the cloud red, reproduced from the same numbers.
+
+**Root cause (measurement; chain read from Phaser 3.90 and then measured).**
+
+1. `TimeStep.step(time)` hands the raw `requestAnimationFrame` **timestamp** to the
+   scene callback and `Clock.update` sets `now = time`. So `scene.time.now` is the
+   stamp of the **last frame whose callbacks have already run**.
+2. An `requestAnimationFrame` stamp is the frame's **scheduled** time (its vsync
+   instant), not the wall time its callbacks run at. On a loaded runner — and by a
+   few ms even on a 60 Hz laptop — the callback batch is late: Chromium dispatches
+   pending input before the frame's callbacks, so a keydown can be handled *after* a
+   frame's stamp while that frame's step has not run yet.
+3. The observer's log captures this exactly: `frames.length - 1` at the event **is**
+   that last-run frame. Proven on the game instance itself in the temporary forensic
+   harness (`window.Phaser` interception plus a wrapper on the scene's `view.update`),
+   across grids 74/82/86: `scene.time.now` equalled the probe's last pushed stamp
+   every time (5/5, e.g. `scene.time.now = 6486.7` = last pushed `6486.7` while the
+   keydown's wall clock was 6585.3, and that recording's next nominal stamp 6570.1
+   only ran its callbacks at wall 6660.4 — 75 ms **after** the keydown).
+4. `bracketFrames` compared the event's wall `performance.now()` against those
+   *nominal* stamps, so it picked the not-yet-run frame and measured the **following**
+   interval: 83.3 ms where the truth was 100.0 ms. On a grid whose intervals straddle
+   the arc's own 90 ms length that flips the verdict — and a correctly-behaving game
+   was failed, twice, on the same commit that passed a sibling run.
+
+This is **not** a cloud-only artefact: the lag is measurable at 60 Hz locally
+(`keydownWallMs=1339.8` against `startAt=1319.9`, `nextFrameAt=1336.6`). It only
+*changes* a verdict when the grid straddles the transient's length, which is why
+seven prior local batteries (and the first cloud round) never saw it.
+
+**The fix (tests-side only; no `src/**` byte changed).**
+
+- **`helpers/probe.ts`** records, per frame, the wall time its callbacks actually ran
+  (`ranAt`, parallel to `frames`) and, per event, `frameIndex` — the last frame that
+  had run, `__psProbe.frames.length - 1`. Both are observations; nothing is inferred.
+- **`helpers/frame-model.ts`** states the model in **indices**: `arcWindow(frames,
+  triggerIndex, 90)` → `startAt = frames[k]`, `nextAt = frames[k+1]`, window
+  `(startAt, startAt + 90)` exclusive, `inside` = the stamps after `k` inside it;
+  `framesSpanned(startIndex, endIndex)` and `gestureGameMs(startIndex, endIndex, grid)`
+  are index differences. `null` still means *not measured* (no frame had run, or the
+  log ends at the trigger).
+- **`attributionHolds(ranAt, t, k)`** ⟺ `ranAt[k] <= t < ranAt[k+1]` — the self-check
+  that the index really is the step the handler saw. The P1 walk asserts it for the
+  keydown, `gestureEvidence` for both ends of every gesture (`attribution=ok` in the
+  log), so a runner where the channel does not hold produces a named attribution
+  failure instead of a quietly mis-read window.
+- **Unchanged on purpose:** `arcVerdict`, `arcImplication`, `arcHandling` and the whole
+  §1.6 table; P1b's exact `onset === null` prediction; the observed-beat shape
+  clauses; the 60 Hz teeth (a fine grid still puts steps inside the window, so an
+  absent beat there still fails loudly). `bracketFrames` is kept — and pinned as the
+  **wrong** answer — so the defect has a regression case rather than a memory.
+
+**What was deliberately not done.** No assertion was weakened: the natural arm still
+fails loudly on `beat-required-absent`, no tolerance, retry or skip was added, and
+the `RESOLVE-LIMIT` branch still carries every deterministic claim the refusal owes.
+
+**The regression pins (unit).** `tests/unit/frame-model.test.ts` 27 → **31** cases:
+the defect in **both directions** (nominal 83.3 → a false "required" where the truth
+is 100.0, and nominal "limit" where the truth is 83.3 → required); the **measured
+sharp trace** as a named legal input (keydown 6585.3, clock 6486.7, next stamp
+6570.1 running at 6660.4 → `beat-required-observed`); `attributionHolds`
+holds/fails-closed (integer, range, boundary, empty log); and the swipe arithmetic
+carried on indices.
+
+**Evidence (local, this worktree, against a QA-owned vite on `:5218`).**
+
+| check | result |
+|---|---|
+| `tsc --noEmit` | 0 errors |
+| `vitest run` | **30 files · 574 passed · 3 skipped** — +4 over QA-005e's 570 |
+| `npx playwright test --list` | **88 tests in 8 files** — inventory unchanged |
+| targeted `transient.spec.ts` | **7 passed**; natural `triggerFrameIndex=67 keydownWallMs=1339.8 startAt=1319.9 nextFrameAt=1336.6 gap=16.7 stampsInsideWindow=5 → beat-required-observed/assert-shape`; P1b `gap=150.0 stampsInsideWindow=0 → limit-justified-absent/resolve-limit` |
+| targeted `mobile.mobile.spec.ts` | **12 passed**; every gesture `attribution=ok`, `span=0`, `gridMs` 16.7 / 50.0 / 150.0 |
+| `transient.spec.ts --repeat-each=15 --retries=0` | **105 passed (7.0 m), zero retries** — natural **15/15** `beat-required-observed → assert-shape` (`gridMs 16.8–17.1`, `gap 16.6–16.7`, `stampsInsideWindow` 4–5, `onset` 38.1–126.4, `peakPrevChanged` 1711–2223); fabricated **15/15** `limit-justified-absent → resolve-limit` (`gap 149.9–166.7`, `stampsInsideWindow=0`, `0/95` intervals below 90 ms) |
+| straddling-grid census (temporary harness, deleted before commit) | **8/8** on the invariant *step inside the window ⟺ beat painted*; both branches reached at stretch 74; the sibling `valueWouldDemandBeat=true` line reproduced |
+| full suite | **88 passed, zero retries (3.7 m)** |
+| `npm run levels` / `npm run build` | `RESULT: PASS` 11/11 · build ✓ |
+
+**What the next cloud round must show (the discriminating lines).** The natural
+arm's line now prints the attribution and the window's actual stamps:
+
+```
+[QA-005e] transient.spec.ts P1 arm=natural-grid triggerFrameIndex=… keydownWallMs=… startAt=…
+          nextFrameAt=… window=(…,…) bracketingGapMs=… stampsInsideWindow=…
+          implication=… handling=… shortIntervals=…/… histogram=…
+```
+
+- a **limit** draw (the cloud's likely case, the histogram bands being what they are)
+  must now print `stampsInsideWindow=0` with `bracketingGapMs >= 90` →
+  `limit-justified-absent` → `resolve-limit`, i.e. **green with the same histogram**
+  that made the two red rounds red;
+- a **fast** draw must print `stampsInsideWindow>=1` **and** a real onset →
+  `beat-required-observed` → `assert-shape`;
+- `handling=fail-loudly` on the cloud would be a **genuine game finding** — the
+  attribution assertion (`ranAt[k] <= t < ranAt[k+1]`, with both numbers in its
+  message) is what makes that reading trustworthy rather than another artefact.
+
+**CI status: PENDING-CI.** These are local numbers on this machine. The claim about
+the *cloud* — that the natural arm can no longer be failed by the mis-attribution —
+is settled only by the post-merge round; the Orchestrator owns the push, the PR and
+that verdict. No run that has not happened is asserted here.
+
+---
+
 ## 2. Inventory — 88 cases
 
 | file | cases | project | what it pins |
@@ -539,8 +691,8 @@ a run that has not happened.
 | `portal.spec.ts` | 6 | desktop | M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
 | `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
-| `transient.spec.ts` | 7 | desktop | the resampling channel is live; **P1** the 90 ms refusal arc with a **post-hoc** arbiter (QA-005e) — the full pixel claim whenever a beat is observed, or a named `RESOLVE-LIMIT` when the recording's own stamps prove no frame could fall inside the arc's window, or a loud `BEAT-REQUIRED-ABSENT` when a frame did and the beat is missing; **P1b** that limit fabricated with a 140 ms/frame stretcher (where the prediction is exact by construction); **P2** the press beat's occlusion proof (timing inequality + pixel-measured geometry) and the bounded arrival transient |
-| `mobile.mobile.spec.ts` | 12 | mobile | 56/72 px bars and the board filling the play area between them; whole-CSS-px square cells above the 40 px floor; ≥ 44×44 buttons with ≥ 8 px gaps; tap = move; distant tap = non-input; swipe ≥ 24 px = move on the dominant axis, with the gesture's **delivery and game-clock span asserted before the HUD read**; the R-T4 delivery shape pinned on a fabricated coarse grid; R-T6 ring never under touch; R-T5 hint at a 280×600 viewport and the swipe fallback; a touch-only win + dialog `Next`; touch undo |
+| `transient.spec.ts` | 7 | desktop | the resampling channel is live; **P1** the 90 ms refusal arc with a **post-hoc** arbiter (QA-005e) whose trigger step comes from the observer's **execution order** (QA-005f: `frameIndex` + `ranAt`, never stamp arithmetic) — the full pixel claim whenever a beat is observed, or a named `RESOLVE-LIMIT` when the recording's own log proves no step could run inside the arc's window, or a loud `BEAT-REQUIRED-ABSENT` when one did and the beat is missing; **P1b** that limit fabricated with a 140 ms/frame stretcher (where the prediction is exact by construction); **P2** the press beat's occlusion proof (timing inequality + pixel-measured geometry) and the bounded arrival transient |
+| `mobile.mobile.spec.ts` | 12 | mobile | 56/72 px bars and the board filling the play area between them; whole-CSS-px square cells above the 40 px floor; ≥ 44×44 buttons with ≥ 8 px gaps; tap = move; distant tap = non-input; swipe ≥ 24 px = move on the dominant axis, with the gesture's **delivery and game-clock span asserted before the HUD read** (QA-005f: the span is the difference of the events' recorded frame indices, and their attribution is asserted); the R-T4 delivery shape pinned on a fabricated coarse grid; R-T6 ring never under touch; R-T5 hint at a 280×600 viewport and the swipe fallback; a touch-only win + dialog `Next`; touch undo |
 
 **Every expectation is derived from production.** Routes, phases, refused
 directions, door states, latch fixtures and portal crossings come from `solve()` /
