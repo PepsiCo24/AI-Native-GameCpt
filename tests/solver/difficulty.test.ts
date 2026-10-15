@@ -158,6 +158,24 @@ const PINS: Readonly<Record<number, DifficultyPin>> = {
   // 20 of it. The seam law is therefore written on `D_exec`, not on `D`
   // (ADR-design-0001) — the same finding §3 records for L5→L6.
   11: { L: 4, B: 1.5244, T: 0, R: 0, M: 4, D: 28.573171, dexec: 8.573171, bRaw: 2.98, forced: 0.02, lookahead: 3, states: 82 },
+  // LV-009-B — the L12–L15 block (ADR-design-0003). All four are M1+M3+M2 boards
+  // (`M = 4`), `T ≡ R ≡ 0` (§4's region holds: no dead state, every reachable state
+  // can still finish — the block's `noUnrecoverableOk` leg is `true` 4/4), and the
+  // par ladder is the P1 ramp 4/6/8/10, so `D` and `D_exec` climb *only* because the
+  // effective branching factor does: `B` rises 1.4103 → 1.6566 while `L` moves in
+  // steps of 2 and `M` is constant. That is the block's whole shape in one column,
+  // and the reason §6 read the tail budget off the *execution* axis.
+  //
+  // The dip holds on the debut member: L12's `D_exec` 8.230769 is 0.342402 *below* the
+  // shipped L11's 8.573171 (the ADR's `BLOCK_L1215_DIP_CEILING`), with par flat at the
+  // P1 floor 4 — a choice-narrowing rest, not a shorter level. The tail member clears
+  // the frozen 13.64 block-end floor by 1.329697 (> L10's measured 13.642857 too).
+  // `lookaheadDepth ≡ L − 1` continues to hold on 4/4, so the alternative reading of
+  // `T` is still not the missing lever.
+  12: { L: 4, B: 1.410256, T: 0, R: 0, M: 4, D: 28.230769, dexec: 8.230769, bRaw: 2.7692, forced: 0.0769, lookahead: 3, states: 78 },
+  13: { L: 6, B: 1.632911, T: 0, R: 0, M: 4, D: 30.898734, dexec: 10.898734, bRaw: 3.0633, forced: 0.0127, lookahead: 5, states: 79 },
+  14: { L: 8, B: 1.652632, T: 0, R: 0, M: 4, D: 32.957895, dexec: 12.957895, bRaw: 3.1368, forced: 0.0105, lookahead: 7, states: 95 },
+  15: { L: 10, B: 1.656566, T: 0, R: 0, M: 4, D: 34.969697, dexec: 14.969697, bRaw: 3.1515, forced: 0.0000, lookahead: 9, states: 99 },
 };
 
 describe("LV-007B · item 3 — the L1–L10 difficulty table, measured", () => {
@@ -313,7 +331,9 @@ describe("LV-007C · item 2 — `D_exec` is a derived reading of the published t
     expect(l10.Dexec).toBeCloseTo(13.642857, 6);
     expect((l10.Dexec as number).toFixed(2)).toBe("13.64");
     // …and the value published for every level of the ten is the one the CLI prints
-    // (`difficultyExec Dexec=…`), on the same axis the seam law is written on.
+    // (`difficultyExec Dexec=…`), on the same axis the seam law is written on — with
+    // LV-008's L11 (8.57) and LV-009-B's block (8.23 / 10.90 / 12.96 / 14.97) appended
+    // in dataset order, so this list is the published 2-dp column of §5.2 whole.
     expect(
       SHIPPED_IDS.map((id) => {
         const d = analyseDifficulty(shippedBoard(id), explore(shippedBoard(id)));
@@ -331,6 +351,10 @@ describe("LV-007C · item 2 — `D_exec` is a derived reading of the published t
       "12.14",
       "13.64",
       "8.57",
+      "8.23",
+      "10.90",
+      "12.96",
+      "14.97",
     ]);
   });
 });

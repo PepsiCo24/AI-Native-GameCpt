@@ -178,8 +178,17 @@ describe("LV-008 · §2 — the debut's named-gate suite is green, verdict for v
       (id) => id < 11 && solve(shippedBoard(id)).dualPhaseTiles > 0,
     );
     expect(earlier).toEqual([]);
+    // LV-009-B — and from L11 *up*: the block's four members continue the column
+    // (19/16/20/15 tiles), so "only from L11" is a statement about the *start* of the
+    // column, which is what the schedule claims. A board before L11 still cannot
+    // satisfy it, and no member of the dataset after L11 is portal-free.
+    const earlierThan = (id: number): readonly number[] =>
+      SHIPPED_IDS.filter(
+        (entry) => entry < id && solve(shippedBoard(entry)).dualPhaseTiles > 0,
+      );
+    expect(earlierThan(11)).toEqual([]);
     expect(SHIPPED_IDS.filter((id) => solve(shippedBoard(id)).dualPhaseTiles > 0)).toEqual(
-      [11],
+      [11, 12, 13, 14, 15],
     );
   });
 
