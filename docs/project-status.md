@@ -1139,7 +1139,33 @@ and a path must be quiescent before dispatch.**
    **QA-005d's green PR → merge → main → Pages publishes 11 levels** → post-merge DG-004c syncs the ~5
    future-scoped sentences → LV-009 INTEGRATION ticket after (dataset add + one-line pin + sidecar regen + the
    door×portal combo's UA capture round if the law pre-writes one). User lanes unchanged: req-08/11 revision art,
-   the frozen `df353a0` cohort, P9 demo video. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+   the frozen `df353a0` cohort, P9 demo video.
+
+70. **LV-009-A RETURNED — the block-tail law FIRED POSITIVE for the first time ever; the branch is HELD
+   unmerged pending GD-011.** Disk-verified by this office: 6 files exactly as declared (`candidates/**` dossier +
+   four boards + one new seeded authoring script; **zero src/levels overlap — dataset frozen at 11**, gates
+   unmoved: shipped validator 11/11 · 15 warnings · negatives PASS unchanged, vitest untouched), and the numbers
+   were RE-RUN not re-quoted: candidates validator 4/4 ok + solver 4/4 `parMatch`, L12 `D_exec 8.230769` exact-match
+   to the dossier, **L15 `D_exec 14.97 > 13.64` confirmed by my own run** — the pre-registered block-end clause
+   fired in the ESCALATION direction (the mirror-image of the L11 law that fired in the BELOW direction; the
+   anti-post-hoc machinery now proven capable of judging both), also above L10's measured peak 13.643. The ramp:
+   8.573 → 8.231 (dip) → 10.899 → 12.958 → 14.970; T≡R≡0, deadStates 0; **channel mandatory from L13**
+   (walk-only UNSATISFIABLE — the sealed line makes the portal solvability-load, the honest mechanical escalation
+   story the block was supposed to tell); `dualPhaseTiles` + latch-reader flags visible 4/4. Honest artifacts
+   recorded-not-repaired: the debut-skeleton family `l12TemplateFamily` = 512 candidates **0 accepts**; and the
+   striking dataset-wide finding — **switchRequired FALSE on all 484 accepted candidates** (latch loads par,
+   never solvability — exactly where the 13.64-style law question lives: is that the doctrine or a filter?).
+   OQ rulings BY THIS OFFICE (mine to make): OQ-4 multi-switch-door STAYS dormant for the block (as designed —
+   a review flag is not an obligation to use it); OQ-5 prettier **leave as-is** (matches all 11 shipped boards +
+   zero CI format gate — reformatting churn now would poison the byte-copy integration diff). **OQ-1/2/3 are
+   design authority → GD-011 DISPATCHED** (branch `agent/design/gd-011-l1215-block-law`): publish L12–L15 par law
+   + dip-shape ruling + latch grade BEFORE measuring the four boards against it — clause-by-clause ACCEPT/REJECT
+   in LV-008 style; if GD picks the strict switchRequired grade, 0/484 means full restart and the law text must
+   say why it's worth it. `b631cda` holds until the verdict; LV-009-B integration follows the dossier §6 checklist
+   (dataset byte-copy + DOCUMENTED_LESSONS + PINS + sidecar regen + mirror rows + ONE-line pin bump + registry
+   unlock + the doors×portals UA capture-entry round). **MILESTONE GATE UNCHANGED AND UNAFFECTED: QA-005d in
+   flight** (their green PR → merge → main → Pages 11 levels) — L12–L15 ride the NEXT milestone by design; the
+   dataset stays 11 all the way through this one. Live 2/3 (QA-005d + GD-011); user lanes unchanged. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
