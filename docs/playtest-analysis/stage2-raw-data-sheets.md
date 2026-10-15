@@ -8,6 +8,10 @@
 > Canonical templates. `docs/playtest-log.md` §9 references them by ID; the coding manual is
 > `stage2-adr0008-gated-protocol-notes.md` §2. Print one Table A + B + C per participant,
 > one Table D per session, one Table E per §3.3 sheet, one Table F per round.
+> **Print-and-fill field instrument for the current L1–L5 build (PA-004, 2026-10-15):**
+> `stage2-field-sheet.md` — per-column definitions, code-event mapping and the OBS-1…OBS-10 minimal
+> program; it instantiates these tables for the field and never overrides them (Table C governs
+> verbatim strings; these tables govern scoring).
 > **Never back-fill a cell from memory the next day.** An unfilled cell stays `—` and is reported as
 > missing. Missing data is a finding; invented data is a protocol violation.
 
