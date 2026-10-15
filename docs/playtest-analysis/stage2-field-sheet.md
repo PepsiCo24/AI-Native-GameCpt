@@ -1,6 +1,14 @@
 # Stage 2 — FIELD SHEET (print-and-fill) · current build L1–L5
 
-> Owner: **Playtest Analyst** · V0.1 (PA-004) · 2026-10-15
+> Owner: **Playtest Analyst** · V0.2 (PA-005) · 2026-10-15
+> **V0.2 (PA-005 — consequential updates only, same commit as the §9.1 BUT table):** the BUT is now
+> **committed** (`41d5a4b` — §F1 rewritten; PA-004's "do not run until the build is committed" block is
+> resolved; **T6's clock has started**). The OBS-6 recall probe was **upgraded to scored (b) b-7**
+> (`playtest-log.md` §9.5 — L5 forced instance only; coding `SAW`/`NOT-SEEN`/`UNCODEABLE`; on L5 asked
+> right after Tw, **before CM1**) — R9/PAGE 2/PAGE 3 rows aligned. **Table C is now the bilingual frozen
+> script** (zh 正式脚本 + en origin): the PAGE 2 language gap is **closed** — read Table C's zh column in
+> Chinese-speaking sessions; this card stays the en reference copy. No threshold moved; still **n = 0**.
+> V0.1 (PA-004) · 2026-10-15
 > Status: **PRE-REGISTERED · NOT RUN · n = 0.** This file contains **no results, no findings, no
 > analysis conclusions** — it is the paper instrument, not data (`playtest-log.md` §9.10).
 > Evidence label (ui-ux R-P7 / §9.10.5): every build in this round is **`placeholder art`**.
@@ -26,7 +34,7 @@
 
 Header (minimal — the full canonical header is **Table A**, fill it too):
 
-| Participant ID | Date · start | Device · viewport px | **BUT commit** (⚠ must be a real committed SHA — see PAGE 4 §F1) | Moderator | Observer | Recording ☐ (screen+hands+audio, Table A consent) |
+| Participant ID | Date · start | Device · viewport px | **BUT commit** = `41d5a4b` (pre-printed fact — §9.1 BUT / PAGE 4 §F1; copy into Table A; never run a scored session on another build) | Moderator | Observer | Recording ☐ (screen+hands+audio, Table A consent) |
 |---|---|---|---|---|---|---|
 | | | | | | | |
 
@@ -52,7 +60,7 @@ reads them before the session, never during:
 | **R6 counts** restart `__` · undo `__` · misclick `__` | | | | | |
 | **R7 ghost choice** stepped-on G1 `__` · avoided G2–G5 `__` (detail `____`) | | | | | |
 | **R8 embed** events `__` · dwell/event `__s` `__s` · flail ☐☐ · C3 ☐ | | | | | |
-| **R9 embed recall** (ask AFTER level end — verbatim): `“____________”` · re-entry ☐Y ☐N ☐hesitant | | | | | |
+| **R9 embed recall** (ask AFTER level end — verbatim; on L5: right after Tw, **before CM1**) `“____________”` · ☐SAW ☐NOT-SEEN ☐UNCODEABLE (**b-7 — scored on L5**, §9.5) · re-entry ☐Y ☐N ☐hesitant | | | | | |
 | **R10 hints** H1 `__` · H2 `__` · H3 `__` *(H2/H3 ⇒ level excluded from D-1)* | | | | | |
 | **R11 confusion** `C#@__:__ “____”` · freezes `__` | | | | | |
 | **R12 spontaneous rule statement** ☐ @`__:__` `“____”` · key ghost crossed in winning attempt: ☐Y ☐N *(L5: structural — pre-tick Y)* | | | | | |
@@ -88,9 +96,9 @@ Real event names + payloads: `src/game/systems/event-bus.ts` (`GameEvents`), emi
 | **R7** ghost choice | at a moment where stepping onto a ghost **and** a different legal move both exist: stepped on (G1) vs avoided (G2–G5) | [M] board reading | no | M13 GAR + M13b → Table D · (b) **b-6**, (d′) **d′-9** (GO denominator recomputed by the analyst from recording + level data) |
 | **R8** embed events/dwell | each time the player **stands inside a solidified tile**: count; dwell = flip-resolution → next legal move (Te0→Te1), 0.1 s from recording (±1 s live ⇒ label `live-timed`, T8) | [E+M] `move.playerEmbedded=true` marks the event; windows are human-timed | event auto, window partly | Table B "Embedded/M14/M15" · (b) **b-3/b-4** (§9.5) |
 | **R8** flail / C3 | inside a dwell window: ≥2 refusal/repeat taps, restart/undo <3 s after landing, or "am I stuck/broken?" ⇒ flail ☐ + C3 ☐ | [M] | no | M15 · (b) **b-4/b-5** |
-| **R9** embed recall | **after level end only** (never mid-window — asking contaminates M14/M15): OBS-6 one-sentence probe, verbatim | [M] — PA-004 field probe, **context, not a §9 scored cell** (see PAGE 3 §OBS-6 note) | no | stays on this sheet → analyst codes b-i/b-ii/b-iii split (PAGE 4 §F3) |
+| **R9** embed recall | **after level end only** (never mid-window — asking contaminates M14/M15); on L5: right after Tw, **before CM1** (§9.8 step 6): OBS-6 one-sentence probe, verbatim → tick `SAW` / `NOT-SEEN` / `UNCODEABLE` (coding rules: §9.5 b-7) | [M] — **scored: (b) b-7 on L5** (§9.5, PA-005 upgrade); L4 offered = context | no | (b) **b-7** (§9.5) · E1 branch b-i/b-ii (PAGE 4 §F3) · string frozen in **Table C row `OBS-6`** (zh + en) |
 | **R9** re-entry | after walking out / undoing out of an embed: did they enter a ghost **again** unprompted? Y/N/hesitant | [M] | no | (b)-iii context (OBS-8) |
-| **R10** hints | ladder rungs used: **H1** stall (20 s no input or 3 consecutive refusals) — say the H1 line, 0 hints · **H2** (+30 s or help request) — "Look at what changes when you move." = 1 hint · **H3** (wants to stop or 90 s stall) — offer one demonstrated move ⇒ session `assisted` · **H4** quit — thank, stop, no persuasion | [M] | no | §9.7 ladder · H2/H3 exclude the level from **D-1** and score against the participant |
+| **R10** hints | ladder rungs used: **H1** stall (20 s no input or 3 consecutive refusals) — say the H1 line, 0 hints · **H2** (+30 s or help request) — "Look at what changes when you move." = 1 hint · **H3** (wants to stop or 90 s stall) — offer one demonstrated move ⇒ session `assisted` · **H4** quit — thank, stop, no persuasion. **Frozen zh lines: Table C rows `H1`/`H2`/`H3` (PA-005) — read them verbatim, never improvise a translation** | [M] | no | §9.7 ladder · H2/H3 exclude the level from **D-1** and score against the participant; **H3 also excludes the participant from b-7's denominator (§9.5)** |
 | **R11** confusion flags | code + time + **verbatim quote** (free text goes in the quote, never in the code). Trigger: wrong-model verbalization / "huh?" / freeze ≥5 s / help request (notes §2.1). Uncodable ⇒ write the quote, no code — analyst counts the discard | [M] | no | Table B "Confusion flags" · M9 · C3→(b) **b-5**, C5→(d′) **d′-2**, C7/C8 cap →(a′) **a′-4** *(C7/C8 cannot fire on this build — no doors/portals)* |
 | **R11** freezes | count of ≥5 s no-input-with-eyes-on-board | [M] | no | M9 trigger (Tf0→Tf1, §9.8) |
 | **R12** spontaneous rule statement | participant states the rule **correctly, unprompted** — never prompt it; time + verbatim | [M] | no | Table B last row · M16/T3 · supports DoD **D-1** context |
@@ -141,29 +149,34 @@ sheet already collects; no field column named D2/D3 exists or may be added.
 
 ---
 
-## PAGE 2 — Probe card (post-L2 / post-L5 · read verbatim, in this order)
+## PAGE 2 — Probe card (session order · read verbatim)
 
 > Canonical verbatim strings live in **Table C** (`stage2-raw-data-sheets.md`) — reproduced here for
-> printing; **if this card and Table C ever differ, Table C governs.** Moderator rules (§9.3): explain
-> nothing, react with "mm-hm" only, never say parity/ghost/echo/phase-wall first, never re-ask beyond
-> one repetition. Any improvised wording on a scored item ⇒ mark `SCRIPT DEVIATION` (Table A footer);
-> on a scored item it can invalidate the session (T7).
-> ⚠ **Language gap (flagged, not solved here):** Table C verbatims are English. If the participant is
-> Chinese-speaking, a Chinese verbatim script must be **frozen into Table C before session 1** (PA
-> task, pre-BUT); improvising a translation mid-session is a script deviation on a scored item.
+> printing; **if this card and Table C ever differ, Table C governs (both columns).** Moderator rules
+> (§9.3): explain nothing, react with "mm-hm" only, never say parity/ghost/echo/phase-wall first, never
+> re-ask beyond one repetition. Any improvised wording on a scored item ⇒ mark `SCRIPT DEVIATION`
+> (Table A footer); on a scored item it can invalidate the session (T7).
+> **Language (SOLVED — PA-005): Table C is now the bilingual frozen script.** In Chinese-speaking
+> sessions read Table C's **zh 正式脚本** column — frozen at the BUT commit, **no rewriting during the
+> session**; in English-speaking sessions read the **en origin** column. This card reproduces the en
+> origin for reference only; improvising a translation on a scored item = script deviation (T7).
+> **Row order below = session order** (§9.8 steps 4–7): V-CL mid-game · P-probe mid-L4 (not run on this
+> build) · at the L5 end dialog: **Tw/CI-beh first, then OBS-6, then the CM block** (OBS-6 must precede
+> CM1 — CM3 would prime the recall b-7 measures).
 
-| # | When | Ask / do (verbatim) | Tick + write |
+| # | When | Ask / do (verbatim — en origin; zh sessions read Table C's zh column) | Tick + write |
 |---|---|---|---|
 | **V-CL** | right after **L2** win | "Why did the world change?" | ☐ because I moved ☐ automatic/timer ☐ don't know · quote `____` → (d′) d′-10 |
-| **P-probe** | mid-L4, paused | "Can you step onto this tile? Why?" ×4 tiles | **NOT RUN on this build unless the §9.1 BUT table pre-marks the state + 4 tiles** (it is currently empty) → record NOT RUN |
-| **CM1** | after **L5** end dialog | "In your own words, what is the rule of this game?" | ☐ flip-on-move ☐ phase-dependent passability → D-1 |
+| **P-probe** | mid-L4, paused | "Can you step onto this tile? Why?" ×4 tiles | **NOT RUN on this build — the §9.1 BUT table records `NOT MARKED`** ((a′) = `NOT TESTABLE ON THIS BUILD`) → record NOT RUN |
+| **CI-beh** | **at the L5 end dialog — BEFORE any question**: start **Tw = 15 s**, say nothing | *(observe)* The build shows "原型结束 / Prototype over" with **no Next button** (structural no-prompt). Sought = taps around/probes for a way on, "还有吗/is there more?", reaches for the device; passive = settles, puts it down, looks at you; **Replay pressed = tick separately with t=__s** (raw fact; analyst codes) | ☐ sought ☐ passive ☐ replay@`__s` → with CI-self feeds **D-2** (M11) |
+| **OBS-6** | **right after Tw closes, before CM1** (the L5 embed is forced). After an **L4** embed: on the L4 win dialog, before Next is pressed. **Never inside an M14 window** | "In one sentence — what just happened on that tile you stepped on?" (zh: Table C row `OBS-6`) | verbatim `____` → R9 · ☐ SAW ☐ NOT-SEEN ☐ UNCODEABLE (coding rules: §9.5 b-7) · **scored = (b) b-7 on L5 only**; L4 answers = offered-exposure context |
+| **CM1** | after OBS-6 | "In your own words, what is the rule of this game?" | ☐ flip-on-move ☐ phase-dependent passability → D-1 |
 | **CM2** | after CM1 | "If you tap a wall that is solid right now, what happens?" | ☐ nothing moves, world doesn't change ☐ other → D-1 |
 | **CM3** | after CM2 | "Why can you sometimes walk onto a tile that looked like a wall?" | ☐ when/which step I arrive ☐ other ☐ n/a |
 | **D1** | after CM3 | "Did the game feel like it was asking you to **think ahead**, to **remember things**, or **neither**?" | ☐ ahead ☐ remember ☐ neither → (d′) d′-1/d′-2 context |
-| **CI-beh** | **before** the questions below, at the L5 end dialog: start **Tw = 15 s**, say nothing | *(observe)* The build shows "原型结束 / Prototype over" with **no Next button** (structural no-prompt). Sought = taps around/probes for a way on, "还有吗/is there more?", reaches for the device; passive = settles, puts it down, looks at you; **Replay pressed = tick separately with t=__s** (raw fact; analyst codes) | ☐ sought ☐ passive ☐ replay@`__s` → with CI-self feeds **D-2** (M11) |
-| **CI-self** | right after Tw | "On a scale of 1 to 5, how much do you want to play Level 6 right now?" | 1 2 3 4 5 → **D-2** (needs CI-self ≥4 **and** sought) |
-| **V8b** | very end of session (after CI-self) | "Is the player inside that wall a **bug**, or **part of the game**?" | ☐ part of the game ☐ bug ☐ unsure — **a P-cohort answer is context, NOT the §3.3 fresh-viewer test** (notes §3 cohort rule); b-2 is scored on Cohort V only |
-| **CM-D / CM-GL / CM-P** | — | — | **NOT RUN on this build** — no door/switch/portal content ⇒ **(a′)/(c′) = `NOT TESTABLE ON THIS BUILD`** → copy that string into **Table F** |
+| **CI-self** | right after D1 | "On a scale of 1 to 5, how much do you want to play Level 6 right now?" | 1 2 3 4 5 → **D-2** (needs CI-self ≥4 **and** sought) |
+| **V8b** | very end of session (after CI-self) | "Is the player inside that wall a **bug**, or **part of the game**?" (zh: Table C row `V8b` — anti-leading wording, frozen) | ☐ part of the game ☐ bug ☐ unsure — **a P-cohort answer is context, NOT the §3.3 fresh-viewer test** (notes §3 cohort rule); b-2 is scored on Cohort V only |
+| **CM-D / CM-GL / CM-P** | — | — | **NOT RUN on this build** — no door/switch/portal content ⇒ **(a′)/(c′) = `NOT TESTABLE ON THIS BUILD`** → the fixed string is **pre-filled in Table F** (PA-005); never blank, never `0` |
 
 Footer: Quit Level (M12) `____` · Aha Moment (M10) `____` · validity VALID/INVALID + reason `____`
 → Table A.
@@ -187,34 +200,43 @@ Footer: Quit Level (M12) `____` · Aha Moment (M10) `____` · validity VALID/INV
 | **OBS-3** | **L3**, first refusal (the greedy tap at the 4th-col/2nd-row wall) | free play | **Tr0 + 3 s**: eyes/hands — do they go to the **HUD** (phase chip, Undo, Restart) as if hunting a day/night switch? did the **phase chip stay put**? first action = R-code | R3, R4, **R5** | M4b · (d′) **d′-3/d′-4**; R6+chrome-tap = the "where's the switch button" signal |
 | **OBS-4** | **L4**, first refusal | free play | same coding as OBS-3, then **compare latency L3 vs L4**: fast R2/R3 ⇒ the L1–L3 rule is still held at L4; freeze/R1/R6 ⇒ it isn't. **Never ask "do you remember"** — the latency contrast *is* the memory measure | R3, R4, R5 | (d′) retention reading (d′-3/d′-4 cells; the contrast itself is analyst context) |
 | **OBS-5** | **L4**, at the ghost `(2,0)` (3rd col / top row) | free play | the choice moment: both the ghost entry **and** the `y=2` detour (3rd row down) are legal — step on (G1) or avoid (G2/G3/G5)? any "that's a wall" verbalization (=G5+C1)? | R7, R11 | M13/M13b · (b) **b-6** offered-exposure context · (d′) **d′-9** |
-| **OBS-6** | **L4 or L5**, the embed event (player lands on the ghost, it solidifies underfoot) | free play; **after level end**, one probe | **live (Te0+0–3 s, intervene never):** do they look at their own tile, or exit/act as if nothing changed? **after level end:** ask the one-sentence recall: **"In one sentence — what just happened on that tile you stepped on?"** Verbatim. Codes: mentions the tile changing/solidifying ⇒ **saw it**; describes only own movement / "nothing" ⇒ **b-i didn't see**; "bug/broken/glitch/didn't save" ⇒ **b-ii** | R8, **R9** (verbatim + tick) | (b) context; M14 window untouched (probe is strictly post-level, like §9.8 step 7's V8b discipline) |
+| **OBS-6** | **L4 or L5**, the embed event (player lands on the ghost, it solidifies underfoot) | free play; **after level end**, one probe (on L5: right after Tw, **before CM1** — §9.8 step 6) | **live (Te0+0–3 s, intervene never):** do they look at their own tile, or exit/act as if nothing changed? **after level end:** ask the one-sentence recall (Table C row `OBS-6`, zh/en frozen): "In one sentence — what just happened on that tile you stepped on?" Coding (**§9.5 b-7**): mentions the tile changing/solidifying — **including bug-flavoured readings** — ⇒ **`SAW`**; describes only own movement / "nothing" ⇒ **`NOT-SEEN`** (b-i evidence); "don't know"/off-topic ⇒ **`UNCODEABLE`** (T9). A bug-flavoured `SAW` ("broken/glitch/didn't save") **also** feeds C3/R8 flail as usual — one measurement, one threshold | R8, **R9** (verbatim + tick) | **(b) b-7 — SCORED on L5** (§9.5, PA-005); L4 = offered-exposure context; E1 branch b-i/b-ii (§F3); M14 window untouched (probe is strictly post-level, like §9.8 step 7's V8b discipline) |
 | **OBS-7** | **L4/L5**, inside each embed dwell window | free play | **Te0→Te1**: dwell length; ≥2 refusal/repeat taps; restart/undo **<3 s** after landing; C3 words ("stuck?", "broken?", "did it not save?"); eyes to moderator | R8 (dwell/flail/C3), R11 | (b) **b-3 (M14) / b-4 (M15) / b-5 (C3)** — §9.5 scored cells |
-| **OBS-8** | **L4** after walking out / undoing out; **L5** approach | free play | **re-entry**: when a ghost is enterable again, do they step in **unprompted a second time** (Y), detour (N), or pause first (hesitant)? **L5**: after refusals at the two permanent walls, do they route to the echo below the goal **without** hesitating at it? | R9 (re-entry), R7 | (b)-iii "reads as mechanic" context (no separate threshold — b-1…b-6 stay the scored set) |
+| **OBS-8** | **L4** after walking out / undoing out; **L5** approach | free play | **re-entry**: when a ghost is enterable again, do they step in **unprompted a second time** (Y), detour (N), or pause first (hesitant)? **L5**: after refusals at the two permanent walls, do they route to the echo below the goal **without** hesitating at it? | R9 (re-entry), R7 | (b)-iii "reads as mechanic" context (no separate threshold — b-1…b-7 stay the scored set) |
 | **OBS-9** | **L5 win → end dialog** ("原型结束 / Prototype over", **no Next button** — build fact) | nothing is offered; silence | start **Tw (15 s)** the moment the dialog appears: do they **hunt for Level 6** (tap around, "is there more?", reach for the device) or go passive? Replay press = tick with time, don't interpret live. **No persuasion ever** (M12 rule) | probe card CI-beh | M11 · DoD **D-2** (§9.7) — the §2 question |
-| **OBS-10** | after Tw | answers the probe card | read CM1→CM2→CM3→D1→CI-self→V8b exactly in that order; tick, quote verbatim, never paraphrase, never explain | probe card | DoD **D-1/D-2** · (d′) **d′-1/d′-2** · (b) **b-2-context** |
+| **OBS-10** | after Tw | answers the probe card | read **OBS-6 → CM1→CM2→CM3→D1→CI-self→V8b** exactly in that order (OBS-6 before CM1: b-7's anti-priming rule, §9.5/§9.8 step 6); tick, quote verbatim, never paraphrase, never explain; zh sessions read Table C's zh column | probe card | DoD **D-1/D-2** · (d′) **d′-1/d′-2** · (b) **b-7 + b-2-context** |
 
-> **OBS-6 note (honesty about a new question):** the one-sentence recall probe is **new in PA-004** —
-> it exists because V8b alone cannot separate "didn't see the tile change" from "saw it and calls it a
-> bug" (PAGE 4 §F3). It is recorded as **context**, not scored: no threshold in §9 names it, and this
-> sheet invents none. If the studio wants it scored under (b), it must be added to §9.5 **before the
-> §9.1 BUT table is committed** (after that, T6 freezes everything) — that edit belongs to
-> `playtest-log.md` (flagged to the Orchestrator in the PA-004 handoff, not done here).
+> **OBS-6 note (PA-005 — UPGRADED to scored, window now closed):** the one-sentence recall probe was
+> **new in PA-004**, recorded as context because V8b alone cannot separate "didn't see the tile change"
+> (b-i) from "saw it and calls it a bug" (b-ii) — and because b-3…b-6 all pass for a cohort that never
+> perceived the beat (a hollow (b) PASS; PAGE 4 §F3). PA-004 pre-registered the only legal upgrade path:
+> "must be added to §9.5 **before** the §9.1 BUT table is committed — after that, T6 freezes
+> everything." **Executed at PA-005 (2026-10-15), in the same commit as the BUT fill:** the probe is
+> now **(b) b-7** (`playtest-log.md` §9.5 — coding rules, denominator, threshold form cited from b-6,
+> E1 branch rule; administration pinned in §9.8 step 6). Scored on **L5 only** (the forced instance);
+> L4 answers remain offered-exposure context. The string itself is frozen in **Table C** (zh + en).
 
 ---
 
 ## PAGE 4 — Build facts, program evidence, honest limits (read before scheduling; never filled)
 
-### §F1 BUT status — ⚠ read first
+### §F1 BUT status — ✅ committed (PA-005, 2026-10-15)
 
-- **Baseline:** `develop` = **`a4a1fb7`**. At the time of writing (2026-10-15) the playable build also
-  contains **uncommitted working-tree changes** (`src/game/renderer/**`, `src/main.ts`, `src/game/env.ts`
-  et al. — the `?level=<n>` deep link, tap-to-move verification, token cross-fade work). §9.1 requires
-  the BUT to be a **filled and committed** row before session 1: an uncommitted working tree is **not a
-  valid BUT** (no SHA, no reproducibility). **Do not run a scored session until the Orchestrator commits
-  the build and the SHA goes into the §9.1 table + this sheet's header.**
-- `?level=<n>` is a **dev/E2E/setup entrance only** (falls back to L1 out of range; nothing persists; no
-  win is bypassed). A scored session **starts at L1**; using `?level=` to skip mid-session = script
-  deviation on a scored item (T7).
+- **The BUT is filled and committed:** `playtest-log.md` §9.1 names build **`41d5a4b`** (develop HEAD
+  at fill; game code byte-identical to the `9c4b5a1` baseline — `git diff 9c4b5a1 41d5a4b -- src/
+  scripts/ package.json` is empty, sole delta `docs/project-status.md`; the §9.1 same-BUT rule covers
+  docs-only descendants, incl. the PA-005 commit itself). **PA-004's blocker — "an uncommitted working
+  tree is not a valid BUT; do not run a scored session" — is resolved**; scored sessions may now be
+  scheduled. ⚠ **T6's clock has started at the BUT commit:** no §9 threshold, level index or probe
+  wording may be edited any more; mid-round corrections go to Table F and apply to the next round.
+- **Entry:** `npm run dev` → `http://localhost:5173` (vite `server.host: true` — LAN URL for the
+  participant's own phone, §9.4). `?level=<n>` is a **dev/E2E/setup entrance only** (falls back to L1
+  out of range; nothing persists; no win is bypassed). A scored session **starts at L1**; using
+  `?level=` to skip mid-session = script deviation on a scored item (T7).
+- **Evidence re-run at fill time on `41d5a4b` (not copied):** solver audit → 5/5 PASS, `par`
+  4/5/6/6/6, `deadStates=0`, `RESULT: PASS`; out-of-repo route enumeration over the shipped rules →
+  l004 = 6 par routes / 3 embed / 3 embed-free (**offered**), l005 = 3 / 3 / 0 + no embed-free route
+  at any length (**forced**) — §9.1 rows 3–4.
 - Verified playable (Orchestrator field-check, 2026-10-15): L1–L5 · keyboard + HUD buttons · Undo /
   Restart · win dialog · Next (hidden at L5) · trusted-input (CDP) tap moves the piece — tap an
   **adjacent** cell (R-T3: non-adjacent taps are silent non-inputs, counted as **misclicks**, never as
@@ -253,12 +275,19 @@ measurement):
 | ghost fill `wallEchoFill` vs embedded interior `wallOccupied` | **1.15:1** | **1.28:1** | the solidified-underfoot tile's interior is **near-identical in greyscale to a passable ghost's fill** — the "it changed" beat may be invisible in fill |
 | what still carries it: retained 2 px edge stroke `wallEdge` vs `wallOccupied` | **4.29:1** | 3.65:1 (published, ui-ux §4.5/§4.6) | edge + 88 % coverage outline (vs ghost 80 % hollow) + the player drawn on top + one-shot `fx.phaseRing` (140–220 ms) are the **only** separation channels |
 
+**Real-render occupied audit (PA-004 harness, retained l004 occupied-frame screenshots, re-run
+2026-10-15):** in the sampled **tile-centre 42 % region** of the occupied tile, the player body
+(`actorBodyB`) covers **100.0 %** and the `wallOccupied` fill visible there is **0.0 %** (ghost tile by
+contrast: 83.8 % `wallEchoFill`) — the solidification *fill* change is **literally invisible at the tile
+centre**; the beat rides on the retained edge/outline + the one-shot ring alone. This is the concrete,
+measured risk **(b) b-7** scores (PA-005, §9.5).
+
 So (b)'s realistic failure is not one thing but three, and they have **different fixes** — the sheet
 must tell them apart:
 
 - **b-i didn't SEE the change** ⇒ a §4-band token/emphasis problem for UI-Art (fix inside R-E/R-E2a,
-  never a bigger nudge — §6.3/§6.5 prohibitions). Detected by **OBS-6 recall probe** + short dwell with
-  no flail.
+  never a bigger nudge — §6.3/§6.5 prohibitions). Detected by **OBS-6 recall probe** (**scored as b-7
+  since PA-005** — `NOT-SEEN`-dominant failures route E1 here) + short dwell with no flail.
 - **b-ii SAW it, reads it as a BUG/trap** ⇒ R-C13 presentation problem (E1 path, §9.9 V3). Detected by
   **OBS-7**: long dwell, flail, C3, restart/undo <3 s, "didn't save".
 - **b-iii reads it as MECHANIC** ⇒ success signal. Detected by **OBS-8**: unprompted re-entry, direct
@@ -271,13 +300,15 @@ must tell them apart:
 
 - **(a′) latch readability / (c′) portal readability:** `NOT TESTABLE ON THIS BUILD` — no
   door+switch level (release: D3 set L6–L10 ships + Solver gate, ADR-0009 Decision 4) and no
-  opposite-colour portal level (release: L11+, Decision 5). Copy the string into **Table F**; it is a
-  legal reportable outcome (§9.10.4), never a pass, never a fail.
-- **b-1/b-2 (V8a/V8b still-image gate):** need **fresh Cohort V** + the frozen screenshot set (§9.1
-  last row, §9.4 disjointness). Without fresh viewers: `§3.3 tests NOT RUN — no fresh cohort`.
+  opposite-colour portal level (release: L11+, Decision 5). The fixed string is **pre-filled in Table F
+  (PA-005)** with both release conditions; it is a legal reportable outcome (§9.10.4), never a pass,
+  never a fail, never blank, never `0`.
+- **b-1/b-2 (V8a/V8b still-image gate):** need **fresh Cohort V** + the frozen screenshot set — §9.1's
+  last row records it as **`NOT CAPTURED` at BUT commit** (capture list there; §9.4 disjointness).
+  Without fresh viewers: `§3.3 tests NOT RUN — no fresh cohort`.
 - **No cohort has run. n = 0.** Every cell in this file's PAGE 1–2 is empty on purpose; §6/§7/§10 of
-  `playtest-log.md` stay empty until Tables B/C exist (§9.10.1). No threshold here may be edited after
-  the §9.1 BUT table is committed (T6).
+  `playtest-log.md` stay empty until Tables B/C exist (§9.10.1). **T6 is now in force** (BUT committed,
+  PA-005): no threshold may be edited any more — mid-round corrections go to Table F, next round only.
 
 ### §F5 Column-merge honesty log (dispatch item 7 — what PAGE 1 drops vs canonical Table B, and why)
 
