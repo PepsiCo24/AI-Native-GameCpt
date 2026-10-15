@@ -176,11 +176,13 @@ all recomputed exact. Findings routed: **MINOR-2** (stale bfs.ts gate-(iii) comm
 LV-007C's own rewrite (verified on develop); **MINOR-1** (46/2000 vs 0.9% vs 18/2000 divergence numbers cited
 across docs without generator labels) → **LV-007D micro + AR-0006** (OQ1: in-repo harness vs unify citations);
  NOTE-1..5 → QA archive (`rv006-mut/` logs) + backlog. Worktree removed. Since then: **UA-0008d — CLOSED & MERGED
- (`4d9dde9`)** and **DG-002 — CLOSED & MERGED (`9bae42c`)** (items 41–42). Live now: **LV-008** (L11 first-portal
+ (`4d9dde9`)**, **DG-002 — CLOSED & MERGED (`9bae42c`)** and **DG-002b — CLOSED & MERGED (`9bcbf91`)** (items 41–43).
+ Live now: **LV-008** (L11 first-portal
  authoring against the frozen pre-registered law — `D_exec<13.64`, par≤4, one opposite-color pair, no false
  routes; ≥20 candidates, program proves, accept/reject never repair), **AR-0006** (three rulings: divergence-number
- source of truth / graphics2d type-purity / metrics persistence; four doc debts), **DG-002b** (ITER-0007 verbatim
- relocation out of the template comment). The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
+ source of truth / graphics2d type-purity / metrics persistence; four doc debts), **QA-005** (permanent Playwright
+ e2e: trusted-input l1→l10 walks + refusal-freeze triples + the transient-frame physics adjudication with a written
+ terminal verdict either way; own server, CI-green ruling, vitest 22/408/3 only-up). The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
 firing on portal boards are now in. **QA-005 re-scoped**: Playwright now
 **installed** (devDep + chromium v1248, installed by the Orchestrator as sole package.json writer) and all dynamic
 frames already captured (see item 28). Remaining QA-005 = the permanent spec only: `playwright.config` +
@@ -669,6 +671,23 @@ and a path must be quiescent before dispatch.**
     shows pure relocation; one commit. Three live: **LV-008** (L11 authoring against the frozen pre-registered law)
     · **AR-0006** (three rulings + four doc debts) · **DG-002b**. Vite :5199 stays up on the merged tree — the
     Entry-3 portal pair-frames fire the moment LV-008's board passes and R-003 unlocks it in the registry.
+43. **DG-002b — RETURNED & MERGED (`9bcbf91`): ITER-0007 freed from the template comment — verbatim relocation,
+    independently re-verified on my disk before merging** (their claims were not taken on trust): relocated block
+    byte-identical to the entombed original, template body untouched (`## ITER-XXXX` tail equality asserted), 11
+    entity headings now monotonic ITER-0001→0011 with 0007 sitting in its chronological seam, comment span shrunk
+    to a template-only pair (62177–62348) with zero swallowed `##`, and the single visible added line is the
+    disclosed `---` stitch (their +49/−47 diffstat reproduced exactly). Process note: the first merge attempt died
+    mid-chain with the harness interruption — re-checked for half-merge state (no MERGE_HEAD, branch unmerged)
+    before cleanly re-running; no residue. **QA-005 dispatched** (third live, ceiling full): permanent Playwright
+    e2e on `playwright.config + tests/e2e/**` — trusted-keyboard l1→l10 walks pinning par-route wins + the
+    refusal-freeze triple (moves/phase/position unchanged) + latched-door occupancy + phase-label flip per legal
+    step; graphics-count expectation **10**; its core deliverable is the **transient-frame physics adjudication in
+    writing** — with the two proven channel facts (≈670 ms CDP screenshot round-trip regardless of clip; all-black
+    `toDataURL` on WebGL) it must land either a GREEN re-sampling channel (UA Entry-2's two CONDITIONALs →
+    measured), an engineer micro-ticket spec (`preserveDrawingBuffer`/snapshot/time-scale — QA itself never touches
+    `src/**`), or a documented physically-unreachable terminal case; no含糊 exit. Plus CI-shape ruling (vitest-only
+    default stays green) and the `rv006-mut/` battery-log archival with NOTE-3/NOTE-4 lessons for maintainers. Runs
+    on its own vite instance (:5198) — my :5199 merged-tree server stays reserved for the Entry-3 capture.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
