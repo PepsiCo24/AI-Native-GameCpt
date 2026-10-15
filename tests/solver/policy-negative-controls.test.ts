@@ -199,6 +199,33 @@ const AHA_LESSON_WITH_INERT_PORTAL: Level = {
 /** The gate-(i) control `tests/solver/latch-gates.test.ts` already carried. */
 const AHA_LESSON_WITHOUT_FUNNEL: Level = AHA_LESSON_WITH_BYPASS;
 
+/**
+ * The §3 construction bullets, broken on purpose (LV-007A n-14).
+ *
+ * `AHA_LESSON_WITH_TWO_DOORS`: the shipped `l008` board plus a second door,
+ * both driven by one switch — everything measured still passes, only the
+ * "one door + one switch" construction does not. (This is deliberately *L9-like*
+ * content wearing an Aha #1 declaration: the funnel rule exists to catch exactly
+ * that mislabel.)
+ */
+const AHA_LESSON_WITH_TWO_DOORS: Level = {
+  ...shippedBoard(8),
+  doors: [
+    { id: "d1", color: "blue", tiles: [[3, 1]] },
+    { id: "d2", color: "red", tiles: [[3, 2]] },
+  ],
+  switches: [
+    { id: "s1", tile: [2, 0], activePhase: "A", targets: ["d1", "d2"] },
+  ],
+};
+
+/**
+ * `AHA_LESSON_OVER_PAR_CAP`: the shipped, gate-clean `l008` board with `par: 9`
+ * (the board itself is untouched and still solves in 6), so the par cap is the one
+ * and only thing wrong with the candidate.
+ */
+const AHA_LESSON_OVER_PAR_CAP: Level = { ...shippedBoard(8), par: 9 };
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Coverage — typed by the inventory, measured by the analyzer
 // ─────────────────────────────────────────────────────────────────────────────
@@ -224,6 +251,8 @@ const NEGATIVE_CONTROLS: Readonly<Record<PolicyViolationCode, readonly Level[]>>
     ],
     "gate-refused-then-entered": [STATIC_BOARD_AS_AHA],
     "gate-dual-phase-tiles": [AHA_LESSON_WITH_INERT_PORTAL],
+    "gate-single-door-one-switch-funnel": [AHA_LESSON_WITH_TWO_DOORS],
+    "gate-aha-par-cap": [AHA_LESSON_OVER_PAR_CAP],
   };
 
 describe("LV-007A · m-2 — every policy code has a negative control that fails when the check is disabled", () => {
@@ -404,7 +433,66 @@ describe("LV-007A · m-2 — gate (iv) reaches FAIL (not UNSATISFIABLE) when a p
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. LV-007A · m-5 — the UNSATISFIABLE channel is whitelisted, and guarded by
+// 4. LV-007A · n-14 — the §3 construction bullets enforced as named gates
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("LV-007A · n-14 — gates (v)/(vi) enforce the Aha #1 construction spec", () => {
+  it("the shipped l008 satisfies both construction bullets", () => {
+    const audit = auditLevel(shippedBoard(8));
+    const funnel = audit.gates.find(
+      (gate) => gate.id === "single-door-one-switch-funnel",
+    );
+    const cap = audit.gates.find((gate) => gate.id === "aha-par-cap");
+    expect(funnel?.status).toBe("PASS");
+    expect(funnel?.detail).toContain("doors=1 switches=1");
+    expect(cap?.status).toBe("PASS");
+    expect(cap?.detail).toContain("par=6 (solver shortest=6) cap=8");
+  });
+
+  it("gate (v) rejects an Aha #1 candidate with a second door", () => {
+    const audit = auditLevel(AHA_LESSON_WITH_TWO_DOORS);
+    const funnel = audit.gates.find(
+      (gate) => gate.id === "single-door-one-switch-funnel",
+    );
+    expect(funnel?.status).toBe("FAIL");
+    expect(funnel?.detail).toContain("doors=2 switches=1");
+    // The *measured* conditions are all still satisfied on this board: the funnel
+    // rule is a construction requirement of its own, not a restatement of (i)–(iii),
+    // and this control is what proves the two are different checks.
+    expect(
+      audit.gates
+        .filter((gate) => gate.status === "FAIL")
+        .map((gate) => gate.id),
+    ).toEqual(["single-door-one-switch-funnel"]);
+    expect(audit.violations.map((v) => v.code)).toEqual([
+      "gate-single-door-one-switch-funnel",
+    ]);
+  });
+
+  it("gate (vi) rejects an Aha #1 candidate over the §3 par cap", () => {
+    const audit = auditLevel(AHA_LESSON_OVER_PAR_CAP);
+    const cap = audit.gates.find((gate) => gate.id === "aha-par-cap");
+    expect(cap?.status).toBe("FAIL");
+    expect(cap?.detail).toContain("par=9 (solver shortest=6) cap=8");
+    // The board is the shipped l008 one, so nothing else fails: the cap is the only
+    // complaint (and the solver's own shortest value never moves the cap).
+    expect(audit.violations.map((v) => v.code)).toEqual(["gate-aha-par-cap"]);
+  });
+
+  it("never judges a level that does not declare Aha #1 (L9 keeps both its doors)", () => {
+    // `docs/level-design.md` §5 puts the two-door ordered plan at L9 and Aha #1 at
+    // L8: the funnel rule must therefore not touch `l009.json`, whose documented
+    // obligation is the latch lesson, not `latch-aha-1`.
+    const l9 = auditLevel(shippedBoard(9));
+    expect(l9.lesson?.obligation).toBe("latch-dynamism");
+    expect(l9.gates).toEqual([]);
+    expect(shippedBoard(9).doors.length).toBe(2);
+    expect(l9.violations).toEqual([]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. LV-007A · m-5 — the UNSATISFIABLE channel is whitelisted, and guarded by
 //    two facts rather than one
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -476,7 +564,7 @@ describe("LV-007A · m-5 — UNSATISFIABLE is whitelisted to `dual-phase-tiles`"
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. No silent code — the inventory cannot drift from the source
+// 6. No silent code — the inventory cannot drift from the source
 // ─────────────────────────────────────────────────────────────────────────────
 
 const POLICY_SOURCE = readFileSync(

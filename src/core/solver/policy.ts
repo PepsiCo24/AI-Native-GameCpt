@@ -175,7 +175,9 @@ export type AhaGateId =
   | "no-solution-with-switches-off"
   | "shortest-solution-presses-switch-and-crosses-door"
   | "refused-then-entered"
-  | "dual-phase-tiles";
+  | "dual-phase-tiles"
+  | "single-door-one-switch-funnel"
+  | "aha-par-cap";
 
 export interface NamedGate {
   readonly id: AhaGateId;
@@ -265,6 +267,9 @@ function routeVerdict(
  *    `UNSATISFIABLE` with the proof instead of being quietly dropped or satisfied
  *    with a mechanic the schedule forbids before L11 — but only while the guard
  *    holds (portal-free **and** measured 0, RV-004 m-5).
+ * 5. `single-door-one-switch-funnel` and 6. `aha-par-cap` — the §3 **construction**
+ *    bullets ("exactly one door + one switch"; "par ≤ 8 for L8"), programmatically
+ *    enforced since LV-007A (RV-004 n-14). They apply to Aha #1 levels only.
  */
 export function latchAhaGates(
   level: Level,
@@ -311,9 +316,45 @@ export function latchAhaGates(
       detail: `refusedThenEnteredTiles=${result.refusedThenEnteredTiles} tiles=[${result.refusedThenEnteredTileList.join(" ")}]`,
     },
     dualPhaseGate(level, result),
+    // ── the §3 construction bullets, as gates (LV-007A n-14) ──────────────────
+    //
+    // `docs/level-design.md` V0.5 §3 keeps two *construction* requirements next to
+    // the measured conditions — "Exactly one door + one switch on the board" and
+    // "Par ≤ 8 for L8" — and records that "programmatic enforcement = LV-007
+    // (RV-004 n-14)". These two gates are that enforcement. They are deliberately
+    // computed **only** for a level whose documented lesson declares Aha #1
+    // (`latch-aha-1`), so the multi-door L9 ordered plan — a different lesson, with
+    // its own obligation — is never judged by the Aha funnel rule.
+    {
+      id: "single-door-one-switch-funnel",
+      label:
+        "exactly one door + one switch on the board (docs/level-design.md §3 construction bullet)",
+      status:
+        level.doors.length === 1 && level.switches.length === 1 ? "PASS" : "FAIL",
+      detail:
+        `doors=${level.doors.length} switches=${level.switches.length} — the Aha #1 board is the ` +
+        `one-door-one-switch funnel (visible from the start, §3). More doors/switches is a different ` +
+        `lesson (L9's ordered plan, L16+ latch fluency) and must not declare Aha #1.`,
+    },
+    {
+      id: "aha-par-cap",
+      label:
+        "par ≤ 8 for the Aha #1 level (docs/level-design.md §3 construction bullet)",
+      status:
+        level.par <= AHA_PAR_CAP && par <= AHA_PAR_CAP ? "PASS" : "FAIL",
+      detail:
+        `par=${level.par} (solver shortest=${String(result.shortestSolution)}) cap=${AHA_PAR_CAP}; ` +
+        `the authored and the measured value are both checked, so neither can move past the cap unnoticed.`,
+    },
   ];
   return gates;
 }
+
+/**
+ * The §3 par cap for the Aha #1 level: "Par ≤ 8 for L8 (L6–L7 sit at par ≤ 4 under
+ * the §6 dip)" — the shipped `l008.json` is solver-verified at 6.
+ */
+export const AHA_PAR_CAP = 8;
 
 /**
  * Gate (iv), `dualPhaseTiles ≥ 1` — the one gate whose verdict can be
@@ -433,6 +474,8 @@ export const POLICY_VIOLATION_CODES: readonly PolicyViolationCode[] = [
   "gate-shortest-solution-presses-switch-and-crosses-door",
   "gate-refused-then-entered",
   "gate-dual-phase-tiles",
+  "gate-single-door-one-switch-funnel",
+  "gate-aha-par-cap",
 ];
 
 /** Switch ids that actually toggle somewhere in the reachable graph. */
