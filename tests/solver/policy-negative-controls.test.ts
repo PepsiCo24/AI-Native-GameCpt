@@ -30,7 +30,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { Level } from "@/core/level";
 import { validateLevel } from "@/core/level";
@@ -39,11 +39,18 @@ import {
   POLICY_VIOLATION_CODES,
   auditLevel,
   firingSwitches,
+  latchAhaGates,
 } from "@/core/solver/policy";
-import { explore } from "@/core/solver/bfs";
+import { analyse, embedMetrics, explore } from "@/core/solver/bfs";
 import { door, makeLevel, switchDef } from "../helpers/fixtures";
 
 const LEVELS_DIR = fileURLToPath(new URL("../../src/levels/", import.meta.url));
+
+/** Every shipped level id, read from the dataset (never a hardcoded ladder). */
+const SHIPPED_IDS = readdirSync(LEVELS_DIR)
+  .filter((name) => /^l\d+\.json$/.test(name))
+  .map((name) => Number(name.slice(1, -".json".length)))
+  .sort((a, b) => a - b);
 
 /** A shipped level's board, schema-validated first (the documented lesson travels with the id). */
 function shippedBoard(id: number): Level {
@@ -397,7 +404,79 @@ describe("LV-007A · m-2 — gate (iv) reaches FAIL (not UNSATISFIABLE) when a p
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. No silent code — the inventory cannot drift from the source
+// 4. LV-007A · m-5 — the UNSATISFIABLE channel is whitelisted, and guarded by
+//    two facts rather than one
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("LV-007A · m-5 — UNSATISFIABLE is whitelisted to `dual-phase-tiles`", () => {
+  const WHITELIST = "dual-phase-tiles";
+
+  it("no other named gate ever reports UNSATISFIABLE (shipped levels + every control board)", () => {
+    // The aggregation channel in `scripts/solve-levels.ts` is generic: *any* gate
+    // that says UNSATISFIABLE is printed as an ESCALATION instead of a failure. That
+    // generality is a fact of the aggregator, so its *use* is pinned here: the only
+    // condition allowed to escalate is the proved-unsatisfiable one. A future gate
+    // that returns UNSATISFIABLE by accident (or as a shortcut) turns this RED.
+    const boards: readonly Level[] = [
+      ...SHIPPED_IDS.map((id) => shippedBoard(id)),
+      ...Object.values(NEGATIVE_CONTROLS).flat(),
+    ];
+    const offenders: string[] = [];
+    let escalations = 0;
+    for (const board of boards) {
+      for (const gate of auditLevel(board).gates) {
+        if (gate.status !== "UNSATISFIABLE") continue;
+        escalations += 1;
+        if (gate.id !== WHITELIST)
+          offenders.push(`${gate.id} (board id=${board.id})`);
+      }
+    }
+    expect(offenders).toEqual([]);
+    // …and the whitelisted escalation really is reachable, so the assertion above
+    // is not vacuous (l008 is portal-free with a measured dualPhaseTiles of 0).
+    expect(escalations).toBeGreaterThan(0);
+  });
+
+  it("the guard needs BOTH facts: a portal-free board measured non-zero is PASS, not excused", () => {
+    // Unconstructible as a real board (the checkerboard invariant is proved three
+    // times over), which is exactly why the second clause must be pinned by
+    // injecting the measurement: `latchAhaGates` takes the `SolveResult` as an
+    // argument, so this asks the question "what if the measurement disagreed with
+    // the proof?" — the answer must be a loud verdict, never an escalation.
+    const level = shippedBoard(8);
+    const graph = explore(level);
+    const result = analyse(level, graph);
+    const par = result.shortestSolution ?? level.par;
+    const injected = latchAhaGates(
+      level,
+      graph,
+      { ...result, dualPhaseTiles: 3, dualPhaseTileList: ["0,0", "1,1", "2,2"] },
+      embedMetrics(level, par),
+    ).find((gate) => gate.id === "dual-phase-tiles");
+
+    expect(injected?.status).toBe("PASS");
+    expect(injected?.detail).toContain("ANOMALY");
+    expect(injected?.detail).toContain("dualPhaseTiles=3");
+    // The real measurement on the same board still escalates, so the guard has not
+    // been weakened into "any portal-free board is excused whatever the number".
+    expect(
+      auditLevel(level).gates.find((gate) => gate.id === "dual-phase-tiles")
+        ?.status,
+    ).toBe("UNSATISFIABLE");
+    expect(result.dualPhaseTiles).toBe(0);
+  });
+
+  it("the escalation is not lost on the shipped set (l008 still reports it)", () => {
+    const gate = auditLevel(shippedBoard(8)).gates.find(
+      (entry) => entry.id === "dual-phase-tiles",
+    );
+    expect(gate?.status).toBe("UNSATISFIABLE");
+    expect(gate?.detail).toContain("Guard: portal-free AND measured 0");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. No silent code — the inventory cannot drift from the source
 // ─────────────────────────────────────────────────────────────────────────────
 
 const POLICY_SOURCE = readFileSync(
@@ -412,32 +491,30 @@ describe("LV-007A · m-2 — policy.ts emits no code that the inventory does not
       (match) => match[1] as string,
     );
     const gateIds = [
-      ...POLICY_SOURCE.matchAll(/id:\s*"([^"]+)",\s*\n\s*label:/g),
+      ...POLICY_SOURCE.matchAll(/id:\s*"([^"]+)",\s*\n\s*label[,:]/g),
     ].map((match) => match[1] as string);
+    const declaredGateIds = POLICY_VIOLATION_CODES.filter((code) =>
+      code.startsWith("gate-"),
+    ).map((code) => code.slice("gate-".length));
 
     // A silent zero-match would make this test vacuous, so the scan itself is
-    // checked first (and its shape re-stated for the next maintainer).
+    // checked first (and its shape re-stated for the next maintainer). One gate id
+    // may legitimately appear several times (the dual-phase gate has three verdict
+    // branches), so the comparison is over the *set* of declared gate ids — which
+    // also makes the scan self-guarding: an empty scan cannot equal four ids.
     expect(
       literals.length,
       'the source scan found no `code: "…"` literal — update the scan if policy.ts changed shape',
     ).toBeGreaterThan(0);
     expect(
-      gateIds.length,
-      'the source scan found no `id: "…", label:` gate entry — update the scan if policy.ts changed shape',
-    ).toBe(
-      POLICY_VIOLATION_CODES.filter((code) => code.startsWith("gate-")).length,
-    );
+      [...new Set(gateIds)].sort(),
+      'the named-gate ids found in policy.ts must be exactly the gate entries of POLICY_VIOLATION_CODES (update the scan if policy.ts changed shape)',
+    ).toEqual([...declaredGateIds].sort());
 
     for (const code of literals) {
       expect(
         declared.has(code),
         `policy.ts emits "${code}" but POLICY_VIOLATION_CODES does not declare it (add it *and* a negative control)`,
-      ).toBe(true);
-    }
-    for (const id of gateIds) {
-      expect(
-        declared.has(`gate-${id}`),
-        `policy.ts reports the gate "${id}" but POLICY_VIOLATION_CODES does not declare gate-${id}`,
       ).toBe(true);
     }
   });

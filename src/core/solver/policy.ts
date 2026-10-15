@@ -257,13 +257,14 @@ function routeVerdict(
  *    pass through the refusing door itself after the toggle", and the toggle must
  *    be required, not incidental;
  * 3. `refused-then-entered` — the §8/ADR-0009 history-dependence metric fires;
- * 4. `dual-phase-tiles` — the dispatch's fourth named gate. **Portal-free boards
- *    can never produce one** (checkerboard invariant, ADR-0009 decision 1: a
- *    switch never moves the player, so the position→phase link survives the
- *    latch; the same fact is pinned by `tests/solver/dynamism-metrics.test.ts`).
- *    The gate is therefore reported `UNSATISFIABLE` with the proof instead of
- *    being quietly dropped or satisfied with a mechanic the schedule forbids
- *    before L11.
+ * 4. `dual-phase-tiles` — the dispatch's fourth named gate, delegated to
+ *    {@link dualPhaseGate}. **Portal-free boards can never produce one**
+ *    (checkerboard invariant, ADR-0009 decision 1: a switch never moves the
+ *    player, so the position→phase link survives the latch; the same fact is
+ *    pinned by `tests/solver/dynamism-metrics.test.ts`), so the gate is reported
+ *    `UNSATISFIABLE` with the proof instead of being quietly dropped or satisfied
+ *    with a mechanic the schedule forbids before L11 — but only while the guard
+ *    holds (portal-free **and** measured 0, RV-004 m-5).
  */
 export function latchAhaGates(
   level: Level,
@@ -309,25 +310,74 @@ export function latchAhaGates(
       status: result.refusedThenEnteredTiles > 0 ? "PASS" : "FAIL",
       detail: `refusedThenEnteredTiles=${result.refusedThenEnteredTiles} tiles=[${result.refusedThenEnteredTileList.join(" ")}]`,
     },
-    {
-      id: "dual-phase-tiles",
-      label: "dualPhaseTiles ≥ 1 (dispatch's fourth named gate)",
-      status:
-        level.portals.length === 0
-          ? "UNSATISFIABLE"
-          : result.dualPhaseTiles > 0
-            ? "PASS"
-            : "FAIL",
-      detail:
-        level.portals.length === 0
-          ? `dualPhaseTiles=${result.dualPhaseTiles} is FORCED to 0 on a portal-free board: the grid is bipartite and every ` +
-            `legal move changes x+y parity and the phase together, so the phase at a tile is a function of the tile ` +
-            `(ADR-0009 decision 1 — a switch never relocates the player, so the latch cannot break it). No portal-free ` +
-            `level before L11 can satisfy the gate as written; ADR-0009 schedules M2 at L11.`
-          : `dualPhaseTiles=${result.dualPhaseTiles} tiles=[${result.dualPhaseTileList.join(" ")}]`,
-    },
+    dualPhaseGate(level, result),
   ];
   return gates;
+}
+
+/**
+ * Gate (iv), `dualPhaseTiles ≥ 1` — the one gate whose verdict can be
+ * **UNSATISFIABLE**, and the *only* producer of that status in this module
+ * (pinned by the suite: every other gate must answer PASS or FAIL).
+ *
+ * The UNSATISFIABLE verdict is drawn only when **both** facts hold (RV-004 m-5):
+ *
+ * - the board is **portal-free** (so ADR-0009 decision 1's checkerboard proof
+ *   applies at all — a switch never relocates the player, so the phase at a tile
+ *   stays a function of the tile), and
+ * - the solver **measured** `dualPhaseTiles === 0`.
+ *
+ * Either fact alone is not an excuse: if a portal is present the proof does not
+ * apply (FAIL, loudly), and if a portal-free board ever measured a non-zero value
+ * the invariant itself has been broken (PASS with an explicit anomaly note, so it
+ * cannot be read as a routine pass). Before m-5 the guard read
+ * `level.portals.length === 0` alone, which would have silently upgraded a real
+ * failure on a portal-bearing board to a non-failure escalation.
+ */
+function dualPhaseGate(level: Level, result: SolveResult): NamedGate {
+  const portalFree = level.portals.length === 0;
+  const measured = result.dualPhaseTiles;
+  const label = "dualPhaseTiles ≥ 1 (dispatch's fourth named gate)";
+
+  if (portalFree && measured === 0) {
+    return {
+      id: "dual-phase-tiles",
+      label,
+      status: "UNSATISFIABLE",
+      detail:
+        `dualPhaseTiles=0 is FORCED to 0 on a portal-free board: the grid is bipartite and every ` +
+        `legal move changes x+y parity and the phase together, so the phase at a tile is a function of the tile ` +
+        `(ADR-0009 decision 1 — a switch never relocates the player, so the latch cannot break it). No portal-free ` +
+        `level before L11 can satisfy the gate as written; ADR-0009 schedules M2 at L11. ` +
+        `(Guard: portal-free AND measured 0 — if either stops holding this verdict becomes PASS/FAIL.)`,
+    };
+  }
+
+  if (measured > 0) {
+    return {
+      id: "dual-phase-tiles",
+      label,
+      status: "PASS",
+      detail:
+        `dualPhaseTiles=${measured} tiles=[${result.dualPhaseTileList.join(" ")}]; ` +
+        `portals=${level.portals.length}` +
+        (portalFree
+          ? ` — ⚠ ANOMALY: the board is portal-free, yet a tile is entered in both phases, so the checkerboard ` +
+            `invariant has been falsified by measurement. The gate condition holds, but escalate: do not read this as a routine pass.`
+          : ` — causality broken by M2 displacement, as designed (ADR-0009 schedules portals from L11).`),
+    };
+  }
+
+  return {
+    id: "dual-phase-tiles",
+    label,
+    status: "FAIL",
+    detail:
+      `dualPhaseTiles=0 on a board carrying ${level.portals.length} portal(s): the portal-free proof does NOT apply, ` +
+      `so this is a real FAIL — a portal that never displacement-breaks the phase link is inert content ` +
+      `(same-colour pairs are validator-rejected; an unused opposite-colour pair is measurably useless). ` +
+      `Not an escalation, and never softened.`,
+  };
 }
 
 function countAllOffStates(level: Level, graph: ReachableGraph): number {
