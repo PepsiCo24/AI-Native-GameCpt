@@ -76,3 +76,37 @@ Three figures circulate for the same quantity (boards where `refusedThenEnteredT
 ### Follow-up ticket (LV queue — code; LV owns `scripts/**`, `src/levels/**`, `tests/solver/**`)
 
 `LV-007E` (name assigned here): `scripts/solve-levels.ts --report` + committed `docs/level-difficulty.report.json` + the freshness pin in `tests/solver/`. Acceptance: the pin goes red when any shipped level's `Dexec` changes without regeneration; the file renders the GD-008 frozen anchors exactly (L10 `Dexec` = 13.64…, the L11 pre-registration threshold). Docs-do-not-run-ahead-of-code note: `docs/architecture.md` §8/§12 name this artifact as **specified, not yet implemented** until the ticket lands.
+
+## Ruling 4 — `isPlayerEmbedded` is **rule semantics, so its home is `src/core/rules`**; the renderer keeps the flag-injection seam (closes RV-005 n-6)
+
+**Finding (RV-005 n-6, item 31; verified on `4d9dde9`):** `isPlayerEmbedded` is defined in the **renderer** (`src/game/renderer/cell-state.ts:120`) and imported by the **gameplay** layer (`src/game/systems/session.ts:31,111`) — a `systems → renderer` edge, the reverse of the §4 direction. It is also a second implementation of a predicate core already owns: the solver's arrival record computes the identical concept as `solidAt(level, after.phase, after.doorsOpen, after.player)` (`src/core/solver/bfs.ts:811`), while the renderer re-derives it as `isWallSolidAt(...) || isClosedDoorAt(...)` (equal to `solidAt` on every in-bounds tile — the player position is always in-bounds — but a parallel truth all the same). And `cell-state.ts`'s own header declares the module "appearance only, never legality" — a law this export breaks: the predicate answers a GameState question with rule meaning (the §6.1 / ADR-0008-clause-3 embedded state), consumed by gameplay (`session.playerEmbedded`).
+
+**裁决 (ruling):**
+
+- **Core owns the predicate.** "Does the player stand inside a tile solid in the current phase?" is a pure function of `(level, phase, doorsOpen, playerPosition)` over core data — the same solidity truth as `solidAt`, under a name that documents ADR-0008 clause 3 at call sites. One truth source: implemented **via** `solidAt`, never beside it.
+- **Renderer owns only the mapping from that verdict to paint.** The correct seam already exists: `wallRenderState(level, gs, tile, playerEmbedded: boolean)` (cell-state.ts:96) takes the flag as an **input**. Nothing in the renderer needs to own the question.
+- **Gameplay imports it from core.** The `systems → renderer` edge disappears; `systems → core` is the legal direction.
+- **What the renderer may keep:** tile-classification for painting (`wallRenderState`, door/portal paint states) and `isPlayerAt` (view-side comparison, no rule meaning).
+
+**Engineering micro-ticket (R queue; Gameplay Engineer owns `src/core/rules/**` + `src/game/**`; I touch no `src/**`):**
+
+1. Add to `src/core/rules/solid.ts`: an exported `isPlayerEmbedded(level: Level, gs: GameState): boolean` (GameState-shaped so the migration is mechanical) implemented as `solidAt(level, gs.phase, gs.levelState.doorsOpen, gs.playerPosition)`, with a doc line naming ADR-0008 clause 3. (`GameState` is already imported from `@/core/state/types` in that module's family — no new dependency.)
+2. `src/game/systems/session.ts:31,111`: import from `@/core/rules/solid`; delete the renderer import.
+3. `src/game/renderer/board-view.ts:352,380,419`: same repoint.
+4. `src/game/renderer/cell-state.ts`: delete the `isPlayerEmbedded` export (its doc paragraphs move with the predicate, minus the paint-duty clauses which stay); `wallRenderState` unchanged.
+5. Tests: `tests/unit/renderer-registry-layers.test.ts:33,437,457` repoint the import to core (rides in the same commit per the R-002b tests pattern; QA notified in the return contract).
+6. Acceptance: `tsc` 0; vitest green; `grep -rn 'from "@/game/renderer' src/game/systems/` is empty; `cell-state.ts` no longer exports the predicate.
+
+## Ruling 5 — the multi-switch-target flag lives at the **validator-warning** layer; no policy code until GD quantifies the L36+ allowance (closes LV-007C OQ4)
+
+**Finding (item 39; verified on `4d9dde9`):** `docs/level-design.md` §1 carries the law twice — the `switches` row ("each door is targeted by at most one switch in L6–L35 … flagged in review (validator warning recommended)") and the validation-invariants sentence ("door targeted by more than one switch ⇒ review flag (warning; hard rejection above the L36+ allowance is Solver-side policy)") — and **nothing implements it**: the validator's warning family (`src/core/level/index.ts:399–505`) has no such entry, and the `POLICY_VIOLATION_CODES` inventory (13 codes, `policy.ts:576`) has no such code.
+
+**裁决 (ruling) — the layer follows the verdict strength:**
+
+- **Home = validator warning** (`src/core/level/index.ts`, the existing `warnings.push` family). The property is statically and locally decidable from level JSON alone — count the switches whose `targets` list a given door id; `> 1` flags. No search is needed, so no solver artifact may be its gate (a hard acceptance edge that needs no search would make acceptance depend on a search run for nothing — the same arrow argument policy.ts's header uses, in reverse).
+- **No policy code today (YAGNI).** `POLICY_VIOLATION_CODES` names **rejections** the acceptance law consumes, one negative control per code (pipeline §8.3). Through L35 the multi-switch shape is *legal but flagged* — there is no rejection to name, hence no code and no control. When GD writes the L36+ allowance as an actual number (or a lesson row claiming an XOR construction), the policy code lands **in that same ticket, with its control** — spec-first, the n-13 precedent (`switch-without-targets` warns in the validator *and* rejects in policy, one layer per verdict strength).
+
+**Follow-up tickets:**
+
+- **LV (code):** validator warning — for each door id targeted by ≥ 2 switches, `warnings.push` naming the door, the count, the switch ids, and the doc anchor (`docs/level-design.md` §1, L6–L35 authoring rule). Tests (LV/QA per house pattern): a 2-switches→1-door fixture warns; 1→1 silent; 2 switches targeting 2 distinct doors silent; distinct from the inert-switch warning (a 2→1 board has no empty `targets`).
+- **GD (wording — optional):** the law already exists at level-design §1; GD confirms the warning string's anchor or adjusts the allowance phrasing. No ADR needed.
