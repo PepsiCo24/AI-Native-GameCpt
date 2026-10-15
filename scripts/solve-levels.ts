@@ -32,12 +32,23 @@
  *      ESCALATION, never counted as a pass and never softened;
  *   6. `--audit` additionally runs the ADR-0009 "9/200 M1-alone anomaly"
  *      qualification obligation handed to SOLVER-001, with the checkerboard
- *      invariant, the artifact probes and minimal reproductions.
+ *      invariant, the artifact probes and minimal reproductions;
+ *   7. `--report` (LV-007E, ADR-architecture-0003 Ruling 3) additionally writes the
+ *      committed metrics **sidecar** `docs/level-difficulty.report.json` from the
+ *      same audit this run just performed — one record per accepted level plus the
+ *      weight vector and a content-hash provenance block
+ *      (`scripts/metrics-report.ts`, pinned by `tests/solver/metrics-sidecar.test.ts`).
+ *      It writes **silently**: the stdout dump above is the report's human form and
+ *      is frozen, so a run with and without `--report` prints identical bytes. The
+ *      write happens only after a clean run, and is placed before the verdict line
+ *      so a write failure cannot be preceded by a `RESULT: PASS` (a rejected candidate
+ *      has no accepted metrics to publish; ADR-0004: reject, never repair).
  *
  * Run (tsx is a devDependency of this workspace):
  *
  *   npx tsx scripts/solve-levels.ts                 # level-set gate
  *   npx tsx scripts/solve-levels.ts --audit         # gate + anomaly qualification
+ *   npx tsx scripts/solve-levels.ts --report        # gate + regenerate the sidecar
  *   npx tsx scripts/solve-levels.ts <levels-dir>    # or LEVELS_DIR=…
  *   npx tsx scripts/solve-levels.ts --audit <dir>
  *
@@ -73,6 +84,7 @@ import type {
   PolicyViolation,
 } from "@/core/solver/policy";
 import { auditLevel } from "@/core/solver/policy";
+import { writeMetricsReport } from "./metrics-report";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Inputs
@@ -80,6 +92,7 @@ import { auditLevel } from "@/core/solver/policy";
 
 const argv = process.argv.slice(2);
 const withAudit = argv.includes("--audit");
+const withReport = argv.includes("--report");
 const dirArg = argv.find((arg) => !arg.startsWith("--"));
 const levelsDir =
   dirArg ??
@@ -1031,6 +1044,21 @@ function audit(): void {
 }
 
 if (withAudit) audit();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// [sidecar] --report — ADR-architecture-0003 R3: the accepted-set metrics become
+// a committed, freshness-pinned artifact (LV-007E)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Written here — after every level has been gated, before the verdict line — so a
+// write failure can never be preceded by a `RESULT: PASS`. Only on a clean run: the
+// sidecar is the *accepted* set's record, so a tree with a rejected candidate writes
+// nothing and the committed file is never half-updated (ADR-0004: reject, never
+// repair). Nothing is printed either — this mode's stdout is the frozen dump above,
+// byte for byte, which is what keeps the pre-LV-007E baselines diffable.
+if (withReport && failures.length === 0) {
+  writeMetricsReport(levelsDir);
+}
 
 console.log("");
 if (failures.length > 0) {
