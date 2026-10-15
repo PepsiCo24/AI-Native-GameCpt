@@ -1,0 +1,26 @@
+[
+  {
+    "where": "E3-2 MEASURED pitch — L11 at 390x844 CSS cssScale2 (THE frame record governs)",
+    "method_history": [
+      "pass1 (capture-entry3-mobile.cjs): fixed threshold 24 + 50-180 band -> 0 samples (checker delta ~34 sits under the band logic); diagnostic re-scan: modal EDGE spacing 96 device px",
+      "misread correction: 96 is the PLATE width (cellSize minus gutters), NOT the pitch",
+      "pass2 (plate-edge derivation, this record): grid x-extent 33..747 device (from pixel scan, both phases) -> gridSide 714 = 7x102 exactly",
+      "formula cross-check (computeLayout, l11 7x3, viewport 780x1432 renderScale2): cellSize=102, gutter=6, grid {x:33,w:714} — identical"
+    ],
+    "measured": {
+      "pitchDevice": 102,
+      "pitchCss": 51,
+      "plateWidthDevice": 96,
+      "gutterDevice": 6,
+      "phasesChecked": [
+        "A day",
+        "B night"
+      ],
+      "scanRowsCss": [
+        0.35,
+        0.45
+      ]
+    },
+    "band": "51 CSS = INSIDE the ruled 51-56 px band, at its floor — equals the §2.3 margin-inclusive row (51.1); the 390/7 ~= 55.7 convention overstates because the margin applies; E3-2 legibility must be judged at 51, not 55.7"
+  }
+]
