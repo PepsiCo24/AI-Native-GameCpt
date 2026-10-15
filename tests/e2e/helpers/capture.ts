@@ -45,6 +45,61 @@ import type { Page } from "@playwright/test";
 /** Channel distance under which two pixels count as "the same" (8-bit RGB). */
 export const CAPTURE_TOLERANCE = 6;
 
+/**
+ * The CDP `Page.captureScreenshot` round trip this channel exists to beat.
+ *
+ * Measured at QA-005: **~670 ms, independent of the clip size** — which is why a
+ * 90 ms refusal arc is unreachable through a screenshot and reachable through the
+ * in-page resampler. The number is the *screen channel's* reference point, not a
+ * frame-rate expectation, so {@link measureFrameGrid}'s ceiling is derived from
+ * it rather than hard-coded per machine.
+ */
+export const SCREENSHOT_ROUND_TRIP_MS = 670;
+
+export interface FrameGrid {
+  /** Median `requestAnimationFrame` interval over the sample window, in ms. */
+  readonly gridMs: number;
+  /** Frames observed in the window. */
+  readonly frames: number;
+}
+
+/**
+ * Measure **the running machine's own animation-frame grid**.
+ *
+ * QA-005's `gridMs < 60` guard was calibrated on a local machine (median 31 ms)
+ * and went bankrupt on CI's 2-core software-GL runner, where the same recorder
+ * observed 6–7 frames in 700 ms (project-status item 57 / the QA-005c ticket):
+ * the guard failed its own premise rather than catching a defect. The guard's
+ * *semantic* is "the recorder kept pace with the machine's own frames, so the
+ * channel is a rAF grid and not a 670 ms screenshot round trip" — which can only
+ * be stated relative to that machine. This measures the reference first, on the
+ * settled board, so the claim can be made on any runner.
+ */
+export async function measureFrameGrid(page: Page, ms = 600): Promise<FrameGrid> {
+  return page.evaluate(
+    (window_ms: number) =>
+      new Promise<{ gridMs: number; frames: number }>((resolve) => {
+        const deltas: number[] = [];
+        let previous = performance.now();
+        const startedAt = previous;
+        const tick = (): void => {
+          const now = performance.now();
+          deltas.push(now - previous);
+          previous = now;
+          if (now - startedAt >= window_ms) {
+            deltas.sort((a, b) => a - b);
+            const mid = deltas[Math.floor(deltas.length / 2)];
+            resolve({ gridMs: mid ?? 0, frames: deltas.length });
+            return;
+          }
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }),
+    ms,
+  );
+}
+
 export interface CaptureStats {
   /** ms since the recorder started (page clock, `performance.now`). */
   readonly t: number;
