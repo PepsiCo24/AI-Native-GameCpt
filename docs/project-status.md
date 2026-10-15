@@ -1072,7 +1072,41 @@ and a path must be quiescent before dispatch.**
    DG round — `docs/evidence/entry3-portal/` import (21 PNGs + 3 logs, verdict-cited), §6/ITER mirrors for chain
    + LV-007E + R5-VAL + UA-0010, three deferred staleness refreshes (README QA-005-in-flight line, playtest-log
    V0.5 wording, iteration header label), submission-doc re-versioning; THEN main → Pages gets 11 levels →
-   G1/G6 evidence complete. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+   G1/G6 evidence complete.
+
+68. **QA-005c MERGED (`6fd1a3d`) — THE FLAKE IS DEAD AT ROOT and the pre-merge checklist's item ③ finally got
+   its TRUE idle-machine closure.** Disk-verified pre-merge: 11 atomic commits, territory exactly the 13 declared
+   files (tests/** + playwright.config.ts only — zero src, zero docs), both hand-typed literals GONE (grep 0/0 —
+   MAJOR-1's whole lineage now structurally impossible to repeat), `EXPECTED_LEVEL_COUNT` survives as the ONE
+   deliberate alarm pin — stronger than before (count AND contiguity, mutation-proved both directions through the
+   REAL loader in a new unit file: unlock now costs one deliberate edit, not six-lines-across-four-files). The
+   mechanism was reproduced frame-by-frame before fixing: mid-hop the disc covers NEITHER cell centre, so a
+   single-instant probe reading `cells: []` was a MEASUREMENT artifact, never a rule failure — the fix is a
+   bounded one-probe-per-frame poll until exactly-one-and-expected, settled case costs one probe, ZERO sleeps
+   added anywhere (honest evidence that stability was bought, not waited for). Touch path same discipline +
+   cached CDP session. transient :116/:257 now measure the idle grid and derive window `max(700 ms, 24×idle)` +
+   ceiling `max(60, 2×idle)` — semantic teeth (idle<335 ms "this is not a screenshot channel") kept.
+   `reuseExistingServer: false` decided + documented (R-004b's live-risk: a config-run can never again silently
+   test a foreign tree). The 9 `test.fail(` grep hits are ALL prose history-pointers — real calls repo-wide: 0
+   (my own anchored grep). **Merged-tree authoritative battery on a now-genuinely-idle machine: tsc 0 ·
+   vitest 29/**543**/3 (537+6 exact) · solver PASS · build ✓ · Playwright 86/0 ZERO-RETRY × 2 consecutive
+   (3.2/3.1 min — same duration as the flaky era: stability bought with polls, not waits).** QA's own evidence:
+   ×4 on their branch (logs kept) + named-site repeat-each 60/60 + 10/10. Their risk-1 is honest and accepted:
+   cloud-shaped fixes are built from the measured CI roster, NOT re-run on CI (no push authority) — the
+   confirmation round is running on `6fd1a3d` RIGHT NOW; pre-QA's last CI (UA round tree) failed EXACTLY the
+   3 deterministic members (chain wall-clock, transient ×2) with the intermittent members green — zero new
+   signatures, perfect roster match to what QA fixed. If any of the 3 survives the round: back as a named
+   failure with the log, retries NOT increased (standing discipline). OQ rulings from this office: OQ1 mutation
+   probe STAYS in the default gate (0.2 s buys permanent alarm verification); OQ2 retries stay `--retries=1`
+   per the narrowed ruling (retry = signal; surviving flake = named ticket) — a future removal needs 2–3 clean
+   green CI rounds first, evidence-gated; OQ3 the 120 s budget is accepted over the chain-split (minimal
+   in-lane change; split stays backlog). **MILESTONE GATE NOW READS: CI green on `6fd1a3d` + DG-004b (DISPATCHED
+   this item: entry3 frames → `docs/evidence/entry3-portal/` with provenance, §6/ITER mirrors for the whole
+   merged slate, three deferred staleness refreshes, submission re-version — all pre-merge-truthful: nothing may
+   claim the 11-level ladder is live until the main merge itself)** → main → Pages publishes 11 levels. Live:
+   DG-004b = 1/3; user lanes unchanged (revision art req-08/11, cohort testers — the instrument `df353a0` is
+   frozen, the runbook's §2-item-4 frames are ALREADY captured in the entry3 mobile trio per the double-use
+   ruling). Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
