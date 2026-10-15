@@ -652,7 +652,7 @@ export class BoardView {
     // shared container (R-Z4): clear every container first, then paint in order.
     for (const painter of this.l4Painters) painter.gfx.clear();
     for (const { spec, gfx } of this.l4Painters) {
-      for (const tile of spec.tilesOf(this.level, this.lastState)) {
+      for (const tile of spec.tilesOf(this.level)) {
         // `prevState` is `null` exactly when no flip runs, and both mixes are `1`
         // then — so a painter's `mix(prev, now, mix)` collapses to `now` and undo,
         // restart and resize all repaint the committed state bit-exactly.

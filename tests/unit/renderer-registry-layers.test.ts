@@ -49,13 +49,10 @@ const EXPECTED_KINDS: readonly TileObjectKind[] = L4_ORDER.filter(
 
 const key = (tile: Vec): string => `${String(tile.x)},${String(tile.y)}`;
 
-function paintedTiles(
-  level: Level,
-  gs: ReturnType<typeof initialState>,
-): ReadonlyMap<string, TileObjectKind[]> {
+function paintedTiles(level: Level): ReadonlyMap<string, TileObjectKind[]> {
   const out = new Map<string, TileObjectKind[]>();
   for (const spec of TILE_OBJECTS) {
-    for (const tile of spec.tilesOf(level, gs)) {
+    for (const tile of spec.tilesOf(level)) {
       const k = key(tile);
       out.set(k, [...(out.get(k) ?? []), spec.kind]);
     }
@@ -75,9 +72,8 @@ export function unclaimedObjectTiles(
   level: Level,
 ): string[] {
   const claimed = new Set<string>();
-  const gs = initialState(level);
   for (const spec of specs) {
-    for (const tile of spec.tilesOf(level, gs)) claimed.add(key(tile));
+    for (const tile of spec.tilesOf(level)) claimed.add(key(tile));
   }
   const declared = [
     ...level.doors.flatMap((door) => door.tiles),
@@ -132,8 +128,7 @@ describe("tile-object registry — §3.1d completeness", () => {
   it("attributes each tile to the right class on l009 (2 doors + 2 switches)", () => {
     const { levels } = loadLevels();
     const level = levels.find((candidate) => candidate.id === 9)!;
-    const gs = initialState(level);
-    const claimed = paintedTiles(level, gs);
+    const claimed = paintedTiles(level);
     expect(claimed.get("2,2")).toEqual(["door"]);
     expect(claimed.get("4,1")).toEqual(["door"]);
     expect(claimed.get("0,1")).toEqual(["switch"]);
@@ -141,23 +136,29 @@ describe("tile-object registry — §3.1d completeness", () => {
     expect(claimed.get("4,0")).toEqual(["goal"]);
     // Door tile order is level-data declaration order (R-Z4's tie-break).
     const doorSpec = TILE_OBJECTS.find((spec) => spec.kind === "door")!;
-    expect(doorSpec.tilesOf(level, gs)).toEqual(doorTilesOf(level).map((entry) => entry.tile));
+    expect(doorSpec.tilesOf(level)).toEqual(doorTilesOf(level).map((entry) => entry.tile));
     const switchSpec = TILE_OBJECTS.find((spec) => spec.kind === "switch")!;
-    expect(switchSpec.tilesOf(level, gs)).toEqual(
+    expect(switchSpec.tilesOf(level)).toEqual(
       switchTilesOf(level).map((entry) => entry.tile),
     );
   });
 
-  it("a flip never changes a tile list — no object is created or destroyed by it (R-E6/R-D8)", () => {
+  it("is a pure projection of the level: memoised per level, computed once, not per frame", () => {
+    // This replaces the V0.7 test that asserted `tilesOf(level, gsA) === tilesOf(level, gsB)`
+    // — i.e. that a parameter which was never read had no effect. With the dead `gs` gone
+    // from the signature, the property worth pinning is what the memo actually delivers:
+    // one frozen array per level (`paintTileObjects` asks once per spec per *frame*),
+    // identical by reference on every later call, and not shared between levels.
     const { levels } = loadLevels();
-    for (const level of levels) {
-      const a = initialState(level);
-      const b = { ...a, phase: (a.phase === "A" ? "B" : "A") as Phase, playerPosition: { x: 0, y: 0 } };
-      for (const spec of TILE_OBJECTS) {
-        expect(spec.tilesOf(level, b), `${spec.kind} on level ${String(level.id)}`).toEqual(
-          spec.tilesOf(level, a),
-        );
+    for (const spec of TILE_OBJECTS) {
+      for (const level of levels) {
+        const first = spec.tilesOf(level);
+        const where = `${spec.kind} on level ${String(level.id)}`;
+        expect(spec.tilesOf(level), where).toBe(first);
+        expect(Object.isFrozen(first), where).toBe(true);
       }
+      // Keyed by the level object: two levels never share one cache entry.
+      expect(spec.tilesOf(levels[0]!), spec.kind).not.toBe(spec.tilesOf(levels[1]!));
     }
   });
 
@@ -176,7 +177,7 @@ describe("tile-object registry — §3.1d completeness", () => {
     for (const level of levels) {
       const gs = initialState(level);
       for (const spec of TILE_OBJECTS) {
-        for (const tile of spec.tilesOf(level, gs)) {
+        for (const tile of spec.tilesOf(level)) {
           const g = new RecordingGraphics();
           const tokens = theme(gs.phase);
           spec.paint({
@@ -356,7 +357,7 @@ describe("registry ↔ cell-state ↔ core", () => {
     expect(doorTilesOf(level).map((entry) => key(entry.tile))).toEqual(["2,1", "3,1", "3,2"]);
     expect(switchTilesOf(level).map((entry) => key(entry.tile))).toEqual(["1,1"]);
     expect(portalTilesOf(level).map((entry) => key(entry.tile))).toEqual(["0,1", "4,4"]);
-    const claimed = paintedTiles(level, initialState(level));
+    const claimed = paintedTiles(level);
     expect(claimed.get("2,1")).toEqual(["door"]);
     expect(claimed.get("1,1")).toEqual(["switch"]);
     expect(claimed.get("4,4")).toEqual(["portal"]);

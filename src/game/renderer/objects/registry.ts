@@ -169,9 +169,41 @@ export interface TileObjectSpec {
    * here would claim art the manifest never asked for (`PLACEHOLDER_TO_ASSET`).
    */
   readonly placeholder?: string;
-  /** Tiles of this class in the level, in level-data declaration order (R-Z4). */
-  readonly tilesOf: (level: Level, gs: GameState) => readonly Vec[];
+  /**
+   * Tiles of this class in the level, in level-data declaration order (R-Z4).
+   *
+   * A **pure projection of the level**: it takes no `GameState`, because a flip can
+   * never change which tiles carry an object (R-E6/R-D8 — the object is created at
+   * layout time and swaps its look in place). It used to accept `gs` and ignore it;
+   * the regression test that used to police that was testing the absence of a
+   * parameter, so the parameter is gone and the memo below pins the real property
+   * (one array per level, not one per frame).
+   */
+  readonly tilesOf: (level: Level) => readonly Vec[];
   readonly paint: (ctx: TileObjectPaintContext) => void;
+}
+
+/**
+ * Memoise a class's tile list per level.
+ *
+ * `paintTileObjects` calls `tilesOf` once per spec **per frame**, so a fresh array
+ * each call is four allocations per frame for information that cannot change. The
+ * cache is a `WeakMap` keyed by the level object, so it keeps no level alive and
+ * cannot leak across a level switch, and the result is frozen because the array is
+ * now shared by every caller: a painter that mutated its tile list would corrupt the
+ * board, not just its own frame.
+ */
+function memoTiles(project: (level: Level) => readonly Vec[]): (level: Level) => readonly Vec[] {
+  const cache = new WeakMap<Level, readonly Vec[]>();
+  return (level) => {
+    const cached = cache.get(level);
+    if (cached !== undefined) return cached;
+    const tiles: readonly Vec[] = Object.freeze(
+      project(level).map((tile) => Object.freeze({ x: tile.x, y: tile.y })),
+    );
+    cache.set(level, tiles);
+    return tiles;
+  };
 }
 
 /** `mix(from, to, t)` — the §6.2 cross-fade, in one place. */
@@ -186,7 +218,7 @@ const GOAL: TileObjectSpec = {
   layer: L4_SLOT.goal,
   // DEV PLACEHOLDER — A-06 goal
   placeholder: "goal",
-  tilesOf: (level) => [{ x: level.goal[0], y: level.goal[1] }],
+  tilesOf: memoTiles((level) => [{ x: level.goal[0], y: level.goal[1] }]),
   paint: (ctx) =>
     paintGoal({
       g: ctx.g,
@@ -220,7 +252,7 @@ const GOAL: TileObjectSpec = {
 const DOOR: TileObjectSpec = {
   kind: "door",
   layer: L4_SLOT.door,
-  tilesOf: (level) => doorTilesOf(level).map((entry) => entry.tile),
+  tilesOf: memoTiles((level) => doorTilesOf(level).map((entry) => entry.tile)),
   paint: (ctx) => {
     const door = doorAt(ctx.level, ctx.tile);
     if (door === undefined) return; // unreachable: the tile list comes from the same data
@@ -263,7 +295,7 @@ const DOOR: TileObjectSpec = {
 const SWITCH: TileObjectSpec = {
   kind: "switch",
   layer: L4_SLOT.switch,
-  tilesOf: (level) => switchTilesOf(level).map((entry) => entry.tile),
+  tilesOf: memoTiles((level) => switchTilesOf(level).map((entry) => entry.tile)),
   paint: (ctx) => {
     const sw = switchDefAt(ctx.level, ctx.tile);
     if (sw === undefined) return; // unreachable, as above
@@ -299,7 +331,7 @@ const SWITCH: TileObjectSpec = {
 const PORTAL: TileObjectSpec = {
   kind: "portal",
   layer: L4_SLOT.portal,
-  tilesOf: (level) => portalTilesOf(level).map((entry) => entry.tile),
+  tilesOf: memoTiles((level) => portalTilesOf(level).map((entry) => entry.tile)),
   paint: (ctx) => {
     const prev = ctx.transition.prev;
     const activeNow = portalIsActive(ctx.level, ctx.gs, ctx.tile);
