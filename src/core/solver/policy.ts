@@ -28,11 +28,36 @@
  *    solver proof). A level the docs call a *forced* phantom walk must FORCE one
  *    (`embedForced`); one documented as *offering* it must offer it and not force
  *    it; a level documented as teaching the latch must actually be
- *    history-dependent (`refusedThenEnteredTiles > 0`); a level whose docs promise
- *    the latch is **load-bearing** must be measurably so
+ *    history-dependent (`refusedThenEnteredTiles > 0` — the **unordered** carrier,
+ *    see the reader split below); a level whose docs promise the latch is
+ *    **load-bearing** must be measurably so
  *    ({@link DocumentedLesson.switchRequired}, L7–L10, with the documented L6 dip
  *    recorded *on its row* as `"exempt"`); the **Aha #1** level must satisfy the
  *    named gates of `docs/level-design.md` §3 one by one.
+ *
+ * ── WHICH METRIC EACH READER READS (the two legs of ADR-architecture-0002) ────
+ * Metric #7 exists in two forms and this module deliberately uses **both**, for
+ * different jobs — re-stitching them into one reader is a re-definition of the
+ * acceptance criterion, not a cleanup:
+ *
+ * - **Aha gate (iii) reads the ORDERED companion** `refusedBeforeEnteredTiles`
+ *   (LV-007C, completing GD-008's wording pass of `docs/level-design.md` §3 (iii)).
+ *   The condition's own sentence is ordered — "refused *first*, entered *later*" —
+ *   and the ordered form is the beat-witnessability measure, i.e. the semantically
+ *   correct reading of that gate (ADR-architecture-0002 decision 4: "the companion
+ *   (ordered) = beat-witnessability"). It closes the trapped-refusal class: a pocket
+ *   where the refusal can only ever be met *after* the acceptance is
+ *   history-dependence in the metric but a beat no player can witness. Measured
+ *   verdict-identical on the shipped ten (both forms report the same tile lists,
+ *   1/1/1/2/1 on L6–L10) and pinned by a divergent-board control.
+ * - **Everything else keeps the UNORDERED canonical form**
+ *   `refusedThenEnteredTiles`: the `lesson-latch-dynamism` obligation below, gate
+ *   (ii)'s refusal half, and `docs/ai-native-pipeline.md` §8.5's pre-L11 acceptance
+ *   law (the generation leg). #7 is the board-level dynamism carrier whose M0 /
+ *   M1-alone `≡ 0` theorem base was proved for *that* form, and a trapped refusal
+ *   still proves entry legality is history-dependent — it must never read as
+ *   "static". §8.5's law is not edited by this switch (ADR-architecture-0002
+ *   Appendix A3).
  *
  * Why `src/core/solver/**` and not `src/core/level/**`: these checks *consume
  * solver metrics*, so putting them in the level layer would point the dependency
@@ -255,6 +280,13 @@ interface RouteVerdict {
  * shipped `switchAt` only returns a switch whose `activePhase` is the current
  * phase) and afterwards enter a tile of a door that switch targets, and is that
  * door tile one the board ever *refused* (`refusedThenEnteredTileList`)?
+ *
+ * The refusal half reads the **unordered** canonical metric on purpose: gate (ii)
+ * is the *route-level* question ("is the toggle required, not incidental?"), while
+ * gate (iii) is the *tile-level* beat question and reads the ordered companion
+ * (`refusedBeforeEnteredTiles`, LV-007C). The job split is ADR-architecture-0002
+ * decision 4; on the shipped ten the two forms are identical, so both gates answer
+ * the same way there either way.
  */
 function routeVerdict(
   level: Level,
@@ -311,7 +343,13 @@ function routeVerdict(
  * 2. `shortest-solution-presses-switch-and-crosses-door` — "the solution must
  *    pass through the refusing door itself after the toggle", and the toggle must
  *    be required, not incidental;
- * 3. `refused-then-entered` — the §8/ADR-0009 history-dependence metric fires;
+ * 3. `refused-then-entered` — the crossed door tile is *refused strictly before it
+ *    is entered* on one real play trace: the **ordered** companion
+ *    `refusedBeforeEnteredTiles ≥ 1` (LV-007C, the code reader for
+ *    `docs/level-design.md` §3 (iii) as re-worded at GD-008; ADR-architecture-0002
+ *    decision 4). The unordered canonical metric is still measured and reported in
+ *    the gate's detail — the difference between the two is the trapped-refusal
+ *    set, and only the unordered form carries §8.5's acceptance law;
  * 4. `dual-phase-tiles` — the dispatch's fourth named gate, delegated to
  *    {@link dualPhaseGate}. **Portal-free boards can never produce one**
  *    (checkerboard invariant, ADR-0009 decision 1: a switch never moves the
@@ -364,9 +402,12 @@ export function latchAhaGates(
     {
       id: "refused-then-entered",
       label:
-        "refusedThenEnteredTiles ≥ 1 (ADR-0009: the latch, not parity, carries the decision)",
-      status: result.refusedThenEnteredTiles > 0 ? "PASS" : "FAIL",
-      detail: `refusedThenEnteredTiles=${result.refusedThenEnteredTiles} tiles=[${result.refusedThenEnteredTileList.join(" ")}]`,
+        "refusedBeforeEnteredTiles ≥ 1 — the ordered beat: on one play trace the tile is refused strictly before it is entered (docs/level-design.md §3 (iii), V0.6; ADR-architecture-0002 decision 4)",
+      status: result.refusedBeforeEnteredTiles > 0 ? "PASS" : "FAIL",
+      detail:
+        `refusedBeforeEnteredTiles=${result.refusedBeforeEnteredTiles} tiles=[${result.refusedBeforeEnteredTileList.join(" ")}] ` +
+        `(ORDERED reader — LV-007C); unordered companion refusedThenEnteredTiles=${result.refusedThenEnteredTiles} ` +
+        `tiles=[${result.refusedThenEnteredTileList.join(" ")}] (canonical #7, §8.5's acceptance carrier — the difference between the two is the trapped-refusal set, a beat no player can witness)`,
     },
     dualPhaseGate(level, result),
     // ── the §3 construction bullets, as gates (LV-007A n-14) ──────────────────
@@ -697,6 +738,14 @@ export function auditLevel(
         }
         break;
       case "latch-dynamism":
+        // NOT switched to the ordered companion (LV-007C decision, stated so it is
+        // not read as an oversight): this obligation is the *board-level
+        // history-dependence* promise ("the latch carries a decision"), which is
+        // metric #7's canonical job and the carrier `docs/ai-native-pipeline.md`
+        // §8.5's pre-L11 acceptance law was proved on. A trapped refusal still proves
+        // history-dependence and must not read as "static" (ADR-architecture-0002
+        // decision 4); beat-*witnessability* is what gate (iii) asks, and gate (iii)
+        // is the reader that reads the ordered form.
         if (result.refusedThenEnteredTiles === 0) {
           violations.push({
             code: "lesson-latch-dynamism",

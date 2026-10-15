@@ -1,8 +1,8 @@
 # Level Difficulty Model & Curve
 
 > Owner: **Agent 4 — Level AI + Solver**
-> Version: V0.3 · Date: 2026-10-15
-> Status: `D` is **measured** since LV-007B item 3 (`B` effective, `T`, `R` implemented in `src/core/solver/difficulty.ts`); the **weights** are still **provisional** and must be re-calibrated from playtest data.
+> Version: V0.4 · Date: 2026-10-15
+> Status: `D` is **measured** since LV-007B item 3 (`B` effective, `T`, `R` implemented in `src/core/solver/difficulty.ts`) and its **execution axis** `D_exec = D − w5·M` is published as of LV-007C item 2; as of **item 3** §3's target curve is **re-keyed** to the V0.6 execution-axis law (`docs/level-design.md` §6 / ADR-design-0001) — the pre-ADR-0009 schedule (door at L21, portal at L36) and the pre-measurement absolute `D` bands are **withdrawn by name**, and the only numbers with legal force are L1–L10 (measured) and L11 (pre-registered). The **weights** are still **provisional** and must be re-calibrated from playtest data.
 
 ---
 
@@ -65,39 +65,96 @@ Diagnostics, reported with every breakdown but carrying **no weight**:
 
 `D = null` **iff** the board is unsolvable (`L = null`): no solution ⇒ no curve spot, and no fabricated number. `D` is deliberately **not** part of the solver's §8 `SolveResult` contract — the weights are a hypothesis, and freezing them into the published solver interface would make a playtest-driven re-calibration an API change. Re-calibrating is **one edit** to `DIFFICULTY_WEIGHTS` plus this §2 table.
 
-## 3. Target curve (non-monotonic on purpose)
+### 2b. The execution axis `D_exec` — published as a column (LV-007C item 2)
+
+The dip law of `docs/level-design.md` §6 (V0.6, ADR-design-0001) does not live on `D`: a mechanic debut **must** raise `w5·M` (the player really is learning something) in the very step where a "dip" was demanded on the single scalar. The law was therefore re-anchored on the part the player feels as hands-and-search:
 
 ```
-D
-│                                        ╭─── Final Exam (L50)
-│                              ╭────╮  ╭──╯
-│                       ╭──────╯    ╰──╯
-│            ╭────╮  ╭──╯
-│      ╭─────╯    ╰──╯        ← dip when a new mechanic is taught
-│ ╭────╯
-│─╯
-└─────────────────────────────────────────────────▶ L
- 1   10    20    25    36      45   50
+D = D_exec + D_learn
+D_exec  = D − w5·M = w1·L + w2·B + w3·T + w4·R   ← the execution axis (dip law)
+D_learn = w5·M                                    ← comprehension tax (never dips at a debut)
 ```
 
-| Block | Target D band (relative) | Intent |
-|---|---|---|
-| L1–L3 | 1–2 (lowest) | teach, no friction |
-| L4–L6 | 3–4 | first consequence awareness |
-| L7–L10 | 5–6 | first Aha, satisfying not punishing |
-| L11–L20 | 6–8 | planning, false routes |
-| L21–L25 | **dip to 5–6** | introduce Phase Door calmly |
-| L26–L35 | 8–11 | combine wall + door |
-| L36–L40 | **dip to 8**, then rise | introduce Phase Portal |
-| L41–L45 | 12–15 | 3–5 step lookahead |
-| L46–L49 | 15–17 | dense composite |
-| L50 | 16–17 (spike, but fair) | recombine only known mechanics |
+`D_exec` is **purely derived** — no new measurement, no new weight, no change to `D`'s formula or arithmetic (`D`'s published values are byte-identical to V0.3's). It is computed in `src/core/solver/difficulty.ts` **from the formula's own non-`M` terms** and printed next to the subtraction on the CLI:
 
-Rules:
+```
+difficultyExec Dexec=13.64 = D(28.64) − 5·M(3) = 1·L(9) + 3·B(1.5476) + 4·T(0) + 2·R(0.0000) · execution axis
+```
 
-- Difficulty must **never** rise monotonically step-by-step.
-- A new-mechanic block always **starts with a dip**.
-- The Final Exam introduces **no new mechanic**.
+Both forms are printed on purpose: the identity `D − w5·M = w1·L + w2·B + w3·T + w4·R` is then checked by the reader, and pinned by the suite (`tests/solver/difficulty.test.ts` §2c asserts both forms plus the `L + 3·B` collapse inside `docs/level-design.md` §4). `D_exec = null` **iff** `D = null` (no solution ⇒ no position on either axis). This is the ADR's convenience ticket, taken: "adding a `D_exec` column to the report would spare every reader the subtraction".
+
+## 3. Target curve (non-monotonic on purpose) — re-keyed to the V0.6 execution-axis law (LV-007C item 3)
+
+**Authority.** The curve is the Game Designer's (`docs/level-design.md` **§6** V0.6, ruled at GD-008 / **ADR-design-0001**; block boundaries from `docs/game-design.md` **§8**). This section is the difficulty model's restatement of it and is deliberately **narrower than the law**: it adds no number, no weight and no rule — it removes the pre-measurement ones.
+
+### 3.1 What the pre-V0.6 table said — withdrawn, and why (kept for the record)
+
+V0.1–V0.3 of this section carried two things that measurement and ADR-0009 jointly killed. They are withdrawn here by name rather than deleted, so no later reader can "rediscover" them:
+
+| Withdrawn row (pre-V0.6) | Why it has no force |
+|---|---|
+| L21–L25 **"dip to 5–6" — introduce Phase Door calmly** | M1 (Phase Door) is not introduced at L21: it ships at **L6**, paired with M3 (switch) as **one teaching unit** (GATE D / ADR-0009; `docs/game-design.md` §8, `docs/level-design.md` §5). L21–L25 sits inside the **L16–L25 latch-fluency** block — an `M`-plateau with **no debut**, hence no dip. |
+| L36–L40 **"dip to 8, then rise" — introduce Phase Portal** | M2 (portal) is not introduced at L36: it ships at **L11** (same ruling). L36–L45 is **synthesis** — no debut, no dip. |
+| Absolute `D` bands (`L1–L3: 1–2` … `L50: 16–17`) | Written **before `D` was computable**. The measured `D` of the *shipped teaching ten alone* is **14.00–28.64** (§5.2) — the bands below "L26–L35: 8–11" are already falsified by four levels that exist, at the doc's own weights. They are not a target to author against, and they are **not replaced by new absolute bands** (§3.4): inventing a fresh band schedule nobody has measured would repeat exactly the mistake §5.2 documents. |
+
+Neither withdrawal changes a rule of the game — the mechanic schedule and the seam list were decided in ADR-0009 and only their *difficulty-doc transcription* was stale.
+
+### 3.2 The shape: a sawtooth on `D_exec`, a step-up on `D`
+
+```
+D_exec  (the dip axis)                    ╭──╮            ╭─────╮
+│                                  ╭─────╯  ╰──╮        ╱       ╰──╮       ╭─── Final Exam
+│                           ╭──────╯           ╰───╮   ╱             ╰─────╯     (max on both axes)
+│                    ╭──────╯   ▼ dip at L6        ▼ dip at L11
+│            ╭───────╯
+│     ───────╯
+└──────────────────────────────────────────────────────────────────────▶ L
+  1–5      6       11           16 …                      36 …     46   50
+
+D = D_exec + w5·M          ┌──┐                        ← the TOTAL steps **up** at every
+│                          │  │   ┌──┐                  debut by the comprehension tax
+│  ────────────────────────┘  └───┘  └─────────────     `w5·ΔM` (+8.53 measured at
+│                                                       L5→L6): admitted, never hidden
+└──────────────────────────────────────────────────────────────────────▶ L
+                          L6      L11      (the same two seams, one axis apart)
+```
+
+The two drawings are the same curve read twice — the ADR's whole point. A debut **must** raise `w5·M` (the player really is learning something new), so the search for a "dip" on the total was a search for a sign that cannot exist; on the execution axis the dip is real, measured, and now printed per level (§2b).
+
+### 3.3 The curve, keyed to the schedule it must match
+
+Ranges are `docs/game-design.md` §8's, verbatim. **`ΔM > 0` occurs exactly twice in the 50-level schedule — L6 and L11** (ADR-0009: those are the only mechanic-introduction seams), so those are the only two places a dip may be scheduled at all.
+
+| Block (`game-design.md` §8) | Mechanic event | Intent (`level-design.md` §5) | Target on the **execution axis** `D_exec` |
+|---|---|---|---|
+| L1–L2 | — (M0 literacy) | tap → move → flip; the flip is harmless on purpose | **measured** 9.00 / 10.06 (§5.2) |
+| L3 | — (M0) | the first honest "no": a *permanent* wall refusal, route around | **measured** 10.29 |
+| L4–L5 | — (M0) | the phantom walk: enter an echo, it solidifies under you, walk out | **measured** 10.58 / 10.33 → **block-1 peak = 10.58** |
+| **L6–L10** | **SEAM — M1+M3 as one latch unit, Aha #1 at L8** | latch decisions; the block dips at L6 | **seam law measured ✓** debut L6 = **8.86 < 10.58** (−1.72 vs peak, −1.47 vs L5); dip spans L6–L7 (8.86 / 7.75, both par 4); block ramps to **13.64 > 10.58 ✓** — sawtooth confirmed |
+| **L11–L15** | **SEAM — M2 portals, Aha #2** | opposite-colour pairs only; parity truly breaks; the block dips at L11 | **pre-registered, not yet authored: `D_exec(L11) < 13.64`** (⇔ `D(L11) < 33.64`), **par ≤ 4**, a single opposite-colour portal pair, no false routes, below-OFFERED teaching grade; and the block's `D_exec` must **exceed 13.64 by its end**. A shipped L11 that violates this is a rejected level, whatever its other virtues |
+| L16–L25 | — (latch fluency) | chained / timed switches, 2-step lookahead | strictly above the previous block's peak; ramp inside the block; **no dip** (no `ΔM`) |
+| L26–L35 | — (portals integrated) | routes re-priced by latch state *and* approach side | strictly above the previous block's peak |
+| L36–L45 | — (synthesis, all mechanics) | 3–5 step lookahead, deceptive geometry, all rules live | strictly above the previous block's peak |
+| L46–L49 | — (density peak) | high-interaction boards, longest pars, zero new rules | the highest ship-content `D_exec` before L50 |
+| L50 | — **Final Exam: no new mechanic** | recombine only what was taught; graduation, not luck | the curve's **maximum on both axes** — a spike that is fair because nothing in it is new |
+
+### 3.4 Rules (binding)
+
+- Difficulty must **never** rise monotonically step-by-step — no mechanical staircase, on either axis.
+- **Seam law** (the precise form of "a new-mechanic block starts with a dip"): at every seam (`ΔM > 0`) the debut level's `D_exec` sits **strictly below the previous block's `D_exec` peak**. Equivalent budget form: `D(debut) − D(previous block peak) < w5·ΔM` — the entire `D` rise at a debut is comprehension tax, never execution.
+- **Sawtooth:** inside a block, `D_exec` ramps until it **exceeds the previous block's `D_exec` peak**. A block that ends below its predecessor's peak is a flat spot, not a curve.
+- **Construction floor** (unchanged by the re-axing): the debut level — and its successor where the block allows — is short (**par ≤ 4** in the teaching span, L1–L15), single-concept (one new mechanic *unit*), free of false routes, and teaches **below OFFERED**: demonstrated by walking, not demanded (the L6 precedent `switchRequired = false`, a named concession never scored as FORCED — `docs/ai-native-pipeline.md` §8.5 OQ4).
+- **Rejection teeth** (unchanged): a debut candidate that breaks the seam law is **rejected or redesigned**. No exceptions — and the rejection is program-side (`scripts/` gate + Solver on `applyMove`'s own graph), never a model's opinion.
+- The **Final Exam introduces no new mechanic**.
+- A mechanic introduced anywhere other than **L6 / L11** is a *schedule* change: it needs a Game Designer ruling (ADR-0009 class), not an edit to this table.
+
+### 3.5 Which numbers have legal force today — and which deliberately do not
+
+- **L1–L10: measured** (§5.2, reproduced by `scripts/solve-levels.ts`, pinned by `tests/solver/difficulty.test.ts`). This is the only stretch of the curve with a program behind it.
+- **L11: pre-registered before any candidate exists** (`D_exec < 13.64`) — so it cannot be fitted after the fact; GD published it in `docs/level-design.md` §6 and §5.2's hook row carries it.
+- **L12–L50: no numeric target is published here**, on purpose. Every value would be unfitted (the §2 weights are V0.1-provisional) and unmeasurable (the levels do not exist). What is fixed above L11 is the **ordering** — strictly above the previous block's peak, ramp within the block, never a staircase — plus the construction floor at any seam. Numbers enter this document only by (a) authoring a level and having the Solver measure it, or (b) regression of `w1…w5` against playtest data (§4). No third path — that is the discipline §5.2's falsified-band record exists to enforce.
+- **Weights are echoed, so no re-read can drift:** every published row carries the weight vector it was computed with (§2a/§5.2). A future re-calibration **recomputes** the seam law; it never re-interprets a stored number.
+- The **felt half** of the valley (first-win time, restarts, undos, refusals at a debut vs the previous block's close) is not a Solver quantity: it is the Playtest Analyst clause named in `docs/level-design.md` §6, a labelled hypothesis until the Stage-2/3 protocol runs with thresholds frozen before the cohort.
 
 ## 4. Calibration loop
 
@@ -147,46 +204,47 @@ Definitions, so the table cannot be misread:
 - `maxSearchDepth` = the depth the *wandering* BFS reached. It is **not** `T` and must not be read as `T`: it measures unexplored frontier depth, not the depth at which an alternative becomes unrecoverable (§2a, §5.2).
 - `parRoutes / embedRoutes` = shortest routes / how many of them end embedded (LV-004 plumbing, `docs/ai-native-pipeline.md` §8). The metric reports **that** some arrival was embedded, not **which** tile did it: on L6–L10 the embedding arrival is typically a **door** tile (a door that latches closed under the player after the flip) — a different construction from L4/L5's wall echo, and L10 carries both. See `src/levels/README.md` §2b/§3.
 
-**Curve read-out (block L6–L10, the latch unit).** `L` runs 4 → 4 → 6 → 8 → 9: the block **starts with a dip** (L6 par 4, the lowest in the game) while `M` jumps 1 → 3, exactly the §3 rule "a new-mechanic block always starts with a dip" — the mechanic count rises, the move count does not. `B_raw` stays flat (2.0–3.0) for every level, so **difficulty is not coming from raw branching**; it comes from planning depth and latch state (L9 `maxSearchDepth` 15 against `par` 8: the board offers long, useless wandering before the ordered plan is found).
+**Curve read-out (block L6–L10, the latch unit).** `L` runs 4 → 4 → 6 → 8 → 9: the block **starts with a dip** (L6 par 4, the lowest in the game) while `M` jumps 1 → 3, exactly the §3.4 rule "a new-mechanic block always starts with a dip" — the mechanic count rises, the move count does not. `B_raw` stays flat (2.0–3.0) for every level, so **difficulty is not coming from raw branching**; it comes from planning depth and latch state (L9 `maxSearchDepth` 15 against `par` 8: the board offers long, useless wandering before the ordered plan is found).
 
-**The §5.1 gap is now closed — but on the move-count axis, not on `D`.** `B` (effective), `T`, `R` and `D` were recorded here as *plainly missing* until LV-007B item 3. They are measured now (§5.2), and the result contradicts the §3 curve rule where it matters: the L5→L6 dip is **–2 on `L` and +8.53 on `D`** (§5.2). No number here is estimated or back-filled; §5.1 stays the raw solver dump and §5.2 is the model.
+**The §5.1 gap is now closed — but on the move-count axis, not on `D`.** `B` (effective), `T`, `R` and `D` were recorded here as *plainly missing* until LV-007B item 3. They are measured now (§5.2), and the result contradicted the §3 curve rule where it matters: the L5→L6 dip is **–2 on `L` and +8.53 on `D`** (§5.2). (That reading stands as taken at LV-007B; the contradiction was then resolved by a change of *axis*, not of numbers — §2b, §3.2, ADR-design-0001 — and §3 was re-keyed to the resolved law at LV-007C item 3.) No number here is estimated or back-filled; §5.1 stays the raw solver dump and §5.2 is the model.
 
 ### 5.2 The §2 model, measured (LV-007B item 3)
 
-Re-derivable with `node_modules/.bin/tsx scripts/solve-levels.ts` (the `difficulty` and
-`difficultyDiagnostics` lines per level) and pinned by `tests/solver/difficulty.test.ts`
-(one assertion set per level, values below reproduced to 6 decimals). Weights are §2's
-**provisional** `w1…w5 = 1, 3, 4, 2, 5` — echoed into every row so no stored `D` can be
-re-read against a later re-calibration.
+Re-derivable with `node_modules/.bin/tsx scripts/solve-levels.ts` (the `difficulty`,
+`difficultyDiagnostics` and `difficultyExec` lines per level) and pinned by
+`tests/solver/difficulty.test.ts` (one assertion set per level, values below reproduced
+to 6 decimals). Weights are §2's **provisional** `w1…w5 = 1, 3, 4, 2, 5` — echoed into
+every row so no stored `D` can be re-read against a later re-calibration.
 
-| Level | `L` | `B` | `T` | `R` | `M` | `D = 1·L + 3·B + 4·T + 2·R + 5·M` | `lookaheadDepth` (diag.) |
-|---|---|---|---|---|---|---|---|
-| L1 | 4 | 1.6667 | 0 | 0 | 1 | **14.00** | 3 |
-| L2 | 5 | 1.6875 | 0 | 0 | 1 | **15.06** | 4 |
-| L3 | 6 | 1.4286 | 0 | 0 | 1 | **15.29** | 5 |
-| L4 | 6 | 1.5263 | 0 | 0 | 1 | **15.58** | 5 |
-| L5 | 6 | 1.4444 | 0 | 0 | 1 | **15.33** | 5 |
-| L6 | 4 | 1.6207 | 0 | 0 | 3 | **23.86** | 3 |
-| L7 | 4 | 1.2500 | 0 | 0 | 3 | **22.75** | 3 |
-| L8 | 6 | 1.5000 | 0 | 0 | 3 | **25.50** | 5 |
-| L9 | 8 | 1.3793 | 0 | 0 | 3 | **27.14** | 7 |
-| L10 | 9 | 1.5476 | 0 | 0 | 3 | **28.64** | 8 |
-| **L11 (hook — not authored)** | — | — | — | — | — | **—** | — |
+| Level | `L` | `B` | `T` | `R` | `M` | `D = 1·L + 3·B + 4·T + 2·R + 5·M` | `D_exec = D − 5·M` (§2b) | `lookaheadDepth` (diag.) |
+|---|---|---|---|---|---|---|---|---|
+| L1 | 4 | 1.6667 | 0 | 0 | 1 | **14.00** | 9.00 | 3 |
+| L2 | 5 | 1.6875 | 0 | 0 | 1 | **15.06** | 10.06 | 4 |
+| L3 | 6 | 1.4286 | 0 | 0 | 1 | **15.29** | 10.29 | 5 |
+| L4 | 6 | 1.5263 | 0 | 0 | 1 | **15.58** | 10.58 | 5 |
+| L5 | 6 | 1.4444 | 0 | 0 | 1 | **15.33** | 10.33 | 5 |
+| L6 | 4 | 1.6207 | 0 | 0 | 3 | **23.86** | **8.86** | 3 |
+| L7 | 4 | 1.2500 | 0 | 0 | 3 | **22.75** | **7.75** | 3 |
+| L8 | 6 | 1.5000 | 0 | 0 | 3 | **25.50** | 10.50 | 5 |
+| L9 | 8 | 1.3793 | 0 | 0 | 3 | **27.14** | 12.14 | 7 |
+| L10 | 9 | 1.5476 | 0 | 0 | 3 | **28.64** | 13.64 | 8 |
+| **L11 (hook — not authored)** | — | — | — | — | — | **—** | **< 13.64** (pre-registered, §3.3) | — |
 
 Definitions are §2a's, not re-stated per row. Two things this table says that §5.1 could not:
 
 - **`T ≡ 0` and `R ≡ 0` on 10/10, and that is a theorem, not a hole.** `docs/level-design.md` §4 forbids exactly the states these two terms measure (`noUnrecoverableOk`, no dead states — both re-checked per level in the test file), so inside the acceptance region `D = L + 3·B + 5·M`. `w3` and `w4` are therefore **inert for any shippable level**: they cannot be used to shape the curve while §4 stands. The zero is *measured*, not assumed — the test file pairs it with a §4-violating control board (a portal that deposits the player in a sealed room) on which `T > 0`, `R > 0` and both weights really move `D`.
 - **`B` is a real filter, and it is not `B_raw`.** `B < B_raw` on every level (L1 1.67 vs 2.93 … L9 1.38 vs 2.59) — the "non-dominated" qualifier in §2 costs about a third of the apparent branching, which is why substituting `B_raw` into `D` would have inflated the whole curve.
+- **The new column is the axis the dip law lives on.** `D_exec` **falls 10.33 → 8.86** across L5→L6 (Δ **−1.47**) while `D` rises +8.53 — the same seam, read on the axis `docs/level-design.md` §6 re-anchored at GD-008 (ADR-design-0001), now published as a column instead of left as a subtraction for the reader (§2b). The dip spans exactly the two par-4 levels (L6 8.86, L7 7.75) and the block then ramps to 13.64 > L4's 10.58: the sawtooth is visible on this axis and nowhere on `D`.
 
-**The L5→L6 seam, measured (the block-opening dip §3 asks for):** `D` **rises by +8.528736**, decomposed exactly as ΔL = **−2**, ΔB = **+0.528736**, ΔM = **+10**, ΔT = ΔR = 0. The design target (`docs/level-design.md` §6: the first level of a new-mechanic block sits **2–3 points below** the previous block's peak) is therefore **missed, with the sign inverted**, and it is missed **by construction at these weights**: introducing a mechanic adds `5·ΔM` (+10 here) in the very step where the dip is supposed to lower the score, while par can only fall to the block's floor (4, the game's lowest) and `B` does not fall at all. A −2…−3 `D` dip at a mechanic introduction is **unreachable** with `w = (1, 3, 4, 2, 5)` no matter what the board looks like.
+**The L5→L6 seam, measured (the block-opening dip §3 asks for):** `D` **rises by +8.528736**, decomposed exactly as ΔL = **−2**, ΔB = **+0.528736**, ΔM = **+10**, ΔT = ΔR = 0. The design target as it read at the time (`docs/level-design.md` §6 **V0.5** — superseded at GD-008 by ADR-design-0001, and the clause measured here is the pre-V0.6 one: the first level of a new-mechanic block sits **2–3 points below** the previous block's peak) is therefore **missed, with the sign inverted**, and it is missed **by construction at these weights**: introducing a mechanic adds `5·ΔM` (+10 here) in the very step where the dip is supposed to lower the score, while par can only fall to the block's floor (4, the game's lowest) and `B` does not fall at all. A −2…−3 `D` dip at a mechanic introduction is **unreachable** with `w = (1, 3, 4, 2, 5)` no matter what the board looks like.
 
-**Recorded, not smoothed.** No weight was tuned to manufacture the dip and no definition was re-worded to make the curve look right: the formula is the doc's, the weights are the doc's, and the disagreement is published here. It is a **weight/definition question for the Game Designer** (see the open items in `docs/level-design.md` §6), with two levers this measurement makes concrete: (a) re-weight `w5` (or let `M` count *new* mechanics instead of total ones, which is what §3's dip rule actually describes), or (b) adopt the weightless `lookaheadDepth` as the real `T` — it is measured on every level, but note it **saturates at `L − 1`** on all ten (the deepest state where a move can waste the par is always exactly one step before the goal), so it is not a differentiator either.
+**Recorded, not smoothed.** No weight was tuned to manufacture the dip and no definition was re-worded to make the curve look right: the formula is the doc's, the weights are the doc's, and the disagreement is published here. It was a **weight/definition question for the Game Designer** (see the open items in `docs/level-design.md` §6), with two levers this measurement made concrete: (a) re-weight `w5` (or let `M` count *new* mechanics instead of total ones, which is what §3.4's seam rule actually describes), or (b) adopt the weightless `lookaheadDepth` as the real `T` — it is measured on every level, but note it **saturates at `L − 1`** on all ten (the deepest state where a move can waste the par is always exactly one step before the goal), so it is not a differentiator either. **The question is closed** (GD-008 / ADR-design-0001): lever (a) was taken *as a decomposition rather than a re-weighting* — `w5` is unchanged, the dip law moved to `D_exec` (§2b/§3.2), so **no published `D` moved**; lever (b) was declined on the saturation measured here.
 
-**L11 hook row.** L11 is where ADR-0009 schedules **M2 (portals)**, i.e. the first `M` step since L6 and the first board on which `dualPhaseTiles ≥ 1` becomes satisfiable. Two things land with it and both are *measurements to take*, not numbers to fill in: the M2 row of this table, and the promotion of the ordered companion metric `refusedBeforeEnteredTiles` from reported-only to gate (ADR-architecture-0002's implementation trigger: it MUST land before the first L11+ portal candidate is accepted; ADR-0009 decision 4 / `docs/ai-native-pipeline.md` §8.5 keep the acceptance law on the **unordered** form). The row above is deliberately empty — this document does not pre-fill a level that does not exist.
+**L11 hook row.** L11 is where ADR-0009 schedules **M2 (portals)**, i.e. the first `M` step since L6 and the first board on which `dualPhaseTiles ≥ 1` becomes satisfiable. Two things land with it and both are *measurements to take*, not numbers to fill in: the M2 row of this table (with its `D_exec`), and the **pre-registered seam decision** of §3.3 — `D_exec(L11) < 13.64` (L10's measured value, reproduced in §5.2 and pinned by `tests/solver/difficulty.test.ts`). The row above is deliberately empty — this document does not pre-fill a level that does not exist. (The ordered companion's first promotion already landed: **gate (iii)** reads `refusedBeforeEnteredTiles` since LV-007C; what L11 still owes is the block ruling of the two legs in `docs/ai-native-pipeline.md` §8.5, not another metric.)
 
 ### 5.3 Measured metrics are the only claim
 
-The two tables above are generated by the program, never by a model: `L1–L10` par values are the solver's `shortestSolution` (the level gate FAILs on any mismatch), the state/route counts come from the same BFS that proves solvability, `refusedThenEnteredTiles` / `dualPhaseTiles` come from `@/core/solver/bfs` with the definitions of `docs/architecture.md` §8 / ADR-0009, and `B`/`T`/`R`/`D` come from `@/core/solver/difficulty.ts` reading that same graph (§2a). Where a field is missing it is named as missing — `L11`'s row is empty, not estimated.
+The two tables above are generated by the program, never by a model: `L1–L10` par values are the solver's `shortestSolution` (the level gate FAILs on any mismatch), the state/route counts come from the same BFS that proves solvability, `refusedThenEnteredTiles` / `dualPhaseTiles` come from `@/core/solver/bfs` with the definitions of `docs/architecture.md` §8 / ADR-0009, and `B`/`T`/`R`/`D`/`D_exec` come from `@/core/solver/difficulty.ts` reading that same graph (§2a/§2b). Where a field is missing it is named as missing — `L11`'s row is empty, not estimated.
 
 ## 6. Change log
 
@@ -195,3 +253,5 @@ The two tables above are generated by the program, never by a model: `L1–L10` 
 | 2026-10-14 | V0.1 | Initial metric definition + provisional weights + target curve | Agent 4 |
 | 2026-10-15 | V0.2 | **LV-006** — new **§5.1 measured metrics for L1–L10** (source, definitions and the block read-out for the latch unit). Records explicitly that `B` (effective), `T`, `R` and therefore `D` are **still unmeasured** — no stand-in is published; `B_raw` (average legal out-degree) is labelled as NOT the §2 `B`. Also records the L6–L10 design deviation (see §5.1/`src/levels/README.md` §2b–§4) so the difficulty rows are traceable | Level AI + Solver (LV-006) |
 | 2026-10-15 | V0.3 | **LV-007B item 3 — the §5.1 gap is closed by measurement.** New **§2a** pins the implemented reading of all five terms (`B` effective = non-dominated legal moves against an exact reverse-BFS distance; `T` literal ⇒ `≡ 0` under §4; `R` = dead states ÷ reachable states with `unrecoverableRatio` as its named companion; `M` = categories; `bRaw`/`forcedMoveRatio`/`lookaheadDepth`/`unrecoverableRatio` demoted to weightless diagnostics) and states that `D` is **not** added to the §8 `SolveResult` contract because the weights are provisional (re-calibration = one constant). New **§5.2** publishes `B`/`T`/`R`/`M`/`D` for L1–L10, the `T ≡ R ≡ 0` theorem inside the §4 acceptance region (so `D = L + 3·B + 5·M` there and `w3`/`w4` are inert), the `B < B_raw` control, the **L5→L6 seam = +8.528736** with its exact decomposition (ΔL −2 · ΔB +0.529 · ΔM +10), the explicit statement that the −2…−3 dip `docs/level-design.md` §6 asks for is **unreachable at these weights by construction**, and an **empty L11 hook row** (M2 debut) that also carries the `refusedBeforeEnteredTiles` promotion trigger. Former §5.2 → **§5.3**. §5's opening claim that metrics are *stored* per level was **corrected**: nothing is stored (the frozen schema has no metrics field and no sidecar exists), the tables are recomputed from the shipped data and pinned by tests, and the persist-or-not question is an OPEN_QUESTION. No weight tuned, no definition re-worded to flatter the curve; the contradiction is reported as-is | Level AI + Solver (LV-007B) |
+| 2026-10-15 | V0.4 | **LV-007C item 2 — the execution axis is published as a column.** New **§2b** defines `D_exec = D − w5·M = w1·L + w2·B + w3·T + w4·R` (ADR-design-0001; `docs/level-design.md` §6) as a **purely derived** reading — `D`'s formula, arithmetic and published values are untouched — and names both forms the program prints (`difficultyExec Dexec=… = D(…) − 5·M(…) = 1·L + 3·B + 4·T + 2·R`, the subtraction *and* the formula's own terms, so the identity is checked rather than assumed); `src/core/solver/difficulty.ts` gains `DifficultyBreakdown.Dexec` (`null` iff `D` is). §5.2 gains the `D_exec` column for L1–L10 (9.00 / 10.06 / 10.29 / 10.58 / 10.33 / 8.86 / 7.75 / 10.50 / 12.14 / 13.64, reproduced from the factory CLI output, not copied) plus the read-out of the L5→L6 seam on that axis (**−1.47**, against **+8.53** on `D` — the two axes are now printed side by side), the L11 hook row carries the pre-registered `< 13.64`, and `tests/solver/difficulty.test.ts` §2c pins both forms + the `L + 3·B` collapse + the ten published values. §5.3's provenance sentence names the new column | Level AI + Solver (LV-007C) |
+| 2026-10-15 | V0.4 | **LV-007C item 3 — §3 re-keyed to the V0.6 execution-axis law, and reconciled with the schedule that actually ships.** The old §3 (V0.1 text) was the last place still carrying the **pre-ADR-0009** plan — a Phase Door dip at **L21–L25** and a Phase Portal dip at **L36–L40** — plus **absolute `D` bands** (`1–2` at L1–L3 … `16–17` at L50) written before `D` was computable; both are **withdrawn by name** in a new §3.1 with the measurement that falsifies them (**the shipped teaching ten alone measures 14.00–28.64**, §5.2, so every band under "L26–L35: 8–11" is already contradicted by levels that exist). §3.2 draws the law as it now reads — sawtooth on `D_exec`, step-**up** on `D` at a debut by `w5·ΔM` — the same curve read twice. §3.3 rebuilds the block table on **`docs/game-design.md` §8's** ranges verbatim (the only two `ΔM > 0` seams are **L6** and **L11**; L21–L25 is *latch fluency* and L36–L45 *synthesis*, so neither may carry a debut dip), with the measured ✓ on the L6 seam (debut 8.86 < peak 10.58; dip −1.72 vs peak / −1.47 vs L5; ramp to 13.64 > 10.58) and the **L11 pre-registration** restated verbatim (`D_exec(L11) < 13.64` ⇔ `D < 33.64`, par ≤ 4, one opposite-colour portal pair, no false routes, below-OFFERED; block must exceed 13.64 by its end). §3.4 states the binding rules — seam law + budget form `ΔD < w5·ΔM`, sawtooth, construction floor, rejection teeth, no debut outside L6/L11 without a GD ruling, Final Exam adds no mechanic. §3.5 names **which numbers have legal force** (L1–L10 measured, L11 pre-registered) and states that **no numeric band above L11 is published on purpose** — a fresh band schedule nobody can measure would repeat the error §5.2 documents; new numbers enter only by solver measurement or playtest regression of `w`. **No new number, weight, rule or level change; authority stays `docs/level-design.md` §6 / ADR-design-0001** | Level AI + Solver (LV-007C) |

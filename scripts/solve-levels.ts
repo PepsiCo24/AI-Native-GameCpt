@@ -190,7 +190,9 @@ function reportLevel(
   // LV-007B item 2: the *ordered* companion of the line above — a subset, and the
   // difference is the trapped refusals (history-dependence the player cannot act
   // on). The canonical metric stays the unordered one (architecture §8.1 /
-  // ADR-architecture-0002), so this line is reported, never substituted.
+  // ADR-architecture-0002) and carries §8.5's acceptance law; since LV-007C this
+  // field is the reader of Aha gate (iii) (docs/level-design.md §3, ordered at
+  // GD-008), reported *and* gated there, never substituted for the canonical one.
   console.log(
     `       refusedBeforeEnteredTiles=${result.refusedBeforeEnteredTiles} tiles=${formatTiles(result.refusedBeforeEnteredTileList)}`,
   );
@@ -227,6 +229,14 @@ function reportLevel(
     );
     console.log(
       `       difficultyDiagnostics BRaw=${add.bRaw.toFixed(4)} forcedMoveRatio=${add.forcedMoveRatio.toFixed(4)} lookaheadDepth=${add.lookaheadDepth} unrecoverableRatio=${add.unrecoverableRatio.toFixed(4)} reachableStates=${add.reachableStates}`,
+    );
+    // LV-007C item 2: the **execution axis** `D_exec = D − w5·M` (ADR-design-0001;
+    // `docs/level-design.md` §6's dip law lives on it). Printed in both forms — the
+    // subtraction and the formula's own non-`M` terms — so the identity is checked by
+    // the reader, not assumed. Purely derived: no new measurement, and `D`'s line
+    // above is untouched.
+    console.log(
+      `       difficultyExec Dexec=${add.Dexec === null ? "n/a (unsolvable)" : add.Dexec.toFixed(2)} = D(${add.D === null ? "n/a" : add.D.toFixed(2)}) − ${w.M}·M(${add.M}) = ${w.L}·L(${String(add.L)}) + ${w.B}·B(${add.B.toFixed(4)}) + ${w.T}·T(${add.T}) + ${w.R}·R(${add.R.toFixed(4)}) · execution axis (ADR-design-0001; inside docs/level-design.md §4 T ≡ R ≡ 0 ⇒ Dexec = L + ${w.B}·B)`,
     );
   }
   printGates(audit.gates);
