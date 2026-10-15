@@ -2,7 +2,7 @@
 
 - **Asset ID:** `A-06`
 - **Asset Name:** `goal` (destination tile), `portal_a` (Phase A portal), `portal_b` (Phase B portal)
-- **用途:** The level goal marker, and the Phase Portal mechanic (introduced at L36). Must read clearly at grid-cell size.
+- **用途:** The level goal marker, and the Phase Portal mechanic (first board at **L11** per ADR-0009 D3; pre-D3: L36). Must read clearly at grid-cell size.
 - **数量:** 3
 - **尺寸:** 512 × 512 px each
 - **比例:** 1:1
@@ -22,7 +22,7 @@
   > text, arrows, letters, numbers, wall look, door look, brick, stone texture, harsh outline, 3D render, photorealism, cluttered detail, mismatched portal shapes, scary portal, fire, lava, watermark, low resolution
 - **文件名:** `goal.png`, `portal_a.png`, `portal_b.png`
 - **目标目录:** `assets/art/props/`
-- **依赖与阻塞:** Goal blocks Stage 2 (every level needs it). Portal blocks Stage 5 (L36).
+- **依赖与阻塞:** Goal blocks Stage 2 (every level needs it). Portal is Stage-5 content (first board at **L11** per ADR-0009 D3; pre-D3: L36) — and per `asset-manifest.md` V0.5.2 (UA-0008 Q3) the raster portal pair is **optional Stage-5 polish, never a shipping dependency** (the vector portal ships; `docs/ui-ux.md` §9.1, V0.8).
 - **验收标准 / Acceptance criteria:**
   1. Three PNG files, ≥ 512 × 512 px, **real alpha channel**; no white box, no baked background, no fringe on glow edges.
   2. Each sprite centred, filling **65–80 %** of the canvas, with identical framing across all three so they swap in place without a layout shift.

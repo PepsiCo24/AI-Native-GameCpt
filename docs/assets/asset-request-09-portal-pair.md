@@ -2,7 +2,7 @@
 
 - **Asset ID:** `A-06-R1` (revision of the portal half of `A-06`; `goal.png` PASSES and is **not** regenerated)
 - **Asset Name:** `portal_a` (Phase A portal), `portal_b` (Phase B portal)
-- **用途:** Phase Portal mechanic (L36, Stage 5). Must pair-read with itself across phases and coexist on the board with `goal.png` without layout shift.
+- **用途:** Phase Portal mechanic (first board at **L11** per ADR-0009 D3; pre-D3: L36 — Stage 5, and per `asset-manifest.md` V0.5.2 optional polish only, never a shipping dependency). Must pair-read with itself across phases and coexist on the board with `goal.png` without layout shift.
 - **数量:** 2
 - **尺寸:** 512 × 512 px each, native
 - **比例:** 1:1
