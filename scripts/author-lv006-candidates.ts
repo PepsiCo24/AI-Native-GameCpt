@@ -308,6 +308,12 @@ const FAMILIES: Array<{
 interface Outcome {
   readonly accepted: boolean;
   readonly reason: string;
+  /**
+   * The machine-readable policy codes, when the rejection came from
+   * `@/core/solver/policy` (the probes read these, never the prose of `reason`,
+   * so a probe can require *every* code it claims — LV-007A).
+   */
+  readonly codes?: readonly string[];
 }
 
 /** Run every program gate on one candidate. The solver — never the proposal — sets `par`. */
@@ -361,6 +367,7 @@ function judge(lead: Lead): { outcome: Outcome; level: Level | null } {
       outcome: {
         accepted: false,
         reason: `policy:${first?.code ?? "?"}${audit.violations.length > 1 ? `(+${audit.violations.length - 1})` : ""}`,
+        codes: audit.violations.map((violation) => `policy:${violation.code}`),
       },
       level: null,
     };
@@ -519,18 +526,25 @@ console.log("");
 //      reachable without ever pressing it, so the Aha is gone;
 //   3. a door no switch targets (M1 alone — the mechanic ADR-0009 measured as
 //      static).
+//
+// A probe may claim **several** codes (LV-007A): probe 2 now trips two, because
+// removing the funnel removes the only reason to press the switch — the same
+// board also breaks the `switchRequired` obligation (`lesson-switch-required`)
+// that binds L7–L10. The coupling is a finding about the board, so it is stated
+// and asserted; the gate (i) code must still be among them.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PROBES: Array<{
   id: number;
   label: string;
-  expect: string;
+  /** Every policy code the rejection must name (all of them, not just the first). */
+  expect: readonly string[];
   level: Lead;
 }> = [
   {
     id: 900,
     label: "probe: inert switch (activePhase can never be current)",
-    expect: "policy:switch-never-fires",
+    expect: ["policy:switch-never-fires"],
     // The door sits on a side tile (decorative: the goal is reachable along the
     // row), so the level stays *solvable* and the inert switch is the only defect
     // — which is exactly the point: the policy has to catch what the BFS cannot.
@@ -553,7 +567,10 @@ const PROBES: Array<{
   {
     id: 8,
     label: "probe: Aha board without the funnel (switch becomes optional)",
-    expect: "policy:gate-no-solution-with-switches-off",
+    expect: [
+      "policy:gate-no-solution-with-switches-off",
+      "policy:lesson-switch-required",
+    ],
     level: {
       id: 8,
       width: 5,
@@ -573,7 +590,7 @@ const PROBES: Array<{
   {
     id: 6,
     label: "probe: door targeted by no switch (M1 alone)",
-    expect: "policy:door-without-switch",
+    expect: ["policy:door-without-switch"],
     level: {
       id: 6,
       width: 5,
@@ -594,10 +611,12 @@ console.log("negative probes (must all be REJECTED by name, never repaired):");
 let probesRejected = 0;
 for (const probe of PROBES) {
   const { outcome } = judge(probe.level);
-  const ok = !outcome.accepted && outcome.reason.startsWith(probe.expect);
+  const codes = outcome.codes ?? [outcome.reason];
+  const ok =
+    !outcome.accepted && probe.expect.every((code) => codes.includes(code));
   if (ok) probesRejected += 1;
   console.log(
-    `  ${ok ? "OK  " : "FAIL"} ${probe.label.padEnd(52)} expected=${probe.expect} got=${outcome.reason}`,
+    `  ${ok ? "OK  " : "FAIL"} ${probe.label.padEnd(52)} expected=${probe.expect.join(" + ")} got=${codes.join(" ")}`,
   );
 }
 if (probesRejected !== PROBES.length) {

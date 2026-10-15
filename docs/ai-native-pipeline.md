@@ -76,7 +76,7 @@ Hard reject conditions:
 - Invalid schema / out-of-bounds / duplicate ids.
 - A cell that is **two objects at once** — today exactly one case exists, a door tile that is also a phase wall (§3b). The board must never promise a move it refuses.
 - **M1 alone**: a door no switch targets, or a door whose only switches can never fire anywhere in the reachable state space. Measured, not declared — see §8. (M1+M3 without either half is the mechanic ADR-0009 measured as static: `refusedThenEnteredTiles = 0`.)
-- A documented lesson the board does not deliver (a "forced" phantom walk that is optional, a latch level with `refusedThenEnteredTiles = 0`, a named Aha gate that FAILs). The documentation is checked against the program, never the other way round.
+- A documented lesson the board does not deliver (a "forced" phantom walk that is optional, a latch level with `refusedThenEnteredTiles = 0`, a documented load-bearing latch whose goal is still reachable with every switch OFF — `lesson-switch-required`, §8.5 — a named Aha gate that FAILs). The documentation is checked against the program, never the other way round.
 
 ## 3b. Level Schema — the validator's own adjudications (door ∩ wall = illegal)
 
@@ -192,14 +192,24 @@ generator prints them rather than quietly narrowing the family.
 
 ### 8.3 Gate self-test (negative probes — the run must fail if these pass)
 
-| Probe | Expected reason | Measured |
+| Probes | Expected reason | Measured |
 |---|---|---|
 | inert switch (`activePhase` can never be current on its own tile) | `policy:switch-never-fires` | rejected by that name |
-| L8 board without the goal funnel (the door still refuses, the switch still fires — but the goal is reachable without pressing it) | `policy:gate-no-solution-with-switches-off` | rejected by that name |
+| L8 board without the goal funnel (the door still refuses, the switch still fires — but the goal is reachable without pressing it) | `policy:gate-no-solution-with-switches-off` **+** `policy:lesson-switch-required` (LV-007A: removing the funnel removes the only reason to press the switch, so the same board also breaks the `switchRequired` obligation — stated, not tolerated; gate (ii) is named too) | rejected by those names |
 | door targeted by no switch (M1 alone) | `policy:door-without-switch` | rejected by that name |
 
-The probes mirror `scripts/validate-levels.ts`'s negative self-tests: an accept-only
+A probe claims **every** code it must see (`expect: readonly string[]`) and the script prints the
+full code list, so a probe can no longer hide a second finding behind a `(+N)` suffix. The probes
+mirror `scripts/validate-levels.ts`'s negative self-tests: an accept-only
 generator proves nothing about its own gate.
+
+Since **LV-007A** this is no longer only the generator's business: `tests/solver/policy-negative-controls.test.ts`
+carries **one negative control per entry of `POLICY_VIOLATION_CODES`** (`Record<PolicyViolationCode, …>`,
+so a code without a control is a compile error) plus a source scan that fails when `policy.ts`
+emits a `code:` literal the inventory does not declare. RV-004 **m-2** found the gap the hard way:
+mutating `lesson-latch-dynamism` (`=== 0` → `false`) kept **176 tests green**. Today the same
+mutation turns the suite RED, as does the inversion of any check (each mutation was run, not
+assumed).
 
 ### 8.4 What was enforced where (and why not in the schema)
 
@@ -212,9 +222,12 @@ schema is a *shape* contract (`src/core/level/**` was not changed by LV-006):
    parity). Enforced on every level, not just L6–L10.
 2. **A documented lesson must be program-true** — the ladder's lesson table
    (`@/core/solver/policy` `DOCUMENTED_LESSONS`, L1–L10) is checked against the metrics:
-   phantom walk FORCED (l005) / OFFERED (l004), latch dynamism on L6–L10, and the named
-   Aha #1 gates on L8. The suite fails if a ladder level has no documented-lesson row, so
-   the table cannot drift from the dataset.
+   phantom walk FORCED (l005) / OFFERED (l004), latch dynamism on L6–L10, the documented
+   `switchRequired` obligation (L7–L10, with L6's dip recorded on its row as `"exempt"` —
+   §8.5), and the named Aha #1 gates of §3 on L8 — measured conditions (i)(ii)(iii) plus,
+   since LV-007A, the §3 **construction** bullets as gates (v) `single-door-one-switch-funnel`
+   and (vi) `aha-par-cap` (`par ≤ 8`). The suite fails if a ladder level has no
+   documented-lesson row, so the table cannot drift from the dataset.
 
 ### 8.5 Escalation — one named condition is unsatisfiable as written
 
@@ -227,6 +240,33 @@ portal exists in `src/levels` before it. The gate is therefore **implemented and
 as `UNSATISFIABLE` with the proof printed**, `dualPhaseTiles === 0` is pinned as the proven
 value, and the CLI lists it under ESCALATIONS — never as a pass, never softened, and never
 "fixed" by adding a portal the schedule forbids.
+
+**The corrected acceptance law, restated for the record (Orchestrator adjudication of this
+escalation).** Because gate (iv) cannot be satisfied before L11, acceptance of an M1+M3 level
+**pre-L11** is carried by the *measured latch* instead: `refusedThenEnteredTiles ≥ 1`
+(ADR-0009 decision 4 — a tile that refuses entry in one reachable state and accepts it in
+another, i.e. history, not parity, carries the decision). The fourth gate **activates from the
+L11 portals block** and reports `UNSATISFIABLE` with its proof until then. LV-007A **m-5**
+tightened the guard: the verdict now needs **both** facts — the board is portal-free **and**
+the solver measured 0 — so a portal-bearing board that measures 0 is a loud **FAIL** (inert
+M2 content), and a portal-free board that ever measures non-zero is a **PASS with an explicit
+ANOMALY** escalation instead of a routine pass. A suite pin asserts that `dual-phase-tiles` is
+the **only** gate allowed to reach `UNSATISFIABLE` (the CLI's escalation channel is generic,
+so its single legitimate producer is pinned rather than trusted).
+
+**`switchRequired` is an obligation on the documented lesson (LV-007A · OQ4 ruling).** The
+`switchRequired = true` that L7–L10 carry (all four measure `true` on the shipped boards) is no
+longer shipped data only: `@/core/solver/policy` checks it, and a level documented as a latch
+whose switch is load-bearing is rejected by **`policy:lesson-switch-required`** when the goal is
+still reachable with every switch OFF (the all-OFF subgraph and its reachability are printed
+with the violation). The obligation is read from the **lesson row**
+(`DOCUMENTED_LESSONS[].switchRequired`), never from the level id: **L6**'s documented dip
+(`docs/level-design.md` §2 L6 + §6 — the un-switched world still solves in 6, the deliberate
+price of teaching the latch on the natural path) is an explicit `"exempt"` row and is the only
+level allowed to keep `switchRequired = false`. There is **no `id === 6` special case** anywhere
+in the module — pinned by a source scan — so the exemption can never be re-read as "L6 is special
+because it is L6"; re-labelling L6's board as L7 is rejected, and promoting a future candidate
+that weakens the latch is a rejection, not a repair (ADR-0004).
 
 ### 8.6 Reproducing this record
 
@@ -245,3 +285,4 @@ node_modules/.bin/vitest run                               # incl. tests/solver/
 | 2026-10-14 | V0.2 | RV-001 **LOW-4** reconciliation: §5 rewritten — "vision-capable model, TBD" and the FAST=DeepSeek mapping were stale; routing now delegates to `docs/ai-model-matrix.md` §3 as single source of truth (REASONING `kimi-k3` · CODING `deepseek-v4.1-flash` · FAST `qwen3.8-flash` · REVIEW/VISION `qwen3.8-max`); Solver-decides-solvability invariant kept verbatim | Docs + GitHub (DG-002) |
 | 2026-10-14 | V0.3 | **LV-005** — new **§3b Level Schema adjudications**: `doors[]` ∩ (`phaseAWalls` \| `phaseBWalls`) = **illegal, hard error** (never "the door swallows the wall"); §3's hard-reject list gains "a cell that is two objects at once". Reason recorded with measured BFS evidence and the explicit non-decision on appearance precedence (UI / Art Director's `docs/ui-ux.md`) | Level AI + Solver (LV-005) |
 | 2026-10-15 | V0.4 | **LV-006** — new **§8 record for the L6–L10 doors+switch unit**: the committed seeded generator and its candidate families, the accept/reject histogram, the shipped-file re-derivation check, the three negative probes, the two content laws now enforced in `@/core/solver/policy`, and the **§8.5 escalation** (`dualPhaseTiles ≥ 1` unsatisfiable before L11). §3's hard-reject list gains "M1 alone" and "a documented lesson the board does not deliver" | Level AI + Solver (LV-006) |
+| 2026-10-15 | V0.5 | **LV-007A (RV-004 backlog A)** — §8.3 gains the one-negative-control-per-code rule (`Record<PolicyViolationCode, …>` + source scan; the m-2 mutation that survived 176 green tests is now RED) and multi-code probe expectations; §8.4's law 2 names the §3 construction bullets as gates (v)/(vi); **§8.5 gains the corrected acceptance law restated for the record** (pre-L11 = `refusedThenEnteredTiles ≥ 1`, gate (iv) active from L11; m-5's two-fact guard + the single-producer whitelist) and the **OQ4 ruling** — `switchRequired` is an obligation on the L7–L10 lesson rows with L6's dip an explicit `"exempt"` row, no `id === 6` special case, new code `lesson-switch-required` | Level AI + Solver (LV-007A) |

@@ -157,17 +157,42 @@ describe("LV-006 · the L6–L10 latch unit is solver-proven", () => {
   });
 
   it("L7–L10 require the switch; L6 is the documented dip where it is optional", () => {
-    // docs/level-design.md §3 condition (i) is generalised to every latch level.
-    for (const level of [L7, L8, L9, L10]) {
+    // docs/level-design.md §3 condition (i) is generalised to every latch level:
+    // the goal must be unreachable inside the all-OFF subgraph — unless the level is
+    // the documented block-opening dip.
+    //
+    // RV-004 n-18: the subgraph size is pinned as a **number** (a solver-side
+    // read-out, `auditLevel().allOffReachableStates`) next to the reachable-state
+    // count, so "the goal is unreachable with every switch OFF" is an assertion
+    // about two measurements rather than about a sentence printed into a detail
+    // string. Values re-measured on the shipped set (2026-10-15).
+    const allOffSubgraph = [
+      { id: 6, goalReachable: true, allOff: 14, reachable: 29 },
+      { id: 7, goalReachable: false, allOff: 5, reachable: 12 },
+      { id: 8, goalReachable: false, allOff: 16, reachable: 34 },
+      { id: 9, goalReachable: false, allOff: 10, reachable: 58 },
+      { id: 10, goalReachable: false, allOff: 20, reachable: 42 },
+    ] as const;
+
+    for (const expected of allOffSubgraph) {
+      const level = LATCH_UNIT.find((entry) => entry.id === expected.id) as Level;
       const audit = auditLevel(level);
       expect(
         audit.allOffGoalReachable,
-        `l${level.id}: the door must genuinely refuse the un-switched approach`,
-      ).toBe(false);
+        `l${expected.id}: the door must genuinely refuse the un-switched approach`,
+      ).toBe(expected.goalReachable);
+      expect(
+        audit.allOffReachableStates,
+        `l${expected.id}: all-OFF subgraph size`,
+      ).toBe(expected.allOff);
+      expect(
+        audit.result.reachableStates,
+        `l${expected.id}: reachable states`,
+      ).toBe(expected.reachable);
     }
-    const l6 = auditLevel(L6);
+
     expect(
-      l6.allOffGoalReachable,
+      auditLevel(L6).allOffGoalReachable,
       "l006 is the block-opening dip (docs/level-design.md §6): its un-switched world still solves in 6",
     ).toBe(true);
   });
@@ -309,6 +334,14 @@ describe("LV-006 · Aha #1 (l008) named gates, measured (docs/level-design.md §
   it("gate (i) — no solution exists with every switch OFF", () => {
     expect(gate("no-solution-with-switches-off").status).toBe("PASS");
     expect(audit.allOffGoalReachable).toBe(false);
+    // RV-004 n-18: the `16/34` in the detail is a measurement, so it is pinned as
+    // two numbers, not as a sentence. `allOffReachableStates` is the size of the
+    // all-OFF subgraph (a solver-side read-out, not a schema field).
+    expect(audit.allOffReachableStates).toBe(16);
+    expect(audit.result.reachableStates).toBe(34);
+    expect(gate("no-solution-with-switches-off").detail).toContain(
+      "all-OFF subgraph: 16/34 reachable state(s) keep every switch OFF",
+    );
   });
 
   it("gate (ii) — every shortest solution presses the switch and crosses the door that refused", () => {
@@ -335,7 +368,11 @@ describe("LV-006 · Aha #1 (l008) named gates, measured (docs/level-design.md §
 
   it("gate (iii) — the refusing tile is in refusedThenEnteredTileList", () => {
     expect(gate("refused-then-entered").status).toBe("PASS");
-    expect(audit.result.refusedThenEnteredTileList).toContain("3,1");
+    // RV-004 n-18: `toEqual` on the whole list, not `toContain` on one entry — a
+    // second refused-then-entered tile on l008 would change the shipped level's
+    // measured shape and must not slip through a membership check.
+    expect(audit.result.refusedThenEnteredTileList).toEqual(["3,1"]);
+    expect(audit.result.refusedThenEnteredTiles).toBe(1);
   });
 
   it("gate (iv) — dualPhaseTiles ≥ 1 is UNSATISFIABLE before L11, and the proven value is 0", () => {

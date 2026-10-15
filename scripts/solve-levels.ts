@@ -193,7 +193,7 @@ function reportLevel(
   );
   // docs/level-design.md §3 condition, measured on every switch-bearing level.
   console.log(
-    `       switchRequired=${audit.allOffGoalReachable === null ? "n/a (no switches)" : String(!audit.allOffGoalReachable)} (goal reachable with every switch OFF: ${audit.allOffGoalReachable === null ? "n/a" : String(audit.allOffGoalReachable)})`,
+    `       switchRequired=${audit.allOffGoalReachable === null ? "n/a (no switches)" : String(!audit.allOffGoalReachable)} allOffSubgraph=${audit.allOffReachableStates === null ? "n/a" : `${audit.allOffReachableStates}/${result.reachableStates} states`} (goal reachable with every switch OFF: ${audit.allOffGoalReachable === null ? "n/a" : String(audit.allOffGoalReachable)})`,
   );
   console.log(
     `       deadStates=${result.deadStates} states=${formatTiles(result.deadStateList)}`,
