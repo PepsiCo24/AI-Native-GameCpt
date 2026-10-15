@@ -1,0 +1,49 @@
+[
+  {
+    "where": "MEASURED pitch @390 CSS (E3-2)",
+    "samples": 0,
+    "medianDevice": 0,
+    "modeDevice": 0,
+    "modeCount": 0,
+    "canvasW": 780,
+    "canvasH": 1432,
+    "cssPitchDevice2": 0,
+    "band": "OUT-OF-BAND — FLAG",
+    "SUPERSEDED": "this pass1 entry reported CSS_PITCH 0/BAND OUT-OF-BAND — channel defect (fixed threshold missed the soft checker deltas); the governing record is capture-log-mobile-pitch.json: measured 51 CSS px, inside the ruled 51-56 band"
+  },
+  {
+    "shot": "mobile_390_l11_day_initial",
+    "bytes": 37214,
+    "h": {
+      "lvl": "11",
+      "moves": "0",
+      "phase": "白昼",
+      "won": false
+    }
+  },
+  {
+    "shot": "mobile_390_l11_night",
+    "bytes": 33464,
+    "h": {
+      "lvl": "11",
+      "moves": "1",
+      "phase": "夜晚",
+      "won": false
+    }
+  },
+  {
+    "shot": "mobile_390_l11_crossing_settled",
+    "bytes": 36330,
+    "h": {
+      "lvl": "11",
+      "moves": "2",
+      "phase": "白昼",
+      "won": false
+    }
+  },
+  {
+    "pageErrors": [],
+    "viewport": "390x844 CSS cssScale2",
+    "tree": "88ea653444b6c51506d9f01d3eeaef1fe1aca31b"
+  }
+]
