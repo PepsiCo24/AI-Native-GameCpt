@@ -176,13 +176,15 @@ all recomputed exact. Findings routed: **MINOR-2** (stale bfs.ts gate-(iii) comm
 LV-007C's own rewrite (verified on develop); **MINOR-1** (46/2000 vs 0.9% vs 18/2000 divergence numbers cited
 across docs without generator labels) → **LV-007D micro + AR-0006** (OQ1: in-repo harness vs unify citations);
  NOTE-1..5 → QA archive (`rv006-mut/` logs) + backlog. Worktree removed. Since then: **UA-0008d — CLOSED & MERGED
- (`4d9dde9`)**, **DG-002 — CLOSED & MERGED (`9bae42c`)** and **DG-002b — CLOSED & MERGED (`9bcbf91`)** (items 41–43).
+ (`4d9dde9`)**, **DG-002 — CLOSED & MERGED (`9bae42c`)**, **DG-002b — CLOSED & MERGED (`9bcbf91`)** (items 41–43)
+ and **AR-0006 — CLOSED & MERGED (`39a96fc`)** (item 44).
  Live now: **LV-008** (L11 first-portal
  authoring against the frozen pre-registered law — `D_exec<13.64`, par≤4, one opposite-color pair, no false
- routes; ≥20 candidates, program proves, accept/reject never repair), **AR-0006** (three rulings: divergence-number
- source of truth / graphics2d type-purity / metrics persistence; four doc debts), **QA-005** (permanent Playwright
+ routes; ≥20 candidates, program proves, accept/reject never repair), **QA-005** (permanent Playwright
  e2e: trusted-input l1→l10 walks + refusal-freeze triples + the transient-frame physics adjudication with a written
- terminal verdict either way; own server, CI-green ruling, vitest 22/408/3 only-up). The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
+ terminal verdict either way; own server :5198, CI-green ruling, vitest 22/408/3 only-up), **GD-009** (AR-0006 R1's
+ GD half: level-design §3 citations → 46/2000 + the approved one-parenthesis `historical` annotation on ADR-0009
+ Context-5's closing line + R5-alignment check, expected no-op). The hard prerequisites for 7x7 long-par boards (n-11) and for gate-(iv)
 firing on portal boards are now in. **QA-005 re-scoped**: Playwright now
 **installed** (devDep + chromium v1248, installed by the Orchestrator as sole package.json writer) and all dynamic
 frames already captured (see item 28). Remaining QA-005 = the permanent spec only: `playwright.config` +
@@ -688,6 +690,28 @@ and a path must be quiescent before dispatch.**
     `src/**`), or a documented physically-unreachable terminal case; no含糊 exit. Plus CI-shape ruling (vitest-only
     default stays green) and the `rv006-mut/` battery-log archival with NOTE-3/NOTE-4 lessons for maintainers. Runs
     on its own vite instance (:5198) — my :5199 merged-tree server stays reserved for the Entry-3 capture.
+44. **AR-0006 — RETURNED & MERGED (`39a96fc`): ADR-architecture-0003 five rulings + architecture V0.7 — the whole
+    architectural backlog cleared in one sweep.** Disk-verified before merge: 4 commits, boundary exactly the 3
+    Architect-owned files; A2's premise checked on disk (`verbatimModuleSyntax: true`, tsconfig.json:16); the scripts
+    tree rewritten to the three REAL files (verified `ls scripts/`); R1–R5 all present as proper `## Ruling` sections
+    (my first grep pattern was wrong, the re-check was right). The rulings: **R1** divergence-rate now has exactly one
+    citable number — the test-pinned **46/2000 (2.3 %)**; 18/2000/0.9 % demoted to labeled historical (out-of-repo
+    harness never committed — *the second corrigendum of the 9/200 class, and this time caught by our own audit
+    chain, not by me after the fact*); **R2** `graphics2d.ts` interface+probe stay co-located, **terminal, zero
+    tickets**; **R3** metrics persistence = generated sidecar `docs/level-difficulty.report.json` + freshness pin
+    (**LV-007E**; recompute-only rejected — prose transcription has drifted twice; schema fields rejected — derived
+    data out of the authoring source, `par` stays the sole exception); **R4** `isPlayerEmbedded` is rule semantics →
+    home `src/core/rules` via `solidAt`, renderer keeps the flag seam, the systems→renderer reverse edge dies —
+    six-step engineer micro-ticket pre-specified in the ADR; **R5** multi-switch-door flag = validator-warning layer
+    NOW, policy code only when GD quantifies the L36+ quota (one-code-one-control; n-13 precedent). My countersignature
+    on their risk (ii), recorded in the merge message: **the sidecar's ownership follows its authoring sibling** —
+    `level-difficulty.report.json` belongs to Level AI + Solver (they own `level-difficulty.md` per the AGENTS §4
+    table), and the Docs catch-all explicitly excludes generated artefacts. Routing: **GD-009 dispatched** (R1 GD half
+    + approved ADR-0009 Context-5 parenthesis + R5 no-op check); **LV-007D parked until LV-008 merges** (same-file
+    collision on pipeline §8.5) with ENLARGED scope: generator labels on the sweep numbers, the §7 self-description
+    ("OPEN_QUESTION to Architect") rest to landed, and the architecture §3 scripts row re-synced when the l11 generator
+    ships; **R-004** (name reserved) = ADR-0003 R4 six-step ticket, queued behind QA-005 (its test repoints must not
+    race QA's in-flight tests/** work). Three live: LV-008 · QA-005 · GD-009.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
