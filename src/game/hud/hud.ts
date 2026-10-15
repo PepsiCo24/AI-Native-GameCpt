@@ -110,10 +110,13 @@ export class Hud {
   private readonly unsubscribes: (() => void)[] = [];
   private winTimer: number | null = null;
   private swipeHintShown = false;
+  /** §6.4 — kept so the win panel waits for the flip the *current* setting runs. */
+  private reducedMotion: boolean;
 
   constructor(config: HudConfig) {
     this.session = config.session;
     this.hooks = config.hooks;
+    this.reducedMotion = config.reducedMotion;
 
     injectHudStyles(document);
 
@@ -224,6 +227,7 @@ export class Hud {
 
   /** §6.4 — reduced motion also removes the DOM transitions. */
   setReducedMotion(reducedMotion: boolean): void {
+    this.reducedMotion = reducedMotion;
     const timings = flipTimings(reducedMotion);
     this.shell.style.setProperty("--ps-flip-tokens-ms", `${String(timings.tokens.dur)}ms`);
     this.shell.style.setProperty("--ps-flip-tokens-delay-ms", `${String(timings.tokens.start)}ms`);
@@ -327,7 +331,7 @@ export class Hud {
    */
   private scheduleWinPanel(level: Level, moveCount: number): void {
     if (this.winTimer !== null) window.clearTimeout(this.winTimer);
-    const delay = flipTimings(false).total;
+    const delay = flipTimings(this.reducedMotion).total;
     this.winTimer = window.setTimeout(() => {
       this.winTimer = null;
       this.showWinPanel(level, moveCount);

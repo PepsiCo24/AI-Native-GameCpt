@@ -11,6 +11,10 @@
  *    `LevelSchema` before it can reach the board (ADR-0004: reject, never repair).
  *    A rejected file is logged loudly by the registry; if *nothing* survives, the
  *    boot fails visibly in the DOM instead of showing an empty board.
+ * 1b. `?level=<n>` — the dev / playtest / E2E entrance into level `n`
+ *    (`docs/ui-ux.md` §1: no level-select screen exists). It only selects the
+ *    session's starting index; out of range falls back to L1, nothing persists
+ *    and no win is bypassed.
  * 2. `GameSession` — the single owner of `GameState`.
  * 3. `Hud` — the DOM overlay (§7.1/§7.2), and the `AppIntents` closures the DOM
  *    buttons and the keyboard shortcuts (`Z` / `R` / `Enter`, §7.4) both call.
@@ -35,9 +39,9 @@
 
 import Phaser from "phaser";
 
-import { onReducedMotionChange, prefersReducedMotion } from "@/game/env";
+import { onReducedMotionChange, prefersReducedMotion, requestedLevel } from "@/game/env";
 import { Hud } from "@/game/hud/hud";
-import { loadPlayableLevels } from "@/game/levels/level-registry";
+import { loadPlayableLevels, startIndexForLevel } from "@/game/levels/level-registry";
 import type { Viewport } from "@/game/renderer/grid-mapping";
 import { LevelScene } from "@/game/scenes/level-scene";
 import type { AppIntents } from "@/game/systems/app-intents";
@@ -71,7 +75,13 @@ function boot(container: HTMLElement): void {
     // R-P6 — the production gate. It throws only when art is expected to be
     // integrated (`ART_INTEGRATED`), see `theme/assets.ts`.
     assertNoPlaceholders();
-    session = new GameSession(loadPlayableLevels());
+    const levels = loadPlayableLevels();
+    // `?level=<n>` — the dev / playtest / E2E entrance (docs/ui-ux.md §1: there is
+    // no level-select screen). Out of range falls back to L1; nothing is persisted
+    // and the win path is untouched (`startIndexForLevel`).
+    session = new GameSession(levels, {
+      startIndex: startIndexForLevel(levels, requestedLevel()),
+    });
   } catch (error) {
     console.error("[main] boot failed:", error);
     showBootFailure(container, error);

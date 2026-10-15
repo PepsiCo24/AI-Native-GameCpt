@@ -18,6 +18,30 @@ export function hasQueryFlag(name: string): boolean {
   return new URLSearchParams(window.location.search).get(name) === "1";
 }
 
+/**
+ * `?level=<n>` — **entry selector only** (dev, playtest, E2E).
+ *
+ * `docs/ui-ux.md` §1: *"Level select / lobby — **no**; prototype enters at a
+ * level directly (design §4)."* The query parameter is that entrance, nothing
+ * more: it decides **where the session starts** and nothing else. It is not an
+ * unlock system (no progression is stored), it does not persist anywhere (no
+ * `localStorage`, no cookie, no `history.replaceState`), and it cannot bypass a
+ * win — `GameSession` still starts at move 0 of the chosen level and every win
+ * still runs through `applyMoveToGameState` + `isGoal` (AGENTS.md §10 YAGNI).
+ *
+ * Returns the 1-based level number, or `null` when the parameter is absent,
+ * empty or not a positive integer. Resolution to an index (with the
+ * out-of-range fallback to L1) is `startIndexForLevel` in the level registry —
+ * this probe only parses.
+ */
+export function requestedLevel(): number | null {
+  if (typeof window === "undefined") return null;
+  const raw = new URLSearchParams(window.location.search).get("level");
+  if (raw === null || raw.trim() === "") return null;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed >= 1 ? parsed : null;
+}
+
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 /** §6.4: the reduced-motion contract. Legibility identical, motion removed. */
