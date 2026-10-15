@@ -31,6 +31,7 @@ import { loadReferenceLevels, levelUrl, refOf } from "./helpers/levels";
 import {
   boardGeometry,
   expectActorAt,
+  expectMoves,
   hud,
   installPixelReadback,
   openLevel,
@@ -184,8 +185,8 @@ test.describe("touch gestures (R-T3, R-T4)", () => {
 
     await tapTouch(page, geometry.cellCenterPage(leg.player.x, leg.player.y));
     await settle(page);
+    await expectMoves(page, 1);
     const after = await hud(page);
-    expect(after.moves, "one tap is one move").toBe(1);
     expect(after.phase).not.toBe(before.phase);
     await expectActorAt(page, geometry, ref.level, leg.player);
   });
@@ -241,10 +242,13 @@ test.describe("touch gestures (R-T3, R-T4)", () => {
     });
 
     // Over the threshold the same gesture is a MOVE in its dominant direction.
+    // The commit is polled, not read once after a fixed sleep: the pointer
+    // sequence is consumed on the game's next input update, which is frames away
+    // on a loaded runner (the cloud shape this test exists to tolerate).
     await swipeTouch(page, from, along(minTravel + 12));
     await settle(page);
+    await expectMoves(page, 1);
     const after = await hud(page);
-    expect(after.moves, "a ≥ 24 px swipe is a move").toBe(1);
     expect(after.phase).toBe(leg.phase);
     await expectActorAt(page, geometry, ref.level, leg.player);
   });
@@ -259,8 +263,8 @@ test.describe("touch gestures (R-T3, R-T4)", () => {
     // Travel 44 px right but 30 px down: |dx| > |dy|, so the gesture is `right`.
     await swipeTouch(page, from, { x: from.x + 44, y: from.y + 30 });
     await settle(page);
+    await expectMoves(page, 1);
     const after = await hud(page);
-    expect(after.moves, "a diagonal swipe is one move").toBe(1);
     expect(after.phase).toBe("B");
     await expectActorAt(page, geometry, ref.level, {
       x: ref.level.player[0] + 1,
@@ -331,6 +335,7 @@ test.describe("R-T5 — the sub-44 px cell hint and the whole-board swipe fallba
     const from = geometry.cellCenterPage(ref.level.player[0], ref.level.player[1]);
     await swipeTouch(page, from, { x: from.x + LAYOUT.swipeMinTravel + 16, y: from.y });
     await settle(page);
+    await expectMoves(page, 1);
     const after = await hud(page);
     expect(after.moves, "R-T5: swipe stays available below the floor").toBe(1);
   });
@@ -349,7 +354,9 @@ test.describe("R-T5 — the sub-44 px cell hint and the whole-board swipe fallba
     if (leg === undefined) return;
     await tapTouch(page, geometry.cellCenterPage(leg.player.x, leg.player.y));
     await settle(page);
-    expect((await hud(page)).moves).toBe(1);
+    await expectMoves(page, 1);
+    const after = await hud(page);
+    expect(after.moves, "the hint must not swallow the input").toBe(1);
   });
 });
 
@@ -394,12 +401,12 @@ test.describe("touch-only playthrough", () => {
     if (leg === undefined) return;
     await tapTouch(page, geometry.cellCenterPage(leg.player.x, leg.player.y));
     await settle(page);
-    expect((await hud(page)).moves).toBe(1);
+    await expectMoves(page, 1);
 
     await page.locator('button[aria-label="Undo"]').tap();
     await settle(page);
+    await expectMoves(page, 0);
     const undone = await hud(page);
-    expect(undone.moves).toBe(0);
     expect(undone.phase).toBe(ref.level.startPhase);
     await expectActorAt(page, geometry, ref.level, start);
   });
