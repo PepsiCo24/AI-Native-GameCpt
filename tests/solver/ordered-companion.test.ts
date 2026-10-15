@@ -20,12 +20,19 @@
  *   §1  The trapped-refusal pocket (`docs/architecture.md` §8.1's open case): a
  *       board the *validator* accepts with zero warnings, whose switch really
  *       fires, with `refusedThenEnteredTiles = 1` and
- *       `refusedBeforeEnteredTiles = 0` — and gate (iii) still PASSes on it, which
- *       is the point: **the acceptance law reads the unordered metric** (the switch
- *       is GD-008's wording pass, not this task's).
+ *       `refusedBeforeEnteredTiles = 0` — and gate (iii) **FAILS on it since
+ *       LV-007C**, which is the point of the switch: the gate now reads the ordered
+ *       form, so a beat no player can witness no longer satisfies it. (Until
+ *       LV-007C the gate read the unordered form and PASSed — GD-008 re-worded
+ *       `docs/level-design.md` §3 (iii) first, and this task is the code half.)
  *   §2  The shipping-grade control: on the five shipped latch levels the two lists
  *       are **equal** (ADR-architecture-0002's coincidence measurement, now an
- *       assertion), and the ordered list is a subset of the unordered one on all ten.
+ *       assertion), and the ordered list is a subset of the unordered one on all
+ *       ten. That equality is what makes the reader switch verdict-identical on the
+ *       shipped set — asserted directly in §2b.
+ *   §2b The switch has teeth *and* changes nothing shipped: every one of the ten
+ *       shipped levels' gate (iii) verdict is provably the same under either reader,
+ *       and the pocket flips. (Iron proof ① of LV-007C, as an assertion.)
  *   §3  Plumbing: `analyse` reports exactly what the graph-level function returns.
  *   §4  A genuine minimal latch (M1 + M3) where *both* metrics fire, so §1's zero
  *       is discrimination and not a broken measurement.
@@ -37,9 +44,10 @@
  *       therefore a *reliable* explanation, not a proved one, and it is recorded as
  *       such instead of being rounded up into a theorem.
  *
- * Nothing here is gated on the ordered metric: it is reported (`SolveResult`,
- * `scripts/solve-levels.ts`) and it is what an L11+ / GD-008 re-wording would
- * promote — never a hard rejection rule before that ruling exists.
+ * Which readers are gated: **gate (iii) only** (LV-007C). The canonical unordered
+ * metric stays the carrier of `docs/ai-native-pipeline.md` §8.5's pre-L11
+ * acceptance law and of the `lesson-latch-dynamism` obligation — the two legs of
+ * ADR-architecture-0002's split are deliberately not re-stitched (Appendix A3).
  */
 
 import { describe, expect, it } from "vitest";
@@ -139,12 +147,12 @@ describe("LV-007B · item 2 — a trapped refusal is history-dependence, not a d
     expect(auditLevel(POCKET).violations).toEqual([]);
   });
 
-  it("gate (iii) PASSes on it — the acceptance law reads the UNORDERED metric", () => {
-    // This is the pin the docs must keep saying (docs/ai-native-pipeline.md §8.5):
-    // gate (iii) is satisfied by `refusedThenEnteredTiles > 0`, so a trapped
-    // refusal passes the gate even though no player can ever act on it. Switching
-    // the gate to the ordered companion is a *wording pass* on the latch lessons
-    // (§6 dip, L7–L10 `switchRequired`) — GD-008's call, not the solver's.
+  it("gate (iii) FAILs on it — the ordered reader landed (LV-007C), so the beat is now the gate's question", () => {
+    // The pocket is history-dependence without a witnessable beat: the tile answers
+    // differently in two reachable states (canonical #7 fires) but no play trace can
+    // contain the refusal *before* the acceptance. `docs/level-design.md` §3 (iii)
+    // asks for the ordered beat and was re-worded at GD-008; LV-007C is the code
+    // switch, and this is the board that proves the switch has teeth.
     const graph = explore(POCKET);
     const result = analyse(POCKET, graph);
     const gate = latchAhaGates(
@@ -154,21 +162,43 @@ describe("LV-007B · item 2 — a trapped refusal is history-dependence, not a d
       embedMetrics(POCKET, result.shortestSolution ?? POCKET.par),
     ).find((entry) => entry.id === "refused-then-entered");
 
+    expect(result.refusedThenEnteredTiles).toBe(1);
     expect(result.refusedBeforeEnteredTiles).toBe(0);
-    expect(gate?.status).toBe("PASS");
-    // …and the gate's own words name the unordered metric, so a reader cannot
-    // mistake which number carried the verdict.
-    expect(gate?.detail).toBe("refusedThenEnteredTiles=1 tiles=[1,1]");
+    expect(gate?.status).toBe("FAIL");
+    // The detail names both numbers, so a reader can see *which* metric carried the
+    // verdict and what the other one measured — the difference is the trapped set.
+    expect(gate?.detail).toContain("refusedBeforeEnteredTiles=0 tiles=[]");
+    expect(gate?.detail).toContain(
+      "unordered companion refusedThenEnteredTiles=1 tiles=[1,1]",
+    );
   });
 
-  it("the policy suite would ship the pocket as an L6 latch (the gap GD-008 owns)", () => {
-    // Reported as a finding, not repaired here: nothing in `policy.ts` rejects a
-    // board whose latch is unorderable. The board above is what such a submission
-    // looks like — valid, solvable, switch-firing, documented row satisfied, and
-    // yet unreachable in the refused state first. Only the ordered companion sees
-    // it, which is why the companion exists.
+  it("the same board is still a documented latch — the acceptance leg did not move", () => {
+    // One reader switched, the other did not: the canonical unordered metric is the
+    // carrier `docs/ai-native-pipeline.md` §8.5's pre-L11 acceptance law and the
+    // `lesson-latch-dynamism` obligation rest on (ADR-architecture-0002 decision 4,
+    // Appendix A3 — the legs are not re-stitched). The pocket is an *L6* latch row
+    // here, so no gate applies and the board is accepted — while as L8 (a level
+    // claiming the Aha beat) the very same board is rejected by gate (iii).
     expect(auditLevel(POCKET).lesson?.obligation).toBe("latch-dynamism");
     expect(auditLevel(POCKET).violations).toEqual([]);
+    const asAha: Level = { ...POCKET, id: 8 };
+    expect(
+      auditLevel(asAha).violations.map((v) => v.code),
+    ).toContain("gate-refused-then-entered");
+  });
+
+  it("as an L6 latch row the pocket still ships; as an Aha #1 claim it cannot (LV-007C)", () => {
+    // Recorded because the two facts live one line apart and used to be the same
+    // fact: the *acceptance carrier* (canonical #7) accepts the board — a trapped
+    // refusal still proves the latch is history-dependent, which is the L6 lesson —
+    // while the *Aha beat* gate (iii) does not, because the beat is unorderable.
+    // Both verdicts are program-measured; neither is a policy opinion.
+    expect(auditLevel(POCKET).lesson?.obligation).toBe("latch-dynamism");
+    expect(auditLevel(POCKET).violations).toEqual([]);
+    expect(
+      auditLevel({ ...POCKET, id: 8 }).violations.map((v) => v.code),
+    ).toContain("gate-refused-then-entered");
   });
 });
 
@@ -225,6 +255,67 @@ describe("LV-007B · item 2 — the shipped latch levels are orderable latches",
     expect(solve(POCKET).refusedBeforeEnteredTileList).not.toEqual(
       solve(POCKET).refusedThenEnteredTileList,
     );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2b. LV-007C — the reader switch: verdict-identical on the shipped set, and it
+//     really bites on a divergent board
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("LV-007C — gate (iii)'s switch to the ordered reader changes no shipped verdict", () => {
+  it("both forms report equal tile lists on all ten — so no shipped gate verdict can move", () => {
+    // Iron proof ①, as an assertion rather than a sentence: gate (iii) is the only
+    // reader that changed, and its verdict is `refusedBeforeEnteredTiles > 0`. On
+    // every shipped level the ordered list *equals* the unordered one, so the
+    // verdict (and the tile list printed in the detail) is the same number either
+    // way — the switch is a semantic correction that cannot reach shipped content.
+    for (const id of SHIPPED_IDS) {
+      const result = solve(shippedBoard(id));
+      expect(result.refusedBeforeEnteredTileList, `l${id}`).toEqual([
+        ...result.refusedThenEnteredTileList,
+      ]);
+    }
+  });
+
+  it("l008's named-gate table is unchanged, verdict for verdict", () => {
+    // The exact table `tests/solver/route-budget.test.ts` pins as the n-11 baseline
+    // (`refused-then-entered:PASS`) — re-asserted here so the reader switch is
+    // covered from the gate's own file as well as from the metrics file.
+    expect(
+      auditLevel(shippedBoard(8)).gates.map((gate) => `${gate.id}:${gate.status}`),
+    ).toEqual([
+      "no-solution-with-switches-off:PASS",
+      "shortest-solution-presses-switch-and-crosses-door:PASS",
+      "refused-then-entered:PASS",
+      "dual-phase-tiles:UNSATISFIABLE",
+      "single-door-one-switch-funnel:PASS",
+      "aha-par-cap:PASS",
+    ]);
+    // …and the gate's detail names the ordered field, so the reader is not a matter
+    // of inference from a passing verdict.
+    const detail = auditLevel(shippedBoard(8)).gates.find(
+      (gate) => gate.id === "refused-then-entered",
+    )?.detail;
+    expect(detail).toContain("refusedBeforeEnteredTiles=1 tiles=[3,1]");
+  });
+
+  it("…while the pocket flips: the switch has teeth (a mutation back turns this RED)", () => {
+    // Same gate, one divergent board: `refusedThenEnteredTiles = 1` (PASS under the
+    // old reader) vs `refusedBeforeEnteredTiles = 0` (FAIL under the new one). A
+    // `git bisect`-proof statement of the change: exactly one of the two forms can
+    // be the gate's input.
+    const graph = explore(POCKET);
+    const result = analyse(POCKET, graph);
+    const gate = latchAhaGates(
+      POCKET,
+      graph,
+      result,
+      embedMetrics(POCKET, result.shortestSolution ?? POCKET.par),
+    ).find((entry) => entry.id === "refused-then-entered");
+    expect(result.refusedThenEnteredTiles).toBe(1);
+    expect(result.refusedBeforeEnteredTiles).toBe(0);
+    expect(gate?.status).toBe("FAIL");
   });
 });
 

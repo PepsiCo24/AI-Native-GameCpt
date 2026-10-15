@@ -15,7 +15,10 @@
  *    world still solves in 6, so the level teaches without punishing.
  * 3. **Aha #1 (`l008`) satisfies its named gates one by one** — see
  *    `docs/level-design.md` §3. Gates (i)/(ii)/(iii) PASS with the measured
- *    numbers below. Gate (iv), `dualPhaseTiles ≥ 1`, is **provably unsatisfiable
+ *    numbers below; **(iii) reads the ordered companion
+ *    `refusedBeforeEnteredTiles` since LV-007C** (the code side of GD-008's
+ *    re-wording of that condition), which on l008 and on all of L1–L10 measures
+ *    the same tile list as the unordered canonical form. Gate (iv), `dualPhaseTiles ≥ 1`, is **provably unsatisfiable
  *    on a portal-free board** (the checkerboard invariant of ADR-0009 decision 1:
  *    a switch never relocates the player, so the position→phase link survives the
  *    latch and a tile is entered in exactly one phase). ADR-0009 schedules M2 at
@@ -361,18 +364,25 @@ describe("LV-006 · Aha #1 (l008) named gates, measured (docs/level-design.md §
     expect(
       gate("shortest-solution-presses-switch-and-crosses-door").detail,
     ).not.toContain("refusedThenEnteredTiles=");
-    expect(gate("refused-then-entered").detail).toContain(
-      "refusedThenEnteredTiles=1 tiles=[3,1]",
-    );
   });
 
-  it("gate (iii) — the refusing tile is in refusedThenEnteredTileList", () => {
+  it("gate (iii) — the refusing tile is in refusedBeforeEnteredTileList (the ORDERED reader, LV-007C)", () => {
+    // GD-008 re-worded §3 (iii) to the ordered form; LV-007C is the code-side
+    // switch. On l008 both forms are measured identical, so the verdict *and* the
+    // tile are the same numbers as before the switch — that equality is the point
+    // (the switch has teeth, it just has nothing to bite on the shipped set).
+    const detail = gate("refused-then-entered").detail;
     expect(gate("refused-then-entered").status).toBe("PASS");
+    expect(detail).toContain("refusedBeforeEnteredTiles=1 tiles=[3,1]");
+    expect(detail).toContain("(ORDERED reader — LV-007C)");
+    expect(detail).toContain("unordered companion refusedThenEnteredTiles=1 tiles=[3,1]");
     // RV-004 n-18: `toEqual` on the whole list, not `toContain` on one entry — a
     // second refused-then-entered tile on l008 would change the shipped level's
     // measured shape and must not slip through a membership check.
     expect(audit.result.refusedThenEnteredTileList).toEqual(["3,1"]);
     expect(audit.result.refusedThenEnteredTiles).toBe(1);
+    expect(audit.result.refusedBeforeEnteredTileList).toEqual(["3,1"]);
+    expect(audit.result.refusedBeforeEnteredTiles).toBe(1);
   });
 
   it("gate (iv) — dualPhaseTiles ≥ 1 is UNSATISFIABLE before L11, and the proven value is 0", () => {

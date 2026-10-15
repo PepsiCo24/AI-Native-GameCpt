@@ -1,7 +1,7 @@
 # AI Native Pipeline — Phase Shift: Echo Grid
 
 > Owner: **Level AI + Solver** with **Orchestrator** (formatting maintenance by Docs + GitHub; content belongs to the owners)
-> Version: V0.6 · Date: 2026-10-15
+> Version: V0.7 · Date: 2026-10-15
 
 ---
 
@@ -101,8 +101,9 @@ What the **solver contract** carries (`SolveResult` / `EmbedMetrics`, `@/core/so
 solvable · shortestSolution (L) · numSolutions
 reachableStates · maxSearchDepth · forcedMoveRatio (diagnostic — NOT `T`)
 deadStates / unrecoverableStates / noUnrecoverableOk
-refusedThenEnteredTiles      (#7 canonical, UNORDERED — the acceptance carrier)
-refusedBeforeEnteredTiles    (#7 ordered companion — reported, NEVER gated; §8.5)
+refusedThenEnteredTiles      (#7 canonical, UNORDERED — the pre-L11 acceptance carrier, §8.5)
+refusedBeforeEnteredTiles    (#7 ordered companion — the reader of Aha gate (iii) since
+                              LV-007C; reported on every level, gated only there; §8.5)
 dualPhaseTiles               (#3)
 embedRoutes / parRoutes      (LV-004: how many shortest routes end embedded — the phantom walk)
 switchRequired               (LV-006: is the goal reachable with every switch OFF?)
@@ -287,24 +288,44 @@ the **only** gate allowed to reach `UNSATISFIABLE` (the CLI's escalation channel
 so its single legitimate producer is pinned rather than trusted).
 
 **The acceptance law keeps reading the metric it was proved on (ADR-architecture-0002, LV-007B
-item 2).** `refusedThenEnteredTiles` is an **unordered state-set** property: it counts a tile
-if any reachable state refuses entry on it and another accepts it, in whatever order those
-states were discovered. A stronger, trace-ordered companion now exists —
-**`refusedBeforeEnteredTiles`**, computed by `@/core/solver/bfs` and printed per level by
-`scripts/solve-levels.ts` — which requires the *same tile* to be refused strictly before it is
-accepted **on one real path**. It is **reported and never gated**: gate (iii)
-(`gate-refused-then-entered`) and this section's pre-L11 acceptance law
-(`refusedThenEnteredTiles ≥ 1`) continue to read the **unordered** form, because that is the
-form ADR-0009 decision 4 was measured and proved on, and because the unordered form must keep
-firing for latch boards whose beat is real but trace-unwitnessable (a trapped refusal still
-proves entry legality is history-dependent). Divergence is real but rare — on the shipped ten
-both forms report identical tile lists (1 / 1 / 1 / 2 / 1 on L6–L10), and on 2000 seeded
-single-door-single-switch boards 46 diverge (44 of them because the door tile *is* the switch
-tile). The companion's **promotion trigger** is ADR-architecture-0002's: it MUST land as a gate
-before the first **L11+ portal candidate** is accepted (teleport edges make trapped refusals
-more likely), and SHOULD be promoted whenever a candidate first diverges. Until then, any
-change that makes this law read the ordered form is a re-definition of the acceptance
-criterion, not a documentation fix.
+item 2; reader split completed at LV-007C).** `refusedThenEnteredTiles` is an **unordered
+state-set** property: it counts a tile if any reachable state refuses entry on it and another
+accepts it, in whatever order those states were discovered. A stronger, trace-ordered
+companion exists — **`refusedBeforeEnteredTiles`**, computed by `@/core/solver/bfs` and
+printed per level by `scripts/solve-levels.ts` — which requires the *same tile* to be
+refused strictly before it is accepted **on one real path**.
+
+**The two legs are deliberately not re-stitched (LV-007C).** GD-008 re-worded
+`docs/level-design.md` §3 (iii) — the **Aha-beat** condition — to the ordered form, and
+LV-007C landed the code half: **`policy.ts` gate (iii) now reads
+`refusedBeforeEnteredTiles ≥ 1`**, with a divergent-board negative control per §8.3's
+one-control-per-code rule (the trapped-refusal pocket: canonical `= 1`,
+ordered `= 0`, so the old reader PASSed a beat no player can witness). Everything else in
+this section still reads the **unordered** form:
+
+- **this section's pre-L11 acceptance law** (`refusedThenEnteredTiles ≥ 1`) — unchanged,
+  because that is the form ADR-0009 decision 4 was measured and proved on, because the
+  unordered form must keep firing for latch boards whose beat is real but
+  trace-unwitnessable (a trapped refusal still proves entry legality is
+  history-dependent and must never read as "static"), and because **any change that makes
+  this law read the ordered form would be a re-definition of the acceptance criterion,
+  not a documentation fix** (ADR-architecture-0002 Appendix A3, unchanged);
+- **`lesson-latch-dynamism`** (the documented-latch obligation, §8.4 law 2) — the
+  board-level dynamism carrier, i.e. the same job as the paragraph above. A level row
+  documented as `latch-dynamism` built from the trapped-refusal board is still accepted;
+  the *same board* claiming Aha #1 (row `latch-aha-1`) is rejected by gate (iii). Both
+  verdicts are pinned in `tests/solver/**`.
+
+So the split reads: **spec (iii) = ordered, this section's generation/acceptance leg =
+unordered — until the L11 block ruling.** The switch is verdict-identical on shipped
+content: on the ten levels both forms report identical tile lists (1 / 1 / 1 / 2 / 1 on
+L6–L10), so no gate verdict moved (the CLI's per-level metric lines are byte-identical
+across the switch; the l008 gate (iii) line changed only in its wording), while on 2000
+seeded single-door-single-switch boards 46 diverge (44 of them because the door tile *is*
+the switch tile). The companion's **promotion trigger** beyond gate (iii) is
+ADR-architecture-0002's: it MUST land as the gate before the first **L11+ portal
+candidate** is accepted (teleport edges make trapped refusals more likely), and SHOULD be
+promoted wherever a candidate first diverges.
 
 **`switchRequired` is an obligation on the documented lesson (LV-007A · OQ4 ruling).** The
 `switchRequired = true` that L7–L10 carry (all four measure `true` on the shipped boards) is no
@@ -347,7 +368,9 @@ deleted, never committed; `tsc` + full suite + all three CLI gates re-run per it
    `RouteEnumerationError` on overrun rather than truncating (a truncated route set would
    silently weaken every metric read from it). `maxStates` still caps the exploration only.
 2. **The ordered companion metric** `refusedBeforeEnteredTiles` — see §8.5 for what it
-   measures, why it is reported and **not** gated, and its promotion trigger.
+   measures, why the **canonical** unordered form still carries the acceptance law, and its
+   promotion trigger. (Superseded in part at **LV-007C**: the companion *is* gated now —
+   by Aha gate (iii) alone, per GD-008's re-wording of `docs/level-design.md` §3 (iii).)
 3. **The §2 difficulty model is measured** — `B` effective, `T`, `R` and `D`, with the two
    structural findings and the untouched weights recorded in §4 above and in
    `docs/level-difficulty.md` §2a / §5.2.
@@ -364,3 +387,4 @@ deleted, never committed; `tsc` + full suite + all three CLI gates re-run per it
 | 2026-10-15 | V0.4 | **LV-006** — new **§8 record for the L6–L10 doors+switch unit**: the committed seeded generator and its candidate families, the accept/reject histogram, the shipped-file re-derivation check, the three negative probes, the two content laws now enforced in `@/core/solver/policy`, and the **§8.5 escalation** (`dualPhaseTiles ≥ 1` unsatisfiable before L11). §3's hard-reject list gains "M1 alone" and "a documented lesson the board does not deliver" | Level AI + Solver (LV-006) |
 | 2026-10-15 | V0.5 | **LV-007A (RV-004 backlog A)** — §8.3 gains the one-negative-control-per-code rule (`Record<PolicyViolationCode, …>` + source scan; the m-2 mutation that survived 176 green tests is now RED) and multi-code probe expectations; §8.4's law 2 names the §3 construction bullets as gates (v)/(vi); **§8.5 gains the corrected acceptance law restated for the record** (pre-L11 = `refusedThenEnteredTiles ≥ 1`, gate (iv) active from L11; m-5's two-fact guard + the single-producer whitelist) and the **OQ4 ruling** — `switchRequired` is an obligation on the L7–L10 lesson rows with L6's dip an explicit `"exempt"` row, no `id === 6` special case, new code `lesson-switch-required` | Level AI + Solver (LV-007A) |
 | 2026-10-15 | V0.6 | **LV-007B (m-8/m-9/m-10 reconciliation) + LV-007B items 1–4 recorded.** §4 **corrected**: the metric block now separates what `SolveResult` carries from what `@/core/solver/difficulty` adds, `maxSearchDepth` is labelled NOT `T`, and "still unmeasured" is replaced by the measured state (`B`/`T`/`R`/`D` landed, §5.2 of `docs/level-difficulty.md`; `D = L + 3·B + 5·M` inside the §4 acceptance region because `T ≡ R ≡ 0` there; the L5→L6 dip is measured **+8.53**, not −2…−3). §7 **stops citing a script that does not exist** (`scripts/generate-levels`) and names the three real gates, with the stale `docs/architecture.md` citation raised as an OPEN_QUESTION since that file is the Architect's. §8.4 law 1 gains the **mirror** law (n-13 `switch-without-targets`: a switch that fires but no door reads is M3 decoration; validator warning ≠ policy gate). §8.5 gains the **ADR-architecture-0002 split stated for the record**: gate (iii) and the pre-L11 acceptance law keep reading the **unordered** `refusedThenEnteredTiles`; the ordered companion `refusedBeforeEnteredTiles` is reported, never gated, with its L11 promotion trigger and the measured 0.9 %-class divergence. New **§8.7** records the n-11 route-walk fix (exact pruning + its **own** budget key `maxRouteVisits`; it used to read the exploration cap), item 2, item 3 and item 4 in one place. Header version resynced to the changelog (it had been left at V0.3 across V0.4/V0.5), and §8 retitled to the running pipeline record with §8.1–§8.2 declared to be the LV-006 block | Level AI + Solver (LV-007B) |
+| 2026-10-15 | V0.7 | **LV-007C item 1 — gate (iii) reads the ordered companion** (the code half of GD-008's re-wording of `docs/level-design.md` §3 (iii); ADR-architecture-0002 decision 4 / Appendix A2). `policy.ts` gate (iii) now gates `refusedBeforeEnteredTiles ≥ 1` and prints both forms in its detail; `lesson-latch-dynamism`, gate (ii)'s refusal half and §8.5's pre-L11 acceptance law stay on the canonical **unordered** `refusedThenEnteredTiles` (A3 — the legs are not re-stitched; §8.5 rewritten to say so). Teeth: a watched trapped-refusal pocket (canonical 1, ordered 0) is now rejected by `gate-refused-then-entered`, added to the one-control-per-code table alongside the zero-board control. No shipped verdict moved: both forms report identical tile lists on L1–L10 (asserted), the CLI's per-level metric lines are byte-identical across the switch and the sole diff is gate (iii)'s own label/detail line. §4's metric block now names gate (iii) as the ordered field's single reader | Level AI + Solver (LV-007C) |

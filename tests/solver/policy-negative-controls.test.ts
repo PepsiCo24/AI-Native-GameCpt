@@ -157,6 +157,35 @@ const LATCH_LESSON_WITH_STATIC_BOARD: Level = {
 const STATIC_BOARD_AS_AHA: Level = { ...LATCH_LESSON_WITH_STATIC_BOARD, id: 8 };
 
 /**
+ * **The trapped-refusal control (LV-007C)** — the board that gives gate (iii)'s
+ * reader switch its teeth. It is `tests/solver/ordered-companion.test.ts` §1's
+ * pocket, re-labelled as the Aha #1 level: a red door on `(1,1)` whose switch sits
+ * on **that same tile** (`activePhase: "A"`, i.e. current exactly when the player
+ * steps onto `(1,1)`), so the latch closes over its own press.
+ *
+ * Measured: `refusedThenEnteredTiles = 1`, `refusedBeforeEnteredTiles = 0` — the
+ * tile really does answer differently in two reachable states (canonical #7 fires,
+ * so `lesson-latch-dynamism` is satisfied and the board is a *working* latch), but
+ * no play trace can contain the refusal *before* the acceptance, because the only
+ * way to make `(1,1)` accept is to stand on it. Under the unordered reader this
+ * board PASSed gate (iii); under the ordered reader it FAILS by name — which is
+ * the whole point of the switch, and the mutation guard for it: re-pointing gate
+ * (iii) back at `refusedThenEnteredTiles` turns this control green and the
+ * coverage assertion in §1 RED.
+ */
+const TRAPPED_REFUSAL_AS_AHA: Level = makeLevel({
+  id: 8,
+  width: 5,
+  height: 3,
+  startPhase: "A",
+  player: [0, 1],
+  goal: [4, 1],
+  doors: [door("d1", "red", [[1, 1]])],
+  switches: [switchDef("s1", [1, 1], "A", ["d1"])],
+  par: 4,
+});
+
+/**
  * A board documented as **Aha #1** whose shortest solutions can *walk around* the
  * door: the goal row is open on both sides, so the latch is not what carries the
  * decision (`allOffGoalReachable === true` — the un-switched world wins too).
@@ -287,7 +316,10 @@ const NEGATIVE_CONTROLS: Readonly<Record<PolicyViolationCode, readonly Level[]>>
     "gate-shortest-solution-presses-switch-and-crosses-door": [
       AHA_LESSON_WITH_BYPASS,
     ],
-    "gate-refused-then-entered": [STATIC_BOARD_AS_AHA],
+    "gate-refused-then-entered": [
+      STATIC_BOARD_AS_AHA,
+      TRAPPED_REFUSAL_AS_AHA,
+    ],
     "gate-dual-phase-tiles": [AHA_LESSON_WITH_INERT_PORTAL],
     "gate-single-door-one-switch-funnel": [AHA_LESSON_WITH_TWO_DOORS],
     "gate-aha-par-cap": [AHA_LESSON_OVER_PAR_CAP],
@@ -502,16 +534,63 @@ describe("LV-007A · m-2 — gate (ii) rejects a board whose shortest solution b
   });
 });
 
-describe("LV-007A · m-2 — gate (iii) rejects a board with a latched door nothing ever refuses", () => {
-  it("reports refusedThenEnteredTiles=0 as a FAIL, not as an absence of evidence", () => {
+describe("LV-007C — gate (iii) reads the ORDERED companion, and the switch has teeth", () => {
+  it("reports refusedBeforeEnteredTiles=0 as a FAIL, not as an absence of evidence", () => {
     const audit = auditLevel(STATIC_BOARD_AS_AHA);
     const gate = audit.gates.find((g) => g.id === "refused-then-entered");
+    // Both forms are 0 here (the door tile is never clicked at all), so this board
+    // fails under either reader — it is the *verdict-string* control.
     expect(audit.result.refusedThenEnteredTiles).toBe(0);
+    expect(audit.result.refusedBeforeEnteredTiles).toBe(0);
     expect(gate?.status).toBe("FAIL");
-    expect(gate?.detail).toBe("refusedThenEnteredTiles=0 tiles=[]");
+    expect(gate?.detail).toContain("refusedBeforeEnteredTiles=0 tiles=[]");
+    expect(gate?.detail).toContain(
+      "unordered companion refusedThenEnteredTiles=0 tiles=[]",
+    );
     expect(audit.violations.map((v) => v.code)).toContain(
       "gate-refused-then-entered",
     );
+  });
+
+  it("the trapped-refusal board flips PASS → violation: the unordered reader would have shipped it", () => {
+    // This is the control that makes the reader switch falsifiable. The board is a
+    // working latch (canonical `refusedThenEnteredTiles = 1`, switch really fires,
+    // door targeted, validator-clean), i.e. exactly what the *unordered* reader
+    // accepted — and its beat is unorderable (`refusedBeforeEnteredTiles = 0`), so
+    // the ordered reader rejects it by that exact name.
+    const audit = auditLevel(TRAPPED_REFUSAL_AS_AHA);
+    const gate = audit.gates.find((entry) => entry.id === "refused-then-entered");
+
+    expect(audit.result.solvable).toBe(true);
+    expect(audit.result.refusedThenEnteredTiles).toBe(1);
+    expect(audit.result.refusedBeforeEnteredTiles).toBe(0);
+    expect(gate?.status).toBe("FAIL");
+    expect(gate?.detail).toContain("refusedBeforeEnteredTiles=0 tiles=[]");
+    expect(gate?.detail).toContain(
+      "unordered companion refusedThenEnteredTiles=1 tiles=[1,1]",
+    );
+    expect(audit.violations.map((v) => v.code)).toContain(
+      "gate-refused-then-entered",
+    );
+
+    // …and the *other* reader is untouched: the same board is still a valid
+    // documented latch under the canonical metric (§8.5's acceptance leg), which is
+    // why it is rejected here by gate (iii)'s code and not by
+    // `lesson-latch-dynamism`.
+    expect(audit.lesson?.obligation).toBe("latch-aha-1");
+    expect(audit.violations.map((v) => v.code)).not.toContain(
+      "lesson-latch-dynamism",
+    );
+    expect(audit.result.refusedThenEnteredTiles).toBeGreaterThan(0);
+
+    // The canonical carrier did not move: a `latch-dynamism` level (L6's row) built
+    // from the very same board is still accepted — the two legs of
+    // ADR-architecture-0002 are deliberately not re-stitched (Appendix A3).
+    const asLatchLesson: Level = { ...TRAPPED_REFUSAL_AS_AHA, id: 6 };
+    const latchAudit = auditLevel(asLatchLesson);
+    expect(latchAudit.lesson?.obligation).toBe("latch-dynamism");
+    expect(latchAudit.gates).toEqual([]);
+    expect(latchAudit.violations).toEqual([]);
   });
 });
 

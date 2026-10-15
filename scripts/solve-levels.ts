@@ -190,7 +190,9 @@ function reportLevel(
   // LV-007B item 2: the *ordered* companion of the line above — a subset, and the
   // difference is the trapped refusals (history-dependence the player cannot act
   // on). The canonical metric stays the unordered one (architecture §8.1 /
-  // ADR-architecture-0002), so this line is reported, never substituted.
+  // ADR-architecture-0002) and carries §8.5's acceptance law; since LV-007C this
+  // field is the reader of Aha gate (iii) (docs/level-design.md §3, ordered at
+  // GD-008), reported *and* gated there, never substituted for the canonical one.
   console.log(
     `       refusedBeforeEnteredTiles=${result.refusedBeforeEnteredTiles} tiles=${formatTiles(result.refusedBeforeEnteredTileList)}`,
   );

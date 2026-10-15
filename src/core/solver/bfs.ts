@@ -58,13 +58,16 @@
  *   measure: on M0-only and M1-without-switches boards it is provably `0`
  *   (arrival phase is a function of the tile, ADR-0009), so `> 0` requires
  *   latched switch state or a parity-breaking portal. **Canonical** metric #7
- *   (`docs/architecture.md` §8.1 / ADR-architecture-0002): the acceptance law and
- *   gate (iii) read *this* one.
+ *   (`docs/architecture.md` §8.1 / ADR-architecture-0002): the pre-L11 acceptance
+ *   law (`docs/ai-native-pipeline.md` §8.5) reads *this* one.
  * - `refusedBeforeEnteredTiles` — the **ordered companion** (LV-007B item 2):
  *   tiles where a refusal is reachable *before* an acceptance (`r →* a`, same tile
  *   at both ends). A strict subset of the metric above; the difference is the
- *   *trapped refusals* — history-dependence the player can never act on. Reported,
- *   never gated.
+ *   *trapped refusals* — history-dependence the player can never act on. Gated
+ *   exactly once and only on the level that claims the Aha #1 beat: gate (iii) of
+ *   `docs/level-design.md` §3 (LV-007C, completing GD-008's re-wording), where the
+ *   condition's own sentence is ordered ("refused *first*, entered *later*"). Every
+ *   other reader keeps the canonical unordered form.
  * - `deadStates` — reachable non-goal states with **zero** legal out-edges
  *   (unrecoverable: there is no wait and no manual flip, `docs/level-design.md`
  *   §4). Their hashes are listed so a failure is reproducible.
@@ -397,8 +400,12 @@ export function refusedThenEnteredTiles(
  * the difference is exactly the trapped-refusal set. It is a **companion**, not a
  * replacement: `docs/architecture.md` §8.1 pins the *unordered* state-set as
  * metric #7 (it is the one ADR-0009 measured: 142/369 latch boards), and the
- * acceptance law of `docs/ai-native-pipeline.md` §8.5, gate (iii) included, stays
- * on that canonical metric until GD-008 re-words the lessons.
+ * acceptance law of `docs/ai-native-pipeline.md` §8.5 stays on that canonical
+ * metric. Since **LV-007C** the one reader that *does* read this field is gate
+ * (iii) of `docs/level-design.md` §3 — the Aha-beat question, whose own sentence is
+ * ordered ("refused *first*, entered *later*") — completing GD-008's re-wording of
+ * that gate with the code-side switch (ADR-architecture-0002 decision 4: the
+ * companion is "the semantically correct reading of Aha gate (iii)").
  *
  * Direction of the walk: the predicate is "∃ r ∈ Refused(t), a ∈ Accepted(t):
  * `r →* a`", and this computes it from the *source* side — a forward closure from
@@ -455,9 +462,10 @@ export interface SolveResult {
   /**
    * Ordered companion of the two fields above (LV-007B item 2): refusals a player
    * can really meet *before* the tile accepts them. Always a subset
-   * (`≤ refusedThenEnteredTiles`); the difference is the trapped-refusal set. It is
-   * reported, not gated: `docs/architecture.md` §8.1 keeps the unordered metric
-   * canonical, and gate (iii) of `docs/level-design.md` §3 still reads it.
+   * (`≤ refusedThenEnteredTiles`); the difference is the trapped-refusal set. Since
+   * LV-007C it is the reader of **gate (iii)** of `docs/level-design.md` §3 (the
+   * Aha-beat question); every other reader — `lesson-latch-dynamism` included —
+   * stays on the canonical unordered metric of `docs/architecture.md` §8.1.
    */
   readonly refusedBeforeEnteredTiles: number;
   readonly refusedBeforeEnteredTileList: readonly string[];
