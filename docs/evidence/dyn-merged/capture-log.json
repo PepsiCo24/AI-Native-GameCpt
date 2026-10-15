@@ -1,0 +1,170 @@
+[
+  {
+    "where": "L8 fresh",
+    "h": {
+      "lvl": "08",
+      "moves": "0",
+      "phase": "白昼",
+      "won": false
+    }
+  },
+  {
+    "shot": "l8_day_initial",
+    "bytes": 50753
+  },
+  {
+    "where": "L8 after 2R",
+    "h": {
+      "lvl": "08",
+      "moves": "2",
+      "phase": "白昼",
+      "won": false
+    }
+  },
+  {
+    "where": "L8 after 3rd R (refusal?)",
+    "h": {
+      "lvl": "08",
+      "moves": "2",
+      "phase": "白昼",
+      "won": false
+    }
+  },
+  {
+    "shot": "l8_refusal_arc",
+    "bytes": 49523
+  },
+  {
+    "where": "L8 on s1 (press beat)",
+    "h": {
+      "lvl": "08",
+      "moves": "3",
+      "phase": "夜晚",
+      "won": false
+    }
+  },
+  {
+    "shot": "l8_press_beat_on_switch",
+    "bytes": 46032
+  },
+  {
+    "where": "L8 after U,R,D",
+    "h": {
+      "lvl": "08",
+      "moves": "5",
+      "phase": "夜晚",
+      "won": false
+    }
+  },
+  {
+    "shot": "l8_on_open_door",
+    "bytes": 46097
+  },
+  {
+    "where": "L8 after 2R",
+    "h": {
+      "lvl": "08",
+      "moves": "6",
+      "phase": "白昼",
+      "won": true
+    }
+  },
+  {
+    "shot": "l8_end_state",
+    "bytes": 91703
+  },
+  {
+    "where": "L8 try goal",
+    "h": {
+      "lvl": "08",
+      "moves": "6",
+      "phase": "白昼",
+      "won": true
+    }
+  },
+  {
+    "shot": "l8_maybe_victory",
+    "bytes": 90784
+  },
+  {
+    "where": "L6 fresh",
+    "h": {
+      "lvl": "06",
+      "moves": "0",
+      "phase": "白昼",
+      "won": false
+    }
+  },
+  {
+    "shot": "l6_day_initial",
+    "bytes": 46436
+  },
+  {
+    "where": "L6 after R",
+    "h": {
+      "lvl": "06",
+      "moves": "1",
+      "phase": "夜晚",
+      "won": false
+    }
+  },
+  {
+    "shot": "l6_night_after_press",
+    "bytes": 40028
+  },
+  {
+    "where": "L6 after RRR",
+    "h": {
+      "lvl": "06",
+      "moves": "3",
+      "phase": "夜晚",
+      "won": false
+    }
+  },
+  {
+    "shot": "l6_mid",
+    "bytes": 41063
+  },
+  {
+    "where": "L6 after RRRR",
+    "h": {
+      "lvl": "06",
+      "moves": "4",
+      "phase": "白昼",
+      "won": true
+    }
+  },
+  {
+    "shot": "l6_victory",
+    "bytes": 86613
+  },
+  {
+    "where": "L10 fresh",
+    "h": {
+      "lvl": "10",
+      "moves": "0",
+      "phase": "白昼",
+      "won": false
+    }
+  },
+  {
+    "shot": "l10_day_initial",
+    "bytes": 49515
+  },
+  {
+    "where": "L10 after D,D,R",
+    "h": {
+      "lvl": "10",
+      "moves": "3",
+      "phase": "夜晚",
+      "won": false
+    }
+  },
+  {
+    "shot": "l10_mid",
+    "bytes": 45226
+  },
+  {
+    "pageErrors": []
+  }
+]
