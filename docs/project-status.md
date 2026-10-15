@@ -991,7 +991,45 @@ and a path must be quiescent before dispatch.**
     self-test. **Territory law by construction:** parallel same-role, both forbidden from pre-existing
     `tests/solver/**`, each owns exactly one new file; R5 forbidden from policy.ts (frozen L11 law constants)
     and the solve script; LV-007E forbidden from src entirely. Chain discipline unchanged: R-004b return gates
-    everything (both granted literal lines COMMITTED or no merge, per item 59 checklist). Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+    everything (both granted literal lines COMMITTED or no merge, per item 59 checklist).
+63. **THE CHAIN MERGED — one green merge, all five RV-007 checklist items closed; L11+fixes are develop-shipped
+   (`42f6f36`, pushed, CI's first real gate run on it).** Disk-proved before merge: both granted literals at
+   HEAD (`[1..11]` + `[6..11]` — MAJOR-1 closed exactly as the gate demanded), zero `test.fail(` repo-wide,
+   range-diffs `=` identity ×2. Authoritative battery on the merge tree (idle machine, zero-retry local
+   discipline): tsc 0 · vitest 26/**487**/3 · levels 11/11 PASS · build ✓ · Playwright **85/1** — the one failure
+   `refusal.spec.ts:48` is the agent-NAMED `expectActorAt` single-instant pixel probe; discriminated with
+   evidence, not waved: isolated re-runs 4/4 green on my machine + their tip ran 86/0 twice + same signature
+   (`found []` during hop when the body covers no cell centre). FLAKY class ruled PRE-EXISTING
+   (helpers/game.ts:490), fix = QA-005c grant (poll/settle), CI absorbs via the standing `--retries=1`.
+   Chain lineage `f484e23 → 8f75bc5 → f4e8186 → 679563c → d630f88 → aaa2042` cited in the merge message (never
+   the orphan `d5ef390`). End-panel now LIVE-correct on develop: `L1–L11 cleared · L 11: moves N`.
+64. **LV-007E + R5-VAL MERGED (`88ea653`, pushed).** Merged-tree battery: tsc 0 · vitest 28/**537**/3 (exact
+   sum 487+16+34) · validator 11/11 + probe family PASS · solve 11/11 + 1 escalation · build ✓ · Playwright full
+   runs: 84/2 — BOTH failures the two named sites (`latch-door:122`, `refusal:48`), zero new signatures,
+   contention-sensitive (my back-to-back battery runs vs their quieter-tip 86/0s); the helper fix is now QA-005c's
+   PRIMARY charge with an acceptance of repeated green full suites. R5 premise correction ACCEPTED (15
+   pre-existing parity-dead-wall warnings at head, new-code count 0 on shipped boards — honest totals chosen over
+   the false 0 I dispatched); the hand-mirror drift class is dead (34 freshness tests pin §5.2 cell-by-cell;
+   seams fixed-pair list ruled YAGNI-stable until a third seam exists). Routed follow-ups: `src/levels/README.md:47`
+   stale `node scripts/validate-levels.ts -> exit 0` line (level lane, fold into LV-009 dispatch), R5's
+   duplicate-target OQ (asked-not-assumed, no ticket yet), Architect's §8/§12 pointer flip (fold into next
+   arch contact).
+65. **ENTRY-3 CAPTURE EXECUTED on `88ea653` — the portal's first pixels on disk (`entry3/`, 21 PNGs + 3 logs,
+   pageErrors [] everywhere).** Desktop: A/B statics, full RRRR settled trace (`moves` 0→4 monotone, HUD text
+   proves it), **11-frame in-page rAF transit extraction around the crossing press** (preserveDrawingBuffer
+   channel — E3-3's transit frame is NOT a named gap, it has pixels), R3 embedded-door `[5,0]` frame, win-panel
+   frame whose live text reads EXACTLY `L1–L11 cleared · L 11: moves 4` (N-2 character contract
+   board-verified), dev-channel frame (`?placeholders=1`: badge visible, strip contains NO portal entry = R-P5
+   negative PASS, badge + strip visible in the same frame), L5 portal-free negative strip frame. Mobile 390×844:
+   A/B/crossing-settled + **measured-pitch record with full method history**: pass1 channel defect (fixed
+   threshold → 0 samples) recorded not erased; governing number **51 CSS px** (plate-edge span 714÷7 =
+   formula-exact `computeLayout` output 102 dev) = INSIDE E3-2's 51–56 band at its floor — the margin-inclusive
+   51.1 row governs over the 390/7≈55.7 convention; UA's pitch correction just earned its keep twice.
+   One-session-runs-double confirmed: these mobile frames also satisfy runbook §2-item-4's cohort-V set.
+   Verdict authority = UA's next ticket (six E3 clauses, per-frame evidence paths in the logs); NO orchestrator
+   verdicts recorded here — the checklist stays PENDING-CAPTURE until their entry lands. Live: QA-005c +
+   UA-0010 about to run; user lanes (revision art req-08/11, cohort testers) unchanged; milestone DG round +
+   main re-merge gated behind both verdicts. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
