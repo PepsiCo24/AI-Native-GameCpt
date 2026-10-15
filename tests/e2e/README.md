@@ -152,8 +152,9 @@ refs) and `inventoryViolation(ids, expected)` — the gate the specs assert. The
 hand-typed number is `EXPECTED_LEVEL_COUNT`; the mutation probe
 (`tests/unit/level-inventory-derivation.test.ts`) clones the shipped `src/levels/`
 into a tmpdir and drives the **real loader** over it: pristine clone → no alarm,
-`+1` file → alarm (count), `−1` file → alarm (count), `l011 → l099` at the same count
-→ alarm (contiguity). The latch inventory keeps the design rule the old `[6..11]`
+`+1` file → alarm (count), `−1` file → alarm (count), and a level whose own `id` is
+wrong (`l005.json` saying `id: 50`) → alarm (contiguity) even though the count is
+still the pinned one. The latch inventory keeps the design rule the old `[6..11]`
 literal carried, restated without a typed number: the latch levels are the dataset's
 **contiguous tail**.
 
