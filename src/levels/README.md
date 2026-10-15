@@ -1,32 +1,52 @@
-# `src/levels/` — level data set (M0 teaching ladder L1–L5)
+# `src/levels/` — level data set (M0 ladder L1–L5 + M1+M3 unit L6–L10)
 
 > Owner: **Level AI + Solver** (AGENTS.md §4). Design intent: **Game Designer** (`docs/level-design.md` §1–§3).
-> Status: **hand-authored candidates, schema-validated, NOT solver-proven.**
-> Board cap: **≤ 7 × 7** (`docs/ui-ux.md` R-L2). All five levels are **M0 only** (`doors`/`switches`/`portals` = `[]`).
+> Status: **schema-validated AND solver-proven** — `scripts/solve-levels.ts` reports `10/10 PASS`, `par` == the solver's `shortestSolution` on 10/10, 0 dead states, 0 unrecoverable states, and the level policy (`@/core/solver/policy`) reports 0 violations on 10/10.
+> Board cap: **≤ 7 × 7** (`docs/ui-ux.md` R-L2). L1–L5 are **M0 only**; L6–L10 add **M1 doors + M3 switches** and still use **no portals** (ADR-0009 schedules M2 at L11).
+> The `par` values below started as manual hypotheses (§2) and are now **solver-verified**; the hand derivations are kept because they explain *why* each number is the floor.
 
-## 0. What is in here, and what is *not* proven
+## 0. What is in here
 
-| File | id | grid | walls (A / B) | `par` (manual hypothesis) |
-|---|---|---|---|---|
-| `l001.json` | 1 | 5 × 3 | — / — | 4 |
-| `l002.json` | 2 | 4 × 4 | — / — | 5 |
-| `l003.json` | 3 | 5 × 3 | `(3,1)` / — | 6 |
-| `l004.json` | 4 | 5 × 4 | `(3,1)` / `(2,0)` | 6 |
-| `l005.json` | 5 | 5 × 4 | `(3,1)`, `(4,0)` / `(4,2)` | 6 |
+| File | id | grid | walls (A / B) | doors / switches | `par` (solver-verified) | documented lesson |
+|---|---|---|---|---|---|---|
+| `l001.json` | 1 | 5 × 3 | — / — | — / — | 4 | literacy: tap → move, the world flashes |
+| `l002.json` | 2 | 4 × 4 | — / — | — / — | 5 | literacy: the flip happens because I moved |
+| `l003.json` | 3 | 5 × 3 | `(3,1)` / — | — / — | 6 | first refusal: a permanent (parity-dead) wall |
+| `l004.json` | 4 | 5 × 4 | `(3,1)` / `(2,0)` | — / — | 6 | phantom walk **offered** (3 of 6 shortest routes embed) |
+| `l005.json` | 5 | 5 × 4 | `(3,1)`, `(4,0)` / `(4,2)` | — / — | 6 | phantom walk **forced** (3 of 3 shortest routes embed) |
+| `l006.json` | 6 | 5 × 3 | — / — | `d1` blue `(3,1)` / `s1` `(1,1)` A → `d1` | 4 | **M1+M3 debut**: the latch on the natural path (block-opening dip) |
+| `l007.json` | 7 | 3 × 3 | `(2,0)`, `(2,2)` / — | `d1` blue `(1,1)` / `s1` `(0,0)` A → `d1` | 4 | the detour: I leave the line to change the world |
+| `l008.json` | 8 | 5 × 4 | `(4,0)`, `(4,2)` / — | `d1` blue `(3,1)` / `s1` `(2,0)` A → `d1` | 6 | **Aha #1**: the door that refused the greedy line opens |
+| `l009.json` | 9 | 5 × 5 | `(2,1)`, `(2,3)`, `(3,0)` / `(2,0)`, `(2,4)` | `d1` red `(2,2)`, `d2` blue `(4,1)` / `s1` `(0,1)` A → `d1`, `s2` `(3,1)` B → `d2` | 8 | two doors + two switches: `s2` sits **behind** `d1` (ordered plan) |
+| `l010.json` | 10 | 6 × 4 | `(1,2)` / `(5,0)`, `(5,2)` | `d1` red `(4,1)` / `s1` `(2,3)` B → `d1` | 9 | gate check: permanent M0 geometry + phantom walk + latch, planned together |
 
-- **Validation is proven** for all five: `node scripts/validate-levels.ts` → `5/5 level files ok`, exit code 0.
-- **Solvability and `par` are NOT proven.** Every `par` above is a **manual derivation** (documented step by step in §2) and is a **hypothesis pending SOLVER-001** (BFS under ADR-0008). Nothing here may be called "verified" before that.
-- Supplementary, *informal* evidence (kept deliberately **out of the repo**, it is not the solver deliverable): a throwaway BFS over the ADR-0008 Option B rules agreed with all five `par` values (4 / 5 / 6 / 6 / 6), found the goal reachable and found no dead end in any of the five. Treat it as a sanity check on the hand work, not as proof.
+### 0b. Measured solver facts (2026-10-15, LV-006)
+
+`node_modules/.bin/tsx scripts/solve-levels.ts` prints these per run; `docs/level-difficulty.md` §5.1 holds the full table.
+
+| id | shortest | reachable states | `refusedThenEnteredTiles` | `dualPhaseTiles` | `parRoutes` / `embedRoutes` | switch required | Aha gates |
+|---|---|---|---|---|---|---|---|
+| 6 | 4 | 29 | 1 `[3,1]` | 0 | 1 / 1 | **no** (dip: un-switched world solves in 6) | — |
+| 7 | 4 | 12 | 1 `[1,1]` | 0 | 2 / 2 | yes | — |
+| 8 | 6 | 34 | 1 `[3,1]` | 0 | 6 / 6 | yes | (i)(ii)(iii) PASS · (iv) UNSATISFIABLE before L11 (§4) |
+| 9 | 8 | 58 | 2 `[2,2] [4,1]` | 0 | 2 / 2 | yes | — |
+| 10 | 9 | 42 | 1 `[4,1]` | 0 | 36 / 36 | yes | — |
+
+- **Validation is proven** for all ten: `node scripts/validate-levels.ts` → `10/10 level files ok`, exit code 0 (negative self-tests 10/10 rejected by name).
+- **Solvability, `par` and the level policy are proven** for all ten: `node_modules/.bin/tsx scripts/solve-levels.ts` → `10/10 PASS`, `RESULT: PASS` (plus one ESCALATION, §4).
+- The hand derivations in §2 (L1–L5, written before the solver existed) and §2b (L6–L10) are kept as the *reason* each `par` is the floor. Where a hand derivation and the solver disagreed, the level file was re-authored — never the number.
+- Supplementary, *informal* evidence (kept deliberately **out of the repo**): the original throwaway BFS that first agreed with all five L1–L5 `par` values (4 / 5 / 6 / 6 / 6). It has been superseded by `scripts/solve-levels.ts`, which is the deliverable and the evidence.
 
 ## 1. Running the gate
 
 ```bash
-node scripts/validate-levels.ts                 # Node ≥ 22.6 type-stripping; no build step
-node --experimental-strip-types scripts/validate-levels.ts
-node scripts/validate-levels.ts <other-levels-dir>   # or LEVELS_DIR=…
+node_modules/.bin/tsx scripts/validate-levels.ts      # schema/rule gate + 10 negative self-tests
+node_modules/.bin/tsx scripts/solve-levels.ts         # BFS: solvable, par, dead states, metrics, policy, gates
+node_modules/.bin/tsx scripts/author-lv006-candidates.ts   # L6-L10 families: accept/reject + negative probes
+node_modules/.bin/tsx scripts/validate-levels.ts <other-levels-dir>   # or LEVELS_DIR=…
 ```
 
-There is **no `tsx`** in this workspace's dependency tree, and this role must not install one; `scripts/validate-levels.ts` therefore runs under Node's native type stripping. Exit code is **non-zero** if any level fails, if a negative self-test is wrongly accepted, or if two level files share an `id`. Failing levels are **rejected, never auto-repaired** (ADR-0004).
+`tsx` is a dev dependency of this workspace (`package.json`), so both gates run without a build step. `scripts/validate-levels.ts` additionally documents that it can run under Node's native type stripping. Exit code is **non-zero** if any level fails, if a negative self-test is wrongly accepted, or if two level files share an `id`. Failing levels are **rejected, never auto-repaired** (ADR-0004). `scripts/solve-levels.ts` also exits non-zero on a policy violation (`@/core/solver/policy`), on a `par` mismatch, on a dead/unrecoverable state, or on a FAILing named gate; a gate that is *unsatisfiable as written* is printed under ESCALATIONS (§4) instead of being counted as a pass.
 
 ## 2. Per-level manual derivation (hypothesis, for SOLVER-001 to falsify)
 
@@ -124,6 +144,102 @@ The alternative 6-move detour `(0,2)→(1,2)→(2,2)→(3,2)→(4,2)→(4,1)` av
 - **If `(3,1)` or `(4,0)` were made solid in BOTH phases:** no change (both are already permanently solid).
 - ⚠ **Blocked intent (see §4):** the design asks for "a side step changes the parity, and the wall that refused me becomes my route". The side step here changes **nothing about `(3,1)`** — it routes around it and lets the player walk through a *different* wall, `(4,2)`.
 
+## 2b. L6–L10 — the doors + switches unit (M1 + M3), solver-verified
+
+Facts used below (proved in §3): **F1** (move *n* is played in phase A if *n* is odd) and **F2** (arrival at tile `c` is always a move `n ≡ d(c) (mod 2)`), plus the corollary **F3** derived in §3: *a switch's `activePhase` must equal the fixed entry phase of its own tile, otherwise the switch can never fire* (the policy `switch-never-fires` rejects it).
+
+Door openness (`src/core/rules/solid.ts`, frozen): a **blue** door is closed in phase A and open in B; a **red** door is the inverse; a switch that is ON inverts its targets. So the *only* way a door tile can be entered is: base-open in the phase present during that move, or latched open by a switch that is currently ON.
+
+### L6 — `l006.json` · the latch on the natural path (5 × 3, `par` 4)
+
+`d(3,1) = 3` (odd) → the blue door `d1` at `(3,1)` is entered on odd moves, i.e. **in phase A, where blue is closed**. `d(1,1) = 1` (odd) → the switch `s1` at `(1,1)` is entered in phase A too, so `activePhase: "A"` is exactly the phase that is current when it is stepped on (F3).
+
+| step | tile entered | phase during the move | outcome |
+|---|---|---|---|
+| 1 | `(1,1)` `s1` | A | legal, `s1` → **ON**; after the flip, phase B |
+| 2 | `(2,1)` | B | legal → phase A |
+| 3 | `(3,1)` `d1` | A | blue is closed in A, but `s1` ON **inverts** it → **open**, legal → phase B |
+| 4 | `(4,1)` **goal** | B | legal → win |
+
+- `par = 4` = `d(goal)`: the only 4-move route is the straight row, and that route passes `s1` at move 1, so **the shortest solution necessarily latches**. Solver: `shortestSolution = 4`, `parRoutes = 1`.
+- The latch is **not required**: the un-switched world still solves in 6 via row 0 or row 2 (`switchRequired = false`). This is deliberate — §6 of `docs/level-design.md` wants the new-mechanic block to open with a **dip**, and `refusedThenEnteredTiles = 1` (`(3,1)`) still proves the latch is load-bearing content, not decoration.
+- The level is also the first place where a **door closes under the player**: after move 3 the player stands on `d1` while phase B is current, where the blue door is open with `s1` ON → not solid; after the *next* flip it would be solid. The solver's `embedRoutes = 1` records exactly that (see §3's note on door-tile embedding).
+
+### L7 — `l007.json` · the detour (3 × 3, `par` 4)
+
+`(2,0)` and `(2,2)` have `d = 3` (odd) and are `phaseAWalls` → by F2 they need an *even* arrival, so both are **permanently solid**: the goal `(2,1)` (d = 2, entered on even moves) has exactly one non-wall neighbour, the door.
+
+| step | tile entered / attempted | phase | outcome |
+|---|---|---|---|
+| 1 | `(1,1)` `d1` **attempted** from the start | A | blue closed in A, `s1` OFF → **REFUSED**: no movement, no flip, still at `(0,1)` phase A |
+| 1′ | `(0,0)` `s1` (the detour) | A | legal, `s1` → **ON** → phase B |
+| 2 | `(0,1)` | B | legal → phase A |
+| 3 | `(1,1)` `d1` | A | latching open (as in L6) → legal → phase B |
+| 4 | `(2,1)` **goal** | B | legal → win |
+
+- The greedy line is refused **at the door itself**, and the switch is one step off that line: the detour costs exactly the two moves the refusal demands, so `par = 4` is simultaneously the floor and the "go out of your way" beat. Solver: `shortestSolution = 4`, `parRoutes = 2` (both shortest routes embed, `embedForced = true`).
+- `switchRequired = true`: without `s1`, the door stays closed in A and the goal has no other non-solid neighbour.
+
+### L8 — `l008.json` · Aha #1, the door that refused the greedy line (5 × 4, `par` 6)
+
+`(4,0)` and `(4,2)` have `d = 5` (odd) and are `phaseAWalls` → **permanently solid** (F2). The goal `(4,1)` (d = 4, entered on even moves) therefore has exactly one non-solid neighbour: the blue door `(3,1)` (d = 3, entered on odd moves, in phase A where blue is closed). `s1` sits at `(2,0)` (d = 3, entered in phase A → `activePhase: "A"`, per F3) — **one tile off the straight row**, past the halfway point.
+
+| step | tile entered / attempted | phase | outcome |
+|---|---|---|---|
+| 1 | `(1,1)` | A | legal → phase B |
+| 2 | `(2,1)` | B | legal → phase A |
+| 3 | `(3,1)` `d1` **attempted** | A | blue closed in A, `s1` OFF → **REFUSED** (the greedy line dies here) |
+| 3′ | `(2,1)` is where the player stands; the fix is the side step `U` | — | — |
+| 3″ | `(2,0)` `s1` | A | legal, `s1` → **ON** → phase B |
+| 4 | `(2,1)` | B | legal → phase A |
+| 5 | `(3,1)` `d1` | A | latching open → legal → phase B |
+| 6 | `(4,1)` **goal** | B | legal → win |
+
+- `par = 6`; **all six** shortest routes press `s1` at move 3 and cross `d1` at move 5 (solver gate (ii): `press-then-cross-door = 6/6`, and the crossed tile `(3,1)` is in `refusedThenEnteredTiles`). `switchRequired = true` (gate (i): the all-OFF subgraph holds 16 of the 34 reachable states and the goal is unreachable inside it).
+- The switch is one tile off the line, the detour costs +2 moves, and the refusal happens *at the door* — the shape `docs/level-design.md` §2/§3 asks for. The fourth named condition, `dualPhaseTiles ≥ 1`, is unsatisfiable before L11: see §4.
+
+### L9 — `l009.json` · two doors + two switches, ordered (5 × 5, `par` 8)
+
+The column `x = 2` is a sealed wall except for one tile: `(2,0)`/`(2,4)` are `phaseBWalls` on even-`d` tiles and `(2,1)`/`(2,3)` are `phaseAWalls` on odd-`d` tiles → **all four permanently solid** (F2), leaving only `(2,2)` — the **red** door `d1` (d = 2, entered on even moves, in phase B where red is closed). So everything at `x ≥ 3` is behind `d1`, and the switch for the second door lives there:
+
+| step | tile entered | phase | outcome |
+|---|---|---|---|
+| 1 | `(0,1)` `s1` | A | legal, `s1` → **ON** (`d1` now open in B) → phase B |
+| 2 | `(0,2)` | B | legal → phase A |
+| 3 | `(1,2)` | A | legal → phase B |
+| 4 | `(2,2)` `d1` | B | red closed in B, `s1` ON → **open** → legal; phase A now, so the door is closed *under* the player (`d1` ∈ `refusedThenEnteredTiles`) |
+| 5 | `(3,2)` | A | legal → phase B |
+| 6 | `(3,1)` `s2` | B | legal, `s2` → **ON** (`activePhase: "B"` = the fixed entry phase of `(3,1)`, d = 4) → phase A |
+| 7 | `(4,1)` `d2` | A | blue closed in A, `s2` ON → **open** → legal → phase B |
+| 8 | `(4,0)` **goal** | B | legal → win |
+
+- The **order is forced by geometry**: `s2` is behind `d1`, and `d1` only opens with `s1`; `(3,0)` is a permanent A-wall and `(4,0)`'s only other neighbour is `d2`, so the goal cannot be reached without both presses. Solver: `shortestSolution = 8`, `parRoutes = 2`, `refusedThenEnteredTiles = 2`, `switchRequired = true`, 0 dead states.
+- This is the dispatch's "two doors / two switches interaction"; it is **not** the lesson `docs/level-design.md` §2 originally wrote for L9 (see §4).
+
+### L10 — `l010.json` · mastery: M0 geometry + phantom walk + latch (6 × 4, `par` 9)
+
+- `(5,0)` and `(5,2)` are `phaseBWalls` on even-`d` tiles (d = 6) → **permanently solid**, so the goal `(5,1)` is reachable only through the **red** door `(4,1)` (d = 4, entered on even moves in phase B, where red is closed).
+- `s1` sits at `(2,3)` (d = 4, entered in phase B → `activePhase: "B"`): a real detour down to row 3 and back.
+- `(1,2)` is a `phaseAWalls` tile on an even-`d` tile (d = 2). Recall the §2 L4/L5 construction: an odd-`d` tile + the *other* phase's wall is the passable echo. Here it is an **A-wall on an even-`d` tile**, entered on an even move while phase B is current → passable, and *after* the flip the player is standing inside a phase-A-solid tile (embedded, legal, ADR-0008 clause 3). So the route recombines "walk through a wall" with "the flip is my step".
+
+| step | tile entered | phase | outcome |
+|---|---|---|---|
+| 1 | `(1,1)` | A | legal → phase B |
+| 2 | `(1,2)` — the echo | B | legal (solid in A only) → phase A, player now **embedded** in an A-wall |
+| 3 | `(2,2)` | A | legal — stepping *out* of the embedded tile needs no rule (`(2,2)` is non-solid in A) → phase B |
+| 4 | `(2,3)` `s1` | B | legal, `s1` → **ON** → phase A |
+| 5 | `(3,3)` | A | legal → phase B |
+| 6 | `(4,3)` | B | legal → phase A |
+| 7 | `(4,2)` | A | legal → phase B |
+| 8 | `(4,1)` `d1` | B | red closed in B, `s1` ON → **open** → legal → phase A |
+| 9 | `(5,1)` **goal** | A | legal → win |
+
+- `par = 9`; `switchRequired = true`; every one of the **36** shortest routes ends embedded (`parRoutes = 36 / embedRoutes = 36`), 0 dead states. The board is deliberately loose (36 equivalent routes, `forced-move ratio` 0.10) — its job is to confirm the player owns *move → flip → latch* together, not to add a new trick (`docs/level-design.md` §2 L10).
+
+### Where L6–L10 came from (reproducible)
+
+The five files are the **accepted output of a committed, seeded generator** (`scripts/author-lv006-candidates.ts`, `SEED = 20261015`), which enumerates the recorded template families, runs schema → rules → BFS → policy on each candidate, takes `par` **from the solver**, and prints every rejection. Re-running it re-derives all five files (`shipped=MATCH`) and fails loudly if any of its three negative probes (inert switch, Aha board without the goal funnel, door with no switch) is wrongly accepted. Full record: `docs/ai-native-pipeline.md` §8.
+
 ## 3. The parity structure, and why M0-only content is a *static* maze
 
 Both facts used above are short proofs, not opinions.
@@ -139,6 +255,24 @@ Both facts used above are short proofs, not opinions.
 
 Empirical backing (throwaway probes kept out of the repo, 4000 random levels each, ADR-0008 rules): M0-only walls → 0 levels with a tile reachable in both phases, 0 tiles refused-then-entered, 0 phase-formula violations. The same holds for **M1 doors without switches** (door solidity is then a function of the phase alone). Dynamism appears only when the phase stops being a function of the tile: **M3 switches** (231/500 random skeletons produced refused-then-entered door tiles) and **M2 portals** (233/500 broke the position→phase function, because a teleport changes position without consuming an extra move).
 
+### F3 — a switch must sit on a tile whose entry phase is its `activePhase`
+
+F2 says the phase present when the player arrives at tile `c` depends only on `c`. `applyMove` fires a switch only when `switch.activePhase` equals the current phase, so on a portal-free board:
+
+- a switch whose `activePhase` **equals** `entryPhase(c)` fires every time it is stepped on (it is a real latch);
+- a switch whose `activePhase` **differs** from `entryPhase(c)` can **never** fire — it is dead data (the same "permanently equivalent" class as a parity-mismatched wall, §2 L3).
+
+This is now enforced by the level policy (`@/core/solver/policy`, code `switch-never-fires`), measured over the whole reachable graph rather than argued from parity (so it stays correct if portals ever arrive). All five unit levels satisfy it: L6 `(1,1)` A, L7 `(0,0)` A, L8 `(2,0)` A, L9 `(0,1)` A + `(3,1)` B, L10 `(2,3)` B.
+
+### Note — "embedded" has two constructions, and the metric does not distinguish them
+
+`embedMetrics` (`@/core/solver/bfs`) asks the shipped `solidAt` whether an arrival left the player inside a **current-phase-solid** tile. That is true for both:
+
+1. the **wall echo** of L4/L5 (an odd-`d` tile carrying the *other* phase's wall, entered while it is an echo, §2 L4);
+2. a **door tile** on an M1+M3 level: the player enters it while it is latched open, the flip happens, and the door is closed in the new phase (`src/game/renderer` draws that as a closed door for one frame — the player is safe and embedded, ADR-0008 clause 3). On L6–L10 this is the usual case: `embedRoutes` = `parRoutes` on all five.
+
+The LV-004 metric is correct for both (its definition is `solidAt`, `docs/architecture.md` §8 — not "wall") but it must not be *read* as "a wall echo happened": L10 carries both constructions, and a future portal level could embed a third way. The policy's lesson obligations are per level and name the intended construction (`phantom-walk-forced` for `l005`, `latch-dynamism` for L6–L10).
+
 **Consequence for the pipeline:** the claim in `ADR-0008` clause 8 that parity-dependent entry "genuinely rewires feasible routes from L1 onward" and resolves OQ-1 does **not** hold for M0-only content. M0 walls are real gates *perceptually* (a wall is solid while its phase is current) but the legal-move graph they produce is **static**: which tiles are enterable is fixed at authoring time by the distance parity from `player`.
 
 ## 4. Blocked design intents (escalation needed — do not silently "fix")
@@ -148,6 +282,8 @@ Empirical backing (throwaway probes kept out of the repo, 4000 random levels eac
 | `docs/level-design.md` §2 L4 | "the solid wall becomes a passable echo … the route crosses the very tile that refused earlier" | **UNREACHABLE in M0** by F2. `l004.json` ships a substitute beat (a *different* tile that is solid in the other phase is crossed while it is an echo) and is flagged, not presented as the specified lesson. |
 | `docs/level-design.md` §2–§3 L5 (Aha #1) | "greedy straight line refused at the last jump; a visible side step changes the parity; the refusing wall itself becomes the route" | **UNREACHABLE in M0** by F2. `l005.json` keeps the refusal + side-step + `par ≤ 6` shape and makes the goal reachable *only* through an echo tile, but the refusing tile `(3,1)` is still never enterable. The ladder's stated Aha is not delivered. |
 | `docs/level-design.md` §1 example | `par: 6` for `player [0,1] / goal [4,1] / phaseAWalls [[2,0]] / phaseBWalls [[3,1]]` | **inconsistent with its own prose**: the prose (and F1/F2) give `R,R,R,R` = **4** moves (the echo `(3,1)` is entered on move 3, a phase-A step). `par` must be re-derived by SOLVER-001. The example also contains `(2,0)`, which is `d = 3` (odd) in a `phaseAWalls` list → never enterable decoration. |
+| `docs/level-design.md` §2 L9 | "switches listen only in their `activePhase`; arriving on the wrong phase does nothing" — a **timing** lesson ("which step do I press on?") | **UNCONSTRUCTIBLE pre-L11**, by F2/F3: arrival at a fixed tile happens in exactly one phase, so there is no such thing as "arriving on the wrong phase" on a portal-free board. A switch is either **always** current on its tile (a working latch) or **never** current (dead data, now rejected by the policy as `switch-never-fires`). `l009.json` therefore ships the *constructible* interaction the dispatch asked for — two doors, two switches, the second switch behind the first door, so the **order** of the presses is forced by geometry (§2b) — and this row records the deviation rather than pretending the timing lesson exists. |
+| Dispatch LV-006 criterion 4 (Aha #1 gate (iv)) | "`dualPhaseTiles ≥ 1` on L8" | **UNSATISFIABLE on any portal-free board** (ADR-0009 decision 1, checkerboard invariant: a switch never relocates the player, so `dualPhaseTiles ≡ 0`; already pinned by `tests/solver/dynamism-metrics.test.ts`). Gate (iv) is implemented and reported by `scripts/solve-levels.ts` as `UNSATISFIABLE` with its proof, and `dualPhaseTiles === 0` is pinned as the proven value. The gate is not dropped, not softened, and no portal is smuggled in — ADR-0009 schedules M2 at L11. Escalated in `docs/ai-native-pipeline.md` §8.5. |
 
 Cheapest mechanical fixes for the design team to consider (**none of them mine to decide** — ADR-0008 is human-approved core rule; M1/M2 scope belongs to the Game Designer):
 
@@ -165,6 +301,7 @@ Exported by `src/core/level/index.ts`: `Coord`, `DoorDef`, `SwitchDef`, `PortalD
 
 ## 7. Next handoff
 
-- **SOLVER-001 (Level AI + Solver):** BFS over `applyMove` from `@/core/rules` — shortest solution + `par` verification + reachability from every reachable state (embedded states included) for these five levels, then difficulty metrics.
-- **Game Designer / Orchestrator:** §3–§4 — the M0 parity question and the L4/L5 Aha, plus the `par` inconsistency in `docs/level-design.md` §1.
-- **Then:** the LLM candidate pipeline (`docs/ai-native-pipeline.md`) can consume `validateLevel` unchanged: schema → rules → BFS → metrics → accept/reject, with rejection (never repair) at every gate.
+- **GAME-001 / UI-ART-001 — L6–L10 must not enter the playable registry yet.** Per the LV-006 task contract the five new files stay out of `src/game/levels/level-registry.ts` until the Game Designer sequences them (L6–L10 were authored to `docs/level-design.md` V0.4 §2/§6; the §2b derivations above are the parts the solver proved). The renderer today implements no `door` or `switch` object (`src/game/renderer/objects/registry.ts`), so the block is not playable as authored — registering it now would ship a board whose latch is invisible.
+- **Game Designer / Orchestrator:** §4 — the two blocked intents (L9's timing lesson, L8's gate (iv)) need a design decision, not an agent workaround: either re-word the ladder for the pre-L11 phase, or re-schedule M2/M3 (ADR-0009 puts portals at L11).
+- **Level AI + Solver (next):** LV-004 embed plumbing is done (§0b prints it); the remaining metric work is `B` effective, `T` and `R` so that `D` can actually be computed (`docs/level-difficulty.md` §5.1/§6).
+- **Then:** the LLM candidate pipeline (`docs/ai-native-pipeline.md` §8) can consume `validateLevel` + `@/core/solver/policy` unchanged for the next block (L11–L20, portals): schema → rules → BFS → metrics → policy → accept/reject, with rejection (never repair) at every gate.
