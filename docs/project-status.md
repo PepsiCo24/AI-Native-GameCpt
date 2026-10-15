@@ -151,8 +151,9 @@ named teaching grade (kept descriptive for now).
 
 **QA-004** (QA Engineer, background) — independent second-implementation reproduction of the ART-INTAKE audit
 numbers (`audit.json`) + suite regression, read-only, no commits. It can now only trigger a **corrigendum** to
-`docs/assets/art-acceptance-2026-10-15.md`, not reopen a ruling. Everything else has returned; the art intake docs are
-now **committed (`0a88d0c`)** — only `assets/` (candidate PNGs) stays untracked pending the storage ruling. Reliability note: a batch of
+`docs/assets/art-acceptance-2026-10-15.md`, not reopen a ruling. Everything else has returned; the art intake docs
+and **all 11 candidate PNGs + audit evidence are committed** (`0a88d0c`, `cd2054e` — storage ruling executed under
+item 27). Reliability note: a batch of
 five concurrent dispatches produced four transport timeouts; the survivors were judged **by disk
 evidence**, not by their silence — `tests/helpers/search.ts` + `tests/solver/**` had landed (QA-002),
 while `docs/ui-ux.md` / `docs/playtest-analysis/**` / `docs/architecture.md` were untouched (re-dispatched
