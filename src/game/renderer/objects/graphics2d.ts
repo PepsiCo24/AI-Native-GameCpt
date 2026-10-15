@@ -18,10 +18,11 @@
  *
  * `Phaser.GameObjects.Graphics` satisfies this interface structurally, so
  * `board-view.ts` passes a real Graphics and nothing is wrapped or adapted at
- * runtime. The `satisfies`-style compatibility probe at the bottom is a
- * **compile-time** assertion (it has no runtime effect) so a future Phaser
- * upgrade that changes a signature fails `tsc --noEmit` here instead of silently
- * at the first draw call.
+ * runtime. That obligation is checked at compile time in two places: every
+ * `board-view.ts` call site that hands a real Graphics to a painter (the primary
+ * guarantee — the argument has to be assignable there), and the explicit probe at the
+ * bottom of this file, which exists so that a Phaser upgrade fails `tsc --noEmit`
+ * **here**, naming the seam, rather than somewhere inside the renderer.
  */
 
 import type Phaser from "phaser";
@@ -53,9 +54,22 @@ export interface Graphics2D {
 }
 
 /**
- * Compile-time compatibility probe — **never executed**. If Phaser's Graphics
- * stops being assignable to {@link Graphics2D}, `tsc --noEmit` fails here.
+ * Compile-time compatibility probe — **never executed, and it is a *value* on purpose**.
+ *
+ * The V0.7 version declared a conditional **type** (`… extends Graphics2D ? true :
+ * never`) that nothing consumed, which proved nothing: TypeScript only checks what is
+ * used, and a type alias that resolves to `never` is a perfectly legal declaration on
+ * its own. The review demonstrated the hole by making the interface unsatisfiable —
+ * `tsc --noEmit` still exited 0.
+ *
+ * The probe is therefore an **assignment**. `true` is exactly what the conditional
+ * yields when `Phaser.GameObjects.Graphics` is assignable to {@link Graphics2D}; when
+ * it is not, the conditional yields `never` and `true` is not assignable to it, so the
+ * error lands on this line rather than at the first draw call.
+ *
+ * It is exported only so that `noUnusedLocals` cannot quietly delete the evidence.
+ * Nothing imports it; its runtime effect is being `true`.
  */
-export type PhaserGraphicsIsGraphics2D = Phaser.GameObjects.Graphics extends Graphics2D
+export const PHASER_GRAPHICS_IS_GRAPHICS2D: Phaser.GameObjects.Graphics extends Graphics2D
   ? true
-  : never;
+  : never = true;
