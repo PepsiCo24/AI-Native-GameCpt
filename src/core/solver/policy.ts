@@ -55,6 +55,8 @@ import {
   goalReachableWithAllSwitchesOff,
   tileKey,
 } from "./bfs";
+import type { DifficultyBreakdown } from "./difficulty";
+import { analyseDifficulty } from "./difficulty";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Documented lessons (the table the docs are checked against)
@@ -585,6 +587,14 @@ export interface LevelAudit {
   readonly allOffReachableStates: number | null;
   /** Named gates — only for a level documented as Aha #1 (`latch-aha-1`). */
   readonly gates: readonly NamedGate[];
+  /**
+   * The `docs/level-difficulty.md` §2 breakdown (LV-007B item 3). Reported, never
+   * gated: the weights are the doc's **provisional V0.1 hypothesis** and live in
+   * `@/core/solver/difficulty` (one constant), so re-calibrating them against
+   * playtest data moves no solver contract. `D` is `null` when the board has no
+   * solution — a board with no solution has no position on the curve.
+   */
+  readonly difficulty: DifficultyBreakdown;
   /** Hard policy violations: the level must not ship while any is present. */
   readonly violations: readonly PolicyViolation[];
 }
@@ -726,5 +736,6 @@ export function auditLevel(
     allOffReachableStates: allOffStates,
     gates,
     violations,
+    difficulty: analyseDifficulty(level, graph),
   };
 }

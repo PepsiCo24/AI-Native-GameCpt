@@ -215,6 +215,20 @@ function reportLevel(
   console.log(
     `       noUnrecoverableOk=${result.noUnrecoverableOk} unrecoverableStates=${result.unrecoverableStates}`,
   );
+  // LV-007B item 3: the §2 difficulty model, D = w1·L + w2·B + w3·T + w4·R + w5·M.
+  // The weights are the doc's PROVISIONAL V0.1 hypothesis (not a calibration), so
+  // the line prints them next to the number: a stored D must never be read against
+  // weights it was not computed with.
+  {
+    const add = audit.difficulty;
+    const w = add.weights;
+    console.log(
+      `       difficulty D=${add.D === null ? "n/a (unsolvable)" : add.D.toFixed(2)} = ${w.L}·L(${String(add.L)}) + ${w.B}·B(${add.B.toFixed(4)}) + ${w.T}·T(${add.T}) + ${w.R}·R(${add.R.toFixed(4)}) + ${w.M}·M(${add.M}) · weights provisional V0.1 (docs/level-difficulty.md §2)`,
+    );
+    console.log(
+      `       difficultyDiagnostics BRaw=${add.bRaw.toFixed(4)} forcedMoveRatio=${add.forcedMoveRatio.toFixed(4)} lookaheadDepth=${add.lookaheadDepth} unrecoverableRatio=${add.unrecoverableRatio.toFixed(4)} reachableStates=${add.reachableStates}`,
+    );
+  }
   printGates(audit.gates);
   printViolations(audit.violations);
   for (const reason of reasons) console.log(`       reason: ${reason}`);
