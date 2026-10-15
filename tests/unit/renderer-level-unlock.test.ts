@@ -1,6 +1,12 @@
 /**
- * L6–L10 unlock evidence — the playable slice, the `?level=` deep link, the
- * L5 → L6 progression and the R-T6 hover gate over the new door/switch content.
+ * L6–L11 unlock evidence — the playable slice, the `?level=` deep link, the
+ * progression through the door/switch content and the R-T6 hover gate.
+ *
+ * L11 (R-003) is the first unlocked board that carries a **portal**, so the
+ * portal assertions below are no longer "no shipped level has one": the registry
+ * now ships the frozen `l011.json` and the solver-verified route runs through the
+ * shipped `GameSession` like every other level. The board file itself is data
+ * owned by Level AI + Solver and is never edited from here.
  *
  * Everything here goes through the **shipped** path: `loadLevels()` (schema +
  * `validateLevel`), `startIndexForLevel` (`src/main.ts`'s deep-link resolution),
@@ -25,6 +31,7 @@ import type { Level } from "@/core/level";
 import { explore, movePath } from "@/core/solver/bfs";
 import { isGoal } from "@/core/state/transitions";
 import type { Direction } from "@/core/state/move";
+import { step } from "@/core/state/move";
 import type { Vec } from "@/core/state/types";
 import { doorIsOpenNow } from "@/game/renderer/cell-state";
 import { adjacentDirection } from "@/game/input/input-map";
@@ -57,7 +64,7 @@ function hoverCell(session: GameSession, cell: Vec): Vec | null {
   return dir !== null && session.movePreview(dir) ? cell : null;
 }
 
-describe("level registry — L6–L10 are unlocked", () => {
+describe("level registry — L6–L11 are unlocked", () => {
   it("lists the whole authored slice, in order", () => {
     expect(LEVEL_SOURCES.map((source) => source.file)).toEqual([
       "l001.json",
@@ -70,15 +77,16 @@ describe("level registry — L6–L10 are unlocked", () => {
       "l008.json",
       "l009.json",
       "l010.json",
+      "l011.json",
     ]);
   });
 
-  it("accepts every file: ids 1..10, nothing rejected, nothing dropped", () => {
+  it("accepts every file: ids 1..11, nothing rejected, nothing dropped", () => {
     expect(rejected).toEqual([]);
-    expect(levels.map((level) => level.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(levels.map((level) => level.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   });
 
-  it("carries the M3 content only from L6 on (doors + switches, still no portals)", () => {
+  it("carries the M3 content from L6 on and the M2 portal from L11 only", () => {
     for (const level of levels) {
       if (level.id < 6) {
         expect(level.doors, `level ${String(level.id)}`).toEqual([]);
@@ -87,22 +95,34 @@ describe("level registry — L6–L10 are unlocked", () => {
         expect(level.doors.length, `level ${String(level.id)}`).toBeGreaterThan(0);
         expect(level.switches.length, `level ${String(level.id)}`).toBeGreaterThan(0);
       }
-      // M2 ships at L36; no shipped level carries a portal end.
-      expect(level.portals, `level ${String(level.id)}`).toEqual([]);
+      // R-003: L11 is the M2 debut — the first shipped board with a portal, and
+      // the only one. L1–L10 stay portal-free until a later unlock says otherwise.
+      if (level.id < 11) {
+        expect(level.portals, `level ${String(level.id)}`).toEqual([]);
+      }
     }
+    const l11 = levels.find((level) => level.id === 11);
+    expect(l11?.portals).toHaveLength(1);
+    expect(l11?.portals[0]?.pair).toEqual([
+      [2, 1],
+      [4, 0],
+    ]);
+    expect(l11?.portals[0]?.activePhase).toBe("B");
+    expect(l11?.par).toBe(4);
   });
 });
 
 describe("?level=<n> deep link — resolves by Level.id for the new levels", () => {
-  it("maps 6..10 to their indices and keeps L1..L5 intact", () => {
-    for (const id of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+  it("maps 6..11 to their indices and keeps L1..L5 intact", () => {
+    for (const id of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) {
       expect(startIndexForLevel(levels, id), `?level=${String(id)}`).toBe(id - 1);
     }
   });
 
   it("falls back to L1 for absent / unknown / out-of-range values", () => {
     expect(startIndexForLevel(levels, null)).toBe(0);
-    expect(startIndexForLevel(levels, 11)).toBe(0);
+    // 11 is *in* the slice now (R-003), so the honest out-of-range probe is 12.
+    expect(startIndexForLevel(levels, 12)).toBe(0);
     expect(startIndexForLevel(levels, 99)).toBe(0);
     expect(startIndexForLevel(levels, -3)).toBe(0);
     expect(startIndexForLevel(levels, 0)).toBe(0);
@@ -114,11 +134,24 @@ describe("?level=<n> deep link — resolves by Level.id for the new levels", () 
     });
     expect(session.level.id).toBe(8);
     expect(session.levelIndex).toBe(7);
-    expect(session.levelCount).toBe(10);
+    expect(session.levelCount).toBe(11);
     // The deep link selects where the session starts; it grants nothing.
     expect(session.moveCount).toBe(0);
     expect(session.isWon).toBe(false);
     expect(session.canUndo).toBe(false);
+  });
+
+  it("starts a session on L11 for ?level=11 — the portal board is player-facing", () => {
+    const session = new GameSession(levels, {
+      startIndex: startIndexForLevel(levels, 11),
+    });
+    expect(session.level.id).toBe(11);
+    expect(session.levelIndex).toBe(10);
+    expect(session.levelCount).toBe(11);
+    expect(session.level.portals).toHaveLength(1);
+    expect(session.phase).toBe("A");
+    expect(session.moveCount).toBe(0);
+    expect(session.isWon).toBe(false);
   });
 });
 
@@ -143,16 +176,29 @@ describe("progression — the win dialog walks L5 into L6", () => {
     expect(session.level.id).toBe(6);
   });
 
-  it("'Next' is refused only after the last unlocked level", () => {
+  it("'Next' from L10 now lands on L11 — the unlock extends the chain by one", () => {
     const session = new GameSession(levels, { startIndex: 9 });
     expect(session.level.id).toBe(10);
+
+    for (const dir of shortestPath(session.level)) session.move(dir);
+    expect(session.isWon).toBe(true);
+
+    expect(session.next()).toBe(true);
+    expect(session.level.id).toBe(11);
+    expect(session.levelIndex).toBe(10);
+    expect(session.moveCount).toBe(0);
+  });
+
+  it("'Next' is refused only after the last unlocked level", () => {
+    const session = new GameSession(levels, { startIndex: 10 });
+    expect(session.level.id).toBe(11);
     expect(session.next()).toBe(false);
-    expect(session.level.id).toBe(10);
+    expect(session.level.id).toBe(11);
   });
 });
 
-describe("L6–L10 are playable end-to-end (solver-verified routes)", () => {
-  for (const id of [6, 7, 8, 9, 10]) {
+describe("L6–L11 are playable end-to-end (solver-verified routes)", () => {
+  for (const id of [6, 7, 8, 9, 10, 11]) {
     it(`L${String(id)}: the shortest route wins in exactly \`par\` moves`, () => {
       const session = new GameSession(levels, {
         startIndex: startIndexForLevel(levels, id),
@@ -170,6 +216,42 @@ describe("L6–L10 are playable end-to-end (solver-verified routes)", () => {
       expect(session.moveCount).toBe(level.par);
     });
   }
+
+  it("L11's par route really uses the portal: a move lands the player on the pair's exit", () => {
+    // The unlock claim is not "the JSON parses" — it is "the shipped session walks
+    // the M2 mechanic". The teleport is detected as a non-adjacent arrival, so the
+    // assertion survives any re-authoring of the route as long as the mechanic is
+    // genuinely on it (the board itself is frozen data, not this test's business).
+    //
+    // The *entry* tile is not observable from the session afterwards (the move
+    // lands on the exit), so it is recomputed with core's own `step` from the
+    // pre-move position — the same function the rules use in `validateEntry`.
+    const level = levelById(11);
+    const portal = level.portals[0]!;
+    const pair = portal.pair.map(([x, y]) => ({ x, y }));
+    const session = new GameSession(levels, { startIndex: startIndexForLevel(levels, 11) });
+
+    const arrivals: Array<{ move: number; entry: Vec; exit: Vec; phaseBefore: string }> = [];
+    for (const dir of shortestPath(level)) {
+      const from = session.playerPosition;
+      const phaseBefore = session.phase;
+      const entry = step(from, dir);
+      session.move(dir);
+      const to = session.playerPosition;
+      const teleported = Math.abs(to.x - entry.x) + Math.abs(to.y - entry.y) > 1;
+      if (teleported) arrivals.push({ move: session.moveCount, entry, exit: to, phaseBefore });
+    }
+
+    expect(arrivals).toHaveLength(1);
+    const arrival = arrivals[0]!;
+    expect(pair.some((tile) => tile.x === arrival.entry.x && tile.y === arrival.entry.y)).toBe(true);
+    expect(pair.some((tile) => tile.x === arrival.exit.x && tile.y === arrival.exit.y)).toBe(true);
+    // Entry is resolved in the *current* phase (applyMove step 3 runs before step
+    // 4's flip), i.e. the phase where `p1` is live — B.
+    expect(arrival.phaseBefore).toBe(portal.activePhase);
+    expect(session.isWon).toBe(true);
+    expect(session.moveCount).toBe(level.par);
+  });
 
   it("a refused move inside these levels is still a no-op: no movement, no flip", () => {
     const session = new GameSession(levels, { startIndex: startIndexForLevel(levels, 10) });
@@ -250,15 +332,15 @@ describe("R-T6 hover — the ring appears only where the core accepts the move",
     // requires `status === "playing"`, so the first probe whose move happened to be the
     // winning one latched the level: every later step degenerated into
     // "movePreview is false because the session is won" (still asserted as a refusal,
-    // still green) while `expect(session.isWon)` at the end passed anyway. All five
-    // levels passed **for the wrong reason**, and the last third of every path was never
-    // validated.
+    // still green) while `expect(session.isWon)` at the end passed anyway. Every
+    // level here passed **for the wrong reason**, and the last third of every path
+    // was never validated.
     //
     // The probe therefore runs on a **clone** — a second `GameSession` replayed to the
     // same step — so the probe may win without touching the session under test. The
     // path is then walked for real, and every step is pinned: exactly one move per step,
     // and no win before the last one.
-    for (const id of [6, 7, 8, 9, 10]) {
+    for (const id of [6, 7, 8, 9, 10, 11]) {
       const level = levelById(id);
       const startIndex = startIndexForLevel(levels, id);
       const session = new GameSession(levels, { startIndex });

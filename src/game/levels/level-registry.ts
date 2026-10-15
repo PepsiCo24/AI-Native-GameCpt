@@ -1,5 +1,5 @@
 /**
- * Level registry — loads the authored L1–L10 files and **validates every one**
+ * Level registry — loads the authored L1–L11 files and **validates every one**
  * before it can reach the board.
  *
  * `docs/architecture.md` §7 / ADR-0004: schema → rule validation → (solver, at CI
@@ -13,7 +13,10 @@
  *   is shared build tooling that this role does not own (AGENTS.md §4).
  * L6+ adds one entry to {@link LEVEL_SOURCES} — data, not scene logic. Level files
  * are read-only inputs for this task (`src/levels/**` is owned by Level AI +
- * Solver), so nothing here writes, mutates or normalizes them.
+ * Solver), so nothing here writes, mutates or normalizes them. L11 (R-003) is the
+ * same shape of edit: the portal painter seam shipped in R-002, so the unlock is
+ * this entry and nothing else — the board itself (`l011.json`) is Level AI's
+ * frozen, solver-proven artefact and is not touched here.
  */
 
 import type { Level } from "@/core/level";
@@ -28,6 +31,7 @@ import l007 from "@/levels/l007.json";
 import l008 from "@/levels/l008.json";
 import l009 from "@/levels/l009.json";
 import l010 from "@/levels/l010.json";
+import l011 from "@/levels/l011.json";
 
 interface LevelSource {
   readonly file: string;
@@ -50,6 +54,10 @@ export const LEVEL_SOURCES: readonly LevelSource[] = [
   { file: "l008.json", raw: l008 },
   { file: "l009.json", raw: l009 },
   { file: "l010.json", raw: l010 },
+  // L11 is the M2 debut (opposite-colour portal pair at B, `docs/level-design.md`
+  // §1 / ADR-0009): accepted by the program solver and the rule validator, par 4.
+  // It joins the slice as data — no new scene logic, no new renderer class.
+  { file: "l011.json", raw: l011 },
 ];
 
 export interface LoadReport {
