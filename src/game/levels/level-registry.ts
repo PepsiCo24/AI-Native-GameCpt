@@ -126,7 +126,7 @@ export function startIndexForLevel(levels: readonly Level[], requested: number |
 }
 
 /**
- * `L1–L10` — the **shipped ladder's own range**, derived from the playable list.
+ * `L1–L11` — the **shipped ladder's own range**, derived from the playable list.
  *
  * The end panel's copy must name the ladder the player actually cleared, so it is
  * computed from the registry rather than written down: QA-005 pinned the stale

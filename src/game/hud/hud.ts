@@ -43,10 +43,10 @@ export interface HudHooks extends AppIntents {
   /** `false` on the last prototype level ⇒ the dialog shows the end panel. */
   readonly hasNextLevel: () => boolean;
   /**
-   * The shipped ladder's own range (`L1–L10`), derived from the level registry by
+   * The shipped ladder's own range (`L1–L11`), derived from the level registry by
    * the composition root — never a literal in this file. The end panel names what
-   * the player actually cleared (TICKET-QA-005-2: the copy said `L1–L5` for a
-   * registry that ships ten levels).
+   * the player actually cleared (TICKET-QA-005-2: the copy said `L1–L5` long after
+   * the registry had grown past five levels).
    */
   readonly shippedLadder: () => string;
 }

@@ -44,7 +44,7 @@ const REFS = loadReferenceLevels();
 
 test.describe("par route → win → HUD contract", () => {
   test(`the shipped dataset is ${String(EXPECTED_LEVEL_COUNT)} levels and every one is solvable`, () => {
-    expect(REFS.map((ref) => ref.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(REFS.map((ref) => ref.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
     for (const ref of REFS) {
       expect(ref.route.length, `L${String(ref.id)} route length`).toBe(ref.par);
       expect(ref.legs[ref.legs.length - 1]?.state.player, `L${String(ref.id)} ends on the goal`).toEqual(

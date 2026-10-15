@@ -57,7 +57,7 @@ const DOOR_LEVELS = levelsWithDoors(REFS);
 
 test.describe("switch latch ⇒ door blocking (R-D1) and door occupancy (R-D7)", () => {
   test("the dataset's latch levels are exactly the levels that ship doors", () => {
-    expect(DOOR_LEVELS.map((ref) => ref.id)).toEqual([6, 7, 8, 9, 10]);
+    expect(DOOR_LEVELS.map((ref) => ref.id)).toEqual([6, 7, 8, 9, 10, 11]);
     for (const ref of DOOR_LEVELS) {
       expect(
         ref.level.switches.length,

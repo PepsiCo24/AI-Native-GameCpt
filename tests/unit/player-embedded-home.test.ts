@@ -84,10 +84,10 @@ function graphOf(level: Level): ReachableGraph {
  * ──────────────────────────────────────────────────────────────────────────── */
 
 describe("isPlayerEmbedded — core owns it via solidAt (R-004)", () => {
-  it("the registry is the shipped ten (the sweep below is over real content)", () => {
+  it("the registry is the shipped eleven (the sweep below is over real content)", () => {
     expect(rejected).toEqual([]);
-    expect(LEVEL_SOURCES).toHaveLength(10);
-    expect(levels.map((level) => level.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(LEVEL_SOURCES).toHaveLength(11);
+    expect(levels.map((level) => level.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   });
 
   it("agrees with solidAt at every state of every shipped par route", () => {
@@ -135,10 +135,13 @@ describe("isPlayerEmbedded — core owns it via solidAt (R-004)", () => {
     expect(embedded, "the shipped ladder contains embedded states").toBeGreaterThan(0);
     expect(levelsWithEmbeddedStates.length).toBeGreaterThan(0);
     // The beat is L4/L5's lesson (docs/level-design.md §2; ADR-0009 lesson (b): the
-    // embedded state must read as "safe — walk out"). Measured on this tree: 11
-    // embedded states over 257 reachable ones, on L4–L10. A re-authoring that deletes
-    // the beat from L4/L5 has to change this line deliberately.
+    // embedded state must read as "safe — walk out"). Measured on this tree: 13
+    // embedded states over 339 reachable ones, on L4–L11 (the 11-level registry grew
+    // the sweep from 257/11 on L4–L10; L11's switch-driven door adds two more). A
+    // re-authoring that deletes the beat from L4/L5 has to change this line deliberately.
     expect(levelsWithEmbeddedStates).toEqual(expect.arrayContaining([4, 5]));
+    // The 11-level growth is itself evidence the sweep is not vacuous on the new board.
+    expect(levelsWithEmbeddedStates).toContain(11);
   });
 
   it("is false for a tile the player is not standing on, whatever that tile is", () => {
