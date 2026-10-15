@@ -1029,7 +1029,27 @@ and a path must be quiescent before dispatch.**
    Verdict authority = UA's next ticket (six E3 clauses, per-frame evidence paths in the logs); NO orchestrator
    verdicts recorded here — the checklist stays PENDING-CAPTURE until their entry lands. Live: QA-005c +
    UA-0010 about to run; user lanes (revision art req-08/11, cohort testers) unchanged; milestone DG round +
-   main re-merge gated behind both verdicts. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+   main re-merge gated behind both verdicts.
+66. **CI SPOKE ON THE MERGED DEVELOP — 7 failed / 79 passed on `42f6f36` — all named, zero new defect
+   signatures, and one honesty note about this office.** The roster is the pre-registered cloud-failure family
+   (ruling 57) running at full strength: (a) `refusal.spec.ts:48` L3+L4+L9 — the `expectActorAt` single-instant
+   class, amplified by slow software GL exactly as feared; (b) `transient.spec.ts:116`/`:257` — the calibrated
+   gridMs-vs-cloud-frame-time mismatch, deterministically red as item 57 pre-said; (c) `mobile:207` R-T4 swipe
+   drift (the intermittent member, this run stuck through the retry); (d) **one new shape, not a new bug**:
+   `playthrough.spec.ts:113` the L1→L10 dialog-Next walk died BOTH attempts on `page.evaluate: Test timeout of
+   30000ms` — the walk is one level longer post-L11 and the 2-core runner simply can't cross 30 s; locally the
+   same test passes (~12 s). Classified as CI-envelope sizing, granted to QA-005c alongside its existing
+   criteria 1/6 (follow-up session dispatched with the exact roster + kept log paths; their design call: per-test
+   timeout sizing or walk split). **Honesty note adopted from the follow-up text into the record: item 63's
+   "idle machine" was not fully idle — the authoritative full-suite battery ran while the two level-lane agents
+   were still alive; the builder's own 86/0 ×2 at the tip + my isolated 4/4 greens + the named-roster match remain
+   the load-bearing evidence, and the TRUE idle-machine proof is now QA-005c's ×3 consecutive green acceptance
+   bar (machine quiet as they run). develop's required e2e gate stays RED until they land — which is the gate
+   DOING ITS JOB, not an anomaly; main is untouched, the public URL unaffected.** LIVE 2/3: QA-005c (roster in
+   hand) + UA-0010 (Entry-3 verdicts from the 21 on-disk frames, 51 CSS measured pitch governing per item 60's
+   ruling). Milestone gate list restated: QA-005c green (local ×3 + CI) → UA-0010 verdicts → milestone DG round
+   (frames import to `docs/evidence/entry3-portal/`, §6 mirrors for the chain + LV-007E + R5 + ITER entries,
+   three deferred staleness refreshes) → main → Pages gets 11 levels. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
