@@ -483,6 +483,13 @@ and a path must be quiescent before dispatch.**
     → Docs+GitHub at merge; backlog n-1..n-6 → QA-005/GD absorb round, **n-6** (`isPlayerEmbedded` imported gameplay←renderer,
     direction reversed, semantics changed by R-002) → **AR-0006 queue** (Architect: lift to core/neutral module);
     m-3/m-5/m-6/m-7/m-8/m-1/m-9 → R-002b (in flight). Merge gate now = R-002b green + UA-0008c M-2 ruling.
+32. **UA-0008b first dispatch — DIED-ON-ARRIVAL (provider rate limit, not work failure).** Autopsy: branch
+    `agent/ui/ua-0008b-entry2` was created at base `36a3b06` but zero commits, zero uncommitted edits — it hit the
+    per-minute token cap launching right behind RV-005's huge report plus two live agents sharing the account.
+    Re-dispatched into the SAME worktree/branch with a token-peak discipline (read capture-log first, images in
+    batches of ≤4, Entry 2 composed once, single atomic commit). Watcher note for future dispatches: after any
+    multi-hundred-KB context turn, cool the quota window before launching a vision-heavy batch. **CI spot-check
+    (all green through `79c83aa`): the @playwright/test devDep did not break the CI install/test path.**
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
