@@ -146,6 +146,55 @@ This is the primary evidence source for the "AI collaboration & iteration proces
 
 ---
 
+## ITER-0007 — first playable vertical slice: the game runs in a browser, and the fill axis survives real pixels
+
+- **Date:** 2026-10-14
+- **Version:** code only. No rule, schema, level or spec change. `ui-ux.md` V0.5 was implemented, not edited.
+- **Hypothesis (the one we tested):** `docs/ui-ux.md`'s central legibility contract — **current-phase wall = filled solid,
+  other-phase wall = hollow ghost, and the player standing inside a solidified wall reads as "safe, walk out"** — is
+  expressible by a renderer that never duplicates the rules. Untested until now: every prior proof was analytic or
+  headless, and a spec that has only ever been satisfied on paper is not yet a design.
+- **Delivered:** `src/main.ts` (190 L, composition root only) + `src/game/**` (18 files, 3,521 L): `scenes/level-scene`,
+  `renderer/{board-view,wall-tiles,cell-state,grid-mapping,objects/*}`, `systems/{session,event-bus,app-intents}`,
+  `hud/{hud,hud-styles}` (DOM layer), `theme/{tokens,assets}`, `input/input-map`, `levels/level-registry`, `env`.
+  Legality is called through **one** site (`GameSession.move` -> `applyMoveToGameState`); the hover probe reuses the
+  same reducer and discards the result, so there is no second rule. `renderer/cell-state.ts` is the only place that
+  queries solidity, and only to choose an appearance.
+- **Evidence (all re-run by the Orchestrator, not taken from the report):**
+  1. `npx tsc --noEmit` exit 0; `npx vitest run` **89 passed | 3 skipped**; `npm run build` green
+     (`dist/assets/*.js` ~1.35 MB, Phaser 3.90.0 inlined; `grep -c board-scene` = 0, so the discarded prototype is
+     unreachable).
+  2. **Real browser (Phaser + WebGL, `npm run dev`)** driven by synthetic keydowns, reading the HUD as the oracle:
+     L1 right -> `moves 1`, chip `白昼 / Light` -> `夜晚 / Shadow` (**every legal move flips**); four rights -> win at
+     `par 4`, panel with **Next enabled**; Next -> L2 -> L3 (L2 won at `par 5`, L3 at `par 6`).
+  3. **ADR-0008 clause 1 measured in the browser:** at L3 `(2,1)` in phase A, tapping the A-wall `(3,1)` gave
+     **`moves 2 -> 2` and chip `白昼 -> 白昼`** — no movement *and no phase flip*. This is the rule most easily broken
+     by a renderer, broken here by nothing.
+  4. **The phantom walk, live:** at L4, right, right, up entered the ghost `(2,0)` (phase A -> B) and the player stood
+     inside it; **up/right walked out** (`moves 3 -> 4`, flip OK); **undo returned the embedded state** (`moves 3`,
+     phase B) — an embedded state is an ordinary state, exactly as ADR-0008 clause 3 requires.
+  5. **Pixel audit of the actual screenshot** (PIL against the Phase-B palette + documented 55/45 and 60/40
+     derivations; board auto-located at `(39,168)..(1051,975)`, cell 202.6 x 202.0, square):
+     `(2,0)` the tile the player stands on = **32 % solid ink, 1 % ghost**; `(3,1)` the other-phase wall =
+     **66 % ghost, 0 % solid**; every other cell = ground only. **The fill axis holds in the rendered frame.**
+  6. The level loader logs the validator's parity-dead **warnings** at boot (`l003` 1, `l004` 1, `l005` 2) without
+     refusing the level — the ADR-0009 severity decision is visible in the running game.
+- **Result:** **hypothesis holds.** The spec's core perceptual claim survives contact with a GPU. What is *not*
+  proven: whether a human reads the ghost as "I can enter now" and the embedded frame as "safe" rather than "glitched"
+  — that is playtest hypothesis **(b)**, and `l005` forces the beat (3/3 shortest routes), so it can be measured.
+- **Costs paid this round (recorded honestly):** one duplicate prototype (`board-scene.ts`, 567 L) from a dispatch I
+  made into a path that still had a live writer; deleted here after both trees compiled — snapshot kept outside the repo.
+  Two root-cause type errors fixed (`wall-tiles.ts` parameter shadowed the `theme()` import; `tokens.ts` declared
+  `winAlpha` twice inside `feedback`), neither patched with `any`.
+- **Deferred to me (Orchestrator), not solved by the agent:** (a) `HUD_FLAGS.showPar = false` contradicts the dispatch
+  text but follows ui-ux §5.3 M-5b; the prewarm format `moves 4 / par 6` exists behind the flag — **spec wins**, and
+  whether to reveal par becomes a playtest variable for (d'). (b) R-P3's `?placeholders=1` wording asks for text on the
+  board, which §7.1 and §7.3 forbid; the agent drew a dev strip instead — accepted, and `ui-ux.md` needs the wording
+  corrected (UA-0006). (c) `theme/tokens.ts` sits outside architecture §5.4's `src/ui/theme/` path — reconcile, do not churn.
+- **SHAs:** this commit.
+
+---
+
 ## ITER-0008 — GD-008: the dip law is falsified by our own measurement — withdrawn **unfitted**, the valley re-anchored on the execution axis (ADR-design-0001)
 
 - **Date:** 2026-10-15
@@ -215,53 +264,6 @@ This is the primary evidence source for the "AI collaboration & iteration proces
 ---
 
 <!-- Template for future entries:
-
-## ITER-0007 — first playable vertical slice: the game runs in a browser, and the fill axis survives real pixels
-
-- **Date:** 2026-10-14
-- **Version:** code only. No rule, schema, level or spec change. `ui-ux.md` V0.5 was implemented, not edited.
-- **Hypothesis (the one we tested):** `docs/ui-ux.md`'s central legibility contract — **current-phase wall = filled solid,
-  other-phase wall = hollow ghost, and the player standing inside a solidified wall reads as "safe, walk out"** — is
-  expressible by a renderer that never duplicates the rules. Untested until now: every prior proof was analytic or
-  headless, and a spec that has only ever been satisfied on paper is not yet a design.
-- **Delivered:** `src/main.ts` (190 L, composition root only) + `src/game/**` (18 files, 3,521 L): `scenes/level-scene`,
-  `renderer/{board-view,wall-tiles,cell-state,grid-mapping,objects/*}`, `systems/{session,event-bus,app-intents}`,
-  `hud/{hud,hud-styles}` (DOM layer), `theme/{tokens,assets}`, `input/input-map`, `levels/level-registry`, `env`.
-  Legality is called through **one** site (`GameSession.move` -> `applyMoveToGameState`); the hover probe reuses the
-  same reducer and discards the result, so there is no second rule. `renderer/cell-state.ts` is the only place that
-  queries solidity, and only to choose an appearance.
-- **Evidence (all re-run by the Orchestrator, not taken from the report):**
-  1. `npx tsc --noEmit` exit 0; `npx vitest run` **89 passed | 3 skipped**; `npm run build` green
-     (`dist/assets/*.js` ~1.35 MB, Phaser 3.90.0 inlined; `grep -c board-scene` = 0, so the discarded prototype is
-     unreachable).
-  2. **Real browser (Phaser + WebGL, `npm run dev`)** driven by synthetic keydowns, reading the HUD as the oracle:
-     L1 right -> `moves 1`, chip `白昼 / Light` -> `夜晚 / Shadow` (**every legal move flips**); four rights -> win at
-     `par 4`, panel with **Next enabled**; Next -> L2 -> L3 (L2 won at `par 5`, L3 at `par 6`).
-  3. **ADR-0008 clause 1 measured in the browser:** at L3 `(2,1)` in phase A, tapping the A-wall `(3,1)` gave
-     **`moves 2 -> 2` and chip `白昼 -> 白昼`** — no movement *and no phase flip*. This is the rule most easily broken
-     by a renderer, broken here by nothing.
-  4. **The phantom walk, live:** at L4, right, right, up entered the ghost `(2,0)` (phase A -> B) and the player stood
-     inside it; **up/right walked out** (`moves 3 -> 4`, flip OK); **undo returned the embedded state** (`moves 3`,
-     phase B) — an embedded state is an ordinary state, exactly as ADR-0008 clause 3 requires.
-  5. **Pixel audit of the actual screenshot** (PIL against the Phase-B palette + documented 55/45 and 60/40
-     derivations; board auto-located at `(39,168)..(1051,975)`, cell 202.6 x 202.0, square):
-     `(2,0)` the tile the player stands on = **32 % solid ink, 1 % ghost**; `(3,1)` the other-phase wall =
-     **66 % ghost, 0 % solid**; every other cell = ground only. **The fill axis holds in the rendered frame.**
-  6. The level loader logs the validator's parity-dead **warnings** at boot (`l003` 1, `l004` 1, `l005` 2) without
-     refusing the level — the ADR-0009 severity decision is visible in the running game.
-- **Result:** **hypothesis holds.** The spec's core perceptual claim survives contact with a GPU. What is *not*
-  proven: whether a human reads the ghost as "I can enter now" and the embedded frame as "safe" rather than "glitched"
-  — that is playtest hypothesis **(b)**, and `l005` forces the beat (3/3 shortest routes), so it can be measured.
-- **Costs paid this round (recorded honestly):** one duplicate prototype (`board-scene.ts`, 567 L) from a dispatch I
-  made into a path that still had a live writer; deleted here after both trees compiled — snapshot kept outside the repo.
-  Two root-cause type errors fixed (`wall-tiles.ts` parameter shadowed the `theme()` import; `tokens.ts` declared
-  `winAlpha` twice inside `feedback`), neither patched with `any`.
-- **Deferred to me (Orchestrator), not solved by the agent:** (a) `HUD_FLAGS.showPar = false` contradicts the dispatch
-  text but follows ui-ux §5.3 M-5b; the prewarm format `moves 4 / par 6` exists behind the flag — **spec wins**, and
-  whether to reveal par becomes a playtest variable for (d'). (b) R-P3's `?placeholders=1` wording asks for text on the
-  board, which §7.1 and §7.3 forbid; the agent drew a dev strip instead — accepted, and `ui-ux.md` needs the wording
-  corrected (UA-0006). (c) `theme/tokens.ts` sits outside architecture §5.4's `src/ui/theme/` path — reconcile, do not churn.
-- **SHAs:** this commit.
 
 ## ITER-XXXX — <title>
 - Date:
