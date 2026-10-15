@@ -911,7 +911,26 @@ and a path must be quiescent before dispatch.**
     discipline. No more silent-red blocking a required gate, and no more hiding either. **(2)** QA-005c ticket
     grows: transient-class runner tolerance (calibrate-or-annotate, decision by evidence from BOTH cloud runs now on
     file) + the narration refresh + `reuseExistingServer:false`. Gate stays REQUIRED — two rulings, one
-    experiment, zero demotions. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+    experiment, zero demotions.
+58. **QA-005b RETURNED: BLOCKED-WITH-EVIDENCE, and my dispatch premise was 2/4 WRONG — they caught ME.** I wrote
+    "4 failures trace to ONE stale constant" (inherited from R-003's diagnosis). QA-005b MEASURED: the constant
+    flips `playthrough:97/:118` green, but `playthrough:47` `toEqual([1..10])` and `latch-door:60` `toEqual([6..10])`
+    are HAND-TYPED literals — arithmetically unsatisfiable at 11 levels; and capping the refs to keep them green
+    would DELETE all five L11 legs, so they STOPPED per the dispatch's own clause and reported instead of smoothing.
+    Disk verification (mine, at their chain tip `f4e8186`): 5 files all inside grant (portal.spec.ts 323 lines NEW,
+    helpers fixtures + `watchErrors`/`phaseOf`, registry-layers prose-only, README), zero `src/docs/.github` hunks,
+    tsc 0, vitest 23/452/3, `--list` 86/8 (75 + 6 portal + 5 per-level L11 legs — arithmetic holds), the two red
+    literals confirmed present verbatim. Their portal probes are mutation-killed (3/3 reverted, falsifiability
+    honored). They also self-reported that QA-005 README's "adding a level needs no test edit" is FALSE for the two
+    hand-typed inventories — documented, not hidden. **BLOCKER-1 ruling (their OQ1)**: option (a′) — the R-004b
+    RESUME carries both literal lines (granted, exactly two) since it already owns `playthrough.spec.ts` adaptation
+    to the 11-level world; single-writer holds because QA-005b is no longer live on those files. **Their OQ2 ruling**:
+    YES in principle — inventories derive from the discovered set, `EXPECTED_LEVEL_COUNT` stays ONE independent
+    hand-typed pin; execution = QA-005c (semantics change to suite files, not smuggled into the chain). Also relayed
+    to R-004b: the `:147` pin's subject MOVED — it now walks L11 (title passes, stale body fails), and WORDING WATCH:
+    UA-0009's end-panel canon must be checked at `develop` before their final battery, UA's string wins.
+    **Merge discipline unchanged**: chain (`f484e23 → 8f75bc5 → f4e8186`) stays UNMERGED with its 2 reds — the moment
+    R-004b returns 86/0/exit-0, it all becomes ONE green merge. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
