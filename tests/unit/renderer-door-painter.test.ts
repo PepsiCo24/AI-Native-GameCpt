@@ -362,13 +362,21 @@ function segmentDistance(
  * Rasterise one door cell from `doorParts` and return ink coverage **before** and
  * **after** the glyph knockout (R-C5). 0.05 px sampling on a ≤ 56 px cell: the
  * sweep is deterministic, so the numbers below are reproducible, not "close to".
+ *
+ * @param cell the cell side in **device px** — what `board-view.ts` passes as
+ *   `min(rect.w, rect.h)`.
+ * @param cssScale R-L6's render scale (`min(devicePixelRatio, 2)`): it moves the
+ *   CSS-px floors (`max(3, …)` bar, `max(9, …)` glyph box, `max(13, …)` medallion,
+ *   2 px stroke) without touching the cell. **The two are not independent** — a real
+ *   render has `cell = cssCell * cssScale`, so a corner is named by its CSS cell and
+ *   its scale, and `deviceCell` is derived.
  */
 function measureDoorCoverage(
   cell: number,
   retract: number,
   glyph: PhaseGlyph,
+  cssScale: number,
 ): { readonly drawn: number; readonly retained: number; readonly medallion: number } {
-  const cssScale = 1;
   const parts = doorParts(rect(cell), cellRadius(cell), cell, cssScale, retract);
   const w = parts.strokeWidth;
   const frame = parts.frame;
@@ -437,64 +445,257 @@ function measureDoorCoverage(
   };
 }
 
-describe("door coverage — §4.3 measured numbers, R-D2/R-D5/R-D6 contracts", () => {
-  const measurements = [CELL_NOMINAL, CELL_FLOOR].map((cell) => {
-    const closed = measureDoorCoverage(cell, 0, "sun");
-    const open = measureDoorCoverage(cell, 1, "sun");
-    return { cell, closed, open };
+/* ──────────────────────────────────────────────────────────────────────────────
+ * §4.3 / §4.6 coverage evidence — an independent raster sweep of the shipped
+ * construction (frame band ∪ bars ∪ medallion, minus the glyph knockout), over the
+ * **full corner grid**: CSS cell × render scale × door colour (RV-005 m-5).
+ *
+ * The V0.7 sweep fixed `cssScale = 1` and always drew the **sun**, i.e. it measured
+ * one corner of a 2 × 2 × 2 grid and called it the contract. The gaps that left:
+ * the crescent glyph (the blue door) knocks out *less* ink than the sun's disc + 8
+ * rays, so it is the worst case for the closed:open ratio, and at `cssScale = 2` the
+ * CSS-px floors (`max(3, …)`, `max(9, …)`, `max(13, …)`, 2 px stroke) move relative
+ * to the cell. Both are measured here, band-asserted where the spec publishes one,
+ * and the exact numbers are pinned so a future tweak in either direction is visible.
+ *
+ * `cell` is the cell side in **device px** and a real render has
+ * `cell = cssCell × cssScale` (R-L6 + the R-T5 40 px CSS floor), so `deviceCell` is
+ * derived, never chosen. The one literal product that is *not* a reachable render —
+ * a 56/40 device cell at scale 2, i.e. a 28/20 CSS px cell below the R-T5 floor — is
+ * measured separately at the end, as evidence *for* the floor rather than against
+ * the geometry.
+ *
+ * This file owns the numbers; it does not own the verdict. Nothing here tunes
+ * geometry to reach a band.
+ * ────────────────────────────────────────────────────────────────────────────── */
+
+type DoorColor = "red" | "blue";
+
+const CSS_CELLS = [56, 40] as const;
+const SCALES = [1, 2] as const;
+const DOOR_COLORS = ["red", "blue"] as const;
+
+/** The glyph is a function of the colour (§3.1b: sun = red, crescent = blue). */
+const glyphFor = (color: DoorColor): PhaseGlyph => (color === "red" ? "sun" : "crescent");
+
+interface Coverage {
+  readonly drawn: number;
+  readonly retained: number;
+  readonly medallion: number;
+}
+
+interface Corner {
+  /** The CSS cell size the band is quoted at (§4.3/§4.6: "@56 px", "@40 px"). */
+  readonly cssCell: number;
+  readonly cssScale: number;
+  /** `cssCell * cssScale` — what `board-view.ts` hands the painter. */
+  readonly deviceCell: number;
+  readonly color: DoorColor;
+  readonly glyph: PhaseGlyph;
+  readonly closed: Coverage;
+  readonly open: Coverage;
+  /** closed : open, on **retained** ink (post-knockout, R-C5). */
+  readonly ratio: number;
+  /** open : closed — R-D6's subordination-by-area ceiling. */
+  readonly weight: number;
+}
+
+function measureCorner(cssCell: number, cssScale: number, color: DoorColor): Corner {
+  const deviceCell = cssCell * cssScale;
+  const glyph = glyphFor(color);
+  const closed = measureDoorCoverage(deviceCell, 0, glyph, cssScale);
+  const open = measureDoorCoverage(deviceCell, 1, glyph, cssScale);
+  return {
+    cssCell,
+    cssScale,
+    deviceCell,
+    color,
+    glyph,
+    closed,
+    open,
+    ratio: closed.retained / open.retained,
+    weight: open.retained / closed.retained,
+  };
+}
+
+/** Every reachable corner: 2 CSS cells × 2 scales × 2 colours. */
+const CORNERS: readonly Corner[] = CSS_CELLS.flatMap((cssCell) =>
+  SCALES.flatMap((cssScale) => DOOR_COLORS.map((color) => measureCorner(cssCell, cssScale, color))),
+);
+
+const corner = (cssCell: number, cssScale: number, color: DoorColor): Corner => {
+  const found = CORNERS.find(
+    (candidate) =>
+      candidate.cssCell === cssCell && candidate.cssScale === cssScale && candidate.color === color,
+  );
+  if (found === undefined) throw new Error(`no measured corner ${cssCell}/${cssScale}/${color}`);
+  return found;
+};
+
+const cornersAt = (cssCell: number, cssScale?: number): readonly Corner[] =>
+  CORNERS.filter(
+    (candidate) =>
+      candidate.cssCell === cssCell && (cssScale === undefined || candidate.cssScale === cssScale),
+  );
+
+const pct = (value: number): number => value * 100;
+
+/** Report shape used by the pins below and by the R-002b hand-off table. */
+const line = (c: Corner): string =>
+  `${String(c.cssCell)}px/cs${String(c.cssScale)}/${c.color} ` +
+  `(dev ${String(c.deviceCell)}): ratio ${c.ratio.toFixed(4)} weight ${c.weight.toFixed(4)} ` +
+  `medallion ${pct(c.closed.medallion).toFixed(2)}%`;
+
+describe("door coverage — §4.3 measured numbers over the full corner grid", () => {
+  it("measures every corner of the grid (2 CSS cells × 2 scales × 2 colours)", () => {
+    expect(CORNERS).toHaveLength(8);
+    for (const c of CORNERS) {
+      expect(c.deviceCell).toBe(c.cssCell * c.cssScale);
+      expect(c.closed.retained).toBeGreaterThan(0);
+      expect(c.open.retained).toBeGreaterThan(0);
+      expect(c.ratio).toBeGreaterThan(1);
+    }
+    // The two glyphs really are two different renderings of the knockout (otherwise
+    // the colour axis would be a duplicate measurement masquerading as a corner).
+    const sun = corner(56, 1, "red");
+    const crescent = corner(56, 1, "blue");
+    expect(sun.glyph).toBe("sun");
+    expect(crescent.glyph).toBe("crescent");
+    expect(sun.closed.retained).not.toBe(crescent.closed.retained);
   });
 
-  it("meets the R-D2 structural contract: closed : open ≥ 1.6 : 1 at the nominal 56 px", () => {
-    const nominal = measurements.find((m) => m.cell === CELL_NOMINAL)!;
-    const ratio56 = nominal.closed.retained / nominal.open.retained;
-    // §4.6 publishes 1.80 : 1 @56 px; an independent sweep of the shipped geometry
-    // measures 1.706 : 1 — both above the contract.
-    expect(ratio56).toBeGreaterThanOrEqual(1.6);
+  it("meets R-D2 at the nominal 56 px in every corner: closed : open ≥ 1.6 : 1", () => {
+    for (const c of cornersAt(56)) {
+      expect(c.ratio, line(c)).toBeGreaterThanOrEqual(1.6);
+    }
+    // …including the scale-2 render, where the CSS-px floors move (RV-005 m-5).
+    expect(cornersAt(56, 2).map((c) => c.ratio).every((r) => r >= 1.6)).toBe(true);
   });
 
-  it("holds ≥ 1.55 : 1 at the 40 px floor, where the published figure is 1.70 and this sweep reads 1.589", () => {
-    // HONEST READING, NOT A WEAKENED THRESHOLD — see R-002 DESIGN_IMPACT:
-    // §4.3/§4.6 publish 1.70 : 1 @40 px, and this independent raster sweep of the
-    // *shipped* `doorParts` + glyph constants measures 1.589 : 1. The gap is a
-    // measurement-accounting difference (the published script appears to use the
-    // ghost's 0.30×cell glyph box rather than §3.1b's `max(9, round(0.22 c))`, and a
-    // thinner effective frame band), not a geometry defect: the unambiguous
-    // sub-contracts below hold at 40 px (middle bar zero ink, stubs ≤ 20 %, no
-    // interior fill, medallion ≤ 10 %). The floor asserted here is the structural
-    // guarantee that survives either accounting; the exact figure is pinned so a
-    // future tweak in *either* direction is visible.
-    const floor = measurements.find((m) => m.cell === CELL_FLOOR)!;
-    const ratio40 = floor.closed.retained / floor.open.retained;
-    expect(ratio40).toBeGreaterThanOrEqual(1.55);
-    expect(ratio40).toBeLessThan(1.7);
-  });
-
-  it("meets R-D6 subordination by area: open visual weight ≤ 0.65× the closed state", () => {
-    for (const { cell, closed, open } of measurements) {
-      const weight = open.retained / closed.retained;
-      expect(weight, `cell ${String(cell)}`).toBeLessThanOrEqual(0.65);
+  it("holds V0.8's ≥ 1.55 floor at 40 px in every corner", () => {
+    // HONEST READING, NOT A WEAKENED THRESHOLD — see R-002/R-002b DESIGN_IMPACT:
+    // §4.3/§4.6's published 1.70 : 1 @40 px does not reproduce under an independent
+    // raster sweep of the *shipped* `doorParts` + the shipped glyph constants; V0.8
+    // re-issued the contract as two bands (≥ 1.6 @56 nominal, ≥ 1.55 @40 floor), and
+    // this asserts the floor. The gap is a measurement-accounting difference (the
+    // published script appears to use the ghost's 0.30×cell glyph box rather than
+    // §3.1b's `max(9, round(0.22 c))`, plus a thinner effective frame band), not a
+    // geometry defect: the unambiguous sub-contracts below hold at every corner
+    // (middle bar zero ink, stubs ≤ 20 %, no interior fill, medallion ≤ 10 %,
+    // open weight ≤ 0.65). The exact per-corner figures are pinned below.
+    for (const c of cornersAt(40)) {
+      expect(c.ratio, line(c)).toBeGreaterThanOrEqual(1.55);
+      expect(c.ratio, line(c)).toBeLessThan(1.7);
     }
   });
 
-  it("keeps the medallion inside R-C2's ≤ 10 % of cell² exception (9.0–9.6 % measured)", () => {
-    for (const { closed } of measurements) {
-      expect(closed.medallion * 100).toBeGreaterThanOrEqual(8.5);
-      expect(closed.medallion * 100).toBeLessThanOrEqual(10);
+  it("keeps the floor's margin visible: no corner sits within 0.01 of the band", () => {
+    // A tripwire, not a band change: if a future tweak lands exactly on 1.55/1.60 the
+    // corner is one rounding away from failing, and that should be a loud edit, not a
+    // silent drift.
+    for (const c of CORNERS) {
+      const band = c.cssCell === 56 ? 1.6 : 1.55;
+      expect(c.ratio - band, line(c)).toBeGreaterThan(0.01);
     }
   });
 
-  it("satisfies R-C5: the glyph knockout removes far less than 30 % of the drawn area", () => {
-    for (const { cell, closed, open } of measurements) {
-      expect(closed.retained / closed.drawn, `closed ${String(cell)}`).toBeGreaterThanOrEqual(0.9);
-      expect(open.retained / open.drawn, `open ${String(cell)}`).toBeGreaterThanOrEqual(0.85);
+  it("meets R-D6 subordination by area at every corner: open weight ≤ 0.65× closed", () => {
+    for (const c of CORNERS) {
+      expect(c.weight, line(c)).toBeLessThanOrEqual(0.65);
     }
   });
 
-  it("an open door carries roughly a third of a solid wall's ink, never a wall-like mass", () => {
+  it("keeps the medallion inside R-C2's ≤ 10 % of cell² exception at every corner", () => {
+    for (const c of CORNERS) {
+      expect(pct(c.closed.medallion), line(c)).toBeGreaterThanOrEqual(8.5);
+      expect(pct(c.closed.medallion), line(c)).toBeLessThanOrEqual(10);
+    }
+  });
+
+  it("satisfies R-C5 at every corner: the knockout removes far less than 30 % of the ink", () => {
+    for (const c of CORNERS) {
+      expect(c.closed.retained / c.closed.drawn, line(c)).toBeGreaterThanOrEqual(0.9);
+      expect(c.open.retained / c.open.drawn, line(c)).toBeGreaterThanOrEqual(0.85);
+    }
+  });
+
+  it("an open door carries roughly a third of a solid wall's ink, never wall-like mass", () => {
     // Reference mass from §3.1b: a solid wall covers ≈ 77.4 % of cell².
     const solidWall = 0.774;
-    for (const { open } of measurements) {
-      expect(open.retained / solidWall).toBeLessThan(0.5);
+    for (const c of CORNERS) {
+      expect(c.open.retained / solidWall, line(c)).toBeLessThan(0.5);
+    }
+  });
+
+  it("pins the measured numbers for every corner (the UA verdict batch)", () => {
+    // The exact figures this sweep produces from the shipped construction. They are
+    // pinned to 4 decimals because the sweep is deterministic (0.05 px grid): a
+    // geometry change anywhere in `doorParts` or `glyph.ts` moves one of these, and
+    // the diff is then a number, not a screenshot.
+    const pinned: Record<string, { ratio: number; weight: number; medallion: number }> = {
+      "56/cs1/red": { ratio: 1.7058, weight: 0.5862, medallion: 9.04 },
+      "56/cs1/blue": { ratio: 1.6959, weight: 0.5897, medallion: 9.04 },
+      "56/cs2/red": { ratio: 1.6756, weight: 0.5968, medallion: 9.04 },
+      "56/cs2/blue": { ratio: 1.6651, weight: 0.6006, medallion: 9.04 },
+      "40/cs1/red": { ratio: 1.589, weight: 0.6293, medallion: 9.62 },
+      "40/cs1/blue": { ratio: 1.5813, weight: 0.6324, medallion: 9.62 },
+      "40/cs2/red": { ratio: 1.5874, weight: 0.63, medallion: 8.95 },
+      "40/cs2/blue": { ratio: 1.5797, weight: 0.633, medallion: 8.95 },
+    };
+    for (const c of CORNERS) {
+      const key = `${String(c.cssCell)}/cs${String(c.cssScale)}/${c.color}`;
+      const expected = pinned[key];
+      expect(expected, `${key} is measured but not pinned`).toBeDefined();
+      expect(c.ratio, `${key} ratio`).toBeCloseTo(expected!.ratio, 4);
+      expect(c.weight, `${key} weight`).toBeCloseTo(expected!.weight, 4);
+      expect(pct(c.closed.medallion), `${key} medallion`).toBeCloseTo(expected!.medallion, 2);
+    }
+    // The worst in-contract corner, named: 40 px at scale 2, blue (crescent) — 0.030
+    // above V0.8's 1.55 floor. The crescent is the worse glyph in every pair (it knocks
+    // out less ink than the sun's disc + 8 rays), which is why fixing the old sweep to
+    // `sun` at `cssScale = 1` hid it.
+    const worst = [...CORNERS].sort((a, b) => a.ratio - b.ratio)[0]!;
+    expect(worst.cssCell).toBe(40);
+    expect(worst.cssScale).toBe(2);
+    expect(worst.color).toBe("blue");
+    for (const c of cornersAt(40).filter((candidate) => candidate.color === "blue")) {
+      expect(c.ratio, line(c)).toBeLessThan(corner(c.cssCell, c.cssScale, "red").ratio);
+    }
+    for (const c of CORNERS.filter((candidate) => candidate.cssScale === 2)) {
+      expect(c.ratio, line(c)).toBeLessThan(corner(c.cssCell, 1, c.color).ratio);
+    }
+  });
+});
+
+describe("door coverage — below the R-T5 floor the geometry degrades as the floors predict", () => {
+  // The one literal `(deviceCell, cssScale)` product RV-005's m-5 wording could also
+  // mean: the cell held at 56/40 **device** px while the CSS-px floors are scaled ×2.
+  // No R-T5-legal layout can produce it — it is a 28 / 20 CSS px cell, below the 40 px
+  // floor ("a level that cannot be laid out at ≥ 40 px on every supported viewport does
+  // not ship") — and the numbers are recorded here as evidence *for* that floor: the
+  // degenerate direction is exactly what the floor prevents from shipping.
+  const DEVICE_CELLS = [56, 40] as const;
+  /** Measured once: a 28 / 20 CSS px cell at scale 2. */
+  const BELOW_FLOOR: readonly Corner[] = DEVICE_CELLS.map((deviceCell) =>
+    measureCorner(deviceCell / 2, 2, "red"),
+  );
+
+  it("is out of contract, and the medallion is the tell", () => {
+    // Measured: 28 CSS px (dev 56) → ratio 1.2890, weight 0.7758, medallion 16.93 %;
+    //           20 CSS px (dev 40) → ratio 1.0495, weight 0.9529, medallion 33.18 %.
+    // At the degenerate end the open door is 95 % of the closed state's mass and the
+    // structural ratio collapses to ~1.05 — R-D2's primary channel is gone. That is
+    // precisely what cannot ship, and the R-T5 40 px CSS floor is what keeps it off a
+    // board: the floors below are asserted, not the vanishing bands.
+    for (const c of BELOW_FLOOR) {
+      // The medallion's `max(13, …)` CSS floor is 26 device px at scale 2 — ~46 % of a
+      // 56 device cell (vs 34 % in contract, 9.0 % of cell²).
+      expect(pct(c.closed.medallion), line(c)).toBeGreaterThan(10);
+      // …and R-D6's subordination ceiling is broken too.
+      expect(c.weight, line(c)).toBeGreaterThan(0.65);
+      // Structure survives (the open door is still hollow with corner stubs) …
+      expect(c.open.retained).toBeGreaterThan(0);
+      expect(c.ratio, line(c)).toBeGreaterThan(1);
     }
   });
 });
