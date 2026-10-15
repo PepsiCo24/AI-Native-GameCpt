@@ -1,5 +1,6 @@
 /**
- * Standing e2e — **the L1–L10 par-route playthrough** (QA-005).
+ * Standing e2e — **the L1–L11 par-route playthrough** (QA-005; re-worded at
+ * QA-005c for the eleven-level registry).
  *
  * What this file pins, and why each claim is here:
  *
@@ -15,18 +16,32 @@
  * 3. **The board agrees with the core.** After the last move the player's tile is
  *    read back from the canvas (the HUD owns no board state) and must equal the
  *    solver's goal tile.
- * 4. **The full unlock chain drives the dialog's own action**: L1 → L10 with the
- *    win dialog's `Next` button, ending in the prototype-over panel. This is the
- *    end-to-end statement that ten levels reach the board (R-002 tree).
+ * 4. **The full unlock chain drives the dialog's own action**: L1 →
+ *    L{@link EXPECTED_LEVEL_COUNT} with the win dialog's `Next` button, ending in
+ *    the prototype-over panel. This is the end-to-end statement that every
+ *    shipped level reaches the board and the ladder names itself (R-002 tree;
+ *    L11 added by R-003).
  * 5. **Fresh context + cleared storage start**: every test opens `?level=<n>` in a
  *    new browser context; `openLevel` clears `localStorage`/`sessionStorage`
  *    before boot (the game persists nothing — asserted, not assumed).
+ *
+ * The dataset count is the suite's **one hand-typed pin**; the inventories the
+ * count test checks are derived (QA-005c OQ2 — `helpers/levels.ts`), so an unlock
+ * needs one deliberate edit instead of a hunt for stale literals.
  */
 
 import { expect, test } from "@playwright/test";
 
 import type { LevelRef } from "./helpers/levels";
-import { EXPECTED_LEVEL_COUNT, loadReferenceLevels, levelUrl, refOf } from "./helpers/levels";
+import {
+  datasetIds,
+  discoveredFileIds,
+  EXPECTED_LEVEL_COUNT,
+  inventoryViolation,
+  loadReferenceLevels,
+  levelUrl,
+  refOf,
+} from "./helpers/levels";
 import {
   actorCell,
   boardGeometry,
@@ -44,7 +59,14 @@ const REFS = loadReferenceLevels();
 
 test.describe("par route → win → HUD contract", () => {
   test(`the shipped dataset is ${String(EXPECTED_LEVEL_COUNT)} levels and every one is solvable`, () => {
-    expect(REFS.map((ref) => ref.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    // The inventories are DERIVED (QA-005c OQ2): the ids come out of the fs scan
+    // and the schema parse, never out of this file. `EXPECTED_LEVEL_COUNT` is the
+    // one independent hand-typed pin, so a dataset change still raises the alarm.
+    expect(datasetIds(REFS), "every parsed id matches its file name").toEqual(discoveredFileIds());
+    expect(
+      inventoryViolation(datasetIds(REFS), EXPECTED_LEVEL_COUNT),
+      "the dataset inventory gate (count + contiguous ladder)",
+    ).toBeNull();
     for (const ref of REFS) {
       expect(ref.route.length, `L${String(ref.id)} route length`).toBe(ref.par);
       expect(ref.legs[ref.legs.length - 1]?.state.player, `L${String(ref.id)} ends on the goal`).toEqual(
@@ -110,7 +132,9 @@ test.describe("par route → win → HUD contract", () => {
     });
   }
 
-  test("the unlock chain runs L1 → L10 through the win dialog's own Next button", async ({ page }) => {
+  test(`the unlock chain runs L1 → L${String(EXPECTED_LEVEL_COUNT)} through the win dialog's own Next button`, async ({
+    page,
+  }) => {
     await openLevel(page, levelUrl(1));
 
     for (const ref of REFS) {
@@ -130,7 +154,8 @@ test.describe("par route → win → HUD contract", () => {
       }
     }
 
-    // Reaching L10's win without ever leaving the chain is the whole unlock claim.
+    // Reaching the last shipped level's win without ever leaving the chain is the
+    // whole unlock claim (the last id is `EXPECTED_LEVEL_COUNT` by the pin above).
     const end = await hud(page);
     expect(end.won).toBe(true);
     expect(end.nextVisible).toBe(false);

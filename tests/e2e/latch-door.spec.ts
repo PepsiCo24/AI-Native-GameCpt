@@ -32,6 +32,8 @@ import { expect, test } from "@playwright/test";
 
 import {
   cheapestDoorFixtures,
+  datasetIds,
+  doorLevelIds,
   loadReferenceLevels,
   levelUrl,
   levelsWithDoors,
@@ -56,8 +58,18 @@ const REFS = loadReferenceLevels();
 const DOOR_LEVELS = levelsWithDoors(REFS);
 
 test.describe("switch latch ⇒ door blocking (R-D1) and door occupancy (R-D7)", () => {
-  test("the dataset's latch levels are exactly the levels that ship doors", () => {
-    expect(DOOR_LEVELS.map((ref) => ref.id)).toEqual([6, 7, 8, 9, 10, 11]);
+  test("the dataset's latch levels are exactly the tail that ships doors", () => {
+    // The latch inventory is DERIVED (QA-005c OQ2 — `doorLevelIds`), so an unlock
+    // costs no edit here. What stays falsifiable is the *design rule* the old
+    // `[6..11]` literal encoded: the latch levels are the dataset's contiguous
+    // tail (L6+ unlocks doors), so a level that loses its doors breaks this.
+    const doors = doorLevelIds(REFS);
+    const all = datasetIds(REFS);
+    expect(doors.length, "the dataset ships latch levels at all").toBeGreaterThan(0);
+    const first = all.indexOf(doors[0] ?? Number.NaN);
+    expect(first, "the first latch level is a dataset level").toBeGreaterThanOrEqual(0);
+    expect(doors, "the latch levels are the dataset's contiguous tail").toEqual(all.slice(first));
+
     for (const ref of DOOR_LEVELS) {
       expect(
         ref.level.switches.length,

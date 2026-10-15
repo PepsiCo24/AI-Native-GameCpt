@@ -29,10 +29,14 @@
  * The file list is discovered from the directory; the hand-pinned registry count
  * is {@link EXPECTED_LEVEL_COUNT} ("the registry ships 11 levels" — R-002 tree
  * plus R-003's L11 unlock at `f484e23`), which `playthrough.spec.ts` compares the
- * discovered set against.
+ * discovered set against. **Every other inventory is derived** (QA-005c OQ2):
+ * {@link datasetIds}, {@link doorLevelIds}, {@link discoveredFileIds} and
+ * {@link inventoryViolation} — so an unlock costs one pin, not three, while a
+ * dataset change still raises the alarm. See `tests/e2e/README.md` §1.
  */
 
 import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { Coord, Level } from "@/core/level";
@@ -50,20 +54,105 @@ import { sameVec } from "@/core/state/types";
 
 /**
  * R-002 tree + R-003 (`f484e23`): L1–L11 reach the board — L11 (M2 portal debut)
- * is the registry's last level, so L10 is no longer the dataset's end (that is
- * what moved `playthrough.spec.ts` onto the "L 10 cleared" branch).
+ * is the registry's last level, so L10 is no longer the dataset's end.
  *
- * Re-pinned 10 → 11 by QA-005b. Four Playwright failures at `f484e23` traced here;
- * this constant alone resolves the two that are *derived* from it
- * (`playthrough.spec.ts:97` — L10 is no longer last — and `:118` — the unlock
- * chain now advances L10 → L11). The other two are hand-typed dataset-inventory
- * literals that this constant cannot reach: `playthrough.spec.ts:47`
- * (`toEqual([1..10])`) and `latch-door.spec.ts:60` (`toEqual([6..10])`). See
- * `tests/e2e/README.md` §1.
+ * **This is the one deliberately hand-typed dataset pin** (QA-005c, OQ2 ruling at
+ * project-status item 58): it names what `src/game/levels/level-registry.ts`
+ * ships, so a dataset change cannot silently re-baseline the suite. Everything
+ * else about the inventory is derived — see {@link datasetIds},
+ * {@link doorLevelIds} and {@link inventoryViolation}. QA-005b re-pinned 10 → 11
+ * when R-003 unlocked L11.
  */
 export const EXPECTED_LEVEL_COUNT = 11;
 
 const LEVELS_DIR = fileURLToPath(new URL("../../../src/levels/", import.meta.url));
+
+/** A discovered level file: the name on disk and the number that name claims. */
+interface DiscoveredLevelFile {
+  readonly file: string;
+  readonly id: number;
+}
+
+/**
+ * The `lNNN.json` files in `dir`, sorted by the number their own name carries.
+ *
+ * One discovery path for everything below: the loader and the inventory checks
+ * must never disagree about what "the dataset" is.
+ */
+function discoveredLevelFiles(dir: string = LEVELS_DIR): readonly DiscoveredLevelFile[] {
+  return readdirSync(dir)
+    .map((name) => {
+      const match = /^l(\d{3})\.json$/.exec(name);
+      return match === null ? null : { file: name, id: Number(match[1]) };
+    })
+    .filter((entry): entry is DiscoveredLevelFile => entry !== null)
+    .sort((a, b) => a.id - b.id);
+}
+
+/**
+ * The ids the **file names** claim (`l001.json` → 1) — a cheap fs scan, no parse.
+ *
+ * This is the independent anchor the parsed dataset is compared against, and the
+ * mutation probe of `tests/unit/level-inventory-derivation.test.ts` points it at a
+ * scratch directory. A file that is added, removed or renamed moves this list.
+ */
+export function discoveredFileIds(dir: string = LEVELS_DIR): readonly number[] {
+  return discoveredLevelFiles(dir).map((entry) => entry.id);
+}
+
+/** `[1, 2, …, count]` — the contiguous ladder an inventory is checked against. */
+export function contiguousIds(count: number): readonly number[] {
+  return Array.from({ length: count }, (_, index) => index + 1);
+}
+
+/* ────────────────── the dataset inventories (derived, QA-005c OQ2) ─────────── */
+
+/**
+ * ── Why these are functions and not typed lists (project-status item 58, OQ2) ──
+ *
+ * QA-005b proved that the two hand-typed inventories (`[1…10]` all levels,
+ * `[6…10]` latch levels) were **arithmetically unsatisfiable** at eleven levels:
+ * every level unlock needed a manual edit in two spec files, while the README
+ * pretended "adding a level needs no test edit". The ruling: the inventories
+ * **derive** from the discovered dataset; exactly **one** independent hand-typed
+ * pin stays — {@link EXPECTED_LEVEL_COUNT} — so a dataset change still raises the
+ * deliberate alarm instead of self-maintaining itself green.
+ *
+ * {@link inventoryViolation} is that alarm as data: it is what the specs assert
+ * and what the mutation probe exercises against a scratch directory, so "the
+ * gate fires when a level is added or removed" is itself pinned.
+ */
+
+/** The dataset's own level inventory, derived from the parsed refs — never typed. */
+export function datasetIds(refs: readonly LevelRef[]): readonly number[] {
+  return refs.map((ref) => ref.id);
+}
+
+/** The latch inventory — the ids of the levels that actually ship doors. */
+export function doorLevelIds(refs: readonly LevelRef[]): readonly number[] {
+  return refs.filter((ref) => ref.level.doors.length > 0).map((ref) => ref.id);
+}
+
+/**
+ * The dataset-inventory gate: `ids` must be the contiguous `L1…L{expected}`
+ * ladder. Returns the reason it is not, or `null` when the dataset is sound.
+ *
+ * Both directions fail: a level file added (or an id gained) makes the count
+ * disagree with the pinned registry; one removed, renamed or mis-numbered makes
+ * the ladder discontinuous. The specs call this; the unit probe mutates a scratch
+ * copy of the real files and requires it to fire both ways.
+ */
+export function inventoryViolation(ids: readonly number[], expected: number): string | null {
+  if (ids.length !== expected) {
+    return `the discovered dataset has ${String(ids.length)} levels, the pinned registry ships ${String(expected)}`;
+  }
+  const ladder = contiguousIds(expected);
+  const firstHole = ids.findIndex((id, index) => id !== ladder[index]);
+  if (firstHole >= 0) {
+    return `the dataset ladder is ${ids.join(",")}, not the contiguous L1…L${String(expected)} (first mismatch at index ${String(firstHole)})`;
+  }
+  return null;
+}
 
 /** Arrow-key code per direction — the §7.4 keyboard mapping, as Playwright presses it. */
 export const ARROW_KEY: Readonly<Record<Direction, string>> = {
@@ -117,15 +206,18 @@ function vecOf(tile: Coord): Vec {
  * Throws on a rejected file (the same "reject, never repair" verdict the
  * registry logs) so the suite can never pass against a level the game would not
  * even load.
+ *
+ * `dir` defaults to the shipped `src/levels/`; the mutation probe of
+ * `tests/unit/level-inventory-derivation.test.ts` points it at a scratch copy so
+ * the *real* loader — parse, validate, solve — is what the inventory gate is
+ * proved against, not a stand-in.
  */
-export function loadReferenceLevels(): readonly LevelRef[] {
-  const files = readdirSync(LEVELS_DIR)
-    .filter((name) => /^l\d{3}\.json$/.test(name))
-    .sort();
+export function loadReferenceLevels(dir: string = LEVELS_DIR): readonly LevelRef[] {
+  const files = discoveredLevelFiles(dir);
 
   const refs: LevelRef[] = [];
-  for (const file of files) {
-    const raw: unknown = JSON.parse(readFileSync(`${LEVELS_DIR}${file}`, "utf8"));
+  for (const { file } of files) {
+    const raw: unknown = JSON.parse(readFileSync(join(dir, file), "utf8"));
     const verdict = validateLevel(raw);
     if (!verdict.ok) {
       throw new Error(`[e2e] ${file} rejected by validateLevel: ${verdict.errors.join(" | ")}`);
