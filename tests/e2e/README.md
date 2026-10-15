@@ -28,7 +28,7 @@ server and points the suite at your instance (that is the parameterised `baseURL
 
 `workers: 1` / `fullyParallel: false` are deliberate: `transient.spec.ts` samples
 real animation frames, and a second worker stealing CPU would make the frame grid a
-lottery. The whole suite is ~3.5 minutes.
+lottery. The whole suite is ~3.3 minutes locally (16.9 min on the 2-core CI runner, §5).
 
 ### It is not part of `npm test` — and that is verified, not hoped
 
@@ -206,8 +206,8 @@ Evidence (QA-005c, own vite on :5214):
 | `vitest run` | **29 files · 543 passed · 3 skipped** — the one new file is the mutation probe; nothing else changed |
 | `npm run levels` | `11/11 level files ok · 0 errors · 15 warnings(0 multi-switch-door) · 11/11 negative cases` → **PASS** |
 | `npx playwright test --list` | **86 tests in 8 files** (unchanged) |
-| `npx playwright test` | **86 passed · 0 failed, zero retries**, × 3 consecutive runs |
-| targeted repeats | `latch-door` L6/L10 10× and `refusal` L3 10× — 10/10 each |
+| `npx playwright test` | **86 passed · 0 failed, zero retries**, × 3 consecutive runs (`3.3 / 3.1 / 3.2 min`), plus a 4th on the committed bytes (3.2 min) |
+| targeted repeats | `latch-door` L6/L10 × 10 and `refusal` L3 × 10 on the reworked `expectActorAt`/`expectMoves` — **60/60 and 10/10** |
 | `npm run build` | ✓ built (chunk-size warning only) |
 
 ### 1.4 What QA-005c did **not** do
