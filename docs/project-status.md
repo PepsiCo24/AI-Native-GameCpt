@@ -1165,7 +1165,46 @@ and a path must be quiescent before dispatch.**
    (dataset byte-copy + DOCUMENTED_LESSONS + PINS + sidecar regen + mirror rows + ONE-line pin bump + registry
    unlock + the doors×portals UA capture-entry round). **MILESTONE GATE UNCHANGED AND UNAFFECTED: QA-005d in
    flight** (their green PR → merge → main → Pages 11 levels) — L12–L15 ride the NEXT milestone by design; the
-   dataset stays 11 all the way through this one. Live 2/3 (QA-005d + GD-011); user lanes unchanged. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+   dataset stays 11 all the way through this one. Live 2/3 (QA-005d + GD-011); user lanes unchanged.
+
+71. **The quota war and the survivor war — both won; the milestone now waits on ONE green develop run.**
+**GD-011 died twice and delivered anyway**: run 1 (kimi-k3) hit `provider.quota` 402 AFTER its full
+reading phase, BEFORE writing a byte (disk confirmed: clean at base). The RESUMED session (same context,
+model swapped to qwen3.8-max per the error's own hint to reduce max-output) authored everything —
+law commit `ad2b310` (level-design V0.9 §6.1) + the 298-line ADR-design-0003 + the §6.1.1 two-sided L16
+bounds refinement — then died on 402 *after the writes, before its own verification/commit*. This office
+performed a MECHANICAL closeout (zero editorial change to GD text): verified content completeness (§1–§9
+all present, per-board verdicts + standing points + handoff in place), verified the ADR status line
+("Orchestrator countersign at merge" — this merge IS the countersign), territory owned-paths-only, ran
+vitest once (29/543/3), committed the two in-flight files citing the death, merged `999b21e`. THE LAW
+(law-before-verdict, derived not adopted): P1 par(L12)=4 as an INTERSECTION of two pre-existing
+constraints; P2 Δpar≥2 derived from the measured B-band spread 1.3125; P3 ceiling ≤10 on
+coverage+searchability(0.5%→0.03% accept cliff)+precedent; NEW P4 coverage clause (par route must visit
+every tile — measured 4/4); two-beat dip ruled (L12 owns the successor slot; three-beat rejected on
+arithmetic); latch doctrine = "the switch buys SPEED, the sealed channel buys EXISTENCE" hardened into
+falsifiable G1–G4 with the lost gate-(i) STATED not hidden; 4/4 boards + block-set ACCEPTED against
+numbers published in the same sitting before the verdict lines; the l12TemplateFamily 0/512 artifact
+PROMOTED to an L16+ authoring instruction (enumerate plan shapes, never clone shipped boards);
+LV-009-B's handoff carries exact constants + machine-checkable pre-registered acceptance law + the
+reader-divergence STOP-and-route clause. Quota state: two premium models now capped; orchestrator
+flash session lives; no new dispatch unless the milestone needs it. **QA-005d then killed BOTH
+survivors with measurement**: P1 root cause — `denyFeedback` records synchronously on keydown, so the
+90 ms arc paints IFF the bracketing frame gap < 90 ms, and the cloud grid straddles 116.7 ms (proved in
+the PR job log: the named RESOLVE-LIMIT branch RAN ON CLOUD asserting state-refusal + channel health +
+positive control with `onset===null` REQUIRED, while local grids print the full pixel-teeth line); R-T4
+root cause — per-awaited CDP touch dispatch is frame-gated and the game clock quantises to the grid, so
+the old burst spanned 15 frames/1999 ms on CI (>500 ⇒ tap ⇒ 0 moves); fix = single-tick Promise.all
+burst (`span=0` proven at 66.7 and 200 ms grids) + delivery/order/coords asserted BEFORE any HUD read,
+causality nailed by temporarily restoring the old helper and reproducing the exact cloud shape. Suite
+inventory 86→**88** (P1b + coarse pins: both branches execute on every machine — more teeth, never
+fewer). **PR #1 ran 88/0 ZERO-RETRY (16.8 min) — the pre-registered cloud proof — merged `fb751de`**,
+branch + worktree pruned. Disciplina honoured end-to-end: merge only from a fully green PR; every
+claim re-run by this office before accepting (tsc 0 · vitest 30/553/3 · targeted 19/19 with the
+evidence lines printed on MY machine). **MILESTONE: waiting on the develop-tip run of `fb751de`**
+(clean CI round #2 since the roster went dark; the `--retries=1` removal conversation opens after 2–3
+green rounds land) — on green, THIS session merges develop→main, Pages publishes the 11-level build,
+then DG-004c syncs the ~5 future-scoped hosting sentences + the 88-case inventory + the roster's final
+chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` cohort, P9 demo video). Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
