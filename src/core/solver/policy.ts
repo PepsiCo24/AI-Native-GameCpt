@@ -71,6 +71,9 @@
 
 import type { Level } from "@/core/level";
 import { coordKey } from "@/core/level";
+import type { Phase } from "@/core/state/phase";
+import type { Vec } from "@/core/state/types";
+import { step } from "@/core/state/move";
 import type {
   ArrivalRecord,
   EmbedMetrics,
@@ -83,6 +86,7 @@ import {
   analyse,
   forEachParRoute,
   goalReachableWithAllSwitchesOff,
+  solve,
   tileKey,
 } from "./bfs";
 import type { DifficultyBreakdown } from "./difficulty";
@@ -100,7 +104,8 @@ export type LessonObligation =
   | "phantom-walk-forced"
   | "phantom-walk-offered"
   | "latch-dynamism"
-  | "latch-aha-1";
+  | "latch-aha-1"
+  | "portal-aha-2";
 
 export interface DocumentedLesson {
   readonly levelId: number;
@@ -230,6 +235,33 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
     evidence:
       "docs/level-design.md §2 L10 + §5 · src/levels/README.md §2b L10 · docs/ai-native-pipeline.md §8",
   },
+  {
+    // ── L11 — the M2 (portal) debut, the second and last mechanic seam ────────
+    //
+    // The obligation `portal-aha-2` is the **debut** obligation: it carries the
+    // §3.4 construction floor of a mechanic debut (par ≤ 4, single-concept, below
+    // OFFERED) plus the pre-registered seam law `D_exec < L10's measured D_exec`
+    // (`docs/level-design.md` §6 V0.6 / ADR-design-0001; `docs/level-difficulty.md`
+    // §3.3). It is deliberately **not** a general "this level uses a portal" tag: a
+    // post-debut portal level (L12+) must declare its own lesson/obligation, because
+    // the par cap and the below-OFFERED grade are properties of the *debut*, exactly
+    // like the §3 construction bullets that apply to Aha #1 only (`latchAhaGates`).
+    levelId: 11,
+    lesson:
+      "M2 debut: the portal — a channel that is only alive in one phase; entering its end in that phase moves me without spending a move, and the crossing is on every par route",
+    obligation: "portal-aha-2",
+    // The L6 precedent, recorded on the row rather than special-cased by id
+    // (docs/level-difficulty.md §3.4's construction floor: a debut "teaches **below
+    // OFFERED** — demonstrated by walking, not demanded (the L6 precedent
+    // `switchRequired = false`, a named concession never scored as FORCED)";
+    // docs/level-design.md §6). L11's latch sits on the only 4-move route (gate (ii)
+    // PASSes) but the walking world still solves in 7, so the board is *not*
+    // load-bearing in the all-OFF sense — the same deliberate price L6 pays, and the
+    // reason this row is `"exempt"` instead of `"required"`.
+    switchRequired: "exempt",
+    evidence:
+      "docs/level-design.md §2 L11 + §5 (L11–L15 block) + §6 (pre-registered seam law) · docs/level-difficulty.md §3.3/§3.4 · src/levels/README.md §0/§2c",
+  },
 ];
 
 export function documentedLesson(levelId: number): DocumentedLesson | null {
@@ -257,8 +289,23 @@ export type AhaGateId =
   | "single-door-one-switch-funnel"
   | "aha-par-cap";
 
+/**
+ * The named gates {@link portalAhaGates} adds for the **M2 (portal) debut**: the
+ * §3.4 construction floor read on a portal board, plus the pre-registered seam law
+ * of `docs/level-design.md` §6 V0.6 / ADR-design-0001 (`D_exec(L11) < L10's measured
+ * D_exec`). A closed union for the same reason as {@link AhaGateId}: a gate that is
+ * not declared here is a compile error, and every declared gate has a
+ * `gate-…` policy code with its own negative control.
+ */
+export type PortalGateId =
+  | "portal-pair-single-opposite-colour"
+  | "portal-crossing-on-every-par-route"
+  | "portal-par-cap"
+  | "portal-teaching-grade-below-offered"
+  | "portal-seam-law-execution-axis";
+
 export interface NamedGate {
-  readonly id: AhaGateId;
+  readonly id: AhaGateId | PortalGateId;
   /** The condition in the words of the design doc / dispatch. */
   readonly label: string;
   readonly status: GateStatus;
@@ -384,31 +431,8 @@ export function latchAhaGates(
         `all-OFF subgraph: ${allOffStates}/${result.reachableStates} reachable state(s) keep every switch OFF; ` +
         `goal reachable inside it = ${allOffReachable}`,
     },
-    {
-      id: "shortest-solution-presses-switch-and-crosses-door",
-      label:
-        "every shortest solution presses a switch and then enters a door that switch targets, one the board refused",
-      status:
-        verdict.routes > 0 &&
-        verdict.pressThenCross === verdict.routes &&
-        verdict.refusedDoor === verdict.routes
-          ? "PASS"
-          : "FAIL",
-      detail:
-        `par=${par}: routes=${verdict.routes}; press-then-cross-door=${verdict.pressThenCross}; ` +
-        `…and that door is one of the refused tiles: routes=${verdict.refusedDoor}; ` +
-        `parRoutes=${embeds.parRoutes} embedRoutes=${embeds.embedRoutes}`,
-    },
-    {
-      id: "refused-then-entered",
-      label:
-        "refusedBeforeEnteredTiles ≥ 1 — the ordered beat: on one play trace the tile is refused strictly before it is entered (docs/level-design.md §3 (iii), V0.6; ADR-architecture-0002 decision 4)",
-      status: result.refusedBeforeEnteredTiles > 0 ? "PASS" : "FAIL",
-      detail:
-        `refusedBeforeEnteredTiles=${result.refusedBeforeEnteredTiles} tiles=[${result.refusedBeforeEnteredTileList.join(" ")}] ` +
-        `(ORDERED reader — LV-007C); unordered companion refusedThenEnteredTiles=${result.refusedThenEnteredTiles} ` +
-        `tiles=[${result.refusedThenEnteredTileList.join(" ")}] (canonical #7, §8.5's acceptance carrier — the difference between the two is the trapped-refusal set, a beat no player can witness)`,
-    },
+    pressThenCrossGate(par, embeds, verdict),
+    refusedBeforeEnteredGate(result),
     dualPhaseGate(level, result),
     // ── the §3 construction bullets, as gates (LV-007A n-14) ──────────────────
     //
@@ -449,6 +473,58 @@ export function latchAhaGates(
  * the §6 dip)" — the shipped `l008.json` is solver-verified at 6.
  */
 export const AHA_PAR_CAP = 8;
+
+/**
+ * Gate (ii) — "every shortest solution presses a switch and then enters a door that
+ * switch targets, one the board refused", read off the {@link routeVerdict} probe.
+ *
+ * Extracted (LV-008) so the M1+M3 debut of the *portal* block (L11) is judged by the
+ * **same** gate implementation as Aha #1 rather than by a copy: on L11 the latch sits
+ * on the only 4-move route, which is exactly the claim this gate measures, and a
+ * second implementation would be a second truth source for one condition. The label
+ * and the detail string are byte-identical to the pre-extraction text, so no shipped
+ * dump line moves.
+ */
+function pressThenCrossGate(
+  par: number,
+  embeds: EmbedMetrics,
+  verdict: RouteVerdict,
+): NamedGate {
+  return {
+    id: "shortest-solution-presses-switch-and-crosses-door",
+    label:
+      "every shortest solution presses a switch and then enters a door that switch targets, one the board refused",
+    status:
+      verdict.routes > 0 &&
+      verdict.pressThenCross === verdict.routes &&
+      verdict.refusedDoor === verdict.routes
+        ? "PASS"
+        : "FAIL",
+    detail:
+      `par=${par}: routes=${verdict.routes}; press-then-cross-door=${verdict.pressThenCross}; ` +
+      `…and that door is one of the refused tiles: routes=${verdict.refusedDoor}; ` +
+      `parRoutes=${embeds.parRoutes} embedRoutes=${embeds.embedRoutes}`,
+  };
+}
+
+/**
+ * Gate (iii) — the **ordered** beat (`refusedBeforeEnteredTiles ≥ 1`). Extracted
+ * (LV-008) for the same once-implemented reason as {@link pressThenCrossGate}: L11's
+ * acceptance explicitly includes the ordered reader, so the debut of the portal block
+ * must be judged by the shipped reader and not by a fresh one.
+ */
+function refusedBeforeEnteredGate(result: SolveResult): NamedGate {
+  return {
+    id: "refused-then-entered",
+    label:
+      "refusedBeforeEnteredTiles ≥ 1 — the ordered beat: on one play trace the tile is refused strictly before it is entered (docs/level-design.md §3 (iii), V0.6; ADR-architecture-0002 decision 4)",
+    status: result.refusedBeforeEnteredTiles > 0 ? "PASS" : "FAIL",
+    detail:
+      `refusedBeforeEnteredTiles=${result.refusedBeforeEnteredTiles} tiles=[${result.refusedBeforeEnteredTileList.join(" ")}] ` +
+      `(ORDERED reader — LV-007C); unordered companion refusedThenEnteredTiles=${result.refusedThenEnteredTiles} ` +
+      `tiles=[${result.refusedThenEnteredTileList.join(" ")}] (canonical #7, §8.5's acceptance carrier — the difference between the two is the trapped-refusal set, a beat no player can witness)`,
+  };
+}
 
 /**
  * Gate (iv), `dualPhaseTiles ≥ 1` — the one gate whose verdict can be
@@ -516,6 +592,280 @@ function dualPhaseGate(level: Level, result: SolveResult): NamedGate {
 }
 
 /**
+ * The §3.4 **construction floor** for the M2 (portal) debut, as a number: "the debut
+ * level … is short (**par ≤ 4** in the teaching span, L1–L15)" — the same floor
+ * `docs/level-design.md` §6 records for L6 (par 4) and L11's own hook row asks for.
+ */
+export const PORTAL_DEBUT_PAR_CAP = 4;
+
+/**
+ * The **pre-registered** seam-law budget for the M2 debut, in `D_exec` units:
+ * `docs/level-design.md` §6 (V0.6, ADR-design-0001) and `docs/level-difficulty.md`
+ * §3.3 publish "`D_exec(L11) < 13.64` ⇔ `D(L11) < 33.64`" **before any candidate
+ * existed**, so the bound cannot be fitted after the fact.
+ *
+ * 13.64 is the *published* 2-dp form of L10's measured `D_exec` = 13.642857
+ * (`docs/level-difficulty.md` §5.2, pinned by `tests/solver/difficulty.test.ts` §2c
+ * and re-derived here in the suite from the shipped `l010.json`), so the bound is
+ * **strictly below** the shipped value it was read from: using it makes the law
+ * harder to satisfy than "beat L10 exactly", never easier.
+ */
+export const PORTAL_DEBUT_EXEC_BUDGET = 13.64;
+
+/** What the portal needs to be measured off the shortest routes. */
+export interface PortalRouteTelemetry {
+  /** Shortest routes enumerated (`par` moves, ending on the goal). */
+  readonly routes: number;
+  /**
+   * Routes on which **some** arrival moved the player by more than one tile — i.e. a
+   * teleport really happened. A teleport is the only displacement source in
+   * `applyMove`, so this is exact, not a heuristic: an ordinary move moves exactly one
+   * tile (`docs/architecture.md` §6.2).
+   */
+  readonly teleportRoutes: number;
+  /**
+   * Routes on which **some** arrival *clicked* a tile that is an end of a portal whose
+   * `activePhase` was the current (pre-flip) phase. Logically equivalent to
+   * {@link PortalRouteTelemetry.teleportRoutes} (entry into an active end ⇒
+   * unconditional teleport), measured separately on purpose: a divergence would be a
+   * real anomaly, and the gate requires both.
+   */
+  readonly portalEnterRoutes: number;
+  /** Total teleporting arrivals over all routes (route-level count above is the gate). */
+  readonly teleportArrivals: number;
+}
+
+/** Manhattan distance, for the teleport detector (`|Δx| + |Δy| ≠ 1` ⇒ teleport). */
+function manhattan(a: Vec, b: Vec): number {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
+
+/**
+ * Enumerate the shortest routes once and report what the **portal** did on them
+ * (LV-008). Reads the shipped `forEachParRoute` walk — no second search, no second
+ * rule — and derives "the clicked tile" exactly as the metrics of
+ * `docs/architecture.md` §8 do (`previous player + direction delta`; the *landing*
+ * tile of a teleport is a different tile and is never what entry refusal is decided
+ * on, `@/core/solver/bfs`).
+ *
+ * The start state comes from `graph.nodes[0]` — the same `toSearchState(initialState)`
+ * the walk itself starts from — so the first arrival's "previous state" is the level's
+ * real initial state and not a lever-free reconstruction of it.
+ */
+export function portalRouteTelemetry(
+  level: Level,
+  par: number,
+  graph: ReachableGraph,
+): PortalRouteTelemetry {
+  const activePhaseByEnd = new Map<string, Phase>();
+  for (const portalDef of level.portals) {
+    for (const end of portalDef.pair)
+      activePhaseByEnd.set(coordKey(end), portalDef.activePhase);
+  }
+  const start = graph.nodes[0];
+
+  let routes = 0;
+  let teleportRoutes = 0;
+  let portalEnterRoutes = 0;
+  let teleportArrivals = 0;
+
+  forEachParRoute(level, par, (route) => {
+    routes += 1;
+    let teleported = false;
+    let enteredActiveEnd = false;
+    for (let i = 0; i < route.length; i += 1) {
+      const arrival = route[i] as ArrivalRecord;
+      const before = i === 0 ? start : route[i - 1]?.state;
+      if (before === undefined) continue;
+      const clicked = step(before.player, arrival.direction);
+      if (activePhaseByEnd.get(tileKey(clicked)) === before.phase)
+        enteredActiveEnd = true;
+      if (manhattan(before.player, arrival.state.player) !== 1) {
+        teleported = true;
+        teleportArrivals += 1;
+      }
+    }
+    if (teleported) teleportRoutes += 1;
+    if (enteredActiveEnd) portalEnterRoutes += 1;
+  });
+
+  return { routes, teleportRoutes, portalEnterRoutes, teleportArrivals };
+}
+
+/**
+ * The **M2 debut gate suite** (`portal-aha-2`) — the named conditions the portal-block
+ * debut must satisfy, one gate per documented requirement of
+ * `docs/level-design.md` §6 / `docs/level-difficulty.md` §3.3–§3.4:
+ *
+ * 1. `dual-phase-tiles` — gate (iv) of `docs/level-design.md` §3, the **only**
+ *    condition that is unsatisfiable before L11 and the reason the schedule puts M2
+ *    here (`dualPhaseGate`; on a portal board `0` is a loud FAIL, never an
+ *    escalation).
+ * 2. `shortest-solution-presses-switch-and-crosses-door` — the M1+M3 unit is on
+ *    **every** shortest route, not decoration (the same reader Aha #1 uses, so the
+ *    two debuts are judged by one implementation).
+ * 3. `refused-then-entered` — the ordered beat, as the dispatch's acceptance list
+ *    requires (`refusedBeforeEnteredTiles ≥ 1`, the LV-007C reader).
+ * 4. `portal-pair-single-opposite-colour` — "a single opposite-colour portal pair":
+ *    exactly one channel, ends on opposite checkerboard colours (ADR-0009 decision 5 /
+ *    `docs/level-design.md` §1). A second pair would be the *other* phase's channel —
+ *    two mechanics where the debut may introduce one.
+ * 5. `portal-crossing-on-every-par-route` — the "no false routes" half that is
+ *    specific to this board: no shortest route may reach the goal without teleporting,
+ *    or the portal is bypassable decoration and the level does not teach what it
+ *    claims.
+ * 6. `portal-par-cap` — `par ≤ 4` (the §3.4 construction floor; authored **and**
+ *    measured, so neither can move past the cap unnoticed).
+ * 7. `portal-teaching-grade-below-offered` — the debut's grade: the **portal-free
+ *    world still solves** (the L6 `switchRequired = false` precedent, `§3.4`). The
+ *    portal may be rewarded in par (gate 5) but must not be *demanded*.
+ * 8. `portal-seam-law-execution-axis` — the pre-registered falsifiable prediction:
+ *    `D_exec < 13.64` (⇔ `D < 33.64`), against {@link PORTAL_DEBUT_EXEC_BUDGET}.
+ *
+ * Deliberately **absent**: gate (i) (`no-solution-with-switches-off`). The debut's
+ * construction floor asks for the new mechanic to be *demonstrated, not demanded*, and
+ * on a portal-bearing board the checkerboard argument that makes an all-OFF refusal
+ * (L7–L10) or an all-OFF solution (L6) a single well-defined fact no longer applies —
+ * a walking route and a teleporting route can stand in different phase relations to
+ * the same door tile. Whether L11's latch is load-bearing is therefore recorded on its
+ * lesson row (`switchRequired: "exempt"`, the L6 pattern) and measured through gate
+ * (2), not through a condition that would misread a portal board. This omission is
+ * stated here rather than left to inference.
+ */
+export function portalAhaGates(
+  level: Level,
+  graph: ReachableGraph,
+  result: SolveResult,
+  embeds: EmbedMetrics,
+): readonly NamedGate[] {
+  const par = result.shortestSolution ?? level.par;
+  const telemetry = portalRouteTelemetry(level, par, graph);
+  const verdict = routeVerdict(level, par, result.refusedThenEnteredTileList);
+  const pair = portalPairVerdict(level);
+  const portalFree = portalFreeWorldVerdict(level);
+  const difficulty = analyseDifficulty(level, graph);
+  const dexec = difficulty.Dexec;
+
+  return [
+    dualPhaseGate(level, result),
+    pressThenCrossGate(par, embeds, verdict),
+    refusedBeforeEnteredGate(result),
+    {
+      id: "portal-pair-single-opposite-colour",
+      label:
+        "exactly one portal pair, its two ends on opposite checkerboard colours, one channel phase (docs/level-design.md §1 opposite-colour law; acceptance: “a single opposite-colour portal pair”)",
+      status:
+        level.portals.length === 1 && pair.oppositeColour ? "PASS" : "FAIL",
+      detail:
+        `portals=${level.portals.length} (the debut introduces ONE channel; a second pair — in particular one with the ` +
+        `other activePhase — is a second mechanic, docs/level-difficulty.md §3.4 "single-concept"); ` +
+        `pair=[${pair.ends.join(" ⇄ ")}] (x+y parities ${pair.parities.join(" / ")}) ⇒ opposite checkerboard colours: ` +
+        `${String(pair.oppositeColour)}; activePhase=${pair.phase ?? "n/a"} (one value per pair, so only that phase shows ` +
+        `the channel); ADR-0009 decision 5 — a same-colour pair is inert and the validator hard-rejects it (0/400 legal)`,
+    },
+    {
+      id: "portal-crossing-on-every-par-route",
+      label:
+        "every par route really teleports — no shortest route reaches the goal without entering an active portal end (the “no false routes” half of the debut's construction floor)",
+      status:
+        telemetry.routes > 0 &&
+        telemetry.teleportRoutes === telemetry.routes &&
+        telemetry.portalEnterRoutes === telemetry.routes
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `par=${par}: routes=${telemetry.routes}; routes with a teleporting arrival (|Δposition| ≠ 1)=${telemetry.teleportRoutes}; ` +
+        `routes entering an active portal end=${telemetry.portalEnterRoutes}; teleporting arrivals=${telemetry.teleportArrivals}. ` +
+        `(Both counters are required: a teleport is the only displacement source in applyMove, so a divergence between them ` +
+        `would be an anomaly. A par route that walks the whole way means the portal is bypassable decoration — the level ` +
+        `claims to teach the channel and does not.)`,
+    },
+    {
+      id: "portal-par-cap",
+      label:
+        "par ≤ 4 for the M2 debut (docs/level-difficulty.md §3.4 construction floor: “short (par ≤ 4 in the teaching span, L1–L15)”)",
+      status:
+        level.par <= PORTAL_DEBUT_PAR_CAP && par <= PORTAL_DEBUT_PAR_CAP
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `par=${level.par} (solver shortest=${String(result.shortestSolution)}) cap=${PORTAL_DEBUT_PAR_CAP}; ` +
+        `the authored and the measured value are both checked, so neither can move past the cap unnoticed.`,
+    },
+    {
+      id: "portal-teaching-grade-below-offered",
+      label:
+        "below OFFERED: the portal-free world still solves — the mechanic is demonstrated and rewarded in par, not demanded (docs/level-difficulty.md §3.4, the L6 precedent)",
+      status: portalFree.solvable ? "PASS" : "FAIL",
+      detail:
+        `portal-free world (same board, portals: []): solvable=${String(portalFree.solvable)} ` +
+        `shortest=${portalFree.shortest === null ? "n/a" : String(portalFree.shortest)} vs par=${par}` +
+        (portalFree.solvable
+          ? ` — the walking world still finishes ${portalFree.shortest === par ? "in the same number of moves" : `${String((portalFree.shortest ?? 0) - par)} move(s) slower`}, so the portal is a shortcut, not a requirement (the L6 "switchRequired = false" precedent, recorded on this level's lesson row as switchRequired: "exempt" and in docs/ai-native-pipeline.md §8.8).`
+          : ` — the portal is REQUIRED for solvability: the debut would ship at the FORCED grade, which the construction floor forbids (docs/level-difficulty.md §3.4). Reject and re-author.`),
+    },
+    {
+      id: "portal-seam-law-execution-axis",
+      label:
+        "D_exec < 13.64 for the M2 debut — the pre-registered falsifiable prediction (docs/level-design.md §6 V0.6 / ADR-design-0001; ⇔ D < 33.64)",
+      status: dexec !== null && dexec < PORTAL_DEBUT_EXEC_BUDGET ? "PASS" : "FAIL",
+      detail:
+        `Dexec=${dexec === null ? "n/a (unsolvable)" : dexec.toFixed(4)} ` +
+        `(D=${difficulty.D === null ? "n/a" : difficulty.D.toFixed(4)} − 5·M(${difficulty.M}) = ` +
+        `1·L(${String(difficulty.L)}) + 3·B(${difficulty.B.toFixed(4)}) + 4·T(${difficulty.T}) + 2·R(${difficulty.R.toFixed(4)})) ` +
+        `< ${PORTAL_DEBUT_EXEC_BUDGET} = the published 2-dp form of L10's measured D_exec (13.642857, docs/level-difficulty.md §5.2) — ` +
+        `the bound is strictly below the shipped value it was read from, so it is not a flattering rounding. ` +
+        `Pre-registered before any L11 candidate existed; a candidate that breaks it is rejected whatever its other virtues.`,
+    },
+  ];
+}
+
+/** The portal-pair facts gate 4 reads, as data (so the verdict is not a sentence). */
+interface PortalPairVerdict {
+  /** The two ends, `"x,y"` each, in the authored order. */
+  readonly ends: readonly string[];
+  /** `x+y` of each end — different parity ⇒ opposite checkerboard colours. */
+  readonly parities: readonly number[];
+  readonly oppositeColour: boolean;
+  /** The single `activePhase` of the pair, or `null` when there is no single pair. */
+  readonly phase: Phase | null;
+}
+
+function portalPairVerdict(level: Level): PortalPairVerdict {
+  const first = level.portals[0];
+  if (first === undefined || level.portals.length !== 1) {
+    return { ends: [], parities: [], oppositeColour: false, phase: null };
+  }
+  const [endA, endB] = first.pair;
+  const parityA = endA[0] + endA[1];
+  const parityB = endB[0] + endB[1];
+  return {
+    ends: [coordKey(endA), coordKey(endB)],
+    parities: [parityA, parityB],
+    oppositeColour: parityA % 2 !== parityB % 2,
+    phase: first.activePhase,
+  };
+}
+
+/**
+ * The "below OFFERED" probe: solve the **same board without its portals** — a second,
+ * much smaller BFS over the shipped rules (`solve` = `explore ∘ analyse`), not a
+ * parity argument. `docs/level-difficulty.md` §3.4 defines the debut's grade as
+ * "demonstrated by walking, not demanded", and the L6 precedent makes it concrete:
+ * L6's un-switched world still solves in 6 while its par is 4, which is exactly the
+ * measured concession `switchRequired: "exempt"` records. For M2 the mirror question is
+ * "does the walking world still solve?", and it is decidable by the same program.
+ */
+function portalFreeWorldVerdict(level: Level): {
+  readonly solvable: boolean;
+  readonly shortest: number | null;
+} {
+  const portalFree: Level = { ...level, portals: [] };
+  const result = solve(portalFree);
+  return { solvable: result.solvable, shortest: result.shortestSolution };
+}
+
+/**
  * Number of reachable states in which **every** switch is OFF — the size of the
  * §3 condition (i) subgraph — or `null` when the level carries no switches at all
  * (`null` = the obligation does not apply; a measured `0` is a real value).
@@ -571,7 +921,8 @@ export type PolicyViolationCode =
   | "lesson-phantom-walk-offered"
   | "lesson-latch-dynamism"
   | "lesson-switch-required"
-  | `gate-${AhaGateId}`;
+  | `gate-${AhaGateId}`
+  | `gate-${PortalGateId}`;
 
 export const POLICY_VIOLATION_CODES: readonly PolicyViolationCode[] = [
   "door-without-switch",
@@ -587,6 +938,11 @@ export const POLICY_VIOLATION_CODES: readonly PolicyViolationCode[] = [
   "gate-dual-phase-tiles",
   "gate-single-door-one-switch-funnel",
   "gate-aha-par-cap",
+  "gate-portal-pair-single-opposite-colour",
+  "gate-portal-crossing-on-every-par-route",
+  "gate-portal-par-cap",
+  "gate-portal-teaching-grade-below-offered",
+  "gate-portal-seam-law-execution-axis",
 ];
 
 /** Switch ids that actually toggle somewhere in the reachable graph. */
@@ -758,6 +1114,14 @@ export function auditLevel(
         break;
       case "latch-aha-1":
         break;
+      case "portal-aha-2":
+        // The M2 debut's own conditions are the named gates below
+        // (`portalAhaGates`); there is no separate board-level obligation to add
+        // here. In particular this obligation deliberately does **not** carry the
+        // `switchRequired` "required" promise: the row is `"exempt"` for the same
+        // documented reason as L6 (see the row), and the latch's role on this board
+        // is measured by gate (ii) instead.
+        break;
       default:
         break;
     }
@@ -789,7 +1153,9 @@ export function auditLevel(
   const gates =
     lesson?.obligation === "latch-aha-1"
       ? latchAhaGates(level, graph, result, embeds)
-      : [];
+      : lesson?.obligation === "portal-aha-2"
+        ? portalAhaGates(level, graph, result, embeds)
+        : [];
   for (const gate of gates) {
     if (gate.status !== "FAIL") continue;
     violations.push({
