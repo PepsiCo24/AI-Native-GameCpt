@@ -1,0 +1,8 @@
+# Markdown is authored by several roles at once and prettier's reflow creates
+# huge meaningless diffs in the design docs, so docs are excluded on purpose.
+# Prose style is enforced by review rounds (RV-*), not by a formatter.
+docs/
+*.md
+dist/
+node_modules/
+package-lock.json

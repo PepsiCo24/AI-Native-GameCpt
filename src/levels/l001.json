@@ -1,0 +1,14 @@
+{
+  "id": 1,
+  "width": 5,
+  "height": 3,
+  "startPhase": "A",
+  "player": [0, 1],
+  "goal": [4, 1],
+  "phaseAWalls": [],
+  "phaseBWalls": [],
+  "doors": [],
+  "switches": [],
+  "portals": [],
+  "par": 4
+}

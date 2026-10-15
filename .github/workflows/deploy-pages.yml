@@ -1,0 +1,59 @@
+name: Deploy to GitHub Pages
+
+# Release lane (Orchestrator-owned infra, AGENTS.md §6: only the Orchestrator
+# merges/pushes main). `main` IS the shipped artifact: pushing it deploys the
+# current build to https://PepsiCo24.github.io/AI-Native-GameCpt/ .
+# The correctness gates live in ci.yml (typecheck/tests/levels/build) and run
+# on every push to main BEFORE this job's build of the same commit; this job
+# only builds and publishes. No secrets, no credentials — nothing
+# credential-shaped may ever be added here.
+#
+# Known disclosure shipped in public on purpose: art is PLACEHOLDER (Asset Gate
+# pending — docs/assets/asset-manifest.md), the HUD banner says so in-game too.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install (lockfile is the source of truth)
+        run: npm ci
+
+      - name: Build (vite; base './' makes the dist subpath-safe)
+        run: npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

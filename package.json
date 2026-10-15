@@ -1,0 +1,32 @@
+{
+  "name": "phase-shift-echo-grid",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Phase Shift: Echo Grid — two-phase grid puzzle (H5 / mobile / desktop browser)",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "levels": "tsx scripts/validate-levels.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "phaser": "^3.90.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.0.0",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.6.2",
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.7",
+    "vitest": "^5.0.4"
+  }
+}

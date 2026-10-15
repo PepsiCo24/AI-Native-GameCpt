@@ -1,6 +1,20 @@
 # ADR-0006 — Illegal move refused (no movement, no flip); wall suppression rejected
 
-- **Status:** Accepted — locked in `docs/game-design.md` V0.2 §3.1
+- **Status:** **Partially superseded by ADR-0008** (GATE C, human decision, 2026-10-14) — see banner below. Originally Accepted; locked in `docs/game-design.md` V0.2 §3.1, now V0.4.
+
+> [!IMPORTANT]
+> **Supersession banner (2026-10-14, Orchestrator).** GATE C selected **Option B**.
+> **Withdrawn:** the third legality condition — "if the post-flip phase would place a solid on the
+> player's tile, the move is illegal and the whole move is reverted" — together with its
+> **union property** consequence ("a wall in either phase is never enterable"). Under Option B a
+> player may legally end a move standing inside a tile that is solid in the new phase, and is
+> **never** crushed, pushed or randomly relocated.
+> **Still in force (unchanged):** no manual phase switch; flip bound to every legal move;
+> **illegal = no movement and no flip = identity state**; rejection of wall *suppression*
+> (one object must not have two resolution paths); determinism and the single shared rules source
+> (ADR-0002, ADR-0004, architecture-0001).
+> Current truth source: `docs/decisions/0008-phase-solidity-entry-only.md` + `docs/game-design.md` V0.4 §3.1
+> + `docs/architecture.md` V0.4 §6.
 - **Date:** 2026-10-14
 - **Deciders:** Game Designer (Agent 1), Orchestrator (Agent 0); Playtest Analyst confirmation pending Stage 2
 

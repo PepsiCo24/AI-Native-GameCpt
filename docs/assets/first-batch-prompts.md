@@ -28,7 +28,7 @@
 |---|---|---|
 | **P0 — blocks Stage 2 prototype** | A-03 (Echo Spirit), A-04 (Phase A bg), A-05 (Phase B bg), A-06 `goal.png` only | The readability test cannot run without these. Everything else can wait. |
 | **P1 — needed before UI polish (Stage 4+)** | A-07 (UI kit) | Prototype runs on CSS DEV PLACEHOLDERs until then. |
-| **P2 — marketing / late mechanics** | A-01 (cover), A-02 (logo), A-06 `portal_a/b.png` | Cover/logo block no gameplay; portals are first used at L36. |
+| **P2 — marketing / late mechanics** | A-01 (cover), A-02 (logo), A-06 `portal_a/b.png` | Cover/logo block no gameplay; portals are first used at **L11** (ADR-0009 D3; pre-D3 sheet said L36) — and are optional Stage-5 polish only (manifest V0.5.2). |
 
 ### Delivery checklist (11 files minimum)
 
