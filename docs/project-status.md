@@ -1049,7 +1049,30 @@ and a path must be quiescent before dispatch.**
    hand) + UA-0010 (Entry-3 verdicts from the 21 on-disk frames, 51 CSS measured pitch governing per item 60's
    ruling). Milestone gate list restated: QA-005c green (local ×3 + CI) → UA-0010 verdicts → milestone DG round
    (frames import to `docs/evidence/entry3-portal/`, §6 mirrors for the chain + LV-007E + R5 + ITER entries,
-   three deferred staleness refreshes) → main → Pages gets 11 levels. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+   three deferred staleness refreshes) → main → Pages gets 11 levels.
+
+67. **UA-0010 RETURNED JUDGED — Entry-3 six of six PASS; the portal's spec story is now closed on pixels, and
+   the merge gate list shrinks to TWO: QA-005c green + milestone DG round.** Disk-verified before merge (single
+   file `35b3df3`): every clause verdict carries cited pixel facts (pair-identity 0 deep-ink mismatches; the
+   settled `(2,1)` = day-1 `(2,1)` at **0 px** on BOTH viewports — the "folded space, not glitch" clause has an
+   arithmetic proof, not a vibe; single-disc constant 90×90 bbox arc across all 11 transit frames, settled by
+   t=202.7 ms inside the 220 ms budget with **0 ms added lock**; greyscale ink-mass separation door 57.8 % vs
+   portal 13.5 % = the class-vs-class question answered with hue removed, exactly as the pre-written clause
+   demanded; the R-P5 strip portal-free negative PASSed in BOTH probes as pre-registered). The **measured 51 CSS
+   px governs** at the band floor — E3-2 was judged at the number the frame record produced, not the number the
+   dispatch remembered; the pass-1 channel defect stays recorded as SUPERSEDED in the log (the honesty rails
+   worked on their own author's file). N-2 frozen instance `L1–L11 cleared · L 11: moves 4` signed on-board; the
+   "provisional until M2 integration" clause discharged empirically with published values UNCHANGED (offline
+   contrast math met reality and nobody had to move a token); Entry-1 portal row + Entry-2 row 7 became pointers
+   with DEFERRED wording kept as history. One observation recorded-not-opened (empty plate band under 7×3 boards
+   at both classes — no clause rests on it). **UA-0010 owed nothing: zero FAIL, zero CONDITIONAL, zero fix paths,
+   zero asset requests — the M2 debut needed no design change, the strongest statement the instrument can make
+   about a new mechanic's first pixels.** Merge `618c76f`. Remaining before main: (a) QA-005c (live) — the
+   named-roster fixes + ×3 consecutive idle zero-retry greens + CI green = the true item-③ closure; (b) milestone
+   DG round — `docs/evidence/entry3-portal/` import (21 PNGs + 3 logs, verdict-cited), §6/ITER mirrors for chain
+   + LV-007E + R5-VAL + UA-0010, three deferred staleness refreshes (README QA-005-in-flight line, playtest-log
+   V0.5 wording, iteration header label), submission-doc re-versioning; THEN main → Pages gets 11 levels →
+   G1/G6 evidence complete. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
