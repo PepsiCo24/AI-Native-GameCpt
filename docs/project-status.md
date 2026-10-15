@@ -1106,7 +1106,40 @@ and a path must be quiescent before dispatch.**
    claim the 11-level ladder is live until the main merge itself)** → main → Pages publishes 11 levels. Live:
    DG-004b = 1/3; user lanes unchanged (revision art req-08/11, cohort testers — the instrument `df353a0` is
    frozen, the runbook's §2-item-4 frames are ALREADY captured in the entry3 mobile trio per the double-use
-   ruling). Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+   ruling).
+
+69. **DG-004b MERGED (`79d1258`) — and the CI roster has CONVERGED to exactly two named survivors; two tickets
+   dispatched (live 2/3).** DG disk-verified by this office: **24/24 artefacts byte-identical** (sha256 recomputed
+   vs committed blobs), territory = the four declared paths ONLY (my first grep's BRE `$\|` alternation silently
+   no-oped under BSD grep and screamed "outside-owned=2" — clean ERE re-run read TRUE 0; false alarm owned here and
+   recorded, the builders' claim was honest), hygiene: orch-smoke only in the evidence README's lineage note, zero
+   absolute paths, tense discipline held everywhere (develop-carries-ladder vs main-carries-ten), and ITER-0016
+   states plainly the CI-green half is NOT landed — **the docs did not pretend the gate closed.** DG also caught
+   THIS office's phantom citation: item 67 wrote the UA-0010 merge as `618c76f` — `git cat-file` proves it NEVER
+   EXISTED; the real merge is `bc332a0` (DG's own docs used the true SHAs `bc332a0`/`35b3df3`; correction dated
+   here, item 67's historical text left as-is — same law we hold every lane to: recorded, not erased). **CI
+   post-QA-005c, BOTH rounds (`6fd1a3d`, `02c99d2` trees): 84/2, the IDENTICAL two named tests both rounds,
+   retries did not save either** — `transient:142` (P1, `report.onset` null even on the enlarged window) +
+   `mobile:208` (R-T4: the bounded `expectMoves` poll ran and exhausted 2000 ms — the gesture never committed on
+   that runner AT ALL). Roster trajectory **7→4→3→2×2**: the actor-flake family, the walk wall-clock, P2 and every
+   intermittent member died in the cloud exactly as QA-005c fixed them — corroboration from the independent
+   arbiter; what remains is cloud-PHYSICS-shaped, not game-shaped (local: 86/0×2 at the merge tree + ×4 on the
+   branch + repeat-each 60/60 & 10/10). **QA-005d** dispatched (tests/** only): prove-or-kill P1's sampling-limit
+   hypothesis (90 ms arc vs measured ~117 ms cloud frame grid → possibly unrenderable-by-camera on that machine;
+   honest fix = runner-aware ASSERTION with 60 Hz teeth fully preserved + named resolve-limit in output/README,
+   never deletion), R-T4 via in-page touch/pointer arrival counters (test-side observer only — src untouched) to
+   locate the drop between CDP synthesis and Phaser's pipeline; **CI-as-measurement-channel granted**: their branch
+   runs as PRs on develop's `pull_request` trigger, ≤3 rounds, and I merge ONLY from a fully green PR run — which
+   doubles as the milestone's pre-registered cloud proof. **LV-009-A** dispatched (authoring phase ONLY): the
+   L12–L15 block as OUT-OF-TREE candidates under `candidates/**` measured against every frozen pre-registered law
+   (block-tail `D_exec(L11–L15) > 13.64` clause, below-OFFERED early members, shipped-mechanics-only fence — no
+   new mechanics/policy edits/schema bends; any missing L12+ par bound goes back as a NAMED GAP for GD approval,
+   not a silent invention), dataset STAYS 11 (the mutation-proved pin + freshness mirror must not move mid-gate),
+   and it runs ZERO e2e to keep the machine quiet for QA's timing proofs. Milestone gate now reads as ONE term:
+   **QA-005d's green PR → merge → main → Pages publishes 11 levels** → post-merge DG-004c syncs the ~5
+   future-scoped sentences → LV-009 INTEGRATION ticket after (dataset add + one-line pin + sidecar regen + the
+   door×portal combo's UA capture round if the law pre-writes one). User lanes unchanged: req-08/11 revision art,
+   the frozen `df353a0` cohort, P9 demo video. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
