@@ -38,7 +38,7 @@ import { fileURLToPath } from "node:url";
 import type { Coord, Level } from "@/core/level";
 import { LevelSchema, validateLevel } from "@/core/level";
 import { applyMove, isLegalMove } from "@/core/rules";
-import { doorAt, isClosedDoorAt } from "@/core/rules/solid";
+import { doorAt, isClosedDoorAt, portalExit } from "@/core/rules/solid";
 import { explore, forEachParRoute, solve } from "@/core/solver/bfs";
 import type { ReachableGraph } from "@/core/solver/bfs";
 import type { Direction } from "@/core/state/move";
@@ -200,6 +200,11 @@ export function tileIs(tile: Coord, at: Vec): boolean {
   return tile[0] === at.x && tile[1] === at.y;
 }
 
+/** Manhattan distance between two tiles — the "non-adjacent arrival" measurement. */
+export function manhattan(a: Vec, b: Vec): number {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
+
 /** `[x, y]` → `Vec` — shared with the helpers that need a level coordinate. */
 export { vecOf };
 
@@ -323,6 +328,126 @@ export function cheapestDoorFixtures(ref: LevelRef): {
 /** Levels that ship at least one door — the dataset's latch levels (L6–L11). */
 export function levelsWithDoors(refs: readonly LevelRef[]): readonly LevelRef[] {
   return refs.filter((ref) => ref.level.doors.length > 0);
+}
+
+/* ──────────────────────── portal fixtures (M2 crossing) ───────────────────── */
+
+/**
+ * One portal-crossing behaviour the level's **state graph** actually reaches.
+ *
+ * Portal crossing is phase-gated (`PortalDef.activePhase`, `docs/level-design.md`
+ * §1, ADR-0008 clause 6) and entry-triggered only, so two claims have to be made
+ * about the shipped board: *somewhere an entry onto a portal end really lands on
+ * the far end*, and *somewhere an entry onto the same end in the other phase is
+ * an ordinary step*. Both are existence claims about reachable states — found
+ * with `explore()` (the solver's own BFS), never typed into a spec. The landing is
+ * the core's own answer (`applyMove`), so a rules change cannot leave a stale
+ * expectation behind.
+ */
+export interface PortalFixture {
+  /** `portal-teleport` — an ACTIVE end was entered; `portal-inactive-step` — the phase gate was off. */
+  readonly kind: "portal-teleport" | "portal-inactive-step";
+  /** Shortest legal route from the level's start to {@link player}. */
+  readonly route: readonly Direction[];
+  /** The tile the press starts from. */
+  readonly player: Vec;
+  /** The phase the press happens in. */
+  readonly phase: Phase;
+  readonly direction: Direction;
+  /** The clicked tile — `step(player, direction)`, i.e. the portal end that was entered. */
+  readonly clicked: Vec;
+  readonly portalId: string;
+  /** The far end of the pair (the tile a teleport lands on). */
+  readonly exit: Vec;
+  /** `applyMove`'s landing tile for this press — the single truth source. */
+  readonly arrival: Vec;
+  /** BFS depth — used to pick the cheapest fixtures for the UI walk. */
+  readonly depth: number;
+}
+
+/**
+ * Every reachable portal-crossing fixture for `ref`, shallowest first.
+ *
+ * A fixture exists for a press whose *clicked* tile is an end of some portal —
+ * the metric definition of `docs/architecture.md` §8 ("the clicked tile of a move
+ * is `state.player + dirDelta`; a portal may move the player further"). The kind
+ * is decided by the portal's `activePhase` against the state's phase, and the
+ * arrival comes from `applyMove`, so "no fixture" means the level genuinely cannot
+ * show that behaviour.
+ */
+export function portalFixtures(ref: LevelRef): readonly PortalFixture[] {
+  if (ref.level.portals.length === 0) return [];
+  const graph = explore(ref.level);
+  const found: PortalFixture[] = [];
+
+  graph.nodes.forEach((state, index) => {
+    const mask = graph.legalMask[index] ?? 0;
+    DIRECTIONS.forEach((direction, bit) => {
+      if ((mask & (1 << bit)) === 0) return; // refused — not a crossing
+      const clicked = step(state.player, direction);
+      const portal = ref.level.portals.find((candidate) =>
+        candidate.pair.some((end) => end[0] === clicked.x && end[1] === clicked.y),
+      );
+      if (portal === undefined) return;
+      const active = portal.activePhase === state.phase;
+      found.push({
+        kind: active ? "portal-teleport" : "portal-inactive-step",
+        route: routeToNode(graph, index),
+        player: state.player,
+        phase: state.phase,
+        direction,
+        clicked,
+        portalId: portal.id,
+        exit: portalExit(portal, clicked),
+        arrival: applyMove(ref.level, state, move(direction)).player,
+        depth: graph.depths[index] ?? 0,
+      });
+    });
+  });
+
+  found.sort((a, b) => a.depth - b.depth);
+  return found;
+}
+
+/**
+ * The cheapest crossing fixtures for a level — what the UI walk drives.
+ *
+ * `pair` is the **discriminating pair**: the same press (same start tile, same
+ * direction, same clicked portal end) in two different phases, where the gate
+ * alone decides between "lands on the far end" and "lands where you stepped".
+ * Position cannot explain the two verdicts; only `activePhase` can.
+ */
+export function cheapestPortalFixtures(ref: LevelRef): {
+  readonly teleport: PortalFixture | null;
+  readonly inactive: PortalFixture | null;
+  readonly pair: { readonly teleport: PortalFixture; readonly inactive: PortalFixture } | null;
+} {
+  const all = portalFixtures(ref);
+  const teleport = all.find((fixture) => fixture.kind === "portal-teleport") ?? null;
+  const inactive = all.find((fixture) => fixture.kind === "portal-inactive-step") ?? null;
+
+  let pair: { teleport: PortalFixture; inactive: PortalFixture } | null = null;
+  for (const candidate of all) {
+    if (candidate.kind !== "portal-teleport") continue;
+    const mirror = all.find(
+      (other) =>
+        other.kind === "portal-inactive-step" &&
+        other.portalId === candidate.portalId &&
+        other.direction === candidate.direction &&
+        sameVec(other.clicked, candidate.clicked),
+    );
+    if (mirror !== undefined) {
+      pair = { teleport: candidate, inactive: mirror };
+      break;
+    }
+  }
+
+  return { teleport, inactive, pair };
+}
+
+/** Levels that ship at least one portal — the dataset's M2 levels (L11). */
+export function levelsWithPortals(refs: readonly LevelRef[]): readonly LevelRef[] {
+  return refs.filter((ref) => ref.level.portals.length > 0);
 }
 
 /**

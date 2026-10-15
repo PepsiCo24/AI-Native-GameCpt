@@ -659,9 +659,11 @@ describe("registry transition wiring — §6.2 mixes at mid-progress (RV m-3)", 
   });
 
   it("portal: the swirl exists only while the portal is active — a latent M10 is pinned anyway", () => {
-    // No shipped level carries a portal (L6–L10 assert `portals: []` elsewhere in the
-    // suite), so this is the only place the wiring can be gated at all: M2 shipping a
-    // portal level without this test would ship a dead §3.1c primary channel.
+    // L11 is the first shipped level that carries a portal (R-003 unlocked it; until then
+    // "L1–L10 stay portal-free" was asserted elsewhere in the suite), but this fixture is
+    // still the only place the wiring is gated in isolation: it builds its own board, so a
+    // painter regression fails here whatever the registry ships — M2 shipping a portal
+    // level without this test would ship a dead §3.1c primary channel.
     const portalLevel = makeLevel({
       player: [0, 0],
       goal: [4, 4],

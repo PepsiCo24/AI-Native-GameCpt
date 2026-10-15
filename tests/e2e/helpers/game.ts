@@ -89,6 +89,42 @@ export async function settle(page: Page, ms = 320): Promise<void> {
   await waitForFrames(page, 2);
 }
 
+/* ─────────────────────────── error channels ─────────────────────────────── */
+
+/**
+ * The two "the page is unhappy" channels, collected per page from the moment the
+ * watch is installed: `console.error` lines and uncaught exceptions
+ * (`pageerror`). Both lists are **live** (append-only) — assert them after the
+ * walk you care about, with {@link expectNoPageErrors}.
+ *
+ * Only `error`-level console output is collected: Phaser logs `info`/`warn` on a
+ * normal boot, and treating those as failures would make the probe unusable.
+ */
+export interface PageErrorWatch {
+  /** `console.error` texts seen so far, in order. */
+  readonly consoleErrors: readonly string[];
+  /** Uncaught page exception messages seen so far, in order. */
+  readonly pageErrors: readonly string[];
+}
+
+export function watchErrors(page: Page): PageErrorWatch {
+  const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => {
+    pageErrors.push(error.message);
+  });
+  return { consoleErrors, pageErrors };
+}
+
+/** Assert both channels stayed empty, with the label that says which walk this was. */
+export function expectNoPageErrors(watch: PageErrorWatch, label: string): void {
+  expect(watch.consoleErrors, `${label}: console.error lines`).toEqual([]);
+  expect(watch.pageErrors, `${label}: uncaught page errors`).toEqual([]);
+}
+
 /* ────────────────────────────── HUD reads ───────────────────────────────── */
 
 export interface HudState {
@@ -164,6 +200,14 @@ export function phaseLabelOf(phase: Phase): string {
 
 export function phaseGlyphOf(phase: Phase): string {
   return theme(phase).hud.phaseGlyph;
+}
+
+/**
+ * The HUD's `data-phase` as the core's `Phase` — the same narrowing `actorCell`
+ * uses. The shell only ever writes `"A"` / `"B"`, so anything else is phase A.
+ */
+export function phaseOf(state: HudState): Phase {
+  return state.phase === "B" ? "B" : "A";
 }
 
 /* ─────────────────────────────── input ──────────────────────────────────── */

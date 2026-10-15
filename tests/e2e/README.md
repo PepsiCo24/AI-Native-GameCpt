@@ -46,26 +46,92 @@ Evidence (QA-005 run):
 | `npm run levels` | `10/10 level files ok · 10/10 negative cases rejected` → **PASS** |
 | `tsc --noEmit` | clean |
 
+### QA-005b — the registry re-pin (10 → 11), and the two literals it cannot reach
+
+R-003 (`f484e23`) unlocked **L11** in the playable registry (11 level files, frozen
+board). The standing suite was written against the 10-level registry, and at
+`f484e23` it ran **76 passed / 4 failed** (own vite, `--strictPort`):
+
+| failing expectation | expected | received | resolved by |
+|---|---|---|---|
+| `playthrough.spec.ts:47` | `[1..10]` | `[1,2,3,4,5,6,7,8,9,10,11]` | ❌ **hard-typed literal** — no constant can reach it |
+| `playthrough.spec.ts:97` | `"原型结束 / Prototype over"` | `"L 10 cleared"` | ✅ `EXPECTED_LEVEL_COUNT` (L10 is no longer last) |
+| `playthrough.spec.ts:118` | `"L 11"` | `"L 10"` | ✅ `EXPECTED_LEVEL_COUNT` (the chain now advances L10 → L11) |
+| `latch-door.spec.ts:60` | `[6..10]` | `[6,7,8,9,10,11]` | ❌ **hard-typed literal** — no constant can reach it |
+
+`EXPECTED_LEVEL_COUNT` was re-pinned **10 → 11** (`helpers/levels.ts`, + prose), which
+aligns the two *derived* failures. The other two compare a **hand-typed dataset
+inventory** against the discovered set, so the number alone cannot move them — and
+they are the only two failures left at this tip:
+
+```
+84 passed · 2 failed   (own vite on :5213, PS_E2E_BASE_URL, exit 1)
+  latch-door.spec.ts:59 › … the dataset's latch levels are exactly the levels that ship doors
+  playthrough.spec.ts:46 › … the shipped dataset is 11 levels and every one is solvable
+```
+
+The one-line fix for each — deliberately **not** applied here: `playthrough.spec.ts`
+sat inside another agent's live edit boundary (R-004b), and neither literal was in
+this task's granted file list, so the dispatch's rule ("if any cannot [be resolved
+through the constant], STOP and report instead of touching the file") was followed for
+both. See the QA-005b return contract, BLOCKER-1.
+
+```diff
+-    expect(REFS.map((ref) => ref.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
++    expect(REFS.map((ref) => ref.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+-    expect(DOOR_LEVELS.map((ref) => ref.id)).toEqual([6, 7, 8, 9, 10]);
++    expect(DOOR_LEVELS.map((ref) => ref.id)).toEqual([6, 7, 8, 9, 10, 11]);
+```
+
+**Known gap this exposes (QA-owned, next round).** These two assertions are typed
+lists, so the README's own promise that "adding a level needs no test edit" is not
+true for them — the count *and* the two inventories have to be re-pinned by hand.
+Deriving them from the discovered set (e.g. `refs.map((ref) => ref.id)`) would make
+the *arithmetic* self-maintaining while keeping the deliberate "this is the dataset"
+pin in one place.
+
+Evidence (QA-005b run, worktree `qa-005b-portal-e2e` @ `f484e23` + this branch):
+
+| check | result |
+|---|---|
+| `tsc --noEmit` | 0 errors |
+| `vitest run` | **23 files · 452 passed · 3 skipped** (455) — prose-only edit, registry-layers stayed green |
+| `npm run levels` | `11/11 level files ok · 10/10 negative cases rejected by name` → **PASS** |
+| `playwright test --list` | **86 tests in 8 files** (was 80 in 7) |
+| `playwright test` (own vite :5213) | **84 passed · 2 failed** — the two literals above, nothing else |
+| `test.fail()` pins | both ride as expected failures (green semantics): `input-replay.spec.ts:97`, `playthrough.spec.ts:147` |
+
+**KNOWN DEFER — `playthrough.spec.ts` header prose.** The file's doc-comment still
+describes itself as "**the L1–L10 par-route playthrough**" (lines 1–20: "ten levels
+reach the board", "L1 → L10 with the win dialog's own `Next`") and line 133's comment
+still says "Reaching L10's win … is the whole unlock claim". Both are prose, no
+assertions, and `playthrough.spec.ts` sat inside another agent's live edit boundary
+when this branch was cut — so QA-005b did **not** touch them. Recorded here so the
+next QA round re-words them alongside the two literal fixes above.
+
 ---
 
-## 2. Inventory — 75 cases
+## 2. Inventory — 86 cases
 
 | file | cases | project | what it pins |
 |---|---:|---|---|
-| `playthrough.spec.ts` | 14 | desktop | L1–L10 par route → win dialog; the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the L1→L10 unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; **`test.fail()` pin** for the stale end-panel copy |
-| `refusal.spec.ts` | 20 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one |
-| `latch-door.spec.ts` | 12 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all five latch levels, in-core and through the UI |
+| `playthrough.spec.ts` | 15 | desktop | L1–L11 par route → win dialog; the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the L1→L11 unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; **`test.fail()` pin** for the stale end-panel copy |
+| `refusal.spec.ts` | 22 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one |
+| `latch-door.spec.ts` | 14 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all six latch levels, in-core and through the UI |
+| `portal.spec.ts` | 6 | desktop | M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
+| `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1: one press/release cycle in one frame window is exactly one move, two are **five** (**`test.fail()` pin**), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
 | `transient.spec.ts` | 6 | desktop | the resampling channel is live; **P1** the 90 ms refusal arc; **P2** the press beat's occlusion proof (timing inequality + pixel-measured geometry) and the bounded arrival transient |
 | `mobile.mobile.spec.ts` | 11 | mobile | 56/72 px bars and the board filling the play area between them; whole-CSS-px square cells above the 40 px floor; ≥ 44×44 buttons with ≥ 8 px gaps; tap = move; distant tap = non-input; swipe ≥ 24 px = move on the dominant axis; R-T6 ring never under touch; R-T5 hint at a 280×600 viewport and the swipe fallback; a touch-only win + dialog `Next`; touch undo |
 
 **Every expectation is derived from production.** Routes, phases, refused
-directions, door states and latch fixtures come from `solve()` /
-`forEachParRoute()` / `explore()` / `isLegalMove` / `applyMove` / `doorFixtures()`
-(`helpers/levels.ts`), the geometry from the renderer's own `computeLayout`, and
-colours from `theme(phase)` tokens. No route, tile, colour or pixel count is typed
-into a spec; a level edit that removes a behaviour fails the run instead of leaving
-a stale fixture behind.
+directions, door states, latch fixtures and portal crossings come from `solve()` /
+`forEachParRoute()` / `explore()` / `isLegalMove` / `applyMove` / `doorFixtures()` /
+`portalFixtures()` (`helpers/levels.ts`), the geometry from the renderer's own
+`computeLayout`, and colours from `theme(phase)` tokens. No route, tile, colour or
+pixel count is typed into a spec; a level edit that removes a behaviour fails the run
+instead of leaving a stale fixture behind. (Two dataset-inventory *literals* are the
+known exception — see §1.)
 
 ---
 
@@ -115,9 +181,12 @@ so the pin cannot be "fixed" by breaking the ordinary path.
 ### TICKET-QA-005-2 — the end panel still says the prototype ends at L5
 
 `hud.ts` builds the last level's dialog body as `L1–L5 cleared · L 10: moves 9`.
-That was true when the playable slice was five levels; the registry now ships ten.
-Pinned in `playthrough.spec.ts` (`expect(won.dialogBody).not.toContain("L1–L5")`).
-Owner: the HUD writer (UI/Art spec authority, Gameplay implementation).
+That was true when the playable slice was five levels; the registry now ships
+eleven (so the pin walks **L11** since the QA-005b re-pin, and the body it rejects
+reads `… · L 11: moves 4`). Pinned in `playthrough.spec.ts`
+(`expect(won.dialogBody).not.toContain("L1–L5")`), which still rides as a
+`test.fail()`. Owner: the HUD writer (UI/Art spec authority, Gameplay
+implementation).
 
 ---
 
@@ -328,12 +397,17 @@ Two lessons that are load-bearing for anyone extending the suite:
 * **No reduced-motion emulation.** The transient protocol needs the flip arcs and the
   press beat to be visible; `Playwright`'s `reducedMotion` is deliberately not set, and
   `FLIP_TIMING.reduced` (`total: 60`) is not what these tests measure.
-* **Adding a level** needs no test edit: the dataset count, every par route, every
-  refusal and every latch fixture are recomputed from the shipped files. Adding a
-  *door level* outside L6–L10 will fail `latch-door.spec.ts`'s "the latch levels are
-  exactly the levels that ship doors" test on purpose — that assertion is the
-  dataset's own inventory, and it should be updated deliberately.
+* **Adding a level** needs no test edit *for the behaviour claims*: every par route,
+  every refusal, every latch fixture and every portal crossing is recomputed from the
+  shipped files. Three **typed inventories** do not follow: `EXPECTED_LEVEL_COUNT`
+  (`helpers/levels.ts`), `playthrough.spec.ts:47` and `latch-door.spec.ts:60` — L11
+  proved it, because the meta-test "the shipped dataset is N levels" and "the latch
+  levels are exactly the levels that ship doors" compare a hand-typed list against the
+  discovered set. Re-pin all three on purpose, in one commit, and re-word the
+  `playthrough.spec.ts` header while you are there (§1's KNOWN DEFER).
 * **A new object class** (a shipped portal, say) belongs in `tests/unit/**` for its
   painter and here only for the rule-level consequence a player can observe. Portals
-  currently ship in no level, so this suite says nothing about them rather than
-  inventing a level to test.
+  ship at **L11** since R-003, and `portal.spec.ts` pins exactly that rule-level
+  surface — the crossing, the phase gate, the flip cadence and the error channels —
+  while the swirl/echo painting stays in
+  `tests/unit/renderer-registry-layers.test.ts` and `renderer-switch-portal-painters.test.ts`.
