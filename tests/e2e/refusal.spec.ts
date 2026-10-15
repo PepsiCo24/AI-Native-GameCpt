@@ -48,6 +48,13 @@ test.describe("illegal move ⇒ no move, no flip, no position change", () => {
     test(`L${String(ref.id)} — every refused direction freezes the triple state, then the level still finishes`, async ({
       page,
     }) => {
+      // CI-envelope sizing (QA-005c): this walks a whole level's refusal surface
+      // through the real browser and probes the canvas after every refusal. On the
+      // 2-core software-GL CI runner it exceeded the default 30 s wall clock
+      // (measured: L3/L4/L9 at 30.8 s, project-status item 66) while it runs in
+      // ~5 s locally. Wall clock, never an assertion: every claim below is intact.
+      test.setTimeout(90_000);
+
       await installPixelReadback(page);
       await openLevel(page, levelUrl(ref.id));
       const geometry = await boardGeometry(page, ref.level);

@@ -135,6 +135,13 @@ test.describe("par route → win → HUD contract", () => {
   test(`the unlock chain runs L1 → L${String(EXPECTED_LEVEL_COUNT)} through the win dialog's own Next button`, async ({
     page,
   }) => {
+    // CI-envelope sizing (QA-005c): one test drives the whole ladder — 11 par
+    // routes, 11 HUD reads and 10 `Next` clicks. On the 2-core software-GL CI
+    // runner that exceeded the default 30 s wall clock (measured 30.9 s,
+    // project-status item 66) while it runs in ~12 s locally. The budget is wall
+    // clock, never an assertion: every claim below is unchanged.
+    test.setTimeout(120_000);
+
     await openLevel(page, levelUrl(1));
 
     for (const ref of REFS) {
