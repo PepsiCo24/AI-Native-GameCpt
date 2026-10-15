@@ -64,6 +64,18 @@
  * - `noUnrecoverableOk` — the `docs/level-design.md` §4 invariant: from **every**
  *   reachable state the goal is still reachable. Computed exactly (reverse
  *   reachability from the goal states over the reachable graph), not sampled.
+ *
+ * ── ROUTE ENUMERATION: PRUNING + ITS OWN BUDGET (n-11) ───────────────────────
+ * {@link forEachParRoute} walks move sequences of a fixed length; its cost is
+ * exponential in `par` unless the walk knows which prefixes can still complete.
+ * It does: every child is admitted only if a goal is reachable from it in exactly
+ * the remaining number of moves ({@link forEachParRouteStats}, exact memoized
+ * recursion over the shipped rules). The route set is therefore *unchanged*
+ * (pinned by `tests/solver/route-budget.test.ts`, pruned vs exhaustive), the cost
+ * becomes `routes × par`-shaped, and the enumeration has its **own** budget key
+ * (`maxRouteVisits`) instead of borrowing the state-exploration one — a level
+ * that exceeds it raises {@link RouteEnumerationError} with the numbers instead of
+ * reporting a partial count.
  */
 
 import type { Level } from "@/core/level";
@@ -96,6 +108,24 @@ export class StateSpaceExplosionError extends Error {
 export interface SolverOptions {
   /** Overrides the default budget (`stateSpaceBound(level)`). Never silently ignored. */
   readonly maxStates?: number;
+  /**
+   * Independent budget for **route enumeration** (n-11): the number of work units
+   * {@link forEachParRoute} may spend, defaulting to
+   * {@link PAR_ROUTE_VISIT_CAP}. Deliberately a different key from `maxStates`:
+   * the two searches have different growth laws (states are bounded by §6.3,
+   * routes grow with `par`), so one budget could not honestly cover both — before
+   * n-11 a caller's `maxStates` silently capped the route walk, and a long-par
+   * board died as a state-space complaint.
+   */
+  readonly maxRouteVisits?: number;
+  /**
+   * Disables the n-11 **lookahead pruning** of {@link forEachParRoute}
+   * (default `true`). It exists so the equivalence between the pruned and the
+   * exhaustive walk is *machine-checkable* (`tests/solver/route-budget.test.ts`
+   * compares the two route sets); the shipped path always prunes, and turning
+   * pruning off can only make the walk slower, never different.
+   */
+  readonly pruneParRoutes?: boolean;
 }
 
 /**
@@ -438,22 +468,61 @@ export function solve(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Absolute cap on the number of DFS nodes a route enumeration may visit
- * (`≈ 4^(par+1)/3`). Exceeding it raises instead of reporting a partial count —
- * the same honesty rule as {@link StateSpaceExplosionError}. `par ≤ 10` levels
- * stay far below (4^11/3 ≈ 1.4 M).
+ * Absolute cap on the number of **work units** a route enumeration may spend
+ * (default for `maxRouteVisits`, n-11). A unit is one DFS node entered *or* one
+ * lookahead probe ({@link forEachParRouteStats}); exceeding it raises instead of
+ * reporting a partial count — the same honesty rule as
+ * {@link StateSpaceExplosionError}, and the budget is now the enumeration's
+ * **own** (before n-11 it read `maxStates`, the state-exploration key).
  */
 export const PAR_ROUTE_VISIT_CAP = 2_000_000;
 
 /** Raised instead of silently reporting a partial route count. */
 export class RouteEnumerationError extends Error {
-  constructor(level: Level, par: number, cap: number) {
+  /** The budget that was hit. */
+  readonly cap: number;
+  /** Work units spent when the budget was hit (always `> cap`). */
+  readonly visits: number;
+  /** The `par` being enumerated. */
+  readonly par: number;
+  readonly levelId: number;
+
+  constructor(level: Level, par: number, cap: number, visits: number) {
     super(
-      `route enumeration for level ${level.id} at par=${par} exceeded the visit budget (${cap}) — ` +
-        `refusing to report partial parRoutes/embedRoutes counts`,
+      `route enumeration for level ${level.id} at par=${par} exceeded its own visit budget ` +
+        `(${visits} work units > maxRouteVisits ${cap}) — refusing to report partial ` +
+        `parRoutes/embedRoutes counts. The budget is not auto-raised and the walk is not ` +
+        `truncated: re-run with an explicit larger maxRouteVisits (the remaining demand is ` +
+        `not knowable without completing the enumeration), or re-author the board. Note that ` +
+        `with the n-11 lookahead pruning the cost is proportional to (routes × par); a blow-up ` +
+        `here means the board's shortest-route set is itself too large to enumerate.`,
     );
     this.name = "RouteEnumerationError";
+    this.cap = cap;
+    this.visits = visits;
+    this.par = par;
+    this.levelId = level.id;
   }
+}
+
+/**
+ * What one {@link forEachParRouteStats} walk cost — reported, never inferred.
+ *
+ * `visits` counts DFS nodes (the classic route-walk cost); `lookaheadVisits`
+ * counts the pruning probes (memo hits included, because they are work); the
+ * budget applies to their **sum**, so a level that spends its whole budget on
+ * lookahead is stopped just as loudly as one that enumerates endlessly.
+ */
+export interface ParRouteEnumerationStats {
+  readonly par: number;
+  /** Distinct legal move sequences of exactly `par` moves that end on the goal. */
+  readonly routes: number;
+  readonly visits: number;
+  readonly lookaheadVisits: number;
+  /** Candidate children dropped by the lookahead because they cannot complete (n-11). */
+  readonly prunedChildren: number;
+  readonly visitBudget: number;
+  readonly pruning: boolean;
 }
 
 /** One arrival on an enumerated route (the start state is not an arrival). */
@@ -481,7 +550,7 @@ export type ParRouteVisitor = (route: readonly ArrivalRecord[]) => void;
 /**
  * Enumerate every distinct legal move sequence of exactly `par` moves that ends
  * on the goal, in depth-first order, and hand each one to `visit`.
- * Returns the number of routes.
+ * Returns the number of routes ({@link forEachParRouteStats} returns the cost).
  *
  * A "route" is a direction sequence (= a path; the direction sequence determines
  * the visited tiles). `par` is not checked against the solver's shortest
@@ -494,15 +563,83 @@ export function forEachParRoute(
   visit: ParRouteVisitor,
   options: SolverOptions = {},
 ): number {
-  const cap = options.maxStates ?? PAR_ROUTE_VISIT_CAP;
+  return forEachParRouteStats(level, par, visit, options).routes;
+}
+
+/**
+ * {@link forEachParRoute} plus the cost of the walk (n-11).
+ *
+ * ── THE PRUNING (why it cannot change the route set) ─────────────────────────
+ * At every walk node `(s, d)` and for each legal child `s' = applyMove(s, dir)`
+ * the walk asks one exact question: **can a goal be reached from `s'` in
+ * exactly `par − d − 1` moves?** — {@link canFinishExactly}, a memoized exact
+ * recursion over the shipped `isLegalMove` / `applyMove`. A child that cannot
+ * complete is dropped; every child that can completes *some* enumerated route,
+ * so the walk visits exactly the prefixes of the routes it reports. The pruned
+ * and the exhaustive walk therefore produce the **same route set** (pinned by
+ * `tests/solver/route-budget.test.ts`, which compares the two sets on the
+ * shipped levels and on a synthetic multi-route board), and pruning can only
+ * remove work, never a route.
+ *
+ * Why this is the honest fix for n-11: without the lookahead the walk's cost is
+ * exponential in `par` *regardless of how many routes exist* (an open 7 × 7 board
+ * at `par = 12` dies at the 2 M budget while its 924 routes are trivially
+ * enumerable). With it, `visits ≤ routes × par + 1` — the cost of a walk that
+ * must hand every route to the visitor — plus the memoized lookahead, whose table
+ * is bounded by `par × (states reachable within par moves)`. A board that still
+ * blows the budget therefore has a shortest-route set that is itself too large to
+ * enumerate, which is a **loud** `RouteEnumerationError`, never a partial count.
+ *
+ * The lookahead is portal-safe by construction (it walks real edges, so a
+ * teleport that shortens the distance to the goal is seen as the move it is);
+ * a distance/parity bound would *not* be sound once M2 ships, which is why the
+ * exact recursion — not the cheaper arithmetic bound — is the shipped prune.
+ */
+export function forEachParRouteStats(
+  level: Level,
+  par: number,
+  visit: ParRouteVisitor,
+  options: SolverOptions = {},
+): ParRouteEnumerationStats {
+  const pruning = options.pruneParRoutes ?? true;
+  const cap = options.maxRouteVisits ?? PAR_ROUTE_VISIT_CAP;
   const start = toSearchState(initialState(level));
   const path: ArrivalRecord[] = [];
-  let visited = 0;
+  const memo = new Map<string, boolean>();
+  let visits = 0;
+  let lookaheadVisits = 0;
+  let prunedChildren = 0;
   let routes = 0;
 
+  /** One work unit = one DFS node or one lookahead probe; over budget = raise. */
+  const charge = (): void => {
+    if (visits + lookaheadVisits > cap)
+      throw new RouteEnumerationError(level, par, cap, visits + lookaheadVisits);
+  };
+
+  const canFinishExactly = (state: SearchState, moves: number): boolean => {
+    lookaheadVisits += 1;
+    charge();
+    if (moves === 0) return isGoal(level, state);
+    const key = `${hashState(state)}|${moves}`;
+    const cached = memo.get(key);
+    if (cached !== undefined) return cached;
+    let finishable = false;
+    for (const direction of DIRECTIONS) {
+      const action = move(direction);
+      if (!isLegalMove(level, state, action)) continue;
+      if (canFinishExactly(applyMove(level, state, action), moves - 1)) {
+        finishable = true;
+        break;
+      }
+    }
+    memo.set(key, finishable);
+    return finishable;
+  };
+
   const walk = (state: SearchState, depth: number): void => {
-    visited += 1;
-    if (visited > cap) throw new RouteEnumerationError(level, par, cap);
+    visits += 1;
+    charge();
     if (depth === par) {
       if (isGoal(level, state)) {
         routes += 1;
@@ -514,6 +651,10 @@ export function forEachParRoute(
       const action = move(direction);
       if (!isLegalMove(level, state, action)) continue;
       const next = applyMove(level, state, action);
+      if (pruning && !canFinishExactly(next, par - depth - 1)) {
+        prunedChildren += 1;
+        continue;
+      }
       path.push(arrivalRecord(level, state, next, direction));
       walk(next, depth + 1);
       path.pop();
@@ -521,7 +662,15 @@ export function forEachParRoute(
   };
 
   walk(start, 0);
-  return routes;
+  return {
+    par,
+    routes,
+    visits,
+    lookaheadVisits,
+    prunedChildren,
+    visitBudget: cap,
+    pruning,
+  };
 }
 
 function arrivalRecord(
@@ -558,6 +707,10 @@ function arrivalRecord(
  *
  * Measured on the shipped set (PA-004 / LV-004): `l004` 6 routes, 3 embedded
  * (OFFERED), `l005` 3 routes, 3 embedded (**FORCED**), `l001`–`l003` 0 embedded.
+ *
+ * Since n-11 the enumeration prunes with the exact finishability lookahead, so
+ * the cost is reported alongside the counts (it used to be that the walk's own
+ * budget was silently the state-exploration one).
  */
 export function embedMetrics(
   level: Level,
@@ -566,7 +719,7 @@ export function embedMetrics(
 ): EmbedMetrics {
   let parRoutes = 0;
   let embedRoutes = 0;
-  forEachParRoute(
+  const stats = forEachParRouteStats(
     level,
     par,
     (route) => {
@@ -579,6 +732,10 @@ export function embedMetrics(
     parRoutes,
     embedRoutes,
     embedForced: parRoutes > 0 && embedRoutes === parRoutes,
+    routeVisits: stats.visits,
+    routeLookaheadVisits: stats.lookaheadVisits,
+    routePrunedChildren: stats.prunedChildren,
+    routeVisitBudget: stats.visitBudget,
   };
 }
 
@@ -587,6 +744,14 @@ export interface EmbedMetrics {
   readonly embedRoutes: number;
   /** Every shortest route embeds at least one arrival (`embedRoutes === parRoutes > 0`). */
   readonly embedForced: boolean;
+  /** n-11 cost read-out: DFS nodes entered by the route walk. */
+  readonly routeVisits: number;
+  /** n-11 cost read-out: lookahead probes (memo hits included). */
+  readonly routeLookaheadVisits: number;
+  /** n-11 cost read-out: children dropped because they cannot complete. */
+  readonly routePrunedChildren: number;
+  /** The `maxRouteVisits` budget the walk ran under. */
+  readonly routeVisitBudget: number;
 }
 
 /**

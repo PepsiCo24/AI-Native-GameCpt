@@ -191,6 +191,13 @@ function reportLevel(
   console.log(
     `       parRoutes=${audit.embeds.parRoutes} embedRoutes=${audit.embeds.embedRoutes} embedForced=${String(audit.embeds.embedForced)}`,
   );
+  // LV-007B n-11: the *cost* of the walk above, on its own line. It used to be
+  // invisible — and that is how a long-par board came to die on a budget nobody had
+  // printed (the walk read the exploration key). `budget` is `maxRouteVisits`, i.e.
+  // this enumeration's own key; the two numbers are DFS nodes + lookahead probes.
+  console.log(
+    `       routeWalk=${audit.embeds.routeVisits} dfs + ${audit.embeds.routeLookaheadVisits} lookahead work units (budget=${audit.embeds.routeVisitBudget}) prunedChildren=${audit.embeds.routePrunedChildren}`,
+  );
   // docs/level-design.md §3 condition, measured on every switch-bearing level.
   console.log(
     `       switchRequired=${audit.allOffGoalReachable === null ? "n/a (no switches)" : String(!audit.allOffGoalReachable)} allOffSubgraph=${audit.allOffReachableStates === null ? "n/a" : `${audit.allOffReachableStates}/${result.reachableStates} states`} (goal reachable with every switch OFF: ${audit.allOffGoalReachable === null ? "n/a" : String(audit.allOffGoalReachable)})`,
