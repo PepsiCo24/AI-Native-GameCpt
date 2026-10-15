@@ -26,6 +26,7 @@
  */
 
 import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 import { loadReferenceLevels, levelUrl, refOf } from "./helpers/levels";
 import {
@@ -41,6 +42,9 @@ import {
   tapTouch,
   waitForFrames,
 } from "./helpers/game";
+import { expectGestureDelivered, gestureEvidence, probeMark, probeSnapshot, installProbe, describeEvents } from "./helpers/probe";
+import type { GestureEvidence } from "./helpers/probe";
+import { installFrameStretcher } from "./helpers/frame-stretch";
 import { LAYOUT } from "@/game/theme/tokens";
 
 const REFS = loadReferenceLevels();
@@ -48,6 +52,64 @@ const REFS = loadReferenceLevels();
 /** §2.2 — the two fixed bars, in CSS px. */
 const TOP_BAR = 56;
 const BOTTOM_BAR = 72;
+
+/**
+ * The fabricated per-frame budget of the R-T4 coarse-grid pin, in ms.
+ *
+ * Comfortably wider than R-T4's own 500 ms window divided by the old burst's
+ * frame count (~15 frames): at this grid the *old* one-send-per-frame pacing could
+ * not fit a gesture inside `swipeMaxMs` on any machine, so the pin fails
+ * deterministically if the delivery shape regresses.
+ */
+const SWIPE_STRETCH_MS = 140;
+
+/**
+ * Window a gesture in the in-page observer's log (QA-005d).
+ *
+ * One mark per gesture, so "what did *this* gesture deliver" is asked of the page
+ * rather than assumed from the fact that the driver's `await`s returned.
+ */
+async function gestureMark(page: Page, name: string): Promise<string> {
+  const label = `qa005d-${name}`;
+  await probeMark(page, label);
+  return label;
+}
+
+/**
+ * The evidence a swipe claim owes **before** it reads the HUD (QA-005d).
+ *
+ * Two independent facts, both measured in the page:
+ *
+ * 1. the gesture was **delivered** — one start, one end, travel included, in
+ *    gesture order, at the coordinates the driver aimed at
+ *    ({@link expectGestureDelivered}); and
+ * 2. it fit inside **R-T4's own 500 ms window of *game* time**, which is what the
+ *    input handler actually compares (`scene.time.now` is quantised to the
+ *    runner's frame grid, so a slow grid can turn a delivered swipe into a tap).
+ *
+ * Without (1) and (2) a red `moves` counter has two possible readings — the rules
+ * refused the gesture, or the driver never produced a usable one — and the
+ * cloud-only `Received: 0` was the second. With them, a non-move is a rule verdict.
+ */
+async function expectSwipeDelivered(
+  page: Page,
+  mark: string,
+  want: { readonly from: { readonly x: number; readonly y: number }; readonly to: { readonly x: number; readonly y: number } },
+  label: string,
+): Promise<GestureEvidence> {
+  const evidence = gestureEvidence(await probeSnapshot(page), mark);
+  expectGestureDelivered(evidence, want, label);
+  expect(
+    evidence.gameMs,
+    `${label}: the gesture must fit inside R-T4's ${String(LAYOUT.swipeMaxMs)} ms window on this runner's own frame grid — it spanned ${String(evidence.span)} frame(s) × ${evidence.gridMs.toFixed(1)} ms = ${evidence.gameMs.toFixed(0)} ms of game time`,
+  ).toBeLessThanOrEqual(LAYOUT.swipeMaxMs);
+  // One evidence line per gesture: what the page actually received, and how the
+  // runner's own grid quantised it — the measurement this branch rests on.
+  console.log(
+    `[QA-005d] mobile.mobile.spec.ts gesture — ${label}: gridMs=${evidence.gridMs.toFixed(1)} span=${String(evidence.span)} gameElapsedMs=${evidence.gameMs.toFixed(0)} maxMs=${String(LAYOUT.swipeMaxMs)} movesDelivered=${String(evidence.moves)} delivered=${describeEvents(evidence.touches)}`,
+  );
+  return evidence;
+}
 
 test.describe("mobile layout (§2.2, R-L5, R-L6)", () => {
   test("the board occupies the whole play area between the two fixed bars", async ({ page }) => {
@@ -209,6 +271,7 @@ test.describe("touch gestures (R-T3, R-T4)", () => {
     page,
   }) => {
     const ref = refOf(REFS, 3);
+    await installProbe(page);
     await installPixelReadback(page);
     await openLevel(page, levelUrl(3));
     const geometry = await boardGeometry(page, ref.level);
@@ -232,9 +295,13 @@ test.describe("touch gestures (R-T3, R-T4)", () => {
     });
 
     // Under the threshold the gesture stays inside the player's own cell and is a
-    // tap on the occupied tile — a guaranteed non-input (§6.5).
-    await swipeTouch(page, from, along(10));
+    // tap on the occupied tile — a guaranteed non-input (§6.5). The *delivery* is
+    // asserted first, so a red counter here can only mean the rule, not the wire.
+    const shortTo = along(10);
+    const shortMark = await gestureMark(page, "rt4-short");
+    await swipeTouch(page, from, shortTo);
     await waitForFrames(page, 2);
+    await expectSwipeDelivered(page, shortMark, { from, to: shortTo }, "the 10 px drag");
     expect((await hud(page)).moves, "a 10 px drag is not a swipe").toBe(0);
     await expectActorAt(page, geometry, ref.level, {
       x: ref.level.player[0],
@@ -245,7 +312,11 @@ test.describe("touch gestures (R-T3, R-T4)", () => {
     // The commit is polled, not read once after a fixed sleep: the pointer
     // sequence is consumed on the game's next input update, which is frames away
     // on a loaded runner (the cloud shape this test exists to tolerate).
-    await swipeTouch(page, from, along(minTravel + 12));
+    const swipeTo = along(minTravel + 12);
+    const swipeMark = await gestureMark(page, "rt4-swipe");
+    await swipeTouch(page, from, swipeTo);
+    await waitForFrames(page, 2);
+    await expectSwipeDelivered(page, swipeMark, { from, to: swipeTo }, `the ${String(minTravel + 12)} px swipe`);
     await settle(page);
     await expectMoves(page, 1);
     const after = await hud(page);
@@ -255,13 +326,22 @@ test.describe("touch gestures (R-T3, R-T4)", () => {
 
   test("the dominant axis decides (R-T4): a mostly-horizontal drag moves right", async ({ page }) => {
     const ref = refOf(REFS, 1); // 5 × 3, no walls: every axis is legal from the start
+    await installProbe(page);
     await installPixelReadback(page);
     await openLevel(page, levelUrl(1));
     const geometry = await boardGeometry(page, ref.level);
     const from = geometry.cellCenterPage(ref.level.player[0], ref.level.player[1]);
 
     // Travel 44 px right but 30 px down: |dx| > |dy|, so the gesture is `right`.
-    await swipeTouch(page, from, { x: from.x + 44, y: from.y + 30 });
+    // The delivery is asserted before the HUD read: on a 72 CSS px cell the same
+    // endpoint would *also* resolve to `right` through the tap path, so without
+    // the evidence this assertion could pass without R-T4's swipe branch ever
+    // running (QA-005d's finding, recorded in `tests/e2e/README.md` §1.5).
+    const to = { x: from.x + 44, y: from.y + 30 };
+    const mark = await gestureMark(page, "rt4-axis");
+    await swipeTouch(page, from, to);
+    await waitForFrames(page, 2);
+    await expectSwipeDelivered(page, mark, { from, to }, "the 44 × 30 px drag");
     await settle(page);
     await expectMoves(page, 1);
     const after = await hud(page);
@@ -270,6 +350,71 @@ test.describe("touch gestures (R-T3, R-T4)", () => {
       x: ref.level.player[0] + 1,
       y: ref.level.player[1],
     });
+  });
+
+  /**
+   * QA-005d regression pin for the R-T4 cloud survivor.
+   *
+   * The failure was **driver pacing**, not a rule: every awaited
+   * `Input.dispatchTouchEvent` cost the renderer a frame, and the game clock —
+   * quantised to the frame grid — turned a delivered swipe into a tap on a runner
+   * whose frames were ~100 ms wide (`span 15 × grid = 1999 ms > swipeMaxMs 500`).
+   * On the 60 Hz laptop that shipped the suite the same burst spanned 13 frames
+   * ≈ 217 ms, so **no local run could ever fail** — the red was cloud-only by
+   * construction.
+   *
+   * `installFrameStretcher` fabricates that grid, so this pin is machine-independent
+   * and fails deterministically if the delivery shape regresses (measured with the
+   * old helper: `span 15` at a 133 ms grid → `moves 0`; with the shipped one-tick
+   * burst: `span 0` at 16.7 / 66.7 / 133.3 ms grids, 12/12 runs).
+   */
+  test("the R-T4 swipe still commits on a fabricated coarse grid (delivery-shape regression pin)", async ({
+    page,
+  }) => {
+    // CI-envelope sizing (QA-005d): with a fabricated ~150 ms frame, the boot, the
+    // gesture, the two-frame settles and the pixel probe cost ~12 s locally, so the
+    // 2-core runner needs headroom over the default 30 s. Wall clock, not an
+    // assertion — the fabrication is what makes this pin machine-independent.
+    test.setTimeout(90_000);
+    const ref = refOf(REFS, 3);
+    await installFrameStretcher(page, SWIPE_STRETCH_MS);
+    await installProbe(page);
+    await installPixelReadback(page);
+    await openLevel(page, levelUrl(3));
+    const geometry = await boardGeometry(page, ref.level);
+    const from = geometry.cellCenterPage(ref.level.player[0], ref.level.player[1]);
+
+    const leg = ref.legs[0];
+    expect(leg, "the level has a first par leg to aim the swipe at").toBeDefined();
+    if (leg === undefined) return;
+    const step = { up: { dx: 0, dy: -1 }, down: { dx: 0, dy: 1 }, left: { dx: -1, dy: 0 }, right: { dx: 1, dy: 0 } }[
+      leg.direction
+    ];
+    const travel = LAYOUT.swipeMinTravel + 12;
+    const to = { x: from.x + step.dx * travel, y: from.y + step.dy * travel };
+
+    const mark = await gestureMark(page, "rt4-coarse");
+    await swipeTouch(page, from, to);
+    await waitForFrames(page, 2);
+    const evidence = await expectSwipeDelivered(page, mark, { from, to }, "the swipe on a coarse grid");
+
+    // The fabrication really is coarser than the burst's own cost budget: the old
+    // shape needed ~15 frames, and this grid makes a fraction of that exceed 500 ms.
+    expect(
+      evidence.gridMs,
+      `the frame stretcher produced the coarse grid (${evidence.gridMs.toFixed(1)} ms per frame)`,
+    ).toBeGreaterThanOrEqual(SWIPE_STRETCH_MS);
+    // …and the fix's own invariant: the whole gesture is delivered in a single
+    // frame window, so its game-clock duration is one grid at most — 7× tighter
+    // than the old one-send-per-frame burst, and grid-independent by construction.
+    expect(
+      evidence.span,
+      `the burst is delivered in one tick, not one frame per send: the gesture spanned ${String(evidence.span)} frame(s) of ${evidence.gridMs.toFixed(1)} ms`,
+    ).toBeLessThanOrEqual(2);
+
+    await settle(page);
+    await expectMoves(page, 1);
+    await expectActorAt(page, geometry, ref.level, leg.player);
   });
 
   test("the R-T6 hover ring never appears under touch (differential pixel probe)", async ({ page }) => {
