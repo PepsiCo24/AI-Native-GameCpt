@@ -859,7 +859,25 @@ and a path must be quiescent before dispatch.**
     required** (a gate is not demoted because it worked). **QA-005b dispatched as CHAIN branch based directly on
     `f484e23`**: one merge lands both atomic commits together, no red window for the registry-class failures; hard
     conflict boundary enforced (R-004b live-owns the two pin files + all `src/**`; playthrough header prose = KNOWN
-    DEFER). DG-004 scope grows: iteration-log mirror now carries the R-003 line too. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+    DEFER). DG-004 scope grows: iteration-log mirror now carries the R-003 line too.
+55. **R-004b VERIFIED + HELD FOR CHAIN-REBASE — the landmine they honestly flagged.** Disk-verified at their tip
+    (`3a607ca`+`318e518`, base `b96f3f8`): WeakSet object-identity handler as a Phaser-free rule module; end-panel
+    body now built from a REQUIRED `shippedLadder()` hook derived in the composition root (the stale-literal class
+    of bug is structurally impossible again); `isPlayerEmbedded` lives in `src/core/rules/solid.ts` via `solidAt`
+    with the systems→renderer edge now TEST-ENFORCED (0 specifiers on disk — I counted). My own run: tsc 0 · vitest
+    25 files/441/3 (only-up against their base — the 441-vs-develop-448 gap is the BASE gap, not a regression).
+    Sharpest evidence in the ticket: the control runs the PRE-FIX handler through the same harness and reproduces
+    the browser's exact 5. **Serialization decision**: their tests were written against the 10-level registry —
+    merged as-is into the 11-level world their end-panel/unlock-chain/`:147` assertions would go red. So NOTHING
+    merges until QA-005b lands; then **R-004b resumes → rebases onto the final chain → adapts its own
+    registry-sensitive assertions → full battery re-run → ONE green merge**. RV-007 (read-only) dispatched now over
+    all three held commits, asked to enumerate the exact landmine assertions and stress-test this ordering.
+    Accepted, not re-litigated: OS key-repeat deliberately unsuppressed (distinct objects ⇒ legit moves — locked
+    rule preserved, "one keydown ⇒ one move" ≠ "hold key = one move"); `ladderLabelOf([])` branch kept for
+    `noUncheckedIndexedAccess`, YAGNI call handed to RV-007; stale QA prose is correct ownership discipline →
+    **QA-005c micro queued** (narration refresh + the REAL config flaw: `reuseExistingServer: true` means a busy
+    :5198 silently tests another tree — must fail loudly); end-panel string awaits UA sign-off (folds into UA-0009);
+    AGENTS §6 mirrors (input dedupe + copy source + architecture §4 test-enforced-arrow note) grow DG-004. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
