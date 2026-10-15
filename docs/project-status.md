@@ -641,6 +641,19 @@ and a path must be quiescent before dispatch.**
     thing killing M12). MINOR-2 already fixed on disk by LV-007C (verified); MINOR-1 (divergence numbers 46/2000
     vs 0.9% vs 18/2000 cited without generator labels across pipeline/design/ADR docs) → **LV-007D micro folded
     into AR-0006 queue** with RV's OQ1 (bring the harness in-repo vs unify citations — Architect+LV countersign).
+41. **UA-0008d — RETURNED & MERGED (`4d9dde9`): ui-ux V0.8.3 + assets V0.5.3.** Item-6 l9 pitch attribution corrected
+    to 78 px CSS per the maxDim law (the V0.8.3 changelog line doubles as the UA-0008c OQ① closure record); whole-
+    file sweep confirmed item 6 was the ONLY live mis-attribution. Asset-side: four pre-D3 "portal at L36" live refs
+    (req-06 ×2, req-09, manifest, first-batch) all synced to L11 with "(pre-D3: L36)" annotations — schedule wording
+    only, zero spec/prompt/acceptance movement, UA-0008 Q3 optional-polish ruling reaffirmed not altered. Boundary:
+    exactly the 5 owned doc files, tree clean. **AR-0006 dispatched** (Architect, worktree `…/ar-0006-arch-sweep`):
+    three rulings (RV-006 OQ1 divergence-number single source of truth — harness in-repo vs unify to 46/2000;
+    R-002b OQ4 `graphics2d.ts` type-purity; metrics-persistence per LV-007B OQ5/RV OQ3 with YAGNI vs §7 tension
+    spelled out) + four doc debts (stale §55 `generate-levels` citation to be replaced with the REAL script family,
+    §8 future-tense → shipped + two-legs-unchained declaration, n-6 `isPlayerEmbedded` dependency direction with
+    code moves pre-specified as engineer micro-tickets, LV-007C OQ4 multi-switch-door flag home ruling). Rulings
+    route onward to LV-007D / GD / gameplay micro-tickets; no code touched by AR. Three live: LV-008 · DG-002 ·
+    AR-0006.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
