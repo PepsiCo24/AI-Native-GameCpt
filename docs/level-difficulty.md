@@ -1,8 +1,8 @@
 # Level Difficulty Model & Curve
 
 > Owner: **Agent 4 — Level AI + Solver**
-> Version: V0.3 · Date: 2026-10-15
-> Status: `D` is **measured** since LV-007B item 3 (`B` effective, `T`, `R` implemented in `src/core/solver/difficulty.ts`); the **weights** are still **provisional** and must be re-calibrated from playtest data.
+> Version: V0.4 · Date: 2026-10-15
+> Status: `D` is **measured** since LV-007B item 3 (`B` effective, `T`, `R` implemented in `src/core/solver/difficulty.ts`) and its **execution axis** `D_exec = D − w5·M` is published as of LV-007C item 2; the **weights** are still **provisional** and must be re-calibrated from playtest data.
 
 ---
 
@@ -64,6 +64,24 @@ Diagnostics, reported with every breakdown but carrying **no weight**:
 - `weights` — the weight vector the number was computed with, so a stored `D` can never be re-read against a later re-calibration by mistake.
 
 `D = null` **iff** the board is unsolvable (`L = null`): no solution ⇒ no curve spot, and no fabricated number. `D` is deliberately **not** part of the solver's §8 `SolveResult` contract — the weights are a hypothesis, and freezing them into the published solver interface would make a playtest-driven re-calibration an API change. Re-calibrating is **one edit** to `DIFFICULTY_WEIGHTS` plus this §2 table.
+
+### 2b. The execution axis `D_exec` — published as a column (LV-007C item 2)
+
+The dip law of `docs/level-design.md` §6 (V0.6, ADR-design-0001) does not live on `D`: a mechanic debut **must** raise `w5·M` (the player really is learning something) in the very step where a "dip" was demanded on the single scalar. The law was therefore re-anchored on the part the player feels as hands-and-search:
+
+```
+D = D_exec + D_learn
+D_exec  = D − w5·M = w1·L + w2·B + w3·T + w4·R   ← the execution axis (dip law)
+D_learn = w5·M                                    ← comprehension tax (never dips at a debut)
+```
+
+`D_exec` is **purely derived** — no new measurement, no new weight, no change to `D`'s formula or arithmetic (`D`'s published values are byte-identical to V0.3's). It is computed in `src/core/solver/difficulty.ts` **from the formula's own non-`M` terms** and printed next to the subtraction on the CLI:
+
+```
+difficultyExec Dexec=13.64 = D(28.64) − 5·M(3) = 1·L(9) + 3·B(1.5476) + 4·T(0) + 2·R(0.0000) · execution axis
+```
+
+Both forms are printed on purpose: the identity `D − w5·M = w1·L + w2·B + w3·T + w4·R` is then checked by the reader, and pinned by the suite (`tests/solver/difficulty.test.ts` §2c asserts both forms plus the `L + 3·B` collapse inside `docs/level-design.md` §4). `D_exec = null` **iff** `D = null` (no solution ⇒ no position on either axis). This is the ADR's convenience ticket, taken: "adding a `D_exec` column to the report would spare every reader the subtraction".
 
 ## 3. Target curve (non-monotonic on purpose)
 
@@ -153,40 +171,41 @@ Definitions, so the table cannot be misread:
 
 ### 5.2 The §2 model, measured (LV-007B item 3)
 
-Re-derivable with `node_modules/.bin/tsx scripts/solve-levels.ts` (the `difficulty` and
-`difficultyDiagnostics` lines per level) and pinned by `tests/solver/difficulty.test.ts`
-(one assertion set per level, values below reproduced to 6 decimals). Weights are §2's
-**provisional** `w1…w5 = 1, 3, 4, 2, 5` — echoed into every row so no stored `D` can be
-re-read against a later re-calibration.
+Re-derivable with `node_modules/.bin/tsx scripts/solve-levels.ts` (the `difficulty`,
+`difficultyDiagnostics` and `difficultyExec` lines per level) and pinned by
+`tests/solver/difficulty.test.ts` (one assertion set per level, values below reproduced
+to 6 decimals). Weights are §2's **provisional** `w1…w5 = 1, 3, 4, 2, 5` — echoed into
+every row so no stored `D` can be re-read against a later re-calibration.
 
-| Level | `L` | `B` | `T` | `R` | `M` | `D = 1·L + 3·B + 4·T + 2·R + 5·M` | `lookaheadDepth` (diag.) |
-|---|---|---|---|---|---|---|---|
-| L1 | 4 | 1.6667 | 0 | 0 | 1 | **14.00** | 3 |
-| L2 | 5 | 1.6875 | 0 | 0 | 1 | **15.06** | 4 |
-| L3 | 6 | 1.4286 | 0 | 0 | 1 | **15.29** | 5 |
-| L4 | 6 | 1.5263 | 0 | 0 | 1 | **15.58** | 5 |
-| L5 | 6 | 1.4444 | 0 | 0 | 1 | **15.33** | 5 |
-| L6 | 4 | 1.6207 | 0 | 0 | 3 | **23.86** | 3 |
-| L7 | 4 | 1.2500 | 0 | 0 | 3 | **22.75** | 3 |
-| L8 | 6 | 1.5000 | 0 | 0 | 3 | **25.50** | 5 |
-| L9 | 8 | 1.3793 | 0 | 0 | 3 | **27.14** | 7 |
-| L10 | 9 | 1.5476 | 0 | 0 | 3 | **28.64** | 8 |
-| **L11 (hook — not authored)** | — | — | — | — | — | **—** | — |
+| Level | `L` | `B` | `T` | `R` | `M` | `D = 1·L + 3·B + 4·T + 2·R + 5·M` | `D_exec = D − 5·M` (§2b) | `lookaheadDepth` (diag.) |
+|---|---|---|---|---|---|---|---|---|
+| L1 | 4 | 1.6667 | 0 | 0 | 1 | **14.00** | 9.00 | 3 |
+| L2 | 5 | 1.6875 | 0 | 0 | 1 | **15.06** | 10.06 | 4 |
+| L3 | 6 | 1.4286 | 0 | 0 | 1 | **15.29** | 10.29 | 5 |
+| L4 | 6 | 1.5263 | 0 | 0 | 1 | **15.58** | 10.58 | 5 |
+| L5 | 6 | 1.4444 | 0 | 0 | 1 | **15.33** | 10.33 | 5 |
+| L6 | 4 | 1.6207 | 0 | 0 | 3 | **23.86** | **8.86** | 3 |
+| L7 | 4 | 1.2500 | 0 | 0 | 3 | **22.75** | **7.75** | 3 |
+| L8 | 6 | 1.5000 | 0 | 0 | 3 | **25.50** | 10.50 | 5 |
+| L9 | 8 | 1.3793 | 0 | 0 | 3 | **27.14** | 12.14 | 7 |
+| L10 | 9 | 1.5476 | 0 | 0 | 3 | **28.64** | 13.64 | 8 |
+| **L11 (hook — not authored)** | — | — | — | — | — | **—** | **< 13.64** (pre-registered, §3) | — |
 
 Definitions are §2a's, not re-stated per row. Two things this table says that §5.1 could not:
 
 - **`T ≡ 0` and `R ≡ 0` on 10/10, and that is a theorem, not a hole.** `docs/level-design.md` §4 forbids exactly the states these two terms measure (`noUnrecoverableOk`, no dead states — both re-checked per level in the test file), so inside the acceptance region `D = L + 3·B + 5·M`. `w3` and `w4` are therefore **inert for any shippable level**: they cannot be used to shape the curve while §4 stands. The zero is *measured*, not assumed — the test file pairs it with a §4-violating control board (a portal that deposits the player in a sealed room) on which `T > 0`, `R > 0` and both weights really move `D`.
 - **`B` is a real filter, and it is not `B_raw`.** `B < B_raw` on every level (L1 1.67 vs 2.93 … L9 1.38 vs 2.59) — the "non-dominated" qualifier in §2 costs about a third of the apparent branching, which is why substituting `B_raw` into `D` would have inflated the whole curve.
+- **The new column is the axis the dip law lives on.** `D_exec` **falls 10.33 → 8.86** across L5→L6 (Δ **−1.47**) while `D` rises +8.53 — the same seam, read on the axis `docs/level-design.md` §6 re-anchored at GD-008 (ADR-design-0001), now published as a column instead of left as a subtraction for the reader (§2b). The dip spans exactly the two par-4 levels (L6 8.86, L7 7.75) and the block then ramps to 13.64 > L4's 10.58: the sawtooth is visible on this axis and nowhere on `D`.
 
 **The L5→L6 seam, measured (the block-opening dip §3 asks for):** `D` **rises by +8.528736**, decomposed exactly as ΔL = **−2**, ΔB = **+0.528736**, ΔM = **+10**, ΔT = ΔR = 0. The design target (`docs/level-design.md` §6: the first level of a new-mechanic block sits **2–3 points below** the previous block's peak) is therefore **missed, with the sign inverted**, and it is missed **by construction at these weights**: introducing a mechanic adds `5·ΔM` (+10 here) in the very step where the dip is supposed to lower the score, while par can only fall to the block's floor (4, the game's lowest) and `B` does not fall at all. A −2…−3 `D` dip at a mechanic introduction is **unreachable** with `w = (1, 3, 4, 2, 5)` no matter what the board looks like.
 
 **Recorded, not smoothed.** No weight was tuned to manufacture the dip and no definition was re-worded to make the curve look right: the formula is the doc's, the weights are the doc's, and the disagreement is published here. It is a **weight/definition question for the Game Designer** (see the open items in `docs/level-design.md` §6), with two levers this measurement makes concrete: (a) re-weight `w5` (or let `M` count *new* mechanics instead of total ones, which is what §3's dip rule actually describes), or (b) adopt the weightless `lookaheadDepth` as the real `T` — it is measured on every level, but note it **saturates at `L − 1`** on all ten (the deepest state where a move can waste the par is always exactly one step before the goal), so it is not a differentiator either.
 
-**L11 hook row.** L11 is where ADR-0009 schedules **M2 (portals)**, i.e. the first `M` step since L6 and the first board on which `dualPhaseTiles ≥ 1` becomes satisfiable. Two things land with it and both are *measurements to take*, not numbers to fill in: the M2 row of this table, and the promotion of the ordered companion metric `refusedBeforeEnteredTiles` from reported-only to gate (ADR-architecture-0002's implementation trigger: it MUST land before the first L11+ portal candidate is accepted; ADR-0009 decision 4 / `docs/ai-native-pipeline.md` §8.5 keep the acceptance law on the **unordered** form). The row above is deliberately empty — this document does not pre-fill a level that does not exist.
+**L11 hook row.** L11 is where ADR-0009 schedules **M2 (portals)**, i.e. the first `M` step since L6 and the first board on which `dualPhaseTiles ≥ 1` becomes satisfiable. Two things land with it and both are *measurements to take*, not numbers to fill in: the M2 row of this table (with its `D_exec`), and the **pre-registered seam decision** of §3 — `D_exec(L11) < 13.64` (L10's measured value, reproduced in §5.2 and pinned by `tests/solver/difficulty.test.ts`). The row above is deliberately empty — this document does not pre-fill a level that does not exist. (The ordered companion's first promotion already landed: **gate (iii)** reads `refusedBeforeEnteredTiles` since LV-007C; what L11 still owes is the block ruling of the two legs in `docs/ai-native-pipeline.md` §8.5, not another metric.)
 
 ### 5.3 Measured metrics are the only claim
 
-The two tables above are generated by the program, never by a model: `L1–L10` par values are the solver's `shortestSolution` (the level gate FAILs on any mismatch), the state/route counts come from the same BFS that proves solvability, `refusedThenEnteredTiles` / `dualPhaseTiles` come from `@/core/solver/bfs` with the definitions of `docs/architecture.md` §8 / ADR-0009, and `B`/`T`/`R`/`D` come from `@/core/solver/difficulty.ts` reading that same graph (§2a). Where a field is missing it is named as missing — `L11`'s row is empty, not estimated.
+The two tables above are generated by the program, never by a model: `L1–L10` par values are the solver's `shortestSolution` (the level gate FAILs on any mismatch), the state/route counts come from the same BFS that proves solvability, `refusedThenEnteredTiles` / `dualPhaseTiles` come from `@/core/solver/bfs` with the definitions of `docs/architecture.md` §8 / ADR-0009, and `B`/`T`/`R`/`D`/`D_exec` come from `@/core/solver/difficulty.ts` reading that same graph (§2a/§2b). Where a field is missing it is named as missing — `L11`'s row is empty, not estimated.
 
 ## 6. Change log
 
@@ -195,3 +214,4 @@ The two tables above are generated by the program, never by a model: `L1–L10` 
 | 2026-10-14 | V0.1 | Initial metric definition + provisional weights + target curve | Agent 4 |
 | 2026-10-15 | V0.2 | **LV-006** — new **§5.1 measured metrics for L1–L10** (source, definitions and the block read-out for the latch unit). Records explicitly that `B` (effective), `T`, `R` and therefore `D` are **still unmeasured** — no stand-in is published; `B_raw` (average legal out-degree) is labelled as NOT the §2 `B`. Also records the L6–L10 design deviation (see §5.1/`src/levels/README.md` §2b–§4) so the difficulty rows are traceable | Level AI + Solver (LV-006) |
 | 2026-10-15 | V0.3 | **LV-007B item 3 — the §5.1 gap is closed by measurement.** New **§2a** pins the implemented reading of all five terms (`B` effective = non-dominated legal moves against an exact reverse-BFS distance; `T` literal ⇒ `≡ 0` under §4; `R` = dead states ÷ reachable states with `unrecoverableRatio` as its named companion; `M` = categories; `bRaw`/`forcedMoveRatio`/`lookaheadDepth`/`unrecoverableRatio` demoted to weightless diagnostics) and states that `D` is **not** added to the §8 `SolveResult` contract because the weights are provisional (re-calibration = one constant). New **§5.2** publishes `B`/`T`/`R`/`M`/`D` for L1–L10, the `T ≡ R ≡ 0` theorem inside the §4 acceptance region (so `D = L + 3·B + 5·M` there and `w3`/`w4` are inert), the `B < B_raw` control, the **L5→L6 seam = +8.528736** with its exact decomposition (ΔL −2 · ΔB +0.529 · ΔM +10), the explicit statement that the −2…−3 dip `docs/level-design.md` §6 asks for is **unreachable at these weights by construction**, and an **empty L11 hook row** (M2 debut) that also carries the `refusedBeforeEnteredTiles` promotion trigger. Former §5.2 → **§5.3**. §5's opening claim that metrics are *stored* per level was **corrected**: nothing is stored (the frozen schema has no metrics field and no sidecar exists), the tables are recomputed from the shipped data and pinned by tests, and the persist-or-not question is an OPEN_QUESTION. No weight tuned, no definition re-worded to flatter the curve; the contradiction is reported as-is | Level AI + Solver (LV-007B) |
+| 2026-10-15 | V0.4 | **LV-007C item 2 — the execution axis is published as a column.** New **§2b** defines `D_exec = D − w5·M = w1·L + w2·B + w3·T + w4·R` (ADR-design-0001; `docs/level-design.md` §6) as a **purely derived** reading — `D`'s formula, arithmetic and published values are untouched — and names both forms the program prints (`difficultyExec Dexec=… = D(…) − 5·M(…) = 1·L + 3·B + 4·T + 2·R`, the subtraction *and* the formula's own terms, so the identity is checked rather than assumed); `src/core/solver/difficulty.ts` gains `DifficultyBreakdown.Dexec` (`null` iff `D` is). §5.2 gains the `D_exec` column for L1–L10 (9.00 / 10.06 / 10.29 / 10.58 / 10.33 / 8.86 / 7.75 / 10.50 / 12.14 / 13.64, reproduced from the factory CLI output, not copied) plus the read-out of the L5→L6 seam on that axis (**−1.47**, against **+8.53** on `D` — the two axes are now printed side by side), the L11 hook row carries the pre-registered `< 13.64`, and `tests/solver/difficulty.test.ts` §2c pins both forms + the `L + 3·B` collapse + the ten published values. §5.3's provenance sentence names the new column | Level AI + Solver (LV-007C) |

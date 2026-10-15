@@ -4,7 +4,9 @@
  * `D = w1·L + w2·B + w3·T + w4·R + w5·M`, with the doc's **provisional** weights
  * (`1, 3, 4, 2, 5`). This file is the program half of §5.1: it pins what the solver
  * actually computes, including the three numbers the doc had recorded as *missing*
- * (`B` effective, `T`, `R`) and the resulting `D` for L1–L10.
+ * (`B` effective, `T`, `R`) and the resulting `D` for L1–L10 — plus, since LV-007C
+ * item 2, the **execution axis** `D_exec = D − w5·M` (ADR-design-0001, the axis the
+ * dip law lives on), in both of its forms.
  *
  * ── THE TWO THINGS THIS FILE IS CAREFUL ABOUT ────────────────────────────────
  *  1. **Zero is a measurement, not a hole.** `T = 0` and `R = 0` on all ten shipped
@@ -122,6 +124,8 @@ interface DifficultyPin {
   readonly R: number;
   readonly M: number;
   readonly D: number;
+  /** The execution axis `D_exec = D − w5·M` (§2a; ADR-design-0001) — LV-007C item 2. */
+  readonly dexec: number;
   /** Diagnostic: plain mean out-degree — must equal §5.1's documented `B_raw`. */
   readonly bRaw: number;
   /** Diagnostic: share of states with exactly one legal move (§5.1). */
@@ -138,16 +142,16 @@ interface DifficultyPin {
  * recorded as *missing*.
  */
 const PINS: Readonly<Record<number, DifficultyPin>> = {
-  1: { L: 4, B: 1.6667, T: 0, R: 0, M: 1, D: 14.0, bRaw: 2.93, forced: 0.0, lookahead: 3, states: 15 },
-  2: { L: 5, B: 1.6875, T: 0, R: 0, M: 1, D: 15.0625, bRaw: 3.0, forced: 0.0, lookahead: 4, states: 16 },
-  3: { L: 6, B: 1.4286, T: 0, R: 0, M: 1, D: 15.285714, bRaw: 2.57, forced: 0.0, lookahead: 5, states: 14 },
-  4: { L: 6, B: 1.5263, T: 0, R: 0, M: 1, D: 15.578947, bRaw: 2.84, forced: 0.0, lookahead: 5, states: 19 },
-  5: { L: 6, B: 1.4444, T: 0, R: 0, M: 1, D: 15.333333, bRaw: 2.78, forced: 0.11, lookahead: 5, states: 18 },
-  6: { L: 4, B: 1.6207, T: 0, R: 0, M: 3, D: 23.862069, bRaw: 2.76, forced: 0.0, lookahead: 3, states: 29 },
-  7: { L: 4, B: 1.25, T: 0, R: 0, M: 3, D: 22.75, bRaw: 2.0, forced: 0.25, lookahead: 3, states: 12 },
-  8: { L: 6, B: 1.5, T: 0, R: 0, M: 3, D: 25.5, bRaw: 2.82, forced: 0.12, lookahead: 5, states: 34 },
-  9: { L: 8, B: 1.3793, T: 0, R: 0, M: 3, D: 27.137931, bRaw: 2.59, forced: 0.03, lookahead: 7, states: 58 },
-  10: { L: 9, B: 1.5476, T: 0, R: 0, M: 3, D: 28.642857, bRaw: 2.95, forced: 0.1, lookahead: 8, states: 42 },
+  1: { L: 4, B: 1.6667, T: 0, R: 0, M: 1, D: 14.0, dexec: 9.0, bRaw: 2.93, forced: 0.0, lookahead: 3, states: 15 },
+  2: { L: 5, B: 1.6875, T: 0, R: 0, M: 1, D: 15.0625, dexec: 10.0625, bRaw: 3.0, forced: 0.0, lookahead: 4, states: 16 },
+  3: { L: 6, B: 1.4286, T: 0, R: 0, M: 1, D: 15.285714, dexec: 10.285714, bRaw: 2.57, forced: 0.0, lookahead: 5, states: 14 },
+  4: { L: 6, B: 1.5263, T: 0, R: 0, M: 1, D: 15.578947, dexec: 10.578947, bRaw: 2.84, forced: 0.0, lookahead: 5, states: 19 },
+  5: { L: 6, B: 1.4444, T: 0, R: 0, M: 1, D: 15.333333, dexec: 10.333333, bRaw: 2.78, forced: 0.11, lookahead: 5, states: 18 },
+  6: { L: 4, B: 1.6207, T: 0, R: 0, M: 3, D: 23.862069, dexec: 8.862069, bRaw: 2.76, forced: 0.0, lookahead: 3, states: 29 },
+  7: { L: 4, B: 1.25, T: 0, R: 0, M: 3, D: 22.75, dexec: 7.75, bRaw: 2.0, forced: 0.25, lookahead: 3, states: 12 },
+  8: { L: 6, B: 1.5, T: 0, R: 0, M: 3, D: 25.5, dexec: 10.5, bRaw: 2.82, forced: 0.12, lookahead: 5, states: 34 },
+  9: { L: 8, B: 1.3793, T: 0, R: 0, M: 3, D: 27.137931, dexec: 12.137931, bRaw: 2.59, forced: 0.03, lookahead: 7, states: 58 },
+  10: { L: 9, B: 1.5476, T: 0, R: 0, M: 3, D: 28.642857, dexec: 13.642857, bRaw: 2.95, forced: 0.1, lookahead: 8, states: 42 },
 };
 
 describe("LV-007B · item 3 — the L1–L10 difficulty table, measured", () => {
@@ -169,6 +173,7 @@ describe("LV-007B · item 3 — the L1–L10 difficulty table, measured", () => 
     });
     expect(d.B, `l${id} B`).toBeCloseTo(pin.B, 4);
     expect(d.D, `l${id} D`).toBeCloseTo(pin.D, 6);
+    expect(d.Dexec, `l${id} D_exec`).toBeCloseTo(pin.dexec, 6);
     expect(d.bRaw, `l${id} B_raw`).toBeCloseTo(pin.bRaw, 2);
     expect(d.forcedMoveRatio, `l${id} forced`).toBeCloseTo(pin.forced, 2);
     expect(d.lookaheadDepth, `l${id} lookaheadDepth`).toBe(pin.lookahead);
@@ -193,6 +198,133 @@ describe("LV-007B · item 3 — the L1–L10 difficulty table, measured", () => 
       expect(d.B, `l${id}`).toBeLessThan(d.bRaw);
       expect(d.B, `l${id}`).toBeGreaterThan(1); // …and the player always has a choice
     }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2c. LV-007C · item 2 — the execution axis `D_exec = D − w5·M` (ADR-design-0001)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("LV-007C · item 2 — `D_exec` is a derived reading of the published terms, not a second metric", () => {
+  it("the two forms agree on all ten: `D − w5·M` = `w1·L + w2·B + w3·T + w4·R`", () => {
+    // The field is computed from the formula's own non-`M` terms and the subtraction
+    // is the cross-check — so the identity is asserted, never assumed. This is the
+    // "both forms printed" contract of `scripts/solve-levels.ts`'s `difficultyExec`
+    // line, in assertions.
+    for (const id of SHIPPED_IDS) {
+      const d = analyseDifficulty(shippedBoard(id), explore(shippedBoard(id)));
+      expect(d.Dexec, `l${id}`).toBeCloseTo(
+        (d.D as number) - DIFFICULTY_WEIGHTS.M * d.M,
+        12,
+      );
+      expect(d.Dexec, `l${id}`).toBeCloseTo(
+        DIFFICULTY_WEIGHTS.L * (d.L as number) +
+          DIFFICULTY_WEIGHTS.B * d.B +
+          DIFFICULTY_WEIGHTS.T * d.T +
+          DIFFICULTY_WEIGHTS.R * d.R,
+        12,
+      );
+      // …and inside the §4 acceptance region it collapses to `L + 3·B` (§5.2's
+      // theorem — the only two live terms), which is how `docs/level-design.md` §6
+      // recomputes the curve by hand.
+      expect(d.Dexec, `l${id}`).toBeCloseTo(
+        (d.L as number) + DIFFICULTY_WEIGHTS.B * d.B,
+        12,
+      );
+    }
+  });
+
+  it("`D_exec` is `null` exactly where `D` is (an unsolvable board has no axis position)", () => {
+    // Same sealed board §4 uses: schema-legal, solvable = false, so neither the total
+    // nor the execution axis may carry a fabricated number.
+    const sealed: Level = {
+      id: 7_202,
+      width: 3,
+      height: 3,
+      startPhase: "A",
+      player: [0, 0] as Coord,
+      goal: [2, 2] as Coord,
+      phaseAWalls: [
+        [1, 2],
+        [2, 1],
+      ],
+      phaseBWalls: [
+        [1, 2],
+        [2, 1],
+      ],
+      doors: [],
+      switches: [],
+      portals: [],
+      par: 4,
+    };
+    const d = analyseDifficulty(sealed, explore(sealed));
+    expect(d.D).toBeNull();
+    expect(d.Dexec).toBeNull();
+    // …and the §4-violating control from §3 shows the axis is not blind to `T`/`R`:
+    // on a board where those terms are non-zero, `D_exec` differs from `L + 3·B`.
+    const trapped: Level = {
+      id: 7_203,
+      width: 5,
+      height: 3,
+      startPhase: "A",
+      player: [0, 0] as Coord,
+      goal: [1, 2] as Coord,
+      phaseAWalls: [
+        [2, 1],
+        [4, 1],
+        [3, 0],
+        [3, 2],
+      ],
+      phaseBWalls: [
+        [2, 1],
+        [4, 1],
+        [3, 0],
+        [3, 2],
+      ],
+      doors: [],
+      switches: [],
+      portals: [portal("p1", [1, 0], [3, 1], "A")],
+      par: 3,
+    };
+    const t = analyseDifficulty(trapped, explore(trapped));
+    expect(t.T).toBeGreaterThan(0);
+    expect(t.R).toBeGreaterThan(0);
+    expect(t.Dexec).toBeCloseTo(
+      (t.D as number) - DIFFICULTY_WEIGHTS.M * t.M,
+      12,
+    );
+    expect(t.Dexec as number).toBeGreaterThan(
+      (t.L as number) + DIFFICULTY_WEIGHTS.B * t.B,
+    );
+  });
+
+  it("the pre-registered L11 threshold is the shipped L10 value, reproduced by the program", () => {
+    // `docs/level-design.md` §6 (V0.6) pre-registers `D_exec(L11) < 13.64` as the
+    // falsifiable seam law for the portal block. That number is not a doc constant:
+    // it is L10's measured `D_exec`, recomputed here from the shipped board's own
+    // terms, so the document cannot drift away from the level it was read from.
+    const l10 = analyseDifficulty(shippedBoard(10), explore(shippedBoard(10)));
+    expect(l10.Dexec).toBeCloseTo(13.642857, 6);
+    expect((l10.Dexec as number).toFixed(2)).toBe("13.64");
+    // …and the value published for every level of the ten is the one the CLI prints
+    // (`difficultyExec Dexec=…`), on the same axis the seam law is written on.
+    expect(
+      SHIPPED_IDS.map((id) => {
+        const d = analyseDifficulty(shippedBoard(id), explore(shippedBoard(id)));
+        return (d.Dexec as number).toFixed(2);
+      }),
+    ).toEqual([
+      "9.00",
+      "10.06",
+      "10.29",
+      "10.58",
+      "10.33",
+      "8.86",
+      "7.75",
+      "10.50",
+      "12.14",
+      "13.64",
+    ]);
   });
 });
 

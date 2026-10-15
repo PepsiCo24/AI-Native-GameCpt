@@ -117,6 +117,7 @@ playtest-driven re-calibration moves no solver contract):
 ```
 L · B (effective) · T · R · M
 D = w1·L + w2·B + w3·T + w4·R + w5·M      (null iff the board is unsolvable)
+D_exec = D − w5·M = w1·L + w2·B + w3·T + w4·R   (execution axis; ADR-design-0001)
 diagnostics: bRaw · forcedMoveRatio · lookaheadDepth · unrecoverableRatio · reachableStates
 ```
 
@@ -127,7 +128,11 @@ pinned in its §2a. Two facts from that measurement belong in the pipeline's own
 inside the `docs/level-design.md` §4 acceptance region `T ≡ 0` **and** `R ≡ 0` (so
 `D = L + 3·B + 5·M` for any shippable level and `w3`/`w4` are inert), and the L5→L6
 block-opening dip §3 asks for is measured **+8.53** on `D` instead of −2…−3 — a weight /
-definition question for the Game Designer, reported as-is, never tuned away here.
+definition question for the Game Designer, reported as-is, never tuned away here. The
+answer landed as **ADR-design-0001** (`docs/level-design.md` §6 V0.6): the dip law is
+re-anchored on the **execution axis** `D_exec = D − w5·M`, which this pipeline now prints
+per level (`difficultyExec`, LV-007C item 2) instead of leaving as a subtraction — measured
+**−1.47** at the same L5→L6 seam.
 
 ## 5. Model routing (roles abstract; the matrix is the single source of truth)
 
@@ -373,7 +378,9 @@ deleted, never committed; `tsc` + full suite + all three CLI gates re-run per it
    by Aha gate (iii) alone, per GD-008's re-wording of `docs/level-design.md` §3 (iii).)
 3. **The §2 difficulty model is measured** — `B` effective, `T`, `R` and `D`, with the two
    structural findings and the untouched weights recorded in §4 above and in
-   `docs/level-difficulty.md` §2a / §5.2.
+   `docs/level-difficulty.md` §2a / §5.2. Its **execution axis** `D_exec = D − w5·M` is
+   printed per level since LV-007C item 2 (§2b there; the axis ADR-design-0001's dip law
+   lives on).
 4. **n-13 · a policy code for M3 content no door reads** — `switch-without-targets`, its own
    negative control, and the validator-warning-vs-policy-rejection layering: §8.4 law 1.
 

@@ -4,6 +4,16 @@
  *
  *     D = w1·L + w2·B + w3·T + w4·R + w5·M
  *
+ * and the **execution axis** the design's dip law was re-anchored on at GD-008
+ * (ADR-design-0001, `docs/level-design.md` §6):
+ *
+ *     D_exec = D − w5·M = w1·L + w2·B + w3·T + w4·R
+ *
+ * Both are reported: `D` is the total load, `D_exec` is the part the player feels as
+ * "what my hands and my search must do". Neither is re-weighted here — the split is a
+ * decomposition of the published formula, not a second metric (see
+ * {@link DifficultyBreakdown.Dexec}).
+ *
  * ── WHY THIS IS ITS OWN MODULE ───────────────────────────────────────────────
  * The §2 weights are an explicit **hypothesis** ("V0.1 — NOT final … replaced by
  * regression against real playtest data"). Freezing them into the §8
@@ -91,6 +101,25 @@ export interface DifficultyBreakdown {
   readonly M: number;
   /** The weighted sum, or `null` when `L` is unknown (no solution ⇒ no curve spot). */
   readonly D: number | null;
+  /**
+   * **The execution axis** (ADR-design-0001, `docs/level-design.md` §6):
+   *
+   *     D_exec = D − w5·M = w1·L + w2·B + w3·T + w4·R
+   *
+   * what the player must **do and search**, with the comprehension tax taken out.
+   * The non-monotonic dip law lives on this axis, because a mechanic debut *must*
+   * raise `w5·M` (the player really is learning something) in the very step where the
+   * old law asked the single scalar to fall. Reported here so no reader has to do the
+   * subtraction by hand (ADR-design-0001 consequences: "adding a `D_exec` column to
+   * the report would spare every reader the subtraction — a convenience ticket").
+   *
+   * Computed from the formula's own non-`M` terms, so the identity with
+   * `D − weights.M·M` is a **cross-check the suite pins**, not a second definition;
+   * inside the `docs/level-design.md` §4 acceptance region it collapses further to
+   * `L + w2·B` because `T ≡ R ≡ 0` there (§5.2's measured theorem). `null` iff `D` is
+   * `null` (no solution ⇒ no position on either axis).
+   */
+  readonly Dexec: number | null;
   /** The weights this breakdown was computed with. */
   readonly weights: DifficultyWeights;
   // ── diagnostics (§2: "computed but treated as diagnostics, not primary score") ──
@@ -207,6 +236,17 @@ export function analyseDifficulty(
         DIFFICULTY_WEIGHTS.T * requiredLookahead +
         DIFFICULTY_WEIGHTS.R * R +
         DIFFICULTY_WEIGHTS.M * M;
+  // The execution axis is computed from the formula's own non-`M` terms — never by
+  // subtracting from `D`, so the two are independent readings whose agreement the
+  // suite asserts (see `DifficultyBreakdown.Dexec`). `D`'s expression above is left
+  // untouched on purpose: adding `D_exec` moves no published number.
+  const Dexec =
+    shortest === null
+      ? null
+      : DIFFICULTY_WEIGHTS.L * shortest +
+        DIFFICULTY_WEIGHTS.B * B +
+        DIFFICULTY_WEIGHTS.T * requiredLookahead +
+        DIFFICULTY_WEIGHTS.R * R;
 
   return {
     levelId: level.id,
@@ -216,6 +256,7 @@ export function analyseDifficulty(
     R,
     M,
     D,
+    Dexec,
     weights: DIFFICULTY_WEIGHTS,
     bRaw: nodeCount === 0 ? 0 : sumOutDegree / nodeCount,
     forcedMoveRatio: nodeCount === 0 ? 0 : forcedMoves / nodeCount,

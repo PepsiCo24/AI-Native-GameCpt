@@ -230,6 +230,14 @@ function reportLevel(
     console.log(
       `       difficultyDiagnostics BRaw=${add.bRaw.toFixed(4)} forcedMoveRatio=${add.forcedMoveRatio.toFixed(4)} lookaheadDepth=${add.lookaheadDepth} unrecoverableRatio=${add.unrecoverableRatio.toFixed(4)} reachableStates=${add.reachableStates}`,
     );
+    // LV-007C item 2: the **execution axis** `D_exec = D − w5·M` (ADR-design-0001;
+    // `docs/level-design.md` §6's dip law lives on it). Printed in both forms — the
+    // subtraction and the formula's own non-`M` terms — so the identity is checked by
+    // the reader, not assumed. Purely derived: no new measurement, and `D`'s line
+    // above is untouched.
+    console.log(
+      `       difficultyExec Dexec=${add.Dexec === null ? "n/a (unsolvable)" : add.Dexec.toFixed(2)} = D(${add.D === null ? "n/a" : add.D.toFixed(2)}) − ${w.M}·M(${add.M}) = ${w.L}·L(${String(add.L)}) + ${w.B}·B(${add.B.toFixed(4)}) + ${w.T}·T(${add.T}) + ${w.R}·R(${add.R.toFixed(4)}) · execution axis (ADR-design-0001; inside docs/level-design.md §4 T ≡ R ≡ 0 ⇒ Dexec = L + ${w.B}·B)`,
+    );
   }
   printGates(audit.gates);
   printViolations(audit.violations);
