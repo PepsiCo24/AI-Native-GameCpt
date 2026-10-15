@@ -32,6 +32,12 @@
  *   — legal geometry, not a defect, and never misleading on the board.
  *   **Warning for every `id`, teaching levels included** (portal case caveated):
  *   ADR-0009 / `docs/level-design.md` V0.4 §0 + §2;
+ * - a door fed by **more than one switch** — LEGAL but flagged for review:
+ *   `docs/level-design.md` §1 allows at most one switch per door in L6–L35, and
+ *   `ADR-architecture-0003` R5 homes the flag at the validator-warning layer
+ *   (statically decidable from level JSON alone, so no search may gate it).
+ *   **This is the first warning that carries a machine-readable code**
+ *   (`multi-switch-door`, see {@link LEVEL_WARNING_CODES});
  * - `docs/ui-ux.md` R-L2 — hard grid cap 7 × 7 (`width`/`height` ∈ 3..7);
  * - `AGENTS.md` §3 — `src/core/**` is pure TypeScript: never import Phaser here.
  *
@@ -260,12 +266,66 @@ function entryPhaseOf(tile: Coord, start: Coord, startPhase: Phase): Phase {
 // 4. Validator
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── the coded-warning channel ───────────────────────────────────────────────
+// Historic warnings are prose with a location prefix (`doors[2] "d1".tiles[0]
+// (3, 1) covers the goal …`). That shape is CONSUMED as a string by
+// `src/game/levels/level-registry.ts` (logged verbatim) and by `tests/**`
+// (`warnings.join(" | ")`), so re-shaping `warnings` into objects would ripple
+// through files this layer does not own — for one flag. The minimal faithful
+// move is therefore a **typed code carried at the head of the message**:
+//
+//   `[multi-switch-door] doors[2] "d1" is targeted by 2 switches (…) — …`
+//
+// One channel, unchanged result shape, machine-readable name, human-review
+// prose intact. `LEVEL_WARNING_CODES` is the inventory (zod-typed, one truth for
+// the TS union), and a warning whose head brackets are not in it reports `null`
+// rather than inventing a code — the same "no silent code" discipline
+// `@/core/solver/policy` applies to `POLICY_VIOLATION_CODES`.
+
+/**
+ * Every warning id the validator may emit today — **one**, and deliberately so:
+ * a code is added here only together with the check that emits it and a control
+ * that fails when the check stops firing (ADR-architecture-0003 R5: the
+ * multi-switch flag is a *review* verdict, so it names a warning, never a
+ * rejection; there is no policy code and no negative control for it).
+ */
+export const LevelWarningCodeSchema = z.enum(["multi-switch-door"]);
+
+/** The machine-readable warning id — derived from the zod enum, so both stay one truth. */
+export type LevelWarningCode = z.infer<typeof LevelWarningCodeSchema>;
+
+/** The inventory, in zod's own declaration order. */
+export const LEVEL_WARNING_CODES: readonly LevelWarningCode[] = LevelWarningCodeSchema.options;
+
+/** The `[code]` head a coded warning carries. */
+const WARNING_CODE_HEAD = /^\[([a-z0-9-]+)\]/;
+
+/**
+ * Read the {@link LevelWarningCode} out of a warning string, or `null` when the
+ * warning carries no code (every pre-existing warning) or an unknown one.
+ */
+export function warningCodeOf(warning: string): LevelWarningCode | null {
+  const head = WARNING_CODE_HEAD.exec(warning)?.[1];
+  if (head === undefined) return null;
+  const parsed = LevelWarningCodeSchema.safeParse(head);
+  return parsed.success ? parsed.data : null;
+}
+
 export interface ValidationResult {
   /** `true` ⟺ `errors` is empty. Warnings never reject a level. */
   ok: boolean;
   /** Hard invariant violations — the candidate is REJECTED (ADR-0004). */
   errors: string[];
-  /** Suspicious-but-legal constructions for manual review; never reject by themselves. */
+  /**
+   * Suspicious-but-legal constructions for manual review; never reject by
+   * themselves.
+   *
+   * A warning **may** start with a machine-readable code in square brackets
+   * (`[multi-switch-door] …`) — read it with {@link warningCodeOf} and check it
+   * against {@link LEVEL_WARNING_CODES}. Uncoded entries are the historic prose
+   * warnings; both kinds live in this one list so a consumer that only prints
+   * them keeps working unchanged.
+   */
   warnings: string[];
 }
 
@@ -290,7 +350,12 @@ export interface ValidationResult {
  *   only, flag for review); a wall that can never be entered on any move count
  *   (an ordinary permanent wall — legal geometry, warning for **every** `id`,
  *   teaching levels included: ADR-0009 / V0.4 §0 + §2); door tiles on the
- *   player/goal; a switch that can never fire; a switch with no targets.
+ *   player/goal; a switch that can never fire; a switch with no targets; **a door
+ *   targeted by ≥ 2 switches** (`multi-switch-door` — legal but flagged, legal
+ *   above all: `docs/level-design.md` §1 caps it at one switch per door in
+ *   L6–L35, and ADR-architecture-0003 R5 homes the flag here rather than in the
+ *   Solver, because the property is decidable from the level JSON alone; it never
+ *   rejects and never gates the BFS proof).
  *
  * Parity-dead walls, precisely: every legal move changes `x + y` parity and the
  * phase together, so the player can only stand next to a tile `T` after
@@ -506,6 +571,52 @@ export function validateLevel(raw: unknown): ValidationResult {
         `switches[${i}] "${sw.id}".tile ${formatCoord(sw.tile)} is a wall while its own activePhase "${sw.activePhase}" is current — entry (and therefore the toggle) can never happen; the switch is inert`,
       );
     }
+  });
+
+  // ── multi-switch doors (M1 × M3) — REVIEW FLAG, never a gate ──────────────
+  // `docs/level-design.md` §1 carries this law twice: the `switches` row ("each
+  // door is targeted by at most one switch in L6–L35 … flagged in review
+  // (validator warning recommended)") and the validation-invariants sentence
+  // ("door targeted by more than one switch ⇒ review flag"). ADR-architecture-0003
+  // R5 rules the home: the property is decidable from the level JSON alone
+  // (count the switches whose `targets` list a given door id), so it is a
+  // **validator warning** — a hard acceptance edge that needs no search must not
+  // make acceptance depend on a search run. Through L35 the shape is *legal but
+  // flagged*; there is no rejection to name, hence no `POLICY_VIOLATION_CODES`
+  // entry and no negative control (YAGNI until GD quantifies the L36+
+  // allowance — the n-13 precedent: `switch-without-targets` warns here *and*
+  // rejects in policy, one layer per verdict strength).
+  //
+  // What counts, precisely:
+  // - **distinct switch ids** whose `targets` name this door — two switches are
+  //   two switches even when they share a phase or a tile shape, and one switch
+  //   listing the same door twice is still one switch;
+  // - only targets that resolve to an existing `doors[]` id: an unresolvable one
+  //   is already the hard `dangling reference` error above and must not also
+  //   manufacture a "door" here;
+  // - overlap is irrelevant: whether the door's tile *is* the switch's tile (the
+  //   self-closing latch of ADR-architecture-0003 R1) changes nothing about the
+  //   target count;
+  // - one warning per door, in `doors[]` order — deterministic output.
+  const targeters = new Map<string, { index: number; id: string }[]>();
+  level.switches.forEach((sw, i) => {
+    const alreadyCounted = new Set<string>();
+    for (const target of sw.targets) {
+      if (!doorIds.has(target) || alreadyCounted.has(target)) continue;
+      alreadyCounted.add(target);
+      const list = targeters.get(target);
+      if (list === undefined) targeters.set(target, [{ index: i, id: sw.id }]);
+      else list.push({ index: i, id: sw.id });
+    }
+  });
+
+  level.doors.forEach((door, i) => {
+    const feeders = targeters.get(door.id) ?? [];
+    if (feeders.length < 2) return;
+    const named = feeders.map((f) => `switches[${f.index}] "${f.id}"`).join(", ");
+    warnings.push(
+      `[multi-switch-door] doors[${i}] "${door.id}" is targeted by ${String(feeders.length)} switches (${named}) — docs/level-design.md §1 allows at most ONE switch per door in L6–L35 (the L36+ allowance is not quantified yet). LEGAL and flagged for review only: this warning never rejects a candidate, never repairs one, and never gates the Solver's proof of solvability. A hard rejection above the allowance is Solver-side policy and does not exist yet (ADR-architecture-0003 R5). Counted per distinct switch id — a switch naming the same door twice counts once; whether the door's tile is also a switch tile is irrelevant to this count.`,
+    );
   });
 
   // ── portals (M2) ──────────────────────────────────────────────────────────

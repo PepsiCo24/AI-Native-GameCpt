@@ -757,6 +757,529 @@ and a path must be quiescent before dispatch.**
     milestone merge with CI green at tip, tag, submission pack (repo + hosted URL only if the user provides a hosting
     target — deploy choice is a USER decision, no accounts touched by agents). Loop discipline: return → disk-verify
     → merge → next queued ticket, ceiling 3 live, no per-step confirmation, every claim carries an artifact.
+48. **G6 HOSTING — USER DECISION LANDED + LIVE.** User ruled: public GitHub Pages on
+    `https://github.com/PepsiCo24/AI-Native-GameCpt`. The first deploy attempt FAILED with an honest on-disk root
+    cause, not a guess: the repo was PRIVATE (free plan ⇒ no Pages; the REST enable said "plan does not support",
+    the deploy action said "ensure Pages enabled"). Three options put to the user with facts; user chose public.
+    Pre-flip gate run live in view before any exposure: tracked-file scan (no `.env`/credentials/keys ever
+    committed), credential-literal grep over the whole tracked tree (zero hits; sole match = AGENTS §9's own policy
+    sentence). Flip executed under that explicit choice; Pages enabled (`build_type: workflow`); rerun deployed.
+    **Live verification is a real browser walk, not a curl**: `?level=8` rendered (canvas 1), trusted keys R,R,R —
+    moves froze at 2, phase unchanged (the refusal triple holds on the public internet), zero page errors, zero
+    failed requests; homepage metadata set. Mechanics: `main` = the shipped artifact (the 162-commit lag closed by
+    release merge `3601935`, CI green on main); `deploy-pages.yml` builds the subpath-safe `dist/` (vite
+    `base: './'`, headless-simulated under a `/AI-Native-GameCpt/` path BEFORE shipping) on every main push —
+    future milestone merges auto-publish. The public build SHIPS WITH PLACEHOLDER ART DISCLOSED in-game (banner)
+    and in the workflow header comment — Asset Gate honored; revision art remains the user's lane; URL ≠ G6 done
+    (final release = milestone re-merge when G1–G5 land).
+49. **DG-003 MERGED — facade canonized to disk-truth (`dde5a3d`+`d358e15` → merge `5cabdd2`).** Verification judged the
+    disk, not the report: all 7 cited SHAs exist (`git cat-file`); "M1-alone 0/370" is the canonical figure of this
+    file, not invented; "nothing DELIVERED" matches manifest V0.5 verbatim; secret/banned-word scans over added lines
+    clean; 46/2000 is the only divergence figure cited (1×README, 2×design-thinking, 5×iteration). Their self-check
+    caught three own overclaims before commit — consistent with what landed. **My finding they could not have:
+    dangling evidence pointers** — README/submission cite `dyn-merged/` (15 trusted-input frames + manifest) that
+    live in the Orchestrator smoke dir, NOT in the repo (`git ls-files` 0 hits). A public repo may not cite
+    unverifiable artefacts → **DG-004 queued with pre-milestone force**: copy evidence into `docs/evidence/`,
+    re-point every citation, add the live-URL line (Pages went public after their base — they could not know it).
+    Until DG-004 lands, no further main merge (current public main is pre-DG text — stale but not wrong-citing).
+    Gap inventory routed: #1→PA-006(item 51) · #2→LV-008(live) · #3→QA-005(item 50) · #4→user art lane ·
+    #5→GD post-cohort · #6/#8→GD ticket queued · #7→LV queue · #9 URL half discharged by item 48, video remains ·
+    #10 folds into PA-006's BUT-table re-freeze.
+50. **QA-005 MERGED — standing browser regression permanent (`6b5bf71` → merge `616789e`).** Disk-verified: 12 files
+    exactly their owned set (`playwright.config.ts`+`tests/**`), 3,217 insertions; `--list` count matched 75/7;
+    **the authoritative run was on merged develop, not their worktree**: Playwright **75 passed / exit 0 / 3.4 min** +
+    tsc 0 + vitest 408/3 + levels 10/10 + build ✓ (all re-run by me at `5cabdd2`/`b96f3f8`). Suite is production-data
+    driven (par routes solved at runtime — future levels flow without spec edits). **Two REAL production defects
+    confirmed verbatim at source and pinned, not patched**: ① frame-window keyboard replay — two down/up pairs in one
+    frame ⇒ 5 moves (`input-map.ts:130` onKeyDown); ② stale mid-run win copy prints "L1–L5 cleared" while the game
+    ships L10 (`hud.ts:348`). Both are live on the public URL now — fix ticket dispatched (item 51); pins are the
+    un-pin contract (unexpected-PASS flags removal). **Transient-frame physics got its terminal verdict** (the
+    Entry-2 not-capturable hole): refusal arc P1 measurable (109 ms window in the 220 ms budget, peak 2488 px, actor
+    centroid 2 px off ROI centre); press-beat P2 **occluded by construction** — actor disc 0.70 cell strictly contains
+    the 0.40 cell switch footprint, so no production change is wanted or needed while occupied; ui-ux wording
+    follow-up = UA-0009 queued micro. **CI ruling (their OQ2): e2e job REQUIRED after `verify`** (`b96f3f8`) —
+    chromium-only, workers 1, NO retries (flake surfaces stay visible), report artifact on failure. Their hygiene
+    risk accepted+fixed: `node_modules/`→`node_modules` so worktree symlinks can never be staged.
+51. **DISPATCHED — live agents 3/3 ceiling.** **R-004b → Gameplay Engineer** (branch `agent/gameplay/r-004b-input-hud-embed`,
+    base `b96f3f8`): fix both pinned defects (src + the granted two-line e2e un-pin + new `tests/unit` regressions)
+    AND land R-004 (`isPlayerEmbedded` → `src/core/rules` via the `solidAt` one-truth, six-step order,
+    architecture-0003 R4). **PA-006 → Playtest Analyst** (branch `agent/playtest/pa-006-stage2-refreeze`, base
+    `b96f3f8`): Stage-2 instrument **re-freeze V0.6** — the `41d5a4b` freeze covers L1–L5 only, pre-unlock, so a
+    cohort would test a prototype that no longer exists; scope = L1–L10 per-level metrics (understand-time,
+    first-win, refuses/restarts/undos, confusion markers, continue-intent at the L5→L6 d′ seam and L6→L8 a′ probe),
+    explicit c′-deferral ruling (portals wait for accepted `l011.json`), friction clause + R7 tri-signal coding,
+    sha256 provenance manifest, user-facing 10-cohort runbook. Cohort itself stays the user's lane; this ticket is
+    the human-free half of G4. **Queue**: DG-004 (PRE-MILESTONE GATE), UA-0009, GD ticket (level-design:115 +
+    par-HUD OQ1 + L11 block-ruling after LV-008), R-003 → after LV-008, LV-007D/E → after LV-008, demo video (user/DG).
+52. **LV-008 MERGED — L11 ACCEPTED, clause-by-clause against the frozen law (`5127600` → merge `aaab35d`).** Law
+    immobility verified on disk first: exactly one commit touched `level-design.md` since `c68afac` (GD-009 citation
+    corrigendum) and the §6 pre-registered clause (line 184) shows **zero diff** — the acceptance numbers predate
+    every candidate and never moved. Clauses, all machine-checked: `D_exec 8.5732 < 13.64` (the bound itself is the
+    2-dp published form of L10's 13.642857 — strictly harder than "beat L10"); `par 4` holds the cap; exactly ONE
+    opposite-colour pair — validator-enforced, `errors=0`; `T=0` false routes; below-OFFERED debut grade with
+    `switchRequired:"exempt"` recorded on the L6 precedent. **Filtered, never fitted**: 54 seeded candidates
+    (`SEED 20261015`, committed `author-l11-candidates.ts`) → 1 accept = shipped `MATCH`; histogram 49×
+    gate-shortest / 4× par-cap; both "差一点" probes rejected by name (same-colour pair = hard validator error;
+    bypassable portal = gate (ii) trip). L1–L10 numbers unmovable and unmoved: solver dump blocks 10/10
+    byte-identical, difficulty rows byte-identical, `l001–l010.json` untouched. Gate (iv) satisfiable for the FIRST
+    time (`dualPhaseTiles 21`) — this RESOLVES the standing escalation without weakening it (whitelist still exactly
+    one gate, still only l008). The §8.5 ordered/unordered promotion trigger was tested at the first L11+ candidate
+    and **did not fire** (`[5,0]` equal on both readers) → block ruling needed no movement. Merged-tree battery, my
+    own re-run: tsc 0 · vitest **23 files / 448 passed / 3 skipped** (only-up) · solver **11/11 + exactly 1
+    escalation** · validator **11/11 + 10/10 negatives by name** · build ✓ · CI pending. Honest risks accepted
+    (seam control is boundary-not-surgical, documented; pair-count control coupling recorded in test comment).
+    **Still invisible in-game**: registry pins `l001–l010` — R-003 dispatched (item 53).
+53. **R-003 DISPATCHED + QUEUE REALIGNED (live 3/3).** **R-003 → Gameplay Engineer** (branch
+    `agent/gameplay/r-003-l11-unlock`): the two registry data lines + `renderer-level-unlock.test.ts` re-pin — the
+    minimal, auditable unlock path (LV-008 was right to refuse this edit itself; author ≠ unlocker). No e2e
+    expectation edits allowed (new count/failures are data-driven signals to report, not to smooth). Landing L11 in
+    the playable registry opens the **Entry-3 portal-pair capture** on `:5199` (my lane) → UA Entry-3 review — the
+    visual-evidence gate for the portal painter. **Unblocked by acceptance**: GD ticket (level-design:115 stale tail
+    + par-HUD OQ1 + a BLOCK-RULGING RECORD that §8.5 promotion trigger was tested 2026-10-15 and did not fire);
+    LV-007D/E (pipeline §8.5 remainder now that l011's generator is shipped; metrics sidecar incl. L11 row; R5
+    multi-switch-door validator warning); **DG-004 scope grows**: evidence-in-repo + live-URL lines + ITER-0012
+    mirror (LV-008's AGENTS §6 obligation is Docs' pen) + the demo-video gap note; QA-005b portal e2e after R-003;
+    **LV-009 L12–L15** per G1 stretch — OQ2 first (per-level seeded script vs bulk generator). LV-008 worktree
+    pruned post-merge (the clause-by-clause record above is the review).
+54. **R-003 VERIFIED + HELD AS CHAIN-BASE (unmerged on purpose) — and the e2e gate caught ME red-handed.**
+    R-003 (`f484e23`) disk-proved: board blob `b09a77bc…` byte-identical to develop at GIT-OBJECT level (author ≠
+    unlocker, not merely claimed); registry = the two data lines in the L6–L10 pattern; branch battery my own run:
+    tsc 0 · vitest 23 files / **452** / 3 (only-up) · validator 11/11 · real-browser `?level=11` smoke green (HUD
+    flip cadence, 0 errors). Its tip's suite fails exactly 4 — all from ONE QA-owned constant, and R-003 correctly
+    refused to touch it. **But the first cloud CI run of the required e2e job (`7f941b5`) failed 13/80 — and 7 of
+    them are MY miss at the LV-008 merge**: the suite iterates the DATASET (11 files on disk) while the constant
+    says 10; I trusted the cloud gate instead of re-running Playwright locally after that merge, and the gate
+    recorded it faithfully. Fault mine, recorded not smoothed. Classification of the 13: **(a) 7 count/dataset**
+    — die with the chain merge (registry 11 + `EXPECTED_LEVEL_COUNT` re-pin; QA-005b's acceptance already requires
+    the full suite zero-red-except-pins at its tip); **(b) 6 timing-class** (transient P1+P2, mobile swipe, refusal
+    L3/L4/L9) — the contended-runner surface QA-005 warned about (13.4 min cloud vs 3.4 min local = ~4× slower,
+    self-calibrating budgets `gridMs < 60` plausibly blown). Discriminating experiment fired: full re-run of the
+    FAILED JOB ONLY on the same commit — same six ⇒ deterministic cloud shape (needs QA-005c runner-tolerance
+    ticket or recorded cloud-skip rationale), different ⇒ flakes. **Until that evidence lands, the e2e job stays
+    required** (a gate is not demoted because it worked). **QA-005b dispatched as CHAIN branch based directly on
+    `f484e23`**: one merge lands both atomic commits together, no red window for the registry-class failures; hard
+    conflict boundary enforced (R-004b live-owns the two pin files + all `src/**`; playthrough header prose = KNOWN
+    DEFER). DG-004 scope grows: iteration-log mirror now carries the R-003 line too.
+55. **R-004b VERIFIED + HELD FOR CHAIN-REBASE — the landmine they honestly flagged.** Disk-verified at their tip
+    (`3a607ca`+`318e518`, base `b96f3f8`): WeakSet object-identity handler as a Phaser-free rule module; end-panel
+    body now built from a REQUIRED `shippedLadder()` hook derived in the composition root (the stale-literal class
+    of bug is structurally impossible again); `isPlayerEmbedded` lives in `src/core/rules/solid.ts` via `solidAt`
+    with the systems→renderer edge now TEST-ENFORCED (0 specifiers on disk — I counted). My own run: tsc 0 · vitest
+    25 files/441/3 (only-up against their base — the 441-vs-develop-448 gap is the BASE gap, not a regression).
+    Sharpest evidence in the ticket: the control runs the PRE-FIX handler through the same harness and reproduces
+    the browser's exact 5. **Serialization decision**: their tests were written against the 10-level registry —
+    merged as-is into the 11-level world their end-panel/unlock-chain/`:147` assertions would go red. So NOTHING
+    merges until QA-005b lands; then **R-004b resumes → rebases onto the final chain → adapts its own
+    registry-sensitive assertions → full battery re-run → ONE green merge**. RV-007 (read-only) dispatched now over
+    all three held commits, asked to enumerate the exact landmine assertions and stress-test this ordering.
+    Accepted, not re-litigated: OS key-repeat deliberately unsuppressed (distinct objects ⇒ legit moves — locked
+    rule preserved, "one keydown ⇒ one move" ≠ "hold key = one move"); `ladderLabelOf([])` branch kept for
+    `noUncheckedIndexedAccess`, YAGNI call handed to RV-007; stale QA prose is correct ownership discipline →
+    **QA-005c micro queued** (narration refresh + the REAL config flaw: `reuseExistingServer: true` means a busy
+    :5198 silently tests another tree — must fail loudly); end-panel string awaits UA sign-off (folds into UA-0009);
+    AGENTS §6 mirrors (input dedupe + copy source + architecture §4 test-enforced-arrow note) grow DG-004.
+56. **PA-006 MERGED (`df353a0` → `b6a702b`) — G4's human-free half is DONE.** Verification: layered §11 over a
+    byte-untouched V0.5 (sole deletion = the version line itself, T6 honored); my own `shasum -c` re-check 5/5 OK;
+    freeze id `df353a0` (RF-1). The instrument is genuinely stricter than asked: BUT rule bound to the DEPLOYED main
+    commit read off Actions (a mid-round deploy stops the round), defect-neutral BD-1/BD-2 contamination clauses so
+    cohort validity does not depend on R-004b's timing, SEAM-1/SEAM-2 pre-registered thresholds with PP-A
+    hand-verified against shipped `l008`, c′ deferred with three repo-fact grounds — deferred loudly, never silently.
+    **Orchestrator rulings on its three OQs:** (1) YES R-004b lands before cohort v2 — but not because the protocol
+    requires it (it is neutral): it lands as the chain's single green merge anyway, and BD-1 is the round's worst
+    threat; (2) no extra P-standby beyond the 3-replacement cap until replacements actually fire — YAGNI; (3) runbook
+    §2.4 frame-capture execution = **Orchestrator lane** (`:5199` reserved), scheduled right after the chain merge
+    (that IS the Entry-3 portal-capture window — one setup serves both). **GD-010 dispatched** into the free slot
+    (L11 law OUTCOME annotation with byte-preservation proof, line-115 tail fix, A3 non-firing record `[5,0]`, OQ1
+    par-HUD ruling — decision by GD, landing in ui-ux deferred to UA). Live: QA-005b, RV-007, GD-010 = 3/3. PA-006
+    worktree + branch pruned; iteration-log RF-1 entry = DG-004.
+57. **GD-010 MERGED + CI discriminating experiment READS: mixed cloud shape — two rulings.** GD-010 (`43f1d84` →
+    merge `081b9cc`): frozen §6 clause **byte-preserved under the OUTCOME annotation** — proof not taken on trust: I
+    re-hashed the paragraph at `b6a702b` vs tip (`ea72befc…` identical); line-115 tail now names the landed ordered
+    reader (substance of the old bullet verified intact on the + side: 46/2000, LV-007C, §8.5-unordered doctrine all
+    present); **ADR-design-0002** records the promotion trigger's measured non-firing (triple-sourced `[5,0]`,
+    pre-specified re-opener, no-vibes clause) — approved here per AGENTS §4; **GD-OQ1 par-in-HUD REFUSED** from locked
+    doctrine (§9 show-don't-tell, board-is-the-teacher, §12 no-punishment, §0.5 no-new-screens) with an
+    evidence-only re-entry; `ui-ux.md` untouched (filing = UA's pen → UA-0009 dispatched: OQ1 closure, end-panel
+    string shape sign-off, transient-observability wording now that QA-005 gave the arcs a terminal verdict, SW/R7
+    observation note). **The cloud e2e re-run (same commit) finished: 9 failed vs 13 first time — the sets differ.**
+    Decomposition: the 7 count/dataset failures persist (registry-10-vs-dataset-11 — die with the chain merge, as
+    planned); `transient.spec.ts:116/:257` failed BOTH runs ⇒ deterministic cloud shape (software GL ~4× slower:
+    self-calibrating budgets like `gridMs < 60` observed at 31 ms locally simply go bankrupt there — the
+    calibration fails its own guard); refusal/mobile-swipe membership drifted run-to-run ⇒ intermittent tail. Two
+    rulings: **(1)** `--retries=1` in the CI job ONLY — a case that passes on retry reports FLAKY (Playwright's
+    distinct state) and every FLAKY must be named in a follow-up ticket; local stays zero-retry per QA-005's
+    discipline. No more silent-red blocking a required gate, and no more hiding either. **(2)** QA-005c ticket
+    grows: transient-class runner tolerance (calibrate-or-annotate, decision by evidence from BOTH cloud runs now on
+    file) + the narration refresh + `reuseExistingServer:false`. Gate stays REQUIRED — two rulings, one
+    experiment, zero demotions.
+58. **QA-005b RETURNED: BLOCKED-WITH-EVIDENCE, and my dispatch premise was 2/4 WRONG — they caught ME.** I wrote
+    "4 failures trace to ONE stale constant" (inherited from R-003's diagnosis). QA-005b MEASURED: the constant
+    flips `playthrough:97/:118` green, but `playthrough:47` `toEqual([1..10])` and `latch-door:60` `toEqual([6..10])`
+    are HAND-TYPED literals — arithmetically unsatisfiable at 11 levels; and capping the refs to keep them green
+    would DELETE all five L11 legs, so they STOPPED per the dispatch's own clause and reported instead of smoothing.
+    Disk verification (mine, at their chain tip `f4e8186`): 5 files all inside grant (portal.spec.ts 323 lines NEW,
+    helpers fixtures + `watchErrors`/`phaseOf`, registry-layers prose-only, README), zero `src/docs/.github` hunks,
+    tsc 0, vitest 23/452/3, `--list` 86/8 (75 + 6 portal + 5 per-level L11 legs — arithmetic holds), the two red
+    literals confirmed present verbatim. Their portal probes are mutation-killed (3/3 reverted, falsifiability
+    honored). They also self-reported that QA-005 README's "adding a level needs no test edit" is FALSE for the two
+    hand-typed inventories — documented, not hidden. **BLOCKER-1 ruling (their OQ1)**: option (a′) — the R-004b
+    RESUME carries both literal lines (granted, exactly two) since it already owns `playthrough.spec.ts` adaptation
+    to the 11-level world; single-writer holds because QA-005b is no longer live on those files. **Their OQ2 ruling**:
+    YES in principle — inventories derive from the discovered set, `EXPECTED_LEVEL_COUNT` stays ONE independent
+    hand-typed pin; execution = QA-005c (semantics change to suite files, not smuggled into the chain). Also relayed
+    to R-004b: the `:147` pin's subject MOVED — it now walks L11 (title passes, stale body fails), and WORDING WATCH:
+    UA-0009's end-panel canon must be checked at `develop` before their final battery, UA's string wins.
+    **Merge discipline unchanged**: chain (`f484e23 → 8f75bc5 → f4e8186`) stays UNMERGED with its 2 reds — the moment
+    R-004b returns 86/0/exit-0, it all becomes ONE green merge.
+59. **RV-007 RETURNED: 3× MERGE, 0 BLOCKER, serialization plan ENDORSED by an independent judge — plus one live
+   MAJOR it caught mid-flight.** The reviewer judged only disk and re-ran everything: Phaser keyboard semantics
+   RE-DERIVED from installed 3.90.0 source (queue re-walk-from-0, postUpdate-empty, per-consecutive guards, the
+   `key.isDown` repeat guard provably INERT in our game since no Key is ever registered — my agent's commit message
+   was accurate line-for-line); the harness control's 5-action sequence independently hand-derived; the
+   "measured, not typed" sweep numbers recomputed EXACT (339 states / 13 embedded / 0 mismatches / levels 4–11);
+   batteries re-run (23/452/3, 25/441/3); un-pin diffs proven assertion-zero-change; range-diff PROVES the
+   in-progress rebase patch-identical (`3a607ca`≡`679563c`, `318e518`≡`d630f88`); QA chain tip correctly cited
+   `f4e8186` (amended; `d5ef390` orphaned — merge record must use f4e8186). **MAJOR-1, caught alive**: the
+   `playthrough.spec.ts:47` literal was applied by R-004b at 21:19, reverted by 21:26, momentarily UNOWNED —
+   resolved not by intervention but by structure: my resume dispatch had already granted both lines; my own disk
+   read after the report (non-poll): latch-door:60 now `[6..11]` dirty, playthrough:47 still `[1..10]` pending —
+   the agent is mid-work. **Merge gate hard-coded by this office: both lines COMMITTED at return or the chain does
+   not merge** (RV-007's checklist adopted verbatim: ① lines land ② adaptation as commits, range-diff vs d630f88
+   ③ final-SHA battery on an IDLE machine, every timing flake NAMED per the FLAKY rule — candidates on record:
+   playthrough:147 ×1, transient:86 ×1, both green on every other read ④ merge record cites f4e8186 ⑤ §6 doc-debt
+   dispatched at merge). Split-landing alternatives were assessed by the reviewer and rejected for the same reason
+   I chose chain: none saves time, all add red windows. Endorsed forward-note: hand-typed inventories STAY as
+   deliberate dataset-change alarms (doctrine-consistent), budget ~6 lines/4 files per future unlock until
+   QA-005c's derivation ruling lands. **Backlog routed to QA-005c**: MINOR-2 (`:147` gains
+   `toContain(L1–L${EXPECTED_LEVEL_COUNT})` closing the composition-root chain end-to-end), MINOR-3 (recursive
+   layer-scan + bare-import pattern), NIT-4/6 (stale spec headers/doc examples), NIT-5 (`constructor`-code
+   prototype lookup — theoretical, Map/hasOwn when touched); DG-004 carries MINOR-4 (§6 mirrors for ALL THREE
+   held commits + R-003 + LV-008 + QA-005b — the doc-debt pile is now one dispatch). NIT-1 noted: R-003's message
+   said base "22 files" where git ls-tree proves 23 — deltas were and remain right; message stays, this line is
+   the correction. **DG-004a DISPATCHED** (free slot): dyn-merged evidence 15 PNGs + capture-log INTO
+   `docs/evidence/dyn-merged/` with provenance README, every dangling citation re-pointed, dated live-URL truth
+   (10 levels + banner disclosed; says NOTHING about the unmerged chain) — the pre-milestone gate now has its
+   pen. Live: R-004b(resume) + UA-0009 + DG-004a = 3/3.
+60. **UA-0009 MERGED (`1548904` → `67c8bf0`) — ui-ux V0.9, spec authority fully filed.** Disk-verified: single
+    file, 50+/13−, tree clean; N-2 end-panel is a **DIRECTED ACCEPT with the exact character contract** (en dash,
+    U+00B7 separator, padded `L {N}`, ids-not-positions, never par) — and it matches R-004b's shipped template
+    EXACTLY, so the resume agent folds zero rework; the self-updating derivation is signed as the *structural*
+    kill of the stale-literal class (second time: hook + ruling both forbid literals by construction). OQ1 REFUSED
+    filed with spec CONCURS (`showPar:false` re-verified by me at tokens.ts:571-572); Entry-2 rows 1–2 CLOSED
+    (measurement / construction — the press-beat stands AS SPECIFIED, "make it visible" re-tunes pre-refused);
+    R7/SW + ADR-design-0002 armed pointers at §12/§3.1d. **Entry-3 pre-written = PENDING-CAPTURE, 8 occurrences,
+    zero pre-blessed verdicts** — six E3 clauses each with FAIL shape + fix bounds. **Their pitch correction is
+    accepted and it bites my capture lane:** L11 (7×3 @390 CSS) renders at the 51–56 px band by the longest-side
+    law — 65 was l10's column-count artifact (the known label wart, now a ruled clause, not just a note).
+    **Orchestrator ruling on their OQ:** one capture session serves both Entry-3 AND runbook §2-item-4 cohort-V
+    frames (viewports: desktop Entry-class harness + 390×844 mobile); the capture log records its OWN measured
+    pitch and THAT governs E3-2. Mid-flight crossing frame: capturable-or-named-gap per their pre-ruling.
+61. **DG-004a MERGED (`e8dd443`+`8b140fc` → `e2d4f44`) — PRE-MILESTONE GATE DISCHARGED.** My own re-run: 16/16
+    sha256 match vs COMMITTED blobs, 17 tracked files under `docs/evidence/dyn-merged/`, all 15 citations
+    in-repo-resolving, zero absolute-path leaks, zero secret-shaped lines; provenance README quotes capture-log
+    fields (pageErrors scope honest: session-terminal not per-frame) and self-reports the mobile trio's missing
+    shot records — recorded not smoothed. Live-URL truth lands scoped STRICTLY to `3601935` (10 levels + banner
+    disclosed; says nothing about the held chain). Three deferred staleness lines (README "QA-005 in flight",
+    playtest-log V0.5 wording, iteration header label) are logged inside ITER-0012's Next Decision → **milestone
+    DG round refreshes + mirrors §6 debt for LV-008/QA-005b + re-versions submission docs — gate list for the
+    next main merge now reads: chain green-merge → Entry-3 capture+UA verdict → milestone DG round.**
+62. **TWO LEVEL-LANE TICKETS DISPATCHED (live 3/3: R-004b + these).** **LV-007E** (metrics sidecar per AR-0003
+    R3): `docs/level-difficulty.report.json` generated by the pipeline, §5.2 becomes a TEST-PINNED mirror —
+    kills the drift class that fired twice this week; stdout dump format frozen byte-wise; freshness test
+    recomputes all 11 records + cross-checks PINS. **R5-VAL** (multi-switch-door = validator WARNING, review-flag
+    not gate): head stays 11/11 errors=0 warnings=0 (verified claim), named probe both-sides, one new CLI
+    self-test. **Territory law by construction:** parallel same-role, both forbidden from pre-existing
+    `tests/solver/**`, each owns exactly one new file; R5 forbidden from policy.ts (frozen L11 law constants)
+    and the solve script; LV-007E forbidden from src entirely. Chain discipline unchanged: R-004b return gates
+    everything (both granted literal lines COMMITTED or no merge, per item 59 checklist).
+63. **THE CHAIN MERGED — one green merge, all five RV-007 checklist items closed; L11+fixes are develop-shipped
+   (`42f6f36`, pushed, CI's first real gate run on it).** Disk-proved before merge: both granted literals at
+   HEAD (`[1..11]` + `[6..11]` — MAJOR-1 closed exactly as the gate demanded), zero `test.fail(` repo-wide,
+   range-diffs `=` identity ×2. Authoritative battery on the merge tree (idle machine, zero-retry local
+   discipline): tsc 0 · vitest 26/**487**/3 · levels 11/11 PASS · build ✓ · Playwright **85/1** — the one failure
+   `refusal.spec.ts:48` is the agent-NAMED `expectActorAt` single-instant pixel probe; discriminated with
+   evidence, not waved: isolated re-runs 4/4 green on my machine + their tip ran 86/0 twice + same signature
+   (`found []` during hop when the body covers no cell centre). FLAKY class ruled PRE-EXISTING
+   (helpers/game.ts:490), fix = QA-005c grant (poll/settle), CI absorbs via the standing `--retries=1`.
+   Chain lineage `f484e23 → 8f75bc5 → f4e8186 → 679563c → d630f88 → aaa2042` cited in the merge message (never
+   the orphan `d5ef390`). End-panel now LIVE-correct on develop: `L1–L11 cleared · L 11: moves N`.
+64. **LV-007E + R5-VAL MERGED (`88ea653`, pushed).** Merged-tree battery: tsc 0 · vitest 28/**537**/3 (exact
+   sum 487+16+34) · validator 11/11 + probe family PASS · solve 11/11 + 1 escalation · build ✓ · Playwright full
+   runs: 84/2 — BOTH failures the two named sites (`latch-door:122`, `refusal:48`), zero new signatures,
+   contention-sensitive (my back-to-back battery runs vs their quieter-tip 86/0s); the helper fix is now QA-005c's
+   PRIMARY charge with an acceptance of repeated green full suites. R5 premise correction ACCEPTED (15
+   pre-existing parity-dead-wall warnings at head, new-code count 0 on shipped boards — honest totals chosen over
+   the false 0 I dispatched); the hand-mirror drift class is dead (34 freshness tests pin §5.2 cell-by-cell;
+   seams fixed-pair list ruled YAGNI-stable until a third seam exists). Routed follow-ups: `src/levels/README.md:47`
+   stale `node scripts/validate-levels.ts -> exit 0` line (level lane, fold into LV-009 dispatch), R5's
+   duplicate-target OQ (asked-not-assumed, no ticket yet), Architect's §8/§12 pointer flip (fold into next
+   arch contact).
+65. **ENTRY-3 CAPTURE EXECUTED on `88ea653` — the portal's first pixels on disk (`entry3/`, 21 PNGs + 3 logs,
+   pageErrors [] everywhere).** Desktop: A/B statics, full RRRR settled trace (`moves` 0→4 monotone, HUD text
+   proves it), **11-frame in-page rAF transit extraction around the crossing press** (preserveDrawingBuffer
+   channel — E3-3's transit frame is NOT a named gap, it has pixels), R3 embedded-door `[5,0]` frame, win-panel
+   frame whose live text reads EXACTLY `L1–L11 cleared · L 11: moves 4` (N-2 character contract
+   board-verified), dev-channel frame (`?placeholders=1`: badge visible, strip contains NO portal entry = R-P5
+   negative PASS, badge + strip visible in the same frame), L5 portal-free negative strip frame. Mobile 390×844:
+   A/B/crossing-settled + **measured-pitch record with full method history**: pass1 channel defect (fixed
+   threshold → 0 samples) recorded not erased; governing number **51 CSS px** (plate-edge span 714÷7 =
+   formula-exact `computeLayout` output 102 dev) = INSIDE E3-2's 51–56 band at its floor — the margin-inclusive
+   51.1 row governs over the 390/7≈55.7 convention; UA's pitch correction just earned its keep twice.
+   One-session-runs-double confirmed: these mobile frames also satisfy runbook §2-item-4's cohort-V set.
+   Verdict authority = UA's next ticket (six E3 clauses, per-frame evidence paths in the logs); NO orchestrator
+   verdicts recorded here — the checklist stays PENDING-CAPTURE until their entry lands. Live: QA-005c +
+   UA-0010 about to run; user lanes (revision art req-08/11, cohort testers) unchanged; milestone DG round +
+   main re-merge gated behind both verdicts.
+66. **CI SPOKE ON THE MERGED DEVELOP — 7 failed / 79 passed on `42f6f36` — all named, zero new defect
+   signatures, and one honesty note about this office.** The roster is the pre-registered cloud-failure family
+   (ruling 57) running at full strength: (a) `refusal.spec.ts:48` L3+L4+L9 — the `expectActorAt` single-instant
+   class, amplified by slow software GL exactly as feared; (b) `transient.spec.ts:116`/`:257` — the calibrated
+   gridMs-vs-cloud-frame-time mismatch, deterministically red as item 57 pre-said; (c) `mobile:207` R-T4 swipe
+   drift (the intermittent member, this run stuck through the retry); (d) **one new shape, not a new bug**:
+   `playthrough.spec.ts:113` the L1→L10 dialog-Next walk died BOTH attempts on `page.evaluate: Test timeout of
+   30000ms` — the walk is one level longer post-L11 and the 2-core runner simply can't cross 30 s; locally the
+   same test passes (~12 s). Classified as CI-envelope sizing, granted to QA-005c alongside its existing
+   criteria 1/6 (follow-up session dispatched with the exact roster + kept log paths; their design call: per-test
+   timeout sizing or walk split). **Honesty note adopted from the follow-up text into the record: item 63's
+   "idle machine" was not fully idle — the authoritative full-suite battery ran while the two level-lane agents
+   were still alive; the builder's own 86/0 ×2 at the tip + my isolated 4/4 greens + the named-roster match remain
+   the load-bearing evidence, and the TRUE idle-machine proof is now QA-005c's ×3 consecutive green acceptance
+   bar (machine quiet as they run). develop's required e2e gate stays RED until they land — which is the gate
+   DOING ITS JOB, not an anomaly; main is untouched, the public URL unaffected.** LIVE 2/3: QA-005c (roster in
+   hand) + UA-0010 (Entry-3 verdicts from the 21 on-disk frames, 51 CSS measured pitch governing per item 60's
+   ruling). Milestone gate list restated: QA-005c green (local ×3 + CI) → UA-0010 verdicts → milestone DG round
+   (frames import to `docs/evidence/entry3-portal/`, §6 mirrors for the chain + LV-007E + R5 + ITER entries,
+   three deferred staleness refreshes) → main → Pages gets 11 levels.
+
+67. **UA-0010 RETURNED JUDGED — Entry-3 six of six PASS; the portal's spec story is now closed on pixels, and
+   the merge gate list shrinks to TWO: QA-005c green + milestone DG round.** Disk-verified before merge (single
+   file `35b3df3`): every clause verdict carries cited pixel facts (pair-identity 0 deep-ink mismatches; the
+   settled `(2,1)` = day-1 `(2,1)` at **0 px** on BOTH viewports — the "folded space, not glitch" clause has an
+   arithmetic proof, not a vibe; single-disc constant 90×90 bbox arc across all 11 transit frames, settled by
+   t=202.7 ms inside the 220 ms budget with **0 ms added lock**; greyscale ink-mass separation door 57.8 % vs
+   portal 13.5 % = the class-vs-class question answered with hue removed, exactly as the pre-written clause
+   demanded; the R-P5 strip portal-free negative PASSed in BOTH probes as pre-registered). The **measured 51 CSS
+   px governs** at the band floor — E3-2 was judged at the number the frame record produced, not the number the
+   dispatch remembered; the pass-1 channel defect stays recorded as SUPERSEDED in the log (the honesty rails
+   worked on their own author's file). N-2 frozen instance `L1–L11 cleared · L 11: moves 4` signed on-board; the
+   "provisional until M2 integration" clause discharged empirically with published values UNCHANGED (offline
+   contrast math met reality and nobody had to move a token); Entry-1 portal row + Entry-2 row 7 became pointers
+   with DEFERRED wording kept as history. One observation recorded-not-opened (empty plate band under 7×3 boards
+   at both classes — no clause rests on it). **UA-0010 owed nothing: zero FAIL, zero CONDITIONAL, zero fix paths,
+   zero asset requests — the M2 debut needed no design change, the strongest statement the instrument can make
+   about a new mechanic's first pixels.** Merge `618c76f`. Remaining before main: (a) QA-005c (live) — the
+   named-roster fixes + ×3 consecutive idle zero-retry greens + CI green = the true item-③ closure; (b) milestone
+   DG round — `docs/evidence/entry3-portal/` import (21 PNGs + 3 logs, verdict-cited), §6/ITER mirrors for chain
+   + LV-007E + R5-VAL + UA-0010, three deferred staleness refreshes (README QA-005-in-flight line, playtest-log
+   V0.5 wording, iteration header label), submission-doc re-versioning; THEN main → Pages gets 11 levels →
+   G1/G6 evidence complete.
+
+68. **QA-005c MERGED (`6fd1a3d`) — THE FLAKE IS DEAD AT ROOT and the pre-merge checklist's item ③ finally got
+   its TRUE idle-machine closure.** Disk-verified pre-merge: 11 atomic commits, territory exactly the 13 declared
+   files (tests/** + playwright.config.ts only — zero src, zero docs), both hand-typed literals GONE (grep 0/0 —
+   MAJOR-1's whole lineage now structurally impossible to repeat), `EXPECTED_LEVEL_COUNT` survives as the ONE
+   deliberate alarm pin — stronger than before (count AND contiguity, mutation-proved both directions through the
+   REAL loader in a new unit file: unlock now costs one deliberate edit, not six-lines-across-four-files). The
+   mechanism was reproduced frame-by-frame before fixing: mid-hop the disc covers NEITHER cell centre, so a
+   single-instant probe reading `cells: []` was a MEASUREMENT artifact, never a rule failure — the fix is a
+   bounded one-probe-per-frame poll until exactly-one-and-expected, settled case costs one probe, ZERO sleeps
+   added anywhere (honest evidence that stability was bought, not waited for). Touch path same discipline +
+   cached CDP session. transient :116/:257 now measure the idle grid and derive window `max(700 ms, 24×idle)` +
+   ceiling `max(60, 2×idle)` — semantic teeth (idle<335 ms "this is not a screenshot channel") kept.
+   `reuseExistingServer: false` decided + documented (R-004b's live-risk: a config-run can never again silently
+   test a foreign tree). The 9 `test.fail(` grep hits are ALL prose history-pointers — real calls repo-wide: 0
+   (my own anchored grep). **Merged-tree authoritative battery on a now-genuinely-idle machine: tsc 0 ·
+   vitest 29/**543**/3 (537+6 exact) · solver PASS · build ✓ · Playwright 86/0 ZERO-RETRY × 2 consecutive
+   (3.2/3.1 min — same duration as the flaky era: stability bought with polls, not waits).** QA's own evidence:
+   ×4 on their branch (logs kept) + named-site repeat-each 60/60 + 10/10. Their risk-1 is honest and accepted:
+   cloud-shaped fixes are built from the measured CI roster, NOT re-run on CI (no push authority) — the
+   confirmation round is running on `6fd1a3d` RIGHT NOW; pre-QA's last CI (UA round tree) failed EXACTLY the
+   3 deterministic members (chain wall-clock, transient ×2) with the intermittent members green — zero new
+   signatures, perfect roster match to what QA fixed. If any of the 3 survives the round: back as a named
+   failure with the log, retries NOT increased (standing discipline). OQ rulings from this office: OQ1 mutation
+   probe STAYS in the default gate (0.2 s buys permanent alarm verification); OQ2 retries stay `--retries=1`
+   per the narrowed ruling (retry = signal; surviving flake = named ticket) — a future removal needs 2–3 clean
+   green CI rounds first, evidence-gated; OQ3 the 120 s budget is accepted over the chain-split (minimal
+   in-lane change; split stays backlog). **MILESTONE GATE NOW READS: CI green on `6fd1a3d` + DG-004b (DISPATCHED
+   this item: entry3 frames → `docs/evidence/entry3-portal/` with provenance, §6/ITER mirrors for the whole
+   merged slate, three deferred staleness refreshes, submission re-version — all pre-merge-truthful: nothing may
+   claim the 11-level ladder is live until the main merge itself)** → main → Pages publishes 11 levels. Live:
+   DG-004b = 1/3; user lanes unchanged (revision art req-08/11, cohort testers — the instrument `df353a0` is
+   frozen, the runbook's §2-item-4 frames are ALREADY captured in the entry3 mobile trio per the double-use
+   ruling).
+
+69. **DG-004b MERGED (`79d1258`) — and the CI roster has CONVERGED to exactly two named survivors; two tickets
+   dispatched (live 2/3).** DG disk-verified by this office: **24/24 artefacts byte-identical** (sha256 recomputed
+   vs committed blobs), territory = the four declared paths ONLY (my first grep's BRE `$\|` alternation silently
+   no-oped under BSD grep and screamed "outside-owned=2" — clean ERE re-run read TRUE 0; false alarm owned here and
+   recorded, the builders' claim was honest), hygiene: orch-smoke only in the evidence README's lineage note, zero
+   absolute paths, tense discipline held everywhere (develop-carries-ladder vs main-carries-ten), and ITER-0016
+   states plainly the CI-green half is NOT landed — **the docs did not pretend the gate closed.** DG also caught
+   THIS office's phantom citation: item 67 wrote the UA-0010 merge as `618c76f` — `git cat-file` proves it NEVER
+   EXISTED; the real merge is `bc332a0` (DG's own docs used the true SHAs `bc332a0`/`35b3df3`; correction dated
+   here, item 67's historical text left as-is — same law we hold every lane to: recorded, not erased). **CI
+   post-QA-005c, BOTH rounds (`6fd1a3d`, `02c99d2` trees): 84/2, the IDENTICAL two named tests both rounds,
+   retries did not save either** — `transient:142` (P1, `report.onset` null even on the enlarged window) +
+   `mobile:208` (R-T4: the bounded `expectMoves` poll ran and exhausted 2000 ms — the gesture never committed on
+   that runner AT ALL). Roster trajectory **7→4→3→2×2**: the actor-flake family, the walk wall-clock, P2 and every
+   intermittent member died in the cloud exactly as QA-005c fixed them — corroboration from the independent
+   arbiter; what remains is cloud-PHYSICS-shaped, not game-shaped (local: 86/0×2 at the merge tree + ×4 on the
+   branch + repeat-each 60/60 & 10/10). **QA-005d** dispatched (tests/** only): prove-or-kill P1's sampling-limit
+   hypothesis (90 ms arc vs measured ~117 ms cloud frame grid → possibly unrenderable-by-camera on that machine;
+   honest fix = runner-aware ASSERTION with 60 Hz teeth fully preserved + named resolve-limit in output/README,
+   never deletion), R-T4 via in-page touch/pointer arrival counters (test-side observer only — src untouched) to
+   locate the drop between CDP synthesis and Phaser's pipeline; **CI-as-measurement-channel granted**: their branch
+   runs as PRs on develop's `pull_request` trigger, ≤3 rounds, and I merge ONLY from a fully green PR run — which
+   doubles as the milestone's pre-registered cloud proof. **LV-009-A** dispatched (authoring phase ONLY): the
+   L12–L15 block as OUT-OF-TREE candidates under `candidates/**` measured against every frozen pre-registered law
+   (block-tail `D_exec(L11–L15) > 13.64` clause, below-OFFERED early members, shipped-mechanics-only fence — no
+   new mechanics/policy edits/schema bends; any missing L12+ par bound goes back as a NAMED GAP for GD approval,
+   not a silent invention), dataset STAYS 11 (the mutation-proved pin + freshness mirror must not move mid-gate),
+   and it runs ZERO e2e to keep the machine quiet for QA's timing proofs. Milestone gate now reads as ONE term:
+   **QA-005d's green PR → merge → main → Pages publishes 11 levels** → post-merge DG-004c syncs the ~5
+   future-scoped sentences → LV-009 INTEGRATION ticket after (dataset add + one-line pin + sidecar regen + the
+   door×portal combo's UA capture round if the law pre-writes one). User lanes unchanged: req-08/11 revision art,
+   the frozen `df353a0` cohort, P9 demo video.
+
+70. **LV-009-A RETURNED — the block-tail law FIRED POSITIVE for the first time ever; the branch is HELD
+   unmerged pending GD-011.** Disk-verified by this office: 6 files exactly as declared (`candidates/**` dossier +
+   four boards + one new seeded authoring script; **zero src/levels overlap — dataset frozen at 11**, gates
+   unmoved: shipped validator 11/11 · 15 warnings · negatives PASS unchanged, vitest untouched), and the numbers
+   were RE-RUN not re-quoted: candidates validator 4/4 ok + solver 4/4 `parMatch`, L12 `D_exec 8.230769` exact-match
+   to the dossier, **L15 `D_exec 14.97 > 13.64` confirmed by my own run** — the pre-registered block-end clause
+   fired in the ESCALATION direction (the mirror-image of the L11 law that fired in the BELOW direction; the
+   anti-post-hoc machinery now proven capable of judging both), also above L10's measured peak 13.643. The ramp:
+   8.573 → 8.231 (dip) → 10.899 → 12.958 → 14.970; T≡R≡0, deadStates 0; **channel mandatory from L13**
+   (walk-only UNSATISFIABLE — the sealed line makes the portal solvability-load, the honest mechanical escalation
+   story the block was supposed to tell); `dualPhaseTiles` + latch-reader flags visible 4/4. Honest artifacts
+   recorded-not-repaired: the debut-skeleton family `l12TemplateFamily` = 512 candidates **0 accepts**; and the
+   striking dataset-wide finding — **switchRequired FALSE on all 484 accepted candidates** (latch loads par,
+   never solvability — exactly where the 13.64-style law question lives: is that the doctrine or a filter?).
+   OQ rulings BY THIS OFFICE (mine to make): OQ-4 multi-switch-door STAYS dormant for the block (as designed —
+   a review flag is not an obligation to use it); OQ-5 prettier **leave as-is** (matches all 11 shipped boards +
+   zero CI format gate — reformatting churn now would poison the byte-copy integration diff). **OQ-1/2/3 are
+   design authority → GD-011 DISPATCHED** (branch `agent/design/gd-011-l1215-block-law`): publish L12–L15 par law
+   + dip-shape ruling + latch grade BEFORE measuring the four boards against it — clause-by-clause ACCEPT/REJECT
+   in LV-008 style; if GD picks the strict switchRequired grade, 0/484 means full restart and the law text must
+   say why it's worth it. `b631cda` holds until the verdict; LV-009-B integration follows the dossier §6 checklist
+   (dataset byte-copy + DOCUMENTED_LESSONS + PINS + sidecar regen + mirror rows + ONE-line pin bump + registry
+   unlock + the doors×portals UA capture-entry round). **MILESTONE GATE UNCHANGED AND UNAFFECTED: QA-005d in
+   flight** (their green PR → merge → main → Pages 11 levels) — L12–L15 ride the NEXT milestone by design; the
+   dataset stays 11 all the way through this one. Live 2/3 (QA-005d + GD-011); user lanes unchanged.
+
+71. **The quota war and the survivor war — both won; the milestone now waits on ONE green develop run.**
+**GD-011 died twice and delivered anyway**: run 1 (kimi-k3) hit `provider.quota` 402 AFTER its full
+reading phase, BEFORE writing a byte (disk confirmed: clean at base). The RESUMED session (same context,
+model swapped to qwen3.8-max per the error's own hint to reduce max-output) authored everything —
+law commit `ad2b310` (level-design V0.9 §6.1) + the 298-line ADR-design-0003 + the §6.1.1 two-sided L16
+bounds refinement — then died on 402 *after the writes, before its own verification/commit*. This office
+performed a MECHANICAL closeout (zero editorial change to GD text): verified content completeness (§1–§9
+all present, per-board verdicts + standing points + handoff in place), verified the ADR status line
+("Orchestrator countersign at merge" — this merge IS the countersign), territory owned-paths-only, ran
+vitest once (29/543/3), committed the two in-flight files citing the death, merged `999b21e`. THE LAW
+(law-before-verdict, derived not adopted): P1 par(L12)=4 as an INTERSECTION of two pre-existing
+constraints; P2 Δpar≥2 derived from the measured B-band spread 1.3125; P3 ceiling ≤10 on
+coverage+searchability(0.5%→0.03% accept cliff)+precedent; NEW P4 coverage clause (par route must visit
+every tile — measured 4/4); two-beat dip ruled (L12 owns the successor slot; three-beat rejected on
+arithmetic); latch doctrine = "the switch buys SPEED, the sealed channel buys EXISTENCE" hardened into
+falsifiable G1–G4 with the lost gate-(i) STATED not hidden; 4/4 boards + block-set ACCEPTED against
+numbers published in the same sitting before the verdict lines; the l12TemplateFamily 0/512 artifact
+PROMOTED to an L16+ authoring instruction (enumerate plan shapes, never clone shipped boards);
+LV-009-B's handoff carries exact constants + machine-checkable pre-registered acceptance law + the
+reader-divergence STOP-and-route clause. Quota state: two premium models now capped; orchestrator
+flash session lives; no new dispatch unless the milestone needs it. **QA-005d then killed BOTH
+survivors with measurement**: P1 root cause — `denyFeedback` records synchronously on keydown, so the
+90 ms arc paints IFF the bracketing frame gap < 90 ms, and the cloud grid straddles 116.7 ms (proved in
+the PR job log: the named RESOLVE-LIMIT branch RAN ON CLOUD asserting state-refusal + channel health +
+positive control with `onset===null` REQUIRED, while local grids print the full pixel-teeth line); R-T4
+root cause — per-awaited CDP touch dispatch is frame-gated and the game clock quantises to the grid, so
+the old burst spanned 15 frames/1999 ms on CI (>500 ⇒ tap ⇒ 0 moves); fix = single-tick Promise.all
+burst (`span=0` proven at 66.7 and 200 ms grids) + delivery/order/coords asserted BEFORE any HUD read,
+causality nailed by temporarily restoring the old helper and reproducing the exact cloud shape. Suite
+inventory 86→**88** (P1b + coarse pins: both branches execute on every machine — more teeth, never
+fewer). **PR #1 ran 88/0 ZERO-RETRY (16.8 min) — the pre-registered cloud proof — merged `fb751de`**,
+branch + worktree pruned. Disciplina honoured end-to-end: merge only from a fully green PR; every
+claim re-run by this office before accepting (tsc 0 · vitest 30/553/3 · targeted 19/19 with the
+evidence lines printed on MY machine). **MILESTONE: waiting on the develop-tip run of `fb751de`**
+(clean CI round #2 since the roster went dark; the `--retries=1` removal conversation opens after 2–3
+green rounds land) — on green, THIS session merges develop→main, Pages publishes the 11-level build,
+then DG-004c syncs the ~5 future-scoped hosting sentences + the 88-case inventory + the roster's final
+chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` cohort, P9 demo video).
+
+72. **The survivors' ghost: QA-005d's fix died a probabilistic death on the natural arm — corrected roster
+   first (this office's own pairing error, recorded not erased): the GREEN rounds were PR #1 AND the
+   `fb751de` develop round (`38784470154`, success — clean round #2 on the fixed tree); the RED round is
+   `f79b949` (`38784574025`, DOCS-ONLY delta, byte-identical tests) where P1 failed BOTH attempts in
+   OPPOSITE directions: attempt 1 arbiter measured 100.0 ms >= 90 → RESOLVE-LIMIT branch → REQUIRED
+   `onset===null` → **Received 643.4** (jitter landed a frame INSIDE the 90 ms arc window on a
+   coarse-mean runner); retry arbiter saw a fine grid → resolvable branch → **onset null**. Three rounds,
+   same content: green/green/red — the coin is the DESIGN, not the tree: pre-measuring the grid once and
+   then REQUIRING the predicted observation couples a hard assertion to one noisy sample. Physics restated:
+   visibility needs SOME presented frame inside `[startAt, startAt+90)`; a mean interval >= 90 does not
+   prove none fell inside, a mean < 90 does not guarantee one did — only the recording's OWN stamps
+   justify either outcome, POST-HOC. **QA-005e dispatched** (branch `agent/qa/qa-005e-p1-oscillation` @
+   `f79b949`, slot 1/3): implication redesign — (a) beat observed ⇒ full shape clauses ALWAYS; (b) beat
+   absent ⇒ permitted ONLY when the same recording proves no frame inside the window, with the honesty
+   machinery (state refusal + channel health + positive control) still asserted and a named
+   `[QA-005e] RESOLVE-LIMIT` attachment; short-bracket + absent ⇒ FAILS loudly (17 ms local grids always
+   bracket short ⇒ **60 Hz teeth preserved, not negotiated**); (c) fabricated P1b keeps REQUIRED-null
+   (exact by construction, green twice); (d) audit every frame-model-verdict consumer for the same
+   coupling; (e) errors carry the interval histogram. Unit tests must reproduce BOTH observations of run
+   38784574025 as named cases. Acceptance: `--repeat-each=15` transient + 2×88/0 zero-retry local, tsc 0,
+   vitest only-up, then the PR-as-measurement-channel again (<=3 rounds); **milestone main merge holds for
+   a green develop tip** — standing discipline: the e2e gate is REQUIRED, a surviving flake is a named
+   ticket (this one named within minutes of its first firing, exactly as the rule intended), retries stay
+   1, and no green is claimed from a docs-delta tree while its test-content sibling printed red.
+   Live 1/3 (QA-005e); user lanes unchanged: req-08/11 revision art, the frozen `df353a0` cohort, P9 video.
+
+73. **The implication arm MET the cloud, the cloud MET the game, and the suite is now
+   measurement-honest end to end: PR #3 green, merged `3ddc2d6`, milestone gate = one
+   green develop round on this tip.** Chronicle: (1) QA-005e shipped the post-hoc arc
+   implication (mechanical closeout here `9eaf7fb`, README census addendum owned by this
+   office); PR #2's cloud round then fired the NEW fail-loudly branch `BEAT-REQUIRED-ABSENT`
+   TWICE - stamps said a frame was inside the window, pixels said no beat - and the
+   branch did exactly what it was designed to do: REFUSED to lie, and made a discovery.
+   (2) QA-005f adjudicated the three-way (a recorder miss / b game hole / c clock
+   attribution): **(c) NAMED, reproduced at the straddling grid, GAME EXONERATED** -
+   rAF stamps are vsync-NOMINAL while the step runs LATER and Chromium dispatches pending
+   input BEFORE frame callbacks, so a loaded runner compared keydown wall-time against a
+   frame that had not run, read a true 100 ms interval as 83.4 "fast", and demanded a
+   beat from a non-existent paint; the invariant (a step inside the window <=> BoardView
+   painted) held 8/8 on the game instance. (3) The fix is tests-side geometry - probe
+   records `ranAt` per frame + `frameIndex` per event, the arc window lives in STEP-INDEX
+   time, both arms assert `attributionHolds` BEFORE classifying - so the four red shapes
+   (attribution / game-absence / recorder / limit) are distinguishable BY MESSAGE, BY
+   NAME; the superseded nominal bracket is pinned as a WRONG-regression case. (4) **PR #3
+   run 38804134439: 88/0 zero-retry (13.1 m), and the cloud draw was the STRONGEST
+   possible one: natural arm `stampsInsideWindow=1, gap 83.4, onset OBSERVED ->
+   assert-shape ran the full pixel teeth ON CLOUD and passed**; fabricated arm
+   resolve-limit faithful; all oscillation + attribution unit cases green in verify.
+   Merged `3ddc2d6` (only from a fully green PR - discipline intact across three PRs).
+   (5) The ENOENT artifact-rot class is CLOSED as machine-healthy: QA-005e's detached
+   closer ran x2 CONSECUTIVE shipped-config greens with five foreign playwrights live,
+   differing only by an isolated `--output` dir, and RECONCILED with this office's
+   `--trace=off` control - the class needs BOTH a foreign process on the same outputDir
+   AND live trace staging; my "quiet" pair's rounds were themselves the concurrency
+   violation (the closer's detached loop was still alive - my preflight missed it because
+   it matched `playwright test` while the loop's playwright was mid-sleep). Standing
+   protocol: before any battery, kill-or-wait on ALL processes rooted in the tree (not
+   just playwright), and prune worktrees only after detached census loops are confirmed
+   DEAD. (6) That same detached closer, discovered post-prune, had committed a 46-line
+   README section to the pruned branch - orphaned `88b37ba`; this office salvage-ported
+   it VERBATIM (`patch -p1`, zero edits, provenance header above the block) because
+   record-not-erase cuts both ways: an agent's late honest evidence gets the same
+   respect as a green test line. (7) The survivor roster is FINAL: 7 -> 4 -> 3 -> 2 ->
+   1 (prediction-coupling) -> 0, every death by measurement, every resurrection with
+   MORE teeth; `--retries=1` retirement can now be negotiated from a position of three
+   cloud greens (PR #1, `fb751de`, PR #3) + this tip round. Live agents 0/3 (all three
+   QA tickets closed on disk); quota: the flash lane keeps delivering, premium models
+   still capped - no new dispatch unless the milestone needs it. **On the green tip
+   round THIS session merges develop -> main and Pages publishes the 11-level build**,
+   then DG-004c flips the five future-scoped hosting sentences + the 88-case inventory +
+   this roster's final chapter. LV-009-B (L12-L15 integration, law published and
+   countersigned) is the NEXT train after the milestone. User lanes unchanged: req-08/11
+   revision art, the frozen `df353a0` cohort, P9 video. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+    PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the

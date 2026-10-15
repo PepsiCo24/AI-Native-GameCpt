@@ -19,14 +19,21 @@
  * direction is not a rule, and a "would this be refused?" test here would be the
  * exact duplication AGENTS.md §3 forbids. Direction → outcome is decided inside
  * the core, by `applyMoveToGameState`.
+ *
+ * The keyboard half of the translation lives in `./key-handler` — a Phaser-free
+ * module — because the one rule it must obey (**one DOM `keydown` event object ⇒
+ * at most one action**, TICKET-QA-005-1) has to be callable from a unit test. This
+ * file only wires it to the scene's `keydown` channel and detaches it again.
  */
 
 import Phaser from "phaser";
 import type { Direction } from "@/core/state/move";
 import type { Vec } from "@/core/state/types";
+import { createKeyActionHandler } from "@/game/input/key-handler";
+import type { InputIntent } from "@/game/input/key-handler";
 import { LAYOUT } from "@/game/theme/tokens";
 
-export type InputIntent = "undo" | "restart" | "next";
+export type { InputIntent } from "@/game/input/key-handler";
 
 export interface InputHost {
   /** `min(devicePixelRatio, 2)` — converts the CSS-px thresholds of R-T4. */
@@ -40,23 +47,6 @@ export interface InputHost {
   hover(cell: Vec | null): void;
   intent(action: InputIntent): void;
 }
-
-const KEY_MOVE: Readonly<Record<string, Direction>> = {
-  ArrowUp: "up",
-  ArrowDown: "down",
-  ArrowLeft: "left",
-  ArrowRight: "right",
-  KeyW: "up",
-  KeyS: "down",
-  KeyA: "left",
-  KeyD: "right",
-};
-
-const KEY_INTENT: Readonly<Record<string, InputIntent>> = {
-  KeyZ: "undo",
-  KeyR: "restart",
-  Enter: "next",
-};
 
 function dominantDirection(dx: number, dy: number): Direction {
   if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? "right" : "left";
@@ -127,18 +117,10 @@ export function attachInput(scene: Phaser.Scene, host: InputHost): () => void {
 
   const onPointerOut = (): void => host.hover(null);
 
-  const onKeyDown = (event: KeyboardEvent): void => {
-    const dir = KEY_MOVE[event.code];
-    if (dir) {
-      event.preventDefault();
-      host.move(dir);
-      return;
-    }
-    const intent = KEY_INTENT[event.code];
-    if (!intent) return;
-    event.preventDefault();
-    host.intent(intent);
-  };
+  // TICKET-QA-005-1: Phaser re-delivers the *same* `keydown` event object while a
+  // burst sits in its per-frame queue, so the handler consumes by identity — one
+  // action per delivered press, never a replay of the queue (`./key-handler`).
+  const onKeyDown = createKeyActionHandler(host);
 
   scene.input.on(Phaser.Input.Events.POINTER_DOWN, onPointerDown);
   scene.input.on(Phaser.Input.Events.POINTER_MOVE, onPointerMove);

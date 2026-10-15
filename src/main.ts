@@ -39,9 +39,10 @@
 
 import Phaser from "phaser";
 
+import type { Level } from "@/core/level";
 import { onReducedMotionChange, prefersReducedMotion, requestedLevel } from "@/game/env";
 import { Hud } from "@/game/hud/hud";
-import { loadPlayableLevels, startIndexForLevel } from "@/game/levels/level-registry";
+import { loadPlayableLevels, ladderLabelOf, startIndexForLevel } from "@/game/levels/level-registry";
 import type { Viewport } from "@/game/renderer/grid-mapping";
 import { LevelScene } from "@/game/scenes/level-scene";
 import type { AppIntents } from "@/game/systems/app-intents";
@@ -71,11 +72,12 @@ function showBootFailure(container: HTMLElement, error: unknown): void {
 
 function boot(container: HTMLElement): void {
   let session: GameSession;
+  let levels: readonly Level[];
   try {
     // R-P6 — the production gate. It throws only when art is expected to be
     // integrated (`ART_INTEGRATED`), see `theme/assets.ts`.
     assertNoPlaceholders();
-    const levels = loadPlayableLevels();
+    levels = loadPlayableLevels();
     // `?level=<n>` — the dev / playtest / E2E entrance (docs/ui-ux.md §1: there is
     // no level-select screen). Out of range falls back to L1; nothing is persisted
     // and the win path is untouched (`startIndexForLevel`).
@@ -113,6 +115,10 @@ function boot(container: HTMLElement): void {
     hooks: {
       ...intents,
       hasNextLevel: () => session.levelIndex + 1 < session.levelCount,
+      // The end panel names the ladder that actually shipped, computed from the
+      // registry (TICKET-QA-005-2) — a literal here is exactly how `L1–L5` outlived
+      // L6–L10.
+      shippedLadder: () => ladderLabelOf(levels),
     },
   });
 

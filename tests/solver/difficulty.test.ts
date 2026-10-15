@@ -152,6 +152,12 @@ const PINS: Readonly<Record<number, DifficultyPin>> = {
   8: { L: 6, B: 1.5, T: 0, R: 0, M: 3, D: 25.5, dexec: 10.5, bRaw: 2.82, forced: 0.12, lookahead: 5, states: 34 },
   9: { L: 8, B: 1.3793, T: 0, R: 0, M: 3, D: 27.137931, dexec: 12.137931, bRaw: 2.59, forced: 0.03, lookahead: 7, states: 58 },
   10: { L: 9, B: 1.5476, T: 0, R: 0, M: 3, D: 28.642857, dexec: 13.642857, bRaw: 2.95, forced: 0.1, lookahead: 8, states: 42 },
+  // LV-008 — the M2 debut: `B` 1.5244 (exact 1.524390243902439) is *lower* than L10's
+  // and `L` falls 9 → 4, so the execution axis drops to 8.5732 while `M` rises to 4
+  // (M1+M3+M2): `D` = 28.5732 sits 0.07 *below* L10's, but the mechanic-count term is
+  // 20 of it. The seam law is therefore written on `D_exec`, not on `D`
+  // (ADR-design-0001) — the same finding §3 records for L5→L6.
+  11: { L: 4, B: 1.5244, T: 0, R: 0, M: 4, D: 28.573171, dexec: 8.573171, bRaw: 2.98, forced: 0.02, lookahead: 3, states: 82 },
 };
 
 describe("LV-007B · item 3 — the L1–L10 difficulty table, measured", () => {
@@ -324,6 +330,7 @@ describe("LV-007C · item 2 — `D_exec` is a derived reading of the published t
       "10.50",
       "12.14",
       "13.64",
+      "8.57",
     ]);
   });
 });

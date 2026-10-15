@@ -40,7 +40,6 @@ import type { DoorDef, Level, PortalDef, SwitchDef } from "@/core/level";
 import {
   baseDoorOpen,
   doorAt,
-  isClosedDoorAt,
   isWallSolidAt,
   portalAt,
   solidWalls,
@@ -104,23 +103,23 @@ export function wallRenderState(
 }
 
 /**
- * R-C13 / R-D7: is the player standing inside a tile that **blocks entry in the
- * current phase**? Two classes qualify — a phase wall solid now (R-C13) and a door
- * closed now (R-D7, "doors share wall semantics") — and the answer is exactly
- * core's own predicate over both, so the view cannot disagree with the rules:
- * `isWallSolidAt(...) || isClosedDoorAt(level, doorsOpen, position)`.
+ * R-C13 / R-D7 — **who owns the "player embedded" question, and who only paints it**.
  *
- * A legal, stable state under ADR-0008 clause 3 — the player was never crushed or
- * pushed, and every outward step is judged by the ordinary entry rule, so the tile
- * can always be left. The flag drives R-C13.2's interior drop, R-D7's occupied
- * door treatment and the one-shot `fx.phaseRing` (R-C13.4). The V0.7 addendum to
+ * The question ("is the player standing inside a tile that blocks entry in the
+ * current phase?") is *rule* semantics and lives in **core**, as
+ * `isPlayerEmbedded(level, gs)` in `@/core/rules/solid`, implemented through the
+ * one `solidAt` truth (ADR-architecture-0003 ruling 4). Gameplay (`GameSession`)
+ * and this renderer both consume that version; the renderer does not re-derive it
+ * from `isWallSolidAt`/`isClosedDoorAt`. It is a legal, stable state under
+ * ADR-0008 clause 3 — the player was never crushed or pushed, and every outward
+ * step is judged by the ordinary entry rule, so the tile can always be left.
+ *
+ * What the flag *drives* is paint, and that stays here: R-C13.2's interior drop,
+ * R-D7's occupied door treatment and the one-shot `fx.phaseRing` (R-C13.4), fed in
+ * through {@link wallRenderState}'s `playerEmbedded` argument. The V0.7 addendum to
  * R-Z7 is what it does **not** drive: no layer, no container, no depth — the ring
  * is painted inside the existing L5 actor container, below the body.
  */
-export function isPlayerEmbedded(level: Level, gs: GameState): boolean {
-  if (isWallSolidAt(level, gs.phase, gs.playerPosition)) return true;
-  return isClosedDoorAt(level, gs.levelState.doorsOpen, gs.playerPosition);
-}
 
 /** Is the player standing on `tile`? (View-side comparison, no rule meaning.) */
 export function isPlayerAt(gs: GameState, tile: Vec): boolean {

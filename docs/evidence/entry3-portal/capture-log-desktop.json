@@ -1,0 +1,151 @@
+[
+  {
+    "shot": "l11_day_initial",
+    "bytes": 43884,
+    "h": {
+      "lvl": "11",
+      "moves": "0",
+      "phase": "白昼",
+      "won": false
+    }
+  },
+  {
+    "shot": "l11_night_on_switch",
+    "bytes": 39995,
+    "h": {
+      "lvl": "11",
+      "moves": "1",
+      "phase": "夜晚",
+      "won": false
+    }
+  },
+  {
+    "where": "R2 transit extraction",
+    "frames": 19,
+    "note": "in-page rAF PNGs, press at t=0 offset ~637ms"
+  },
+  {
+    "shot": "l11_R2_transit_01",
+    "bytes": 62114,
+    "tMs": 29.4
+  },
+  {
+    "shot": "l11_R2_transit_02",
+    "bytes": 61994,
+    "tMs": 67.7
+  },
+  {
+    "shot": "l11_R2_transit_03",
+    "bytes": 66184,
+    "tMs": 102.2
+  },
+  {
+    "shot": "l11_R2_transit_04",
+    "bytes": 66674,
+    "tMs": 136.3
+  },
+  {
+    "shot": "l11_R2_transit_05",
+    "bytes": 63965,
+    "tMs": 169.3
+  },
+  {
+    "shot": "l11_R2_transit_06",
+    "bytes": 64286,
+    "tMs": 202.7
+  },
+  {
+    "shot": "l11_R2_transit_07",
+    "bytes": 63162,
+    "tMs": 236.5
+  },
+  {
+    "shot": "l11_R2_transit_08",
+    "bytes": 62156,
+    "tMs": 270.8
+  },
+  {
+    "shot": "l11_R2_transit_09",
+    "bytes": 62302,
+    "tMs": 304.7
+  },
+  {
+    "shot": "l11_R2_transit_10",
+    "bytes": 62276,
+    "tMs": 338.3
+  },
+  {
+    "shot": "l11_R2_transit_11",
+    "bytes": 62408,
+    "tMs": 372.4
+  },
+  {
+    "shot": "l11_R2_crossing_settled",
+    "bytes": 42103,
+    "h": {
+      "lvl": "11",
+      "moves": "2",
+      "phase": "白昼",
+      "won": false
+    }
+  },
+  {
+    "shot": "l11_R3_embedded_door",
+    "bytes": 40896,
+    "h": {
+      "lvl": "11",
+      "moves": "3",
+      "phase": "夜晚",
+      "won": false
+    }
+  },
+  {
+    "shot": "l11_R4_win_panel",
+    "bytes": 90890,
+    "h": {
+      "lvl": "11",
+      "moves": "4",
+      "phase": "白昼",
+      "won": true
+    }
+  },
+  {
+    "where": "win panel innerText sample",
+    "body": "L 11 moves 4 白昼 / Light 原型结束 / Prototype over. L1–L11 cleared · L 11: moves 4 DEV PLACEHOLDER ART — NOT FINAL Undo Restart 原型结束 / Prototype over L1–L11 cleared · L 11: moves 4 Replay"
+  },
+  {
+    "where": "L11 ?placeholders=1 dev channel",
+    "stripText": "A-03 echo_spirit_aA-03 echo_spirit_bA-04 bg_phase_a_1920x1080A-05 bg_phase_b_1920x1080A-06 goalA-07 ui_kit",
+    "badgeVisible": true
+  },
+  {
+    "shot": "l11_dev_channel",
+    "bytes": 59942,
+    "h": {
+      "lvl": "11",
+      "moves": "0",
+      "phase": "白昼",
+      "won": false
+    }
+  },
+  {
+    "where": "L5 portal-free negative probe",
+    "stripText": "A-03 echo_spirit_aA-03 echo_spirit_bA-04 bg_phase_a_1920x1080A-05 bg_phase_b_1920x1080A-06 goalA-07 ui_kit",
+    "portalMentioned": false
+  },
+  {
+    "shot": "l5_no_portal_strip",
+    "bytes": 64430,
+    "h": {
+      "lvl": "05",
+      "moves": "0",
+      "phase": "白昼",
+      "won": false
+    }
+  },
+  {
+    "pageErrors": [],
+    "viewport": "1000x620 CSS DPR2",
+    "tree": "88ea653444b6c51506d9f01d3eeaef1fe1aca31b"
+  }
+]
