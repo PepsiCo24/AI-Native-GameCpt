@@ -15,6 +15,19 @@
  * requirement "one registry" intends. `board-view.ts` iterates this list and
  * never names a class.
  *
+ * **Within L4 the stack is §3.1d's, and it lives here as data** (V0.6, R-Z1):
+ * `portal < switch < goal < wall < door` — blockers draw **above** the goal, so a
+ * ring can never sit on a solid wall and promise a win the rules refuse (R-Z3).
+ * {@link L4_ORDER} is that total order, {@link L4_SLOT} its numeric slot per
+ * class, and `TileObjectSpec.layer` carries the slot — the container depth in
+ * `board-view.ts` is derived from it, never written as a literal. There is **no**
+ * per-cell or per-frame z-sorting anywhere: adding a class is adding a slot
+ * value, adding a class *before* an existing one is renumbering this table once.
+ *
+ * Caveat the table exists to make explicit: precedence assigns the **wall class**
+ * a slot, it does not give walls a second renderer — the wall is the one stateful
+ * class (see above), so it takes `L4_SLOT.wall` directly instead of an entry.
+ *
  * **Walls are the one stateful class and are deliberately not in this table.**
  * R-E6/R-E8: a wall tile is one persistent display object whose *state* swaps
  * `wall ↔ wallEcho ↔ wallOccupied` in place, staggered per tile during a flip, and
@@ -42,6 +55,38 @@ import type { ThemeTokens } from "@/game/theme/tokens";
 
 export type TileObjectKind = "goal";
 
+/**
+ * `docs/ui-ux.md` §3.1d — the single-cell appearance precedence within L4,
+ * **bottom → top**: `portal < switch < goal < wall < door`.
+ *
+ * The literal is the contract; {@link L4_SLOT} carries the numbers and is
+ * checked against it (`satisfies` at compile time, `assertLayerOrder` at boot),
+ * so a typo cannot silently invert two classes. `wall` is in the table because
+ * §3.1d's order is a statement about *classes* — the wall simply has no
+ * `TileObjectSpec` (R-E6/R-E8: it is the one stateful class).
+ */
+export const L4_ORDER = ["portal", "switch", "goal", "wall", "door"] as const;
+
+export type L4Class = (typeof L4_ORDER)[number];
+
+/**
+ * The numeric L4 slot of each class — the rank **is** the number, and the rank
+ * ascends in {@link L4_ORDER}. `TileObjectSpec.layer` takes one of these values;
+ * `board-view.ts` turns a slot into a container depth (`L4_DEPTH_BASE + slot`).
+ *
+ * The total order is fixed and complete: inserting a class means renumbering this
+ * table once (a data edit), never "finding room" between two numbers.
+ */
+export const L4_SLOT = {
+  portal: 1,
+  switch: 2,
+  goal: 3,
+  wall: 4,
+  door: 5,
+} as const satisfies Readonly<Record<L4Class, number>>;
+
+export type L4Slot = (typeof L4_SLOT)[L4Class];
+
 export interface TileObjectPaintContext {
   readonly g: Phaser.GameObjects.Graphics;
   readonly rect: Rect;
@@ -54,8 +99,12 @@ export interface TileObjectPaintContext {
 
 export interface TileObjectSpec {
   readonly kind: TileObjectKind;
-  /** Draw order inside L4; lower first. */
-  readonly layer: number;
+  /**
+   * §3.1d slot (a {@link L4_SLOT} value, never a bare literal): lower draws
+   * first. Two specs sharing one slot keep **level-data declaration order**
+   * (R-Z4) — they land in the same container, in {@link TILE_OBJECTS} order.
+   */
+  readonly layer: L4Slot;
   /** `docs/assets/asset-manifest.md` Asset ID this class is waiting on. */
   readonly placeholder: string;
   /** Tiles of this class in the level, in the current state. */
@@ -65,7 +114,9 @@ export interface TileObjectSpec {
 
 const GOAL: TileObjectSpec = {
   kind: "goal",
-  layer: 10,
+  // §3.1d — above the modifiers (portal/switch), **below the blockers** (wall/
+  // door): R-Z3, the ring never draws over a solid wall / closed door.
+  layer: L4_SLOT.goal,
   // DEV PLACEHOLDER — A-06 goal
   placeholder: "goal",
   tilesOf: (level) => [{ x: level.goal[0], y: level.goal[1] }],
@@ -79,5 +130,9 @@ const GOAL: TileObjectSpec = {
     }),
 };
 
-/** Every non-wall tile-object class the board can draw. Add an entry, not a branch. */
+/**
+ * Every non-wall tile-object class the board can draw. Add an entry, not a branch.
+ * Declaration order is the R-Z4 tie-break **within** one slot; across slots the
+ * order is §3.1d's and comes from `layer`, not from this list's order.
+ */
 export const TILE_OBJECTS: readonly TileObjectSpec[] = [GOAL];
