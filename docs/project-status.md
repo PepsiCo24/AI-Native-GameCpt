@@ -142,8 +142,12 @@ come from CDP/Playwright events, never from dispatched synthetic events.**
 `~/.local/share/opencode/worktree/f9a5d9/r-002-painters` (base `5624558`, branch `agent/gameplay/r-002-painters`).
 Visual acceptance is NOT his call: Orchestrator smoke + UA vision review + §6 iteration-log entry gate before merge.
 
-**GD-007** (Game Designer, background) — `docs/level-design.md` V0.5 alignment, isolated worktree
-`~/.local/share/opencode/worktree/f9a5d9/gd-007-level-design` (base `cd2054e`).
+**LV-007A** (Level AI + Solver, background) — enforcement & pinning batch (m-2 negative controls, m-5 UNSATISFIABLE
+guard+whitelist, n-14 named gates (v)(vi), n-18 pin hardening, switchRequired obligation L7–L10 per OQ4 ruling),
+isolated worktree `~/.local/share/opencode/worktree/f9a5d9/lv-007a-enforcement` (base `99e3f90`). **LV-007B** (metrics:
+B/T/R→`D`, n-11 route pruning + `maxRouteVisits`, m-8/9/10 doc lines, first real `D`-dip verification at L5→L6 /
+L10→L11 seams) queued for the next free slot. Deferred design question from GD-007: whether "below OFFERED" becomes a
+named teaching grade (kept descriptive for now).
 
 **QA-004** (QA Engineer, background) — independent second-implementation reproduction of the ART-INTAKE audit
 numbers (`audit.json`) + suite regression, read-only, no commits. It can now only trigger a **corrigendum** to
@@ -379,12 +383,12 @@ and a path must be quiescent before dispatch.**
    no genuine timing-gate wall — phase walls exist only as permanent obstacle / permanent decoration / echo.**
    Worktree hygiene note: `?? node_modules` in the worktree = ignore pattern `node_modules/` (trailing slash) does
    not match the symlink; harmless with explicit-path staging, fix before worktrees are reused.
-16. **GD-007 — DISPATCHED 2026-10-15** (isolated worktree `~/.local/share/opencode/worktree/f9a5d9/gd-007-level-design`,
-    branch `agent/design/gd-007-level-design`, base `cd2054e`; brief = five edits: §1 ladder-sync to ADR-0009 + gate-(iv)
-    ruling, L9 re-word to the F3-constructible ordered-plan lesson, L6 dip confirmed never-forced, §3 Aha bullets aligned
-    ((i)(ii)(iii) pre-L11 / dualPhase from L11), §6 dip numbers vs §5.1). **Acceptance check on return: also verify the
-    withdrawn "0/200" figure and the same-colour-portal "validator rule to be added" sentence are gone/updated** (rule
-    landed since LV-002A: `npm run levels` rejects every same-colour pair, 0/400 legal) — if missed, GD-007b micro-fix.
+16. **GD-007 — CLOSED & MERGED (`99e3f90`).** Disk-verified: single file `docs/level-design.md` V0.4→V0.5 (+26/−16);
+    both acceptance hard-points clean — bare withdrawn "0/200" gone (kept only as labeled historical notes alongside the
+    true figures 142/369 · 0/400 · 200/203 · 203/203), "validator rule to be added" exists now only inside the changelog
+    row describing its removal; L9 shipped wording uses full metric names; gate ids (i)(ii)(iii) match the CLI verbatim.
+    Earlier scope gap I flagged (item 16 pre-merge text) turned out already fixed by GD in §1. Follow-ups it defers are
+    tracked in LV-007A/B. Historical detail kept below for provenance:
     `docs/level-design.md` §1 lines ~43/46 still cite the withdrawn "0/200" figure and describe the
     same-colour-portal rejection as a "validator rule to be added" — that rule has since **landed** (`npm run levels` rejects every same-colour pair, 0/400 legal).
     GD-006 correctly stayed out of scope and flagged it instead of widening the edit.
