@@ -1278,7 +1278,44 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    then DG-004c flips the five future-scoped hosting sentences + the 88-case inventory +
    this roster's final chapter. LV-009-B (L12-L15 integration, law published and
    countersigned) is the NEXT train after the milestone. User lanes unchanged: req-08/11
-   revision art, the frozen `df353a0` cohort, P9 video. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+   revision art, the frozen `df353a0` cohort, P9 video.
+
+74. **MILESTONE M1 SHIPPED: the live game is ELEVEN levels on GitHub Pages, and the
+   serving is proven to be the proven tree.** `develop@4bbfdf2` -> `main@3da1240`
+   (`release(m1)`), Pages deploy run 38808879618 `success`, and main's own CI round
+   38808880095 came back **88/0 in 15.9 m with zero retry consumption** - the FIFTH
+   consecutive clean cloud round on the survivor lineage (PR #1, `fb751de`, PR #3,
+   develop tip, main), which is exactly the exit clause the v1 retry policy wrote
+   for itself. Live verification, honest ledger (all RAF-independent, per QA-005f's
+   own doctrine applied to this office's mouth): **(a) serving identity** - live
+   bundle is `index-CKz_I2T-.js`, byte-identical NAME with `npm run build` run on
+   this tree (content-hash filenames: identity, not similarity, and harder evidence
+   than a screenshot); **(b) the 11-level ladder renders** - accessibility tree of
+   `?level=11` shows `L 11 / moves 0 / 白昼 / Light / Undo(disabled) / Restart`, where the
+   previous live build physically could not show that banner; **(c) console 0 errors
+   / 0 uncaught** (the lone warning is l003's known validator design note, on the
+   ledger since authoring); **(d) network 7 requests / 0 failed**. What this office
+   deliberately did NOT claim: a trusted-key interaction walk on the live URL - the
+   review tab reports `document.hidden: true`, Phaser's rAF never fires, and **a
+   runner that cannot present frames does not get pixel evidence demanded of it, nor
+   fabricated**. Interaction proof on the identical tree is CI's unlock-chain
+   (L1->L11 through real win dialogs, 88/0 x5); the human-eye browser walk rides the
+   P9 video lane (user). One incident recorded not erased: during verification this
+   office blind-POSTed the Pages deployments API with an empty body - HTTP 404, zero
+   effect (re-verified: correct bundle still serving); the standing rule this
+   teaches: verify with GETs, never POST at a serving pipeline you did not stage.
+   (1) **INFRA-001 is in flight as PR #4**: cloud e2e drops `--retries=1` for bare
+   `npx playwright test` - checked first that `playwright.config.ts:70` pins
+   `retries: 0` hard, so flag-removal IS behavior-removal; pre-registered self-gate:
+   red round = one-line revert of ci.yml, never a weakened assertion. (2) **DG-004c
+   dispatched**: README's five future-scoped hosting sentences flip to the shipped
+   present, the 88-case inventory + 7->4->3->2->1->0 roster chronicle finalizes,
+   ITER-0017 syncs the milestone. Named follow-up for the QA lane (their file, not
+   this office's pen): the `tests/e2e/README.md` cloud-policy paragraph still speaks
+   of `--retries=1` - one line to flip in QA voice once PR #4 lands. (3) **LV-009-B
+   integration is the next train and is already running** (STEP-0 law re-attestation
+   before any dataset byte moves). User lanes unchanged: req-08/11 revision art,
+   the frozen `df353a0` cohort, P9 video. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
