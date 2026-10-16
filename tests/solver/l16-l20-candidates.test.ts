@@ -1,6 +1,7 @@
 /**
- * `tests/solver/l16-l20-candidates.test.ts` — the durable pin on the L16+ block
- * candidates (Level AI + Solver, AGENTS.md §4).
+ * `tests/solver/l16-l20-candidates.test.ts` — the durable pin on the L16–L19
+ * registered root block (QA-011, retargeted from the pre-registration candidate
+ * shelf).
  *
  * Why this file exists: `scripts/author-l16-candidates.ts` proposes and
  * `scripts/prove-candidate.ts` proves, but both are *runs* — their output lives in
@@ -8,24 +9,30 @@
  * same obligations from the landed bytes on every `vitest run`, using only the
  * shipped readers (`@/core/level` + `@/core/solver/*`). Nothing here is compared
  * against a number typed by the author: `par` is stamped by `analyse`, the cut and
- * the rung come from the shipped `l015.json`, and the band comes from the shipped
- * dataset.
+ * the rung come from the shipped rows *below the block*, and the band is re-derived
+ * from that same pre-block set.
  *
- * Scope boundary (LV-010 / R-003c): the candidates are **unregistered**. They live
- * in `src/levels/candidates/` precisely so that the three suites that own the
- * shipped-set census (`difficulty.test.ts` `SHIPPED_IDS`, `metrics-sidecar.test.ts`
- * `REPORT.levels.length`, the registry) keep reading 15 and are not perturbed.
- * This suite therefore walks the subdirectory itself and asserts nothing about
- * registration — wiring the candidates into `src/levels/` root, `EXPECTED_LEVEL_COUNT`
- * and the sidecars is the R-003c ticket's work, not this file's.
+ * Scope boundary (QA-011 / R-003c landed): the block is now **registered**. The four
+ * members live in `src/levels/` root and the lessons that carry the `block-l1619`
+ * obligation are their registry rows, so this suite walks the root set and derives
+ * `BLOCK_IDS` from `documentedLesson(id)?.obligation` — never from a typed 16–19.
+ * The candidate shelf (`src/levels/candidates/`) is asserted **empty**: its role was
+ * to hold the block while the census stayed at the shipped 15, and that role is over
+ * (the census now reads 19 through the single `EXPECTED_LEVEL_COUNT` pin).
  *
- * Evidence policy (AGENTS.md §7): this suite is the proof, so it must not be able
- * to pass vacuously — every structural obligation carries a **negative control** in
- * the last block, and the controls are asserted to be *rejected* by the same
- * readers that accept the real candidates.
+ * Why the pre-block filter matters: the block's own rows clear the cut by design
+ * (`D_exec` 17.1 … 22.9) and `l016` carries the one NAMED `B` excursion (1.7000).
+ * Deriving the cut/band over the *whole* dataset would let the block raise the filter
+ * it is judged by — the one thing `docs/level-design.md` §6.1.1 forbids. The window is
+ * therefore `id < min(BLOCK_IDS)`, read from the registry, not a typed `15`.
+ *
+ * Evidence policy (AGENTS.md §7): this suite is the proof, so it must not be able to
+ * pass vacuously — every structural obligation carries a **negative control** in the
+ * last block, and the controls are asserted to be *rejected* by the same readers that
+ * accept the real members.
  */
 
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -34,7 +41,13 @@ import type { Level } from "@/core/level";
 import { LevelSchema, validateLevel } from "@/core/level";
 import { analyse, explore } from "@/core/solver/bfs";
 import { analyseDifficulty } from "@/core/solver/difficulty";
-import { allOffShortestSolution, auditLevel } from "@/core/solver/policy";
+import {
+  allOffShortestSolution,
+  auditLevel,
+  BLOCK_L1619_IDS,
+  BLOCK_L1619_NAMED_B_EXCURSIONS,
+  documentedLesson,
+} from "@/core/solver/policy";
 
 const LEVELS_DIR = new URL("../../src/levels/", import.meta.url).pathname;
 const CANDIDATES_DIR = join(LEVELS_DIR, "candidates");
@@ -47,51 +60,95 @@ const shipped = readdirSync(LEVELS_DIR)
   .sort()
   .map((f) => readLevel(LEVELS_DIR, f));
 
-const candidateFiles = readdirSync(CANDIDATES_DIR)
-  .filter((n) => /^l\d+\.json$/.test(n))
-  .sort();
+/**
+ * The block's members, **derived from the registry**: a root row is a member when
+ * its documented lesson carries the `block-l1619` obligation. Adding, moving or
+ * dropping a member moves this list and every obligation below with it.
+ */
+const BLOCK_IDS: readonly number[] = shipped
+  .map((level) => level.id)
+  .filter((id) => documentedLesson(id)?.obligation === "block-l1619")
+  .sort((a, b) => a - b);
+
+/** The published rung ladder (`policy.ts`) must name exactly the registered rows. */
+const BLOCK_MIN = Math.min(...BLOCK_IDS);
+const PRE_BLOCK = shipped.filter((level) => level.id < BLOCK_MIN);
 
 /**
- * The two constants the block law is measured against, **both from the shipped
- * set**: the escalation cut (the maximum `D_exec` over everything already shipped)
- * and the block's first rung (`par(L15)`). Neither is typed here — the `attest-lv010-cut`
- * transcript of `a19a347` proved these exact values on the isolated dataset, and
- * this suite re-derives them on the live files.
+ * The two constants the block law is measured against, **both from the pre-block
+ * set**: the escalation cut (the maximum `D_exec` over everything already shipped
+ * before the block) and the block's first rung (`par` of the last pre-block row).
+ * Neither is typed here — the `attest-lv010-cut` transcript of `a19a347` proved these
+ * exact values on the isolated dataset, and this suite re-derives them on the live
+ * files *below the block*.
  */
-const shippedMetrics = shipped.map((level) => ({
+const preBlockMetrics = PRE_BLOCK.map((level) => ({
   level,
   diff: analyseDifficulty(level, explore(level)),
 }));
-const cut = Math.max(...shippedMetrics.map((m) => m.diff.Dexec ?? Number.NEGATIVE_INFINITY));
-const l15Par = shipped.find((l) => l.id === 15)?.par ?? 0;
-/** The band §6.1.1 P2 publishes for `B` — re-measured, not imported as a literal. */
+const cut = Math.max(
+  ...preBlockMetrics.map((m) => m.diff.Dexec ?? Number.NEGATIVE_INFINITY),
+);
+const l15Par = PRE_BLOCK.at(-1)?.par ?? 0;
+/** The band §6.1.1 P2 publishes for `B` — re-measured on the pre-block set, not imported. */
 const bBand: readonly [number, number] = [
-  Math.min(...shippedMetrics.map((m) => m.diff.B)),
-  Math.max(...shippedMetrics.map((m) => m.diff.B)),
+  Math.min(...preBlockMetrics.map((m) => m.diff.B)),
+  Math.max(...preBlockMetrics.map((m) => m.diff.B)),
 ];
 
-describe("L16+ candidates — derived block obligations, re-measured per run", () => {
-  it("re-derives the cut and the first rung from the shipped set (the obligations are measured, not typed)", () => {
-    expect(shipped).toHaveLength(15);
+describe("L16–L19 block — derived obligations, re-measured per run", () => {
+  it("re-derives the cut, the first rung and the band from the pre-block set (the obligations are measured, not typed)", () => {
+    expect(PRE_BLOCK).toHaveLength(15);
     expect(l15Par).toBe(10);
     expect(cut).toBeCloseTo(14.969697, 6);
     expect(bBand).toEqual([1.25, 1.6875]);
+    // …and the boundary is the registry's, not a typed 16: the pre-block window stops
+    // exactly one rung below the first registered member.
+    expect(PRE_BLOCK.at(-1)?.id).toBe(BLOCK_MIN - 1);
   });
 
-  it("has at least the L16 rung and no candidate outside the L16–L20 window", () => {
-    expect(candidateFiles.length).toBeGreaterThanOrEqual(1);
-    for (const file of candidateFiles) {
-      const level = readLevel(CANDIDATES_DIR, file);
-      expect(level.id).toBeGreaterThanOrEqual(16);
-      expect(level.id).toBeLessThanOrEqual(20);
-      // the file name is the id, zero-padded: a mis-named rung would break the
-      // `SHIPPED_IDS`-style readers the moment R-003c registers it
-      expect(file).toBe(`l${String(level.id).padStart(3, "0")}.json`);
+  it("is registered as the L16–L19 ladder the law publishes, and the shelf is empty", () => {
+    // The four rows the `block-l1619` obligation names are exactly `BLOCK_L1619_IDS`.
+    expect([...BLOCK_IDS]).toEqual([...BLOCK_L1619_IDS]);
+    // Contiguous, one rung per id, id === file name — a mis-named rung would break
+    // the `SHIPPED_IDS`-style readers the moment they read it.
+    for (let i = 0; i < BLOCK_IDS.length; i += 1) {
+      const id = BLOCK_IDS[i] as number;
+      expect(id).toBe(BLOCK_MIN + i);
+    }
+    for (const id of BLOCK_IDS) {
+      const file = `l${String(id).padStart(3, "0")}.json`;
+      expect(
+        existsSync(join(LEVELS_DIR, file)),
+        `l${id} is a registered member and must live in the root set`,
+      ).toBe(true);
     }
   });
 
-  for (const file of candidateFiles) {
-    const level = readLevel(CANDIDATES_DIR, file);
+  it("the candidate shelf is empty — the block no longer lives outside the census", () => {
+    const shelf = existsSync(CANDIDATES_DIR)
+      ? readdirSync(CANDIDATES_DIR).filter((n) => /^l\d+\.json$/.test(n))
+      : [];
+    expect(shelf).toEqual([]);
+  });
+
+  it("L20 is the documented ABSENT rung: the ladder's tail is the dataset's tail, and nothing claims to be above it", () => {
+    const maxShipped = Math.max(...shipped.map((level) => level.id));
+    // The block's last member is the last shipped row: the ladder stops where the
+    // dataset stops (the device's census ceiling, `BLOCK_L1619_TAIL_EXEC_CEILING`).
+    expect(BLOCK_IDS.at(-1)).toBe(maxShipped);
+    expect(maxShipped).toBe(19);
+    // No L20 file, no L20 lesson row, no `block-l1619` obligation above the tail.
+    expect(existsSync(join(LEVELS_DIR, "l020.json"))).toBe(false);
+    expect(documentedLesson(20)).toBeNull();
+    expect(
+      shipped.filter((level) => level.id >= 20).map((level) => level.id),
+    ).toEqual([]);
+  });
+
+  for (const id of BLOCK_IDS) {
+    const file = `l${String(id).padStart(3, "0")}.json`;
+    const level = readLevel(LEVELS_DIR, file);
     const graph = explore(level);
     const result = analyse(level, graph);
     const diff = analyseDifficulty(level, graph);
@@ -100,7 +157,7 @@ describe("L16+ candidates — derived block obligations, re-measured per run", (
 
     describe(`${file} (rung ${String(level.id)})`, () => {
       it("is schema- and rule-legal, with `par` stamped by the solver rather than declared", () => {
-        const verdict = validateLevel(JSON.parse(readFileSync(join(CANDIDATES_DIR, file), "utf8")));
+        const verdict = validateLevel(JSON.parse(readFileSync(join(LEVELS_DIR, file), "utf8")));
         expect(verdict.ok).toBe(true);
         expect(verdict.errors).toEqual([]);
         expect(audit.violations).toEqual([]);
@@ -112,7 +169,7 @@ describe("L16+ candidates — derived block obligations, re-measured per run", (
         expect(result.shortestSolution).toBeGreaterThanOrEqual(l15Par + 2 * (level.id - 15));
       });
 
-      it("clears the escalation cut on D_exec, and strictly increases along the candidates", () => {
+      it("clears the escalation cut on D_exec, and strictly increases along the block", () => {
         expect(diff.Dexec).not.toBeNull();
         expect(diff.Dexec as number).toBeGreaterThan(cut);
       });
@@ -151,24 +208,23 @@ describe("L16+ candidates — derived block obligations, re-measured per run", (
   }
 
   /**
-   * ── Block-level obligations (LV-010f) ─────────────────────────────────────
+   * ── Block-level obligations ───────────────────────────────────────────────
    *
-   * The per-candidate block above pins each board on its own. These three pin the
+   * The per-member block above pins each board on its own. These pin the
    * **ladder**, which is the thing the design actually ships: the rungs must be a
    * strictly rising sequence, each must sit exactly on its derived rung value, and
    * the one `B` excursion that was accepted must stay the only one.
    *
-   * All three read the landed bytes through the same readers; none compares against
-   * a number typed here except the *named* excursion list, which is a record of a
-   * measurement (F-L16-2), not a target.
+   * All read the landed bytes through the same readers; the `B` register is imported
+   * from `policy.ts` (its single home since R-003c), so the assertion pins the
+   * *measurement against the register* in both directions rather than restating it.
    */
-  const ladder = candidateFiles
-    .map((f) => {
-      const level = readLevel(CANDIDATES_DIR, f);
-      const graph = explore(level);
-      return { file: f, level, graph, diff: analyseDifficulty(level, graph), result: analyse(level, graph) };
-    })
-    .sort((a, b) => a.level.id - b.level.id);
+  const ladder = BLOCK_IDS.map((id) => {
+    const file = `l${String(id).padStart(3, "0")}.json`;
+    const level = readLevel(LEVELS_DIR, file);
+    const graph = explore(level);
+    return { file, level, graph, diff: analyseDifficulty(level, graph), result: analyse(level, graph) };
+  }).sort((a, b) => a.level.id - b.level.id);
 
   it("rises strictly along the block: every rung's D_exec exceeds its predecessor's", () => {
     expect(ladder.length).toBeGreaterThanOrEqual(2);
@@ -187,38 +243,42 @@ describe("L16+ candidates — derived block obligations, re-measured per run", (
     }
   });
 
-  /**
-   * The `B`-band excursion register. §6.1.1's self-correcting guard says an
-   * out-of-band `B` must be **named**; it does not say the band may be widened.
-   * `l016.json` measures `B = 1.7000` against the shipped top `1.6875` (F-L16-2), it
-   * is recorded here by rung, and every other rung must be in band or the excursion
-   * has grown without being named. Measured, not asserted by hand: the tolerance is
-   * the band the shipped set itself reports.
-   */
-  const NAMED_B_EXCURSIONS: ReadonlyMap<number, string> = new Map([
-    [16, "F-L16-2: B=1.7000 above the shipped band top; the rung escalates on D_exec, the excursion is named not widened"],
-  ]);
-
-  it("keeps every B in band except the rungs named in the excursion register", () => {
+  it("keeps every B in band except the rungs named in the excursion register — and names no rung that is in band", () => {
     for (const rung of ladder) {
       const inBand = rung.diff.B >= bBand[0] && rung.diff.B <= bBand[1];
-      if (inBand) continue;
-      expect(
-        NAMED_B_EXCURSIONS.has(rung.level.id),
-        `${rung.file} measures B=${rung.diff.B.toFixed(4)} outside [${bBand[0]}, ${bBand[1]}] and is not named in the excursion register`,
-      ).toBe(true);
+      const named = rung.level.id in BLOCK_L1619_NAMED_B_EXCURSIONS;
+      if (!inBand) {
+        expect(
+          named,
+          `${rung.file} measures B=${rung.diff.B.toFixed(4)} outside [${bBand[0]}, ${bBand[1]}] and is not named in the excursion register`,
+        ).toBe(true);
+      }
+      // The register is a record of a measurement, not a sink: an entry whose rung
+      // came back in band is stale, and a stale entry is how a second excursion gets
+      // smuggled in behind a name that no longer describes it.
+      if (named) {
+        expect(
+          inBand,
+          `${rung.file} is named in the excursion register but measures B=${rung.diff.B.toFixed(4)} inside [${bBand[0]}, ${bBand[1]}] — the entry is stale`,
+        ).toBe(false);
+      }
     }
+    // …and the register is not empty, so the rule above is not vacuous.
+    expect(Object.keys(BLOCK_L1619_NAMED_B_EXCURSIONS).length).toBeGreaterThan(0);
   });
 
   /**
    * Negative controls for the *suite itself*: each mutation must be refused by the
-   * same readers that accepted the candidate above. A control that stops being
-   * refused means the assertions above have gone slack, so this block is the
-   * suite's own liveness check — and it is why the suite is not a restatement of
+   * same readers that accepted the members above. A control that stops being refused
+   * means the assertions above have gone slack, so this block is the suite's own
+   * liveness check — and it is why the suite is not a restatement of
    * `scripts/prove-candidate.ts`'s numbers.
    */
   describe("negative controls — the obligations above are live", () => {
-    const base = readLevel(CANDIDATES_DIR, candidateFiles[0] as string);
+    const base = readLevel(
+      LEVELS_DIR,
+      `l${String(BLOCK_MIN).padStart(3, "0")}.json`,
+    );
 
     it("refuses a mis-stamped par (the file's claim is compared, never trusted)", () => {
       const forged: Level = { ...base, par: Math.max(1, base.par - 1) };
@@ -239,8 +299,8 @@ describe("L16+ candidates — derived block obligations, re-measured per run", (
         "door-without-switch",
       );
       // and the sanctioned measurement stays defined on the bare board, so the
-      // gate reads `allOff - par` rather than silently treating "no latch" as
-      // "existence": a null here would have been the weaker reading.
+      // existence/grade readers keep working rather than silently treating "no latch"
+      // as "UNSATISFIABLE": a null here would have been the weaker reading.
       expect(allOffShortestSolution(naked, nakedGraph)).not.toBeNull();
     });
 

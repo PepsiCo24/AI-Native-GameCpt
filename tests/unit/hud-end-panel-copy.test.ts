@@ -6,7 +6,7 @@
  * QA-005 pinned the defect as a `test.fail()`: `hud.ts` built the last level's
  * dialog body from a literal `L1–L5 cleared · <level>: <moves>`, written when the
  * playable slice was five levels, while the registry has since grown well past
- * that (it ships **fifteen** on this chain). The pin's own expectation was
+ * that (it ships **nineteen** on this chain). The pin's own expectation was
  * `expect(won.dialogBody).not.toContain("L1–L5")` + "contains `moves <par>`". The
  * copy now reads the range from the **registry's own list**
  * (`ladderLabelOf(loadPlayableLevels())`, injected by the composition root as the
@@ -39,6 +39,7 @@ import { Hud } from "@/game/hud/hud";
 import { ladderLabelOf, loadPlayableLevels } from "@/game/levels/level-registry";
 import { GameSession } from "@/game/systems/session";
 import type { HudHooks } from "@/game/hud/hud";
+import { EXPECTED_LEVEL_COUNT } from "../e2e/helpers/levels";
 
 const levels = loadPlayableLevels();
 const LAST = levels[levels.length - 1] as Level;
@@ -123,14 +124,18 @@ afterEach(() => {
 });
 
 describe("ladderLabelOf — the shipped range comes from the registry", () => {
-  it("names the ladder the repository actually ships (L1–L15)", () => {
-    // The id ladder is the hand-typed registry pin (`docs/ai-native-pipeline.md`
-    // §8.10: the 15-level dataset; R-003b's registry unlock). The label itself is
-    // DERIVED — from `LAST`, the registry's own last level — so the range never
-    // needs a second literal when the ladder grows.
-    expect(levels.map((level) => level.id)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    ]);
+  it(`names the ladder the repository actually ships (L1–L${String(LAST.id)})`, () => {
+    // The id ladder is asserted as a *rule over the registry's own rows* — contiguous
+    // `1 … LAST.id` — rather than a typed list, and the label itself is DERIVED from
+    // `LAST`, so growing the ladder needs no number edit here. QA-011's migration
+    // removed the hand-typed `[1…15]` this used to hold (a second count beside the
+    // dataset pin) and replaced it with the rule; the *count* stays pinned exactly
+    // once, at `tests/e2e/helpers/levels.ts` `EXPECTED_LEVEL_COUNT`, which the last
+    // id must equal — a registry that quietly stops at a shorter ladder still fails.
+    expect(levels.map((level) => level.id)).toEqual(
+      Array.from({ length: LAST.id }, (_, index) => index + 1),
+    );
+    expect(LAST.id).toBe(EXPECTED_LEVEL_COUNT);
     expect(ladderLabelOf(levels)).toBe(`L1–L${String(LAST.id)}`);
   });
 
@@ -144,7 +149,7 @@ describe("ladderLabelOf — the shipped range comes from the registry", () => {
 });
 
 describe("the end panel copy (TICKET-QA-005-2)", () => {
-  it("the last level's dialog is honest about the shipped fifteen and still carries the move count", () => {
+  it(`the last level's dialog is honest about the shipped ${String(LAST.id)} and still carries the move count`, () => {
     vi.useFakeTimers();
     const mounted = mount(levels.length - 1);
     solve(mounted);

@@ -50,7 +50,7 @@ const SHIPPED_LEVELS = fileURLToPath(new URL("../../src/levels/", import.meta.ur
 
 const SCRATCH_ROOT = mkdtempSync(join(tmpdir(), "ps-level-inventory-"));
 
-/** `l011.json` for the pinned count — the file name the mutations move. */
+/** `l019.json` for the pinned count — the file name the mutations move. */
 const lastFile = `l${String(EXPECTED_LEVEL_COUNT).padStart(3, "0")}.json`;
 
 /** A clone of the shipped `src/levels/`, so a mutation can never touch the repo. */
@@ -116,7 +116,7 @@ describe("mutation probe — the alarm fires when the dataset moves (both direct
     expect(gateOver(dir).verdict, "a pristine clone must not alarm").toBeNull();
 
     // A valid, solvable extra level: a copy of the last file, renumbered. This is
-    // the realistic unlock shape — someone ships L12 and forgets the pin.
+    // the realistic unlock shape — someone ships L20 and forgets the pin.
     writeFileSync(
       join(dir, `l${String(EXPECTED_LEVEL_COUNT + 1).padStart(3, "0")}.json`),
       readFileSync(join(dir, lastFile), "utf8"),

@@ -17,22 +17,23 @@
  * - `isLegalMove` / `applyMove` — the one movement truth source (AGENTS.md §3).
  *
  * ── Why the files are read from disk instead of importing the registry ───────
- * `src/game/levels/level-registry.ts` statically imports eleven `*.json` files,
- * and Node's ESM loader refuses a JSON import without an import attribute (the
+ * `src/game/levels/level-registry.ts` statically imports every shipped `*.json`
+ * file, and Node's ESM loader refuses a JSON import without an import attribute (the
  * registry is bundled by Vite, where that rule does not apply). Importing the
  * registry from a Playwright spec therefore throws
- * `needs an import attribute of "type: json"`. Reading the eleven files with
+ * `needs an import attribute of "type: json"`. Reading the shipped files with
  * `node:fs` + `JSON.parse` keeps the *validation* on the production gate while
  * sidestepping a bundler-only import shape — and `tests/e2e/helpers/levels.ts`
  * is a **test** file, so this is not a second production path.
  *
  * The file list is discovered from the directory; the hand-pinned count is
- * {@link EXPECTED_LEVEL_COUNT} (the dataset's **15**-level ladder — R-002 tree →
- * R-003's L11 unlock at `f484e23` → LV-009-B's L12–L15 block, ADR-design-0003 §8),
- * which `playthrough.spec.ts` compares the discovered set against. **Every other
- * inventory is derived** (QA-005c OQ2): {@link datasetIds}, {@link doorLevelIds},
- * {@link discoveredFileIds} and {@link inventoryViolation} — so an unlock costs one
- * pin, not three, while a dataset change still raises the alarm.
+ * {@link EXPECTED_LEVEL_COUNT} (the dataset's **19**-level ladder — R-002 tree →
+ * R-003's L11 unlock at `f484e23` → LV-009-B's L12–L15 block, ADR-design-0003 §8 →
+ * R-003c's L16–L19 registration at `208c5eb`/`a75b420`), which `playthrough.spec.ts`
+ * compares the discovered set against. **Every other inventory is derived**
+ * (QA-005c OQ2): {@link datasetIds}, {@link doorLevelIds}, {@link discoveredFileIds}
+ * and {@link inventoryViolation} — so an unlock costs one pin, not three, while a
+ * dataset change still raises the alarm.
  * See `tests/e2e/README.md` §1.
  */
 
@@ -59,23 +60,41 @@ import { sameVec } from "@/core/state/types";
  * **LV-009-B re-pinned 11 → 15** when the L12–L15 block entered the dataset
  * (`src/levels/l012.json … l015.json`, ADR-design-0003 §8 item 5: the validator
  * gate went 15/15 ok · 0 errors · 28 warnings).
+ * **R-003c re-pinned 15 → 19** when the L16–L19 block was registered at the dataset
+ * root (`src/levels/l016.json … l019.json`, `208c5eb` + the registry rows at
+ * `a75b420`; `npm run levels` = 19/19 PASS, `docs/level-difficulty.report.json`
+ * regenerated to 19 records).
  *
  * **This is the one deliberately hand-typed dataset pin** (QA-005c, OQ2 ruling at
- * project-status item 58): a dataset change cannot silently re-baseline the suite.
- * Everything else about the inventory is derived — see {@link datasetIds},
- * {@link doorLevelIds} and {@link inventoryViolation}.
+ * project-status item 58; re-affirmed by QA-011): a dataset change cannot silently
+ * re-baseline the suite. QA-011's migration rule was derivation-first — every other
+ * count in `tests/**` now derives from this pin, from the fs scan
+ * ({@link discoveredFileIds}), from the registry's own rows, or from a rule over the
+ * derived ids, so the ladder has **exactly one** typed count to re-take. That single
+ * count cannot be derived without deleting the alarm this file exists to raise
+ * (a self-derived inventory is vacuously true after any mutation — proved by the
+ * mutation probe of `tests/unit/level-inventory-derivation.test.ts`), which is why
+ * it stays a literal and why it is the only one.
  *
  * ⚠ The pin names the **dataset**, and the dataset is what it is checked against.
  * The *playable* registry (`src/game/levels/level-registry.ts`) is a second,
- * independent list; R-003b registered L12–L15 (`3cd643e`) so it now ships the same
- * fifteen, and the UI-walk specs (playthrough rows for L12–L15, the L1→L15 unlock
- * chain, `?level=12..15`) resolve off it and run green. The dataset pin stays
- * independent on purpose: it is the alarm that fires when the files move, whether
- * or not the registry follows.
+ * independent list; R-003b registered L12–L15 (`3cd643e`) and R-003c/GAME-001 the
+ * L16–L19 rows (`a75b420`), so it now ships the same nineteen, and the UI-walk specs
+ * (playthrough rows for every level, the L1→L19 unlock chain, `?level=16..19`) resolve
+ * off it and run green. The dataset pin stays independent on purpose: it is the alarm
+ * that fires when the files move, whether or not the registry follows.
  */
-export const EXPECTED_LEVEL_COUNT = 15;
+export const EXPECTED_LEVEL_COUNT = 19;
 
-const LEVELS_DIR = fileURLToPath(new URL("../../../src/levels/", import.meta.url));
+/**
+ * The dataset directory — resolved **lazily**, at call time, so importing this
+ * module never dereferences `import.meta.url` or touches the fs. `EXPECTED_LEVEL_COUNT`
+ * is the one pin the fast unit suites need (one of them under **jsdom**, where
+ * `import.meta.url` is not a `file:` URL and a module-level `fileURLToPath` throws
+ * `The URL must be of scheme file` before a single test runs).
+ */
+const levelsDir = (): string =>
+  fileURLToPath(new URL("../../../src/levels/", import.meta.url));
 
 /** A discovered level file: the name on disk and the number that name claims. */
 interface DiscoveredLevelFile {
@@ -89,7 +108,7 @@ interface DiscoveredLevelFile {
  * One discovery path for everything below: the loader and the inventory checks
  * must never disagree about what "the dataset" is.
  */
-function discoveredLevelFiles(dir: string = LEVELS_DIR): readonly DiscoveredLevelFile[] {
+function discoveredLevelFiles(dir: string = levelsDir()): readonly DiscoveredLevelFile[] {
   return readdirSync(dir)
     .map((name) => {
       const match = /^l(\d{3})\.json$/.exec(name);
@@ -106,7 +125,7 @@ function discoveredLevelFiles(dir: string = LEVELS_DIR): readonly DiscoveredLeve
  * mutation probe of `tests/unit/level-inventory-derivation.test.ts` points it at a
  * scratch directory. A file that is added, removed or renamed moves this list.
  */
-export function discoveredFileIds(dir: string = LEVELS_DIR): readonly number[] {
+export function discoveredFileIds(dir: string = levelsDir()): readonly number[] {
   return discoveredLevelFiles(dir).map((entry) => entry.id);
 }
 
@@ -222,7 +241,7 @@ function vecOf(tile: Coord): Vec {
  * the *real* loader — parse, validate, solve — is what the inventory gate is
  * proved against, not a stand-in.
  */
-export function loadReferenceLevels(dir: string = LEVELS_DIR): readonly LevelRef[] {
+export function loadReferenceLevels(dir: string = levelsDir()): readonly LevelRef[] {
   const files = discoveredLevelFiles(dir);
 
   const refs: LevelRef[] = [];
@@ -460,7 +479,7 @@ export function cheapestDoorFixtures(ref: LevelRef): {
   return { occupancy, refusedEntry };
 }
 
-/** Levels that ship at least one door — the dataset's latch levels (L6–L11). */
+/** Levels that ship at least one door — the dataset's latch levels (L6–L19). */
 export function levelsWithDoors(refs: readonly LevelRef[]): readonly LevelRef[] {
   return refs.filter((ref) => ref.level.doors.length > 0);
 }
@@ -580,7 +599,7 @@ export function cheapestPortalFixtures(ref: LevelRef): {
   return { teleport, inactive, pair };
 }
 
-/** Levels that ship at least one portal — the dataset's M2 levels (L11). */
+/** Levels that ship at least one portal — the dataset's M2 levels (L11–L19). */
 export function levelsWithPortals(refs: readonly LevelRef[]): readonly LevelRef[] {
   return refs.filter((ref) => ref.level.portals.length > 0);
 }

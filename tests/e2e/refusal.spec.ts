@@ -53,6 +53,21 @@ test.describe("illegal move ⇒ no move, no flip, no position change", () => {
       // 2-core software-GL CI runner it exceeded the default 30 s wall clock
       // (measured: L3/L4/L9 at 30.8 s, project-status item 66) while it runs in
       // ~5 s locally. Wall clock, never an assertion: every claim below is intact.
+      //
+      // QA-011 at 19 rows — this is now the suite's slowest per-level class, and
+      // the tail is the peak: measured locally on the frozen bytes (`--retries=0`,
+      // art-era, two green rounds) L16 13.4→22.1 / L17 14.0→23.6 / L18 18.4→28.0 /
+      // **L19 20.1→28.4 s**, against L15 8.9 s and ~5 s for L3/L4/L9 — because the
+      // refusal surface is walked once per leg and the tail's par is 12/14/16/18.
+      // That is 22–32 % of the budget on this fast machine. Projected onto CI with
+      // the suite-level factor of these rounds (10.0/11.8 m local vs the art-era
+      // cloud round's 31.6 m ≈ 2.7–3.2×) L19 lands at ~55–90 s, and with the
+      // row-class factor the family's own history suggests (30.8 s cloud vs ~5 s
+      // local here ≈ 6×, on the shorter routes) it would land at ~120–170 s —
+      // **above** this budget. Named as a WATCH ROW rather than silently widened
+      // (project-status item 84 doctrine, and `budget when crossed`): the next cloud
+      // round is the observation the derived envelope must come from, and QA-011
+      // flags L17–L19 for it in the handoff.
       test.setTimeout(90_000);
 
       await installPixelReadback(page);

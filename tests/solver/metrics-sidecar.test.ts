@@ -56,6 +56,10 @@ import {
   levelContentHash,
   serializeMetricsReport,
 } from "../../scripts/metrics-report";
+import {
+  EXPECTED_LEVEL_COUNT,
+  discoveredFileIds,
+} from "../e2e/helpers/levels";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Inputs — the committed artifact, the mirror document, the independent pins
@@ -206,11 +210,15 @@ describe("LV-007E · R3 §1 — the records: the accepted set, complete and self
       .filter((name) => name.endsWith(".json"))
       .sort();
     expect(REPORT.levels.length).toBe(files.length);
-    expect(REPORT.levels.length).toBe(15); // non-vacuity: an empty report must fail
+    // Non-vacuity tooth: the shared dataset pin (`EXPECTED_LEVEL_COUNT`, the one
+    // hand-typed count in `tests/**`) — an empty — or a silently shrunken — report
+    // still fails, and QA-011 replaced the stale `15` literal with the pin so the
+    // census has a single source.
+    expect(REPORT.levels.length).toBe(EXPECTED_LEVEL_COUNT);
     expect(REPORT.levels.map((record) => record.file)).toEqual(files);
-    expect(REPORT.levels.map((record) => record.id)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    ]);
+    // …and the record order is the dataset's own file order, taken from the fs scan
+    // rather than retyped here (the `[1…15]` literal QA-011 retired).
+    expect(REPORT.levels.map((record) => record.id)).toEqual(discoveredFileIds());
   });
 
   it("every record re-satisfies the §2 identity from its own terms (no hidden term)", () => {
@@ -380,8 +388,11 @@ describe("LV-007E · R3 — `docs/level-difficulty.md` §5.2 is a declared mirro
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builder bug cannot agree with itself)", () => {
-  it("the pin table was really parsed (15 rows, no silent empty match)", () => {
-    expect(HAND_PINS.size).toBe(15);
+  it("the pin table was really parsed (one row per shipped level, no silent empty match)", () => {
+    // The measured table lives in `tests/solver/difficulty.test.ts`; its size must be
+    // the dataset pin, so the cross-check below cannot go vacuous by parsing nothing
+    // (or by the table keeping the old 15 rows while the report grows).
+    expect(HAND_PINS.size).toBe(EXPECTED_LEVEL_COUNT);
     expect([...HAND_PINS.keys()].sort((a, b) => a - b)).toEqual(
       REPORT.levels.map((record) => record.id),
     );
@@ -421,10 +432,20 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
       "10.90",
       "12.96",
       "14.97",
+      // R-003c — the L16–L19 block: the registered rungs' measured execution axis
+      // (the same column `docs/level-difficulty.md` §5.2 prints).
+      "17.10",
+      "19.03",
+      "20.91",
+      "22.89",
     ]);
     expect(HAND_PINS.get(11)?.dexec.toFixed(2)).toBe("8.57");
     expect(HAND_PINS.get(12)?.dexec.toFixed(2)).toBe("8.23");
     expect(HAND_PINS.get(15)?.dexec.toFixed(2)).toBe("14.97");
+    // …and the four registered rungs were parsed out of the *other* file's table, so
+    // the mirror above is checked against a table the report builder never wrote.
+    expect(HAND_PINS.get(16)?.dexec.toFixed(2)).toBe("17.10");
+    expect(HAND_PINS.get(19)?.dexec.toFixed(2)).toBe("22.89");
   });
 });
 

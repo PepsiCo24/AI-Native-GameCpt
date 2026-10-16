@@ -36,6 +36,8 @@ import type { Level } from "@/core/level";
 import { validateLevel } from "@/core/level";
 import type { PolicyViolationCode } from "@/core/solver/policy";
 import {
+  BLOCK_L1619_IDS,
+  BLOCK_L1619_PAR_EXPECTATION,
   DOCUMENTED_LESSONS,
   POLICY_VIOLATION_CODES,
   auditLevel,
@@ -540,6 +542,112 @@ const BLOCK_TAIL_INTERIOR_MEMBER_AS_LAST: Level = {
   id: 15,
 };
 
+/**
+ * **B7** — `gate-block-l1619-rung`, and surgical by construction: the shipped `l016` row
+ * with its **authored** `par` moved off the derived rung (12 → 14). The board itself is
+ * untouched, so every other `block-l1619` gate still reads PASS — the violation list is
+ * exactly one code — and the code's two teeth (`level.par` **and** the solver's
+ * `shortestSolution` must equal the rung) are what reject it. This is the C1/P2 law the
+ * registration introduced: `par = par(L15) + 2·(id − 15)`, an equality, not a floor.
+ */
+const BLOCK_L1619_RUNG_OFF_BY_ONE: Level = {
+  ...shippedBoard(16),
+  par: 14,
+};
+
+/**
+ * **B8** — `gate-block-l1619-grid-coverage`, and surgical: `l016` re-based on a 7 × 7
+ * grid with the added seventh **row sealed in both phases**, so the walkable world — and
+ * with it the par, the latch grading, the coverage *count* (42) and every other gate — is
+ * byte-for-byte the shipped device's. The only thing that moved is the law's accounting:
+ * `distinctPositions` is 42 of the 49 tiles the grid now claims. The grid is law, not
+ * decoration (the census that produced the par-18 ceiling is a 7 × 6 census), which is why
+ * the clause is an equality on `width × height` rather than a solvability check.
+ */
+const BLOCK_L1619_GRID_ENLARGED: Level = {
+  ...shippedBoard(16),
+  height: 7,
+  phaseAWalls: [
+    ...shippedBoard(16).phaseAWalls,
+    ...(Array.from({ length: 7 }, (_, x) => [x, 6]) as [number, number][]),
+  ],
+  phaseBWalls: [
+    ...shippedBoard(16).phaseBWalls,
+    ...(Array.from({ length: 7 }, (_, x) => [x, 6]) as [number, number][]),
+  ],
+};
+
+/**
+ * **B9** — `gate-block-l1619-device-existence`: the shipped `l016` seal with its `d1`
+ * door **and the switch that drives it removed** (`d1` is the goal's only other approach),
+ * so the all-OFF world solves again and the goal-gated property is gone.
+ *
+ * Deliberately **not** surgical, and recorded rather than hidden: the same removal is read
+ * by three clauses — `block-l1619-device-existence` (the seal is no longer load-bearing),
+ * `lesson-switch-required` (the row promises `"required"` and the latch is now decorative)
+ * and gate (ii) (the remaining par routes cross `d2`, which no longer needs a press) — and
+ * that co-firing *is* the finding: existence and load-bearingness are one property here
+ * (ADR-design-0003 §5's "the latch grades par, never solvability" does **not** transfer to
+ * this device, which is exactly why the rows are `"required"`). The rung still PASSES
+ * (par stays 12), so the code is the only reader that reports the loss.
+ */
+const BLOCK_L1619_SEAL_OPENED: Level = (() => {
+  const l016 = shippedBoard(16);
+  return { ...l016, doors: l016.doors.slice(1), switches: l016.switches.slice(1) };
+})();
+
+/**
+ * **B10** — `gate-block-l1619-escalation-cut`, and surgical: `l016` plus a **second portal
+ * whose landing is a pocket**. The pair `(0,5) ⇄ (1,0)` is live in phase B and the corner
+ * `(0,5)` has its two neighbours walled in phase A, so entering `(1,0)` in phase B lands the
+ * player in a dead pocket: `T = 21`, `R = 0.016` and `D_exec = 100.943548` — the execution
+ * axis is no longer `par + 3·B` (the identity the clause is written on). The par (12), the
+ * grid, the coverage (42/42), the all-OFF grade and the press-then-cross routes are all
+ * untouched, so exactly one code fires. The clause exists because a board nobody can finish
+ * after a wrong turn must not be graded by a number the player's hands cannot feel —
+ * without it, the extra `T` would have *lowered* the grade's meaning while raising its value.
+ */
+const BLOCK_L1619_CUT_BREACHED: Level = (() => {
+  const l016 = shippedBoard(16);
+  return {
+    ...l016,
+    portals: [...l016.portals, { id: "p2", pair: [[0, 5], [1, 0]] as const, activePhase: "B" as const }],
+    phaseAWalls: [...l016.phaseAWalls, [1, 5], [0, 4]] as [number, number][],
+  };
+})();
+
+/**
+ * **B11** — `gate-block-l1619-b-band`: the shipped `l016` board (the one **named**
+ * excursion, `B = 1.7000 > 1.6875`) wearing a rung that is **not** in
+ * `BLOCK_L1619_NAMED_B_EXCURSIONS`. The register is keyed by rung, and this control is what
+ * proves it: the same board under `id = 17` is rejected by `block-l1619-b-band` by name.
+ *
+ * Not surgical — the rung gate fires with it, and it must: the register is indexed by the
+ * rung the board *claims*, so presenting the out-of-band board under another rung is
+ * simultaneously an unnamed excursion and a broken ladder. A surgical variant (an in-band
+ * board pushed out of band without disturbing par, coverage or the cut) was searched and is
+ * not reachable on this device: `B` is measured over the reachable graph, so any wall
+ * change large enough to move it out of the band moves the rung's par or its coverage too.
+ */
+const BLOCK_L1619_UNNAMED_B_EXCURSION: Level = {
+  ...shippedBoard(16),
+  id: 17,
+};
+
+/**
+ * **B12** — the block's LAST member (`l019`) wearing an interior member's board — the
+ * same shape as {@link BLOCK_TAIL_INTERIOR_MEMBER_AS_LAST} above, and for the same
+ * reason: the terminal-ceiling clause is only reachable on the block's last rung, so
+ * the honest counter-example is a rung that is not the ceiling. `l018` carries par 16
+ * (not 18) and `D_exec = 20.907923` (not 22.885157), so `block-l1619-tail-ceiling`
+ * fails by name; the rung gate fails with it, because the block's members are not
+ * interchangeable rungs.
+ */
+const BLOCK_L1619_INTERIOR_MEMBER_AS_LAST: Level = {
+  ...shippedBoard(18),
+  id: 19,
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Coverage — typed by the inventory, measured by the analyzer
 // ─────────────────────────────────────────────────────────────────────────────
@@ -595,6 +703,13 @@ const NEGATIVE_CONTROLS: Readonly<Record<PolicyViolationCode, readonly Level[]>>
     "gate-block-portal-load": [BLOCK_MANDATORY_GRADE_WITH_OPEN_WALK],
     "gate-block-dip-ceiling": [BLOCK_DIP_CEILING_ENLARGED],
     "gate-block-tail-exec-budget": [BLOCK_TAIL_INTERIOR_MEMBER_AS_LAST],
+    // ── QA-011 — the L16–L19 registered root rows' six gates (LV-010-law) ────
+    "gate-block-l1619-rung": [BLOCK_L1619_RUNG_OFF_BY_ONE],
+    "gate-block-l1619-grid-coverage": [BLOCK_L1619_GRID_ENLARGED],
+    "gate-block-l1619-device-existence": [BLOCK_L1619_SEAL_OPENED],
+    "gate-block-l1619-escalation-cut": [BLOCK_L1619_CUT_BREACHED],
+    "gate-block-l1619-b-band": [BLOCK_L1619_UNNAMED_B_EXCURSION],
+    "gate-block-l1619-tail-ceiling": [BLOCK_L1619_INTERIOR_MEMBER_AS_LAST],
   };
 
 describe("LV-007A · m-2 — every policy code has a negative control that fails when the check is disabled", () => {
@@ -1087,6 +1202,140 @@ describe("LV-009-B — the L12–L15 block's gates have teeth, and the four ship
     expect(l11.lesson?.obligation).toBe("portal-aha-2");
     expect(l11.gates.map((gate) => gate.id)).not.toContain("block-par-ramp");
     expect(l11.violations).toEqual([]);
+  });
+
+  // ── QA-011 — the L16–L19 registered root block's six gates, control by control ─
+  // The ladder is read from the registry, never typed: this section's controls are
+  // the *same* six gates the rows land under, so a re-registration moves both at once.
+  const BLOCK_GATE_IDS = [
+    "block-l1619-rung",
+    "block-l1619-grid-coverage",
+    "block-l1619-device-existence",
+    "block-l1619-escalation-cut",
+    "block-l1619-b-band",
+    "block-l1619-tail-ceiling",
+  ] as const;
+
+  it("the registered rows are the discrimination side: every block gate PASSes on l016–l019 with zero violations", () => {
+    // Derivation-first: the member ids come from the registry, not from a typed 16–19.
+    for (const id of BLOCK_L1619_IDS) {
+      const audit = auditLevel(shippedBoard(id));
+      expect(audit.violations, `l${id}`).toEqual([]);
+      for (const gateId of BLOCK_GATE_IDS) {
+        const gate = audit.gates.find((g) => g.id === gateId);
+        // The tail-ceiling clause is only carried by the LAST member (index === len−1),
+        // so its absence elsewhere is the law, not a hole.
+        if (gateId === "block-l1619-tail-ceiling" && id !== BLOCK_L1619_IDS.at(-1)) {
+          expect(gate, `l${id} must not carry ${gateId}`).toBeUndefined();
+          continue;
+        }
+        expect(gate?.status, `l${id} · ${gateId}`).toBe("PASS");
+      }
+    }
+  });
+
+  it("B7 — the rung is an EQUALITY: an authored par off the derived rung is rejected by name, alone", () => {
+    const audit = auditLevel(BLOCK_L1619_RUNG_OFF_BY_ONE);
+    expect(audit.violations.map((v) => v.code)).toEqual([
+      "gate-block-l1619-rung",
+    ]);
+    const rung = audit.gates.find((g) => g.id === "block-l1619-rung");
+    expect(rung?.status).toBe("FAIL");
+    expect(rung?.detail).toContain(
+      "par=14 (solver shortest=12); this member expects 12",
+    );
+    // The expectation table behind that sentence is derived from the registry ids.
+    expect(rung?.detail).toContain(
+      `${BLOCK_L1619_PAR_EXPECTATION.join(" / ")} from BLOCK_L1619_IDS=[${BLOCK_L1619_IDS.join(", ")}]`,
+    );
+    expect(validateLevel(BLOCK_L1619_RUNG_OFF_BY_ONE).ok).toBe(true);
+  });
+
+  it("B8 — the grid is law: the same walkable world re-based on 7 × 7 fails coverage alone", () => {
+    const audit = auditLevel(BLOCK_L1619_GRID_ENLARGED);
+    expect(audit.violations.map((v) => v.code)).toEqual([
+      "gate-block-l1619-grid-coverage",
+    ]);
+    const coverage = audit.gates.find(
+      (g) => g.id === "block-l1619-grid-coverage",
+    );
+    expect(coverage?.status).toBe("FAIL");
+    expect(coverage?.detail).toContain(
+      "grid 7 × 7 (law: 7 × 6); distinctPositions=42 of 49",
+    );
+    // The seal is untouched: the solver still reads the shipped par 12 and 42 tiles,
+    // so only the *accounting* moved — which is the clause's whole claim.
+    expect(audit.result.shortestSolution).toBe(12);
+    expect(audit.result.distinctPositions).toBe(42);
+  });
+
+  it("B9 — existence is load-bearing: opening the seal fires three named clauses, and that coupling IS the finding", () => {
+    const audit = auditLevel(BLOCK_L1619_SEAL_OPENED);
+    expect(
+      audit.violations.map((v) => v.code).sort(),
+    ).toEqual([
+      "gate-block-l1619-device-existence",
+      "gate-shortest-solution-presses-switch-and-crosses-door",
+      "lesson-switch-required",
+    ]);
+    const existence = audit.gates.find(
+      (g) => g.id === "block-l1619-device-existence",
+    );
+    expect(existence?.status).toBe("FAIL");
+    expect(existence?.detail).toContain(
+      "allOffGoalReachable=true allOffShortest=14 par=12",
+    );
+    // The rung still PASSes (par stays 12), which is why existence is not implied by
+    // the ladder: the rung is the only reader that stays silent here.
+    expect(
+      audit.gates.find((g) => g.id === "block-l1619-rung")?.status,
+    ).toBe("PASS");
+  });
+
+  it("B10 — the cut is an identity: a portal pocket re-prices the execution axis and fires alone", () => {
+    const audit = auditLevel(BLOCK_L1619_CUT_BREACHED);
+    expect(audit.violations.map((v) => v.code)).toEqual([
+      "gate-block-l1619-escalation-cut",
+    ]);
+    const cut = audit.gates.find((g) => g.id === "block-l1619-escalation-cut");
+    expect(cut?.status).toBe("FAIL");
+    expect(cut?.detail).toContain("Dexec=100.943548 > 14.969697");
+    // The identity `D_exec = par + 3·B` is what the clause reads, so the measured
+    // `T = 21` / `R = 0.016129` must be on the record with the check.
+    expect(cut?.detail).toContain("T=21, R=0.016129");
+    expect(validateLevel(BLOCK_L1619_CUT_BREACHED).ok).toBe(false);
+  });
+
+  it("B11 — the excursion register is keyed by rung: the named board under an unnamed id fires", () => {
+    const audit = auditLevel(BLOCK_L1619_UNNAMED_B_EXCURSION);
+    expect(
+      audit.violations.map((v) => v.code).sort(),
+    ).toEqual(["gate-block-l1619-b-band", "gate-block-l1619-rung"]);
+    const band = audit.gates.find((g) => g.id === "block-l1619-b-band");
+    expect(band?.status).toBe("FAIL");
+    expect(band?.detail).toContain(
+      "B=1.7000 vs [1.2500, 1.6875]; named excursion: none",
+    );
+    // Both facts are one act: the register is indexed by the rung the board *claims*.
+    expect(
+      audit.gates.find((g) => g.id === "block-l1619-rung")?.status,
+    ).toBe("FAIL");
+  });
+
+  it("B12 — the terminal ceiling is an equality, so an interior member wearing the last rung's id fires", () => {
+    const audit = auditLevel(BLOCK_L1619_INTERIOR_MEMBER_AS_LAST);
+    expect(
+      audit.violations.map((v) => v.code).sort(),
+    ).toEqual(["gate-block-l1619-rung", "gate-block-l1619-tail-ceiling"]);
+    const tail = audit.gates.find((g) => g.id === "block-l1619-tail-ceiling");
+    expect(tail?.status).toBe("FAIL");
+    expect(tail?.detail).toContain("par=16 (ceiling 18)");
+    expect(tail?.detail).toContain("Dexec=20.907923 (ceiling 22.885157)");
+    // The clause is reachable only on the registry's last member; the control has to
+    // *be* that member to ask the question, which is why the id is re-labelled.
+    expect(BLOCK_L1619_INTERIOR_MEMBER_AS_LAST.id).toBe(
+      BLOCK_L1619_IDS.at(-1),
+    );
   });
 });
 
