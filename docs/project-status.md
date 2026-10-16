@@ -1533,6 +1533,34 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
     reference-identity guarantees, boot-gate three directions) re-queues last — it is the only durable coverage gap
     the F1 fix currently rests on harness transcripts outside the repo.
 
+82. **QA-005h merged (`5b2a449`) — the deployed artifact is now a lane, not an anecdote.**
+   (a) The on-demand lane exists: `playwright.live.config.ts` + `tests/e2e-live/{deployed-artifact.spec.ts,
+   live-target.ts}` (3 new files, +283) drive the **deployed GitHub Pages build** with the *local* solver's par
+   routes for all 15 shipped levels plus the `?level=99` fallback, asserting `moves == par`, the win dialog, the
+   ladder label and both error channels empty. Its own run: **17/17 green in 43.8 s** against the live build.
+   Deliberately a separate config **and** a separate `testDir`, no `webServer`: a network/CDN incident must never
+   be able to turn the zero-retry CI gate red, and a mis-set `baseURL` can never silently pass against the
+   working tree. Because the expectations come from the checked-out dataset, the lane is green **exactly while
+   the deployed build ships the same ladder as the tree** — which turns "did the train ship the right artifact?"
+   into one command instead of an argument.
+   (b) Both findings from the throwaway run became **assertions** rather than comments: `PS_E2E_BASE_URL` cannot
+   target a sub-path deployment (`levelUrl()` answers a root-absolute `/?level=<n>`, which against the Pages
+   project root drops `/AI-Native-GameCpt/`) — the lane pins that resolution so it goes red if `levelUrl()` ever
+   becomes deployment-safe; and the win dialog is raised **after** the arrival beat, so the lane reads it with
+   the auto-retrying locator, never a sleep.
+   (c) The README truth-up: §2 is now the only present-tense inventory — **107 cases in 8 files**, per-file
+   counts read off `--list` — with a dated note that the per-ticket blocks in §1 are historical snapshots and are
+   left byte-as-written (§1.8's `PENDING-CI` is closed with the three gh-verified green rounds).
+   (d) **Verified by me on disk before merge, not accepted on report**: the diff touches only the four owned
+   files (`playwright.config.ts` untouched, byte-identical), worktree clean, roster isolation proven from the
+   test side (`--list` = `Total: 107 tests in 8 files`), and **every derived number re-measured independently
+   here** — `refusal 29 · latch-door 22 · playthrough 19 · mobile 12 · controls 8 · transient 7 · portal 6 ·
+   input-replay 4 = 107`, and `95 desktop + 12 mobile`. Zero assertions changed.
+   (e) Infra hygiene in the same pass: a **leaked `vite --strictPort` had been holding port 5218 for 10.6 hours**
+   (no connections — a 2026-10-16 04:00-era lane's orphan), which is exactly why QA-005i's first local run died
+   with `Timed out waiting 60000ms from config.webServer` rather than starting: killed, port verified free. Lane
+   ports in use: 5217 QA-005h's roster run, 5219 the reviewer's, 5221 reserved for the clock measurement.
+
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
 root cause in **my own** out-of-repo harness: it fabricated the initial state as `{ doorsOpen: {} }` instead of calling `initialState(level)`. Door openness is
