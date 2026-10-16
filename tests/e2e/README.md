@@ -187,6 +187,7 @@ runner measured **7 failed / 79 passed (16.9 min)** with `--retries=1`:
 |---|---|---|
 | `playthrough.spec.ts:113` unlock chain, 30.9 s × 2 | **wall clock**, not an assertion | the walk now carries a documented 120 s CI budget (`test.setTimeout`) |
 | `refusal.spec.ts:48` L3/L4/L9, 30.8 s | **wall clock**, not an assertion | per-level walk carries a documented 90 s CI budget |
+| `latch-door.spec.ts:134` L15 UI walk, 30.9 s (run 38845237536, release-build contention; 21.2 s quiet in run 38843718456) | **wall clock**, not an assertion | QA-005g: the per-level UI walk carries a documented 90 s CI budget |
 | `refusal.spec.ts:48` (all params, on loaded machines) | the `cells: []` single-instant probe | the bounded poll above |
 | `transient.spec.ts:116` / `:257` (`frames > 15`, `gridMs < 60`) | local-calibrated constants | runner-aware: the idle frame grid is **measured first**, the recorder window is sized from it, and the `gridMs` ceiling is `max(60, 2 × idle)` |
 | `mobile.mobile.spec.ts:207` R-T4, `Expected: 1, Received: 0` | gesture commit vs HUD read | cached CDP session + a frame after `touchEnd` + the bounded `expectMoves` poll |
