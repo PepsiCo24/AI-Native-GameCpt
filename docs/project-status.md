@@ -1392,8 +1392,10 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    `expect(` lines**, no retries, global 30 s default untouched. Orchestrator merge-gate battery on the merged
    tip: typecheck 0 · vitest **31 files / 632 passed / 3 skipped** · levels **15/15 PASS** · build ✓ · full
    local e2e **107 passed (9.3m), zero retries**. Cloud round for the pushed tip: run **`38849186852`** —
-   [RESULT] (this push also carried the two LEVEL-DOCS-1 closure commits `3cd3c03`+`1eda401` that were still
-   local).
+   **GREEN, `success`**: verify 32 s, e2e 22m2s, **107 passed (21.3m)**, zero retries — and the round
+   incidentally supplied the decisive control: with **no** release build overlapping, L15 still measured
+   **29.4 s** (L14 23.8 s), i.e. 98 % of the old 30 s default, so the pre-fix red was not a one-off draw
+   (this push also carried the two LEVEL-DOCS-1 closure commits `3cd3c03`+`1eda401` that were still local).
    (c) **Infra: every red so far shipped zero artifacts.** The workflow uploaded `playwright-report/`, which
    never exists under the list-only reporter — annotation "No files were found with the provided path"
    on both `38795670240` and `38845237536` — while the traces we pay for (`trace: retain-on-failure`) land in
