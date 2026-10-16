@@ -96,4 +96,5 @@ These frames capture settled states. The transient-frame physics (the refusal nu
 
 - Trusted-input frames prove **the rules render** — phase flip, refusal freeze, latch arc, par wins, mobile layout — on the merged tree. They prove **nothing about players**: no cohort has run (`docs/playtest-log.md`), and no frame here is quoted as playtest evidence anywhere.
 - Captured on a local build of the merged **develop** lineage; the public Pages build (`main` at `3601935`) is an earlier tree — the frames are *not* images of the live URL.
+  *Scope note (DG-004d continuity): "`main` at `3601935`" was the serving state on the capture day; `main` is now `5b058ff` with fifteen levels. These frames remain a local build of the develop lineage and prove nothing about players — the zero-cohort line above still holds.*
 - The frames postdate the transient-observability verdict context: where a state is occluded by construction (press-beat P2), no frame in this set can show it, and none claims to.
