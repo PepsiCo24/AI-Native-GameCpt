@@ -29,7 +29,7 @@
 
 import { expect, test } from "@playwright/test";
 
-import { loadReferenceLevels, levelUrl } from "./helpers/levels";
+import { loadReferenceLevels, levelUrl, refusalRouteEnvelopeMs } from "./helpers/levels";
 import {
   expectActorAt,
   boardGeometry,
@@ -62,13 +62,18 @@ test.describe("illegal move ⇒ no move, no flip, no position change", () => {
       // That is 22–32 % of the budget on this fast machine. Projected onto CI with
       // the suite-level factor of these rounds (10.0/11.8 m local vs the art-era
       // cloud round's 31.6 m ≈ 2.7–3.2×) L19 lands at ~55–90 s, and with the
-      // row-class factor the family's own history suggests (30.8 s cloud vs ~5 s
-      // local here ≈ 6×, on the shorter routes) it would land at ~120–170 s —
-      // **above** this budget. Named as a WATCH ROW rather than silently widened
-      // (project-status item 84 doctrine, and `budget when crossed`): the next cloud
-      // round is the observation the derived envelope must come from, and QA-011
-      // flags L17–L19 for it in the handoff.
-      test.setTimeout(90_000);
+      // QA-011's projection landed exactly here: observation round `38890893868`
+      // (develop `77a6ba6`, job `116940140379`) hard-timed-out L18 and L19 at this
+      // very constant while L15/L16/L17 passed — the projected 120–170 s row class
+      // against 90 s, confirmed. So the constant is replaced by a **par-derived
+      // envelope** (item 77(d)); the measured table and the fit live in
+      // `refusalRouteEnvelopeMs` (tests/e2e/helpers/levels.ts). Par comes from the
+      // level's own solver-shortest solution (`ref.par`), never from the id — so
+      // **L20 (par 20) is absorbed by the same formula with zero re-migration**
+      // (it evaluates to 223 s), and every further rung is a computed number.
+      // Retries stay forbidden and every assertion above/below is untouched: this
+      // is wall clock, and only wall clock.
+      test.setTimeout(refusalRouteEnvelopeMs(ref.par));
 
       await installPixelReadback(page);
       await openLevel(page, levelUrl(ref.id));

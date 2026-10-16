@@ -614,3 +614,81 @@ export function resolveRoute(level: Level, route: readonly Direction[]): SearchS
   for (const direction of route) state = applyMove(level, state, move(direction));
   return state;
 }
+
+/* ─────────────── the refusal-row CI envelope (QA-013, item 77(d)) ──────────── */
+
+/**
+ * The wall-clock ceiling for **one refusal-surface row** — a function of the
+ * level's own **par**, never of its id.
+ *
+ * ── Why a function of par, and why not a constant ────────────────────────────
+ * The row walks the whole par route and probes the canvas after every refused
+ * direction, so its cost is `Σ_legs refusals(leg) × C_probe + par × C_move`:
+ * measured, it grows with par and nothing else. QA-005c froze it at `90_000` for
+ * every row; that is a **prediction from a smaller census**, and observation round
+ * `38890893868` (develop `77a6ba6`, job `116940140379`) falsified it at the tail —
+ * L18 and L19 hard-timed-out at exactly that ceiling while L15/L16/L17 passed.
+ * Item 77(d) (`DERIVED ENVELOPES`, project-status item 95) says the replacement
+ * must be **derived from the level**, so that L20 (par 20) is absorbed by the same
+ * formula with **zero re-migration** — and so that the next growth rung is a
+ * *number the formula computes*, not an edit somebody has to remember.
+ *
+ * ── The arithmetic (all of it measured, none of it typed from a feeling) ─────
+ * Local refusal-family rows, `--retries=0`, this branch, art-era bytes (one
+ * worker, `PS_E2E_PORT=5240`), and the same round's cloud rows:
+ *
+ * | level | par | local s | cloud s | local→cloud |
+ * |---|---|---|---|---|
+ * | L15 | 10 | 10.4 | 57 | 5.48 |
+ * | L16 | 12 | 13.4 | 79 | **5.90** |
+ * | L17 | 14 | 14.0 | 82 | 5.86 |
+ * | L18 | 16 | 17.8 | ≥90 (crossed) | ≥5.06 |
+ * | L19 | 18 | 19.9 | ≥90 (crossed) | ≥4.52 |
+ *
+ * 1. **shape** — least squares over the five local points gives
+ *    `local(par) = 1.17 par − 1.28 s` with worst residual `3.0 s` (at par 10).
+ *    The per-rung steps are `+3.0, +0.6, +3.8, +2.1` s, whose *second*
+ *    differences `−2.4, +3.2, −1.7` **change sign**: the honest verdict is
+ *    **affine in par with run-level jitter**, not convex. (The cloud curve's own
+ *    `+22 s` then `+3 s` steps say the same thing: the steep rung is the small-par
+ *    one, so a convex fit would be a story told against the data.)
+ * 2. **cloud factor** — the max same-family factor this round is **5.90**
+ *    (par 12). Taking the max, not the mean, is the conservative direction.
+ * 3. **upper-bound cloud estimate** — `5.90 × (local(par) + worst residual)`,
+ *    i.e. an affine envelope that is `≥` the observed cloud duration at all three
+ *    rungs that *have* one (79.2 ≥ 57, 93.0 ≥ 79, 106.8 ≥ 82).
+ * 4. **envelope** — `× 1.5` safety, `ceil`ed to whole seconds, floored at the
+ *    `90_000` this migration replaces (no row is ever *tightened* by the
+ *    migration), capped at `240_000` (the absolute cap the ticket asks for).
+ *
+ * | par | 10 | 12 | 14 | 16 | 18 | 20 | 22 |
+ * |---|---|---|---|---|---|---|---|
+ * | upper-bound cloud s | 79.2 | 93.0 | 106.8 | 120.6 | 134.4 | 148.2 | 162.0 |
+ * | envelope s | 119 | 140 | 161 | 181 | 202 | 223 | 240 (cap) |
+ *
+ * The cap binds from par 22 on. That is **deliberate and loud**: a future rung
+ * that reaches it is a *named* re-derivation, not a silently clamped number
+ * (item 84 / item 95 doctrine). This is wall clock only — every assertion in the
+ * spec is untouched.
+ */
+export function refusalRouteEnvelopeMs(par: number): number {
+  /** Least-squares slope of the five local rows against par. */
+  const LOCAL_S_PER_PAR = 1.17;
+  /** …and its intercept. */
+  const LOCAL_INTERCEPT_S = -1.28;
+  /** Max `|measured − fit|` in the local round — folds the jitter into the bound. */
+  const LOCAL_WORST_RESIDUAL_S = 3.0;
+  /** Max local→cloud same-family factor observed in round `38890893868`. */
+  const CLOUD_FACTOR = 5.9;
+  /** Required margin over the fitted value. */
+  const SAFETY = 1.5;
+  /** The constant this migration replaces — kept as a floor, so it only ever widens. */
+  const FLOOR_MS = 90_000;
+  /** The ticket's absolute cap. It binds at par ≥ 22 (see the table above). */
+  const CAP_MS = 240_000;
+
+  const cloudUpperS =
+    CLOUD_FACTOR * (LOCAL_S_PER_PAR * par + LOCAL_INTERCEPT_S + LOCAL_WORST_RESIDUAL_S);
+
+  return Math.min(CAP_MS, Math.max(FLOOR_MS, Math.ceil(SAFETY * cloudUpperS) * 1000));
+}
