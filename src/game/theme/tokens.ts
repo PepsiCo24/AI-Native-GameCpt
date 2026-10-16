@@ -16,6 +16,17 @@
  * Door *states* deliberately add no token at all: §3.1b carries open/closed by
  * geometry, so there is nothing here to re-tune when doors ship at L21.
  *
+ * V0.9.5 delta implemented here (F3-R, `docs/ui-ux.md` §4.3/§4.5): **one value** —
+ * `actor.ring` Phase B `#5B4E96` → `#EAF0FF`, and it arrives as an **alias of
+ * `text.primary` B** (the §9.1 rule 3 parity pin), not as a second hex. The
+ * placeholder B ring measured 1.34:1 vs `wallOccupied` and 2.02:1 vs `ground.cell`
+ * — below R-C9's own 3:1 trigger — while the drawn art body killed the
+ * placeholder-era body-alone channel (1.16:1, QA-007-F3); the re-derived B ring
+ * restores the published B body ratios (wall 4.62 / red 4.38 / blue 3.63) on the
+ * element the art era actually draws. Nothing else moves: `ringVisibleFor`'s
+ * semantics, the mount-time path, `obj.wallOccupied`, Phase A and `fx.phaseRing`
+ * (same minimax winner) are all untouched.
+ *
  * Path note (flagged, not silently decided): §5.4 names
  * `src/ui/theme/tokens.ts` as the home of this map. `src/ui/**` belongs to the
  * UI / Art Director (AGENTS.md §4) and this task's dispatch forbids creating
@@ -82,7 +93,14 @@ export interface ThemeTokens {
   readonly actor: {
     /** Echo Spirit body — DEV PLACEHOLDER A-03 `echo_spirit_a/b`. */
     readonly body: Hex;
-    /** Auto contrast ring, drawn only when R-C9 demands it. */
+    /**
+     * Auto contrast ring, drawn only when R-C9 demands it.
+     *
+     * Phase B is **derived from `text.primary` B** (§4.3 V0.9.5 token record, F3-R
+     * — the §9.1 rule 3 parity pin): authored as an alias, resolved in
+     * {@link derive}, never a second copy of the hex. Phase A keeps its own value
+     * (`#4A3216`, re-derived with `text.primary` A `#3A3226` in the V0.5 minimax).
+     */
     readonly ring: Hex;
     /** R-C9 decision, computed at boot (never per frame, never per-phase branch). */
     readonly ringVisible: boolean;
@@ -197,11 +215,31 @@ export function lerpColorInt(a: number, b: number, t: number): number {
  * §4.3 base palette (measured 2026-10-14) — the input of the derivation below.
  * ──────────────────────────────────────────────────────────────────────────── */
 
+/**
+ * An authored base-palette member that has **no hex of its own**: it *is* another
+ * token, named by path. This is the §9.1-rule-3 **parity pin** mechanism — the
+ * mechanism, not a promise: the value is read from the named source inside
+ * {@link derive}, so a copy-pasted hex cannot exist and the two cannot drift.
+ *
+ * Deliberately **not exported**: §9.1 keeps this module's public surface at
+ * §5.4's declared shape (`ThemeTokens` / `THEME` / `theme()` / `cssVars()`), and
+ * a parity pin is provable *through* that surface
+ * (`THEME.B.actor.ring === THEME.B.text.primary`).
+ */
+interface TokenAlias {
+  readonly aliasOf: "text.primary";
+}
+
+function isTokenAlias(value: Hex | TokenAlias): value is TokenAlias {
+  return typeof value !== "string";
+}
+
 interface BasePalette {
   readonly ground: ThemeTokens["ground"];
   /** `obj` minus every **derived** member — those are computed by {@link derive}. */
   readonly obj: Omit<ThemeTokens["obj"], DerivedObjKey>;
-  readonly actor: Omit<ThemeTokens["actor"], "ringVisible">;
+  /** `ring` may be an {@link TokenAlias} (F3-R) — resolved by {@link derive}. */
+  readonly actor: { readonly body: Hex; readonly ring: Hex | TokenAlias };
   readonly text: ThemeTokens["text"];
   readonly accent: Hex;
   readonly hud: Omit<ThemeTokens["hud"], "phaseGlyph" | "phaseLabel">;
@@ -279,7 +317,7 @@ const BASE: Record<Phase, BasePalette> = {
       doorBlue: "#8FC4FF",
       switch: "#C79BE8",
     },
-    actor: { body: "#EAF0FF", ring: "#5B4E96" },
+    actor: { body: "#EAF0FF", ring: { aliasOf: "text.primary" } },
     text: { primary: "#EAF0FF", secondary: "#A9B2D8" },
     accent: "#7FD8D0",
     hud: { panel: "#1B1F3B", panelAlpha: 0.88, chipFill: "#4A3D7A", chipGlyph: "#C9D6FF" },
@@ -320,6 +358,14 @@ const BASE: Record<Phase, BasePalette> = {
  *   V0.5 / D-3 — the "min" is mandatory, not cosmetic: a candidate is only
  *   acceptable if it clears **every** interior, because the flip can solidify a
  *   wall *or* a closed door under the player).
+ * - `actor.ring` = the value itself, **except** where the authored palette names
+ *   another token instead of a hex: Phase B is `{ aliasOf: "text.primary" }` and
+ *   therefore resolves to `text.primary` B `#EAF0FF` (§4.3 V0.9.5 token record,
+ *   F3-R — the §9.1 rule 3 parity pin, one source of truth). Because the alias is
+ *   resolved **before** the `fx.phaseRing` candidate list is built, a re-tune of
+ *   `text.primary` B moves the ring *and* re-runs the minimax in the same pass
+ *   (R-C12). The V0.5 winner is unchanged (`text.primary` B: min 3.63:1 — the
+ *   duplicate candidate collapses, no cascade).
  *
  * Implementing the rules (instead of copying §4.3's numbers) is what makes a
  * base-token re-tune impossible to ship without recomputing every derived value in
@@ -347,8 +393,13 @@ function derive(base: BasePalette): ThemeTokens {
   const doorBlueOccupied = blend(obj.doorBlue, ground.cell, 0.55);
   const portalEcho = blend(obj.portal, ground.cell, 0.8);
 
+  // F3-R parity pin (§4.3 V0.9.5 token record; architecture §9.1 rule 3): the
+  // Phase-B identity ring is the Phase-B `text.primary` **value**, not a second
+  // copy of its hex — resolved here, so the two cannot drift apart.
+  const ring = isTokenAlias(actor.ring) ? base.text.primary : actor.ring;
+
   // R-C13.4 / D-3 — minimax over every interior a flip can solidify under the player.
-  const ringCandidates: readonly Hex[] = [actor.ring, base.accent, base.text.primary];
+  const ringCandidates: readonly Hex[] = [ring, base.accent, base.text.primary];
   const occupiedInteriors: readonly Hex[] = [wallOccupied, doorRedOccupied, doorBlueOccupied];
   let phaseRing: Hex = ringCandidates[0] as Hex;
   let bestWorst = -Infinity;
@@ -373,7 +424,7 @@ function derive(base: BasePalette): ThemeTokens {
       doorBlueOccupied,
       portalEcho,
     },
-    actor: { ...actor, ringVisible: ringVisibleFor(actor.body, ground.cell) },
+    actor: { body: actor.body, ring, ringVisible: ringVisibleFor(actor.body, ground.cell) },
     text: base.text,
     accent: base.accent,
     hud: {
