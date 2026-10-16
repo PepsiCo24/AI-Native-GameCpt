@@ -1680,3 +1680,8 @@ breaks **only** for door ∩ wall overlap (item 14/15).
 - Never place final art without an `asset-request-*.md` and a human-authorised generation channel.
 - LLM opinion never replaces the program Solver. "Should work" is not evidence.
 - Two agents may not touch `GameState`, the level schema, core rules, `package.json`, `opencode.json` or `AGENTS.md` at once.
+
+87. **TRAIN 3 LANDED — the art era is live on Pages, first-party verified.**
+    (a) `main` = **`7ec0560`** (merge of develop at the proven shipped state). Gate evidence chain: shipped-state cloud round **38867895111** (`db49823`) **107/0 at 32.1 m** (worst observed load shape) + R-006 local both-states 107/0 + the budgets proven. Deploy workflow 38871660364 green; CI 38871660347 in flight at booking time.
+    (b) **First-party live verification (17/17 in 1.5 m, `tests/e2e-live/**`, QA-005h's lane pointed at the deployed URL):** HTML serves **`index-r6pZvEiE.js`** — byte-identical name to the local proven build; **all five signed PNGs return 206/200** (`bg_phase_a/b_1920x1080`, `echo_spirit_a/b`, `goal`, content-hashed names unchanged); every level walked its solver par route against the deployed artifact; **art-mounted state** (dev strip empty ⇒ A-07 retirement + `ART_INTEGRATED=true` hold in production), boot R-P6 gate passes silently, error channels clean. Pages moved from vector placeholders (5b058ff) to the real board.
+    (c) What is still NOT done (named, not implied): QA-010 (mid-walk race) in flight — it hardens future gates, not this one; RV-009 queued; R-003c registration of the L16–L19 4-rung block awaits its three-lane train; the stage-2 cohort (the fun verdict) remains the only gate no measurement can pass.
