@@ -46,6 +46,63 @@ Evidence (QA-005 run):
 | `npm run levels` | `10/10 level files ok · 10/10 negative cases rejected` → **PASS** |
 | `tsc --noEmit` | clean |
 
+### The deployed-artifact lane — `tests/e2e-live` (QA-005h): on demand, never in CI
+
+Everything above runs against a vite this repo just built from the working tree.
+Nothing above runs against **the artifact the world can load** — the GitHub Pages
+build of `main`. `tests/e2e-live/` is that lane, and it is one command:
+
+```bash
+npx playwright test --config=playwright.live.config.ts   # root config, its own testDir
+```
+
+For every shipped level it opens the *deployed* bundle with `?level=<n>` and drives
+the **solver's** par route (`loadReferenceLevels()` — the same helper the standing
+suite uses, so no move count is typed into the lane), then requires the deployed HUD
+to agree: a fresh session at move 0 with no dialog, `moves === route.length`, the win
+dialog up, the session still naming the level, and both error channels
+(`console.error` + `pageerror`) empty. Plus one `?level=99` fallback row and one row
+pinning the lane's own targeting rule (below).
+
+Measured 2026-10-16 against `main` = `5b058ff`, deployed bundle
+`assets/index-CCs6qr4w.js` — **17 passed (43.8 s)**, per-row 2.2–3.7 s, fallback row
+1.3 s (the Orchestrator's throwaway reference run: 16/16 in 31.8 s; this lane adds one
+cheap row, below). **Isolation, measured:** `npx playwright test --list` still reports
+**107 tests in 8 files** and `npx vitest run` still reports **32 files · 648 passed ·
+3 skipped** — the lane's directory is invisible to both rosters, in both directions.
+
+**It is deliberately NOT in CI.** The CI e2e job is a zero-retry **correctness** gate;
+a spec that loads a CDN-backed production URL would make a Pages/DNS/propagation
+incident indistinguishable from a code regression, and would put an external
+dependency inside the gate that answers "did this commit break the game". Two files
+make the separation structural, not conventional: this lane is a *separate config*
+(`playwright.live.config.ts` — Playwright only auto-loads the exact name
+`playwright.config.ts`, so a bare `npx playwright test` can never pick it up) with a
+*separate `testDir`* and **no `webServer` at all** (nothing is built or served here, so
+a mis-set base URL cannot silently re-point the lane at a local dev server).
+
+**Finding 1 — `PS_E2E_BASE_URL` cannot target this deployment (measured).** The
+standing suite's `levelUrl()` answers a **root-absolute** `/?level=<n>`; resolved
+against the Pages *project* root the URL API replaces the whole path, so
+`new URL("/?level=1", "https://pepsico24.github.io/AI-Native-GameCpt/").href` is
+`https://pepsico24.github.io/?level=1` — the user-pages root, one level above the
+project, not the game. The sub-path root is therefore spelled out in the lane's own
+file (`tests/e2e-live/live-target.ts` → `LIVE_ROOT` + `liveLevelUrl()`), and that
+resolution is **pinned as a test row** so the limitation cannot rot: if `levelUrl()`
+ever becomes deployment-safe the row goes red and the lane can drop its own builder.
+
+**Finding 2 — the win dialog is raised *after* the arrival beat (measured).** Reading
+the HUD with a single `hud()` call immediately after the last press sees
+`won === false` while `moves` is already the correct count: the flip/hop beat lands
+first, the overlay is raised after it. Re-measured on the deployed build before this
+lane was written: the immediate read was `won === false` on **12/15** rows (L11, L12
+and L15 happened to have made it already — the read is a **race**, which is exactly why
+it must not be trusted). The lane therefore reads the dialog with the auto-retrying
+locator (`await expect(page.locator(".ps-overlay")).toBeVisible()`), **never** a sleep:
+a sleep would hide a genuine slow-boot regression behind wall-clock padding, while the
+retrying assertion waits exactly as long as the app takes and fails loudly if the
+dialog never appears.
+
 ### QA-005b — the registry re-pin (10 → 11), and the two literals it cannot reach
 
 R-003 (`f484e23`) unlocked **L11** in the playable registry (11 level files, frozen
@@ -187,9 +244,23 @@ runner measured **7 failed / 79 passed (16.9 min)** with `--retries=1`:
 |---|---|---|
 | `playthrough.spec.ts:113` unlock chain, 30.9 s × 2 | **wall clock**, not an assertion | the walk now carries a documented 120 s CI budget (`test.setTimeout`) |
 | `refusal.spec.ts:48` L3/L4/L9, 30.8 s | **wall clock**, not an assertion | per-level walk carries a documented 90 s CI budget |
+| `latch-door.spec.ts:134` L15 UI walk, 30.9 s (run 38845237536, release-build contention; 21.2 s quiet in run 38843718456) | **wall clock**, not an assertion | QA-005g: the per-level UI walk carries a documented 90 s CI budget |
+| `portal.spec.ts:265` L11 portal walk, 30.8 s (run 38857692208, art bundle live; 20.7 s pre-art in run 38849186852) | **wall clock**, not an assertion | QA-005i: the row carries a documented 90 s CI budget |
+| `playthrough.spec.ts:135` unlock chain L1→L15, 2.1 m = 126 s (run 38857692208, art bundle live; 96 s pre-art in run 38849186852) | **wall clock**, not an assertion | QA-005i: the row's QA-005c budget was re-derived from 120 s to 360 s |
 | `refusal.spec.ts:48` (all params, on loaded machines) | the `cells: []` single-instant probe | the bounded poll above |
 | `transient.spec.ts:116` / `:257` (`frames > 15`, `gridMs < 60`) | local-calibrated constants | runner-aware: the idle frame grid is **measured first**, the recorder window is sized from it, and the `gridMs` ceiling is `max(60, 2 × idle)` |
 | `mobile.mobile.spec.ts:207` R-T4, `Expected: 1, Received: 0` | gesture commit vs HUD read | cached CDP session + a frame after `touchEnd` + the bounded `expectMoves` poll |
+
+**Both crossed rows crossed twice (QA-009).** The two QA-005i rows above went red *again* in
+run **38860398944** (`d9a83dd`), on the same messages and zero assertion flips —
+`Test timeout of 30000ms exceeded.` / `Test timeout of 120000ms exceeded.` — while run
+**38861480689** (`e469e72`, **byte-identical test tree**) went **107 passed / 0 failed (20.3 m)**.
+Class: contention on top of **runner variance** — wall clock, never an assertion. The same-code
+control (identical tree, 31.4 m against 20.3 m) withdrew the art-inflation attribution per
+project-status item 84; local interleaved controls confirm the art state costs no more per frame,
+per boot, or per harness path. The budgets above are ceilings for the ENVIRONMENT wall clock
+(QA-005g class), sized by the budget-when-crossed law (item 77(d)) at ≥2.5× observed.
+No other row is budgeted.
 
 The `frames > 15` tooth survives by construction: the window is `max(700 ms,
 24 × idle grid)`, so it spans ≥ ~24 of the *runner's own* frames on any machine
@@ -737,15 +808,190 @@ the *cloud* — that the natural arm can no longer be failed by the mis-attribut
 is settled only by the post-merge round; the Orchestrator owns the push, the PR and
 that verdict. No run that has not happened is asserted here.
 
+### 1.8 QA-007a — the L15 latch-row red: the *selection* branch is closed, not merely unobserved
+
+Run **38845237536** (push `bed2cb9`, e2e job 116794357318) went **106 passed / 1 failed
+(21.6 m)** with `latch-door.spec.ts:134:5` →
+`L15 — the UI blocks the closed door and strands the player on a closed one`, verbatim:
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+That is a **fifth class**, distinct from QA-005f's four shapes (attribution /
+`BEAT-REQUIRED-ABSENT` / recorder / `resolve-limit`): a **wall-clock budget
+exhaustion** whose message carries **no assertion body at all**. The same code row was
+green in ~8 prior full rounds (QA-006 local 107/0 6.8 m; merge-tip local 107/0 5.7 m;
+cloud `ff0a8f8` 107/0 16.0 m; cloud main `5b058ff` 107/0 12.9 m), and the red commit
+`bed2cb9` was **docs-only** ahead of `ff0a8f8`.
+
+**The red is not a fixture/selection defect** — the branch QA-005g's measurement left
+implicit. QA-007a interrogated `cheapestDoorFixtures()` browser-free (`tsx` over
+`tests/e2e/helpers/levels.ts`; the throwaway scan was deleted before commit; the
+standing audit is `scripts/latch-pair-audit.ts`):
+
+| level | occupancy route | refusal route | distinct welded occupancies at min depth |
+|---|---:|---:|---:|
+| L6 | 3 | 4 | 1 (unique) |
+| L7 | 3 | 0 | 1 (unique) |
+| L8 | 5 | 2 | 1 (unique) |
+| L9 | 4 | 1 | 1 (unique) |
+| L10 | 8 | 3 | 1 (unique) |
+| L11 | 3 | 4 | 1 (unique) |
+| L12 | 3 | 4 | 1 (unique) |
+| L13 | 5 | 6 | 1 (unique) |
+| L14 | 7 | 8 | 1 (unique) |
+| L15 | **9** | **10** | 1 (unique) |
+
+Every door level's weld pins **exactly one** occupancy at the minimal depth (L9/L11/L12
+carry several welded *pairs*, but a single welded *occupancy*), `explore()`'s node order
+is identical across repeated calls, and `cheapestDoorFixtures(ref)` is a **pure function
+of one level ref** — permuting the dataset array reproduces every signature
+byte-for-byte, so dataset load order cannot enter the choice. L15's row therefore drives
+the one world the scan names (refusal 10 + occupancy 9 = **19 trusted presses**, two
+level opens) — the same work size QA-005g measured from the cloud.
+
+**Why it crossed the line.** The row's cost is frame-quantised (`pressDirection` = 2
+rendered frames each, `helpers/game.ts`) while the per-test budget is a fixed 30 s
+(`playwright.config.ts`). Local rounds on QA-007a's own vite (`PS_E2E_PORT=5236`, base
+`0f08c95`):
+
+| local round | census | L15 row |
+|---|---|---|
+| recon, `latch-door.spec.ts` alone | 22 passed (1.5 m) | 7.1 s |
+| full suite round 1 | **107 passed (6.6 m)** | 8.2 s |
+| full suite round 2 | **107 passed (10.0 m)** | **17.9 s** |
+| full suite round 3 | **107 passed (5.4 m)** | 7.4 s |
+
+Three clean full rounds, `latch-door.spec.ts:134` never the failing row: the row swung
+8.2 → 17.9 → 7.4 s on *identical code* while every assertion stayed green — the machine,
+not the board, moved it. At the cloud's red round it reached 30.9 s and crossed the
+fixed budget.
+
+**Disposition — named transient, remediated by QA-005g.** QA-005g (`cd3af77`, merged
+`091c483`) diagnosed the same run and gave the walk `test.setTimeout(90_000)` inside the
+derived `DOOR_LEVELS` loop (the `refusal.spec.ts:56` precedent), with no assertion change
+and no retry. QA-007a lands **no spec change**: duplicating the budget would be a second
+writer on the same range. Its contribution is the independent proof above — the failure
+cannot be a selection or game defect, only a wall clock — so the merged 90 s budget is
+the right class of remedy.
+
+**CI status: CLOSED — remedy landed, three consecutive green cloud rounds measured under
+zero retries (2026-10-16, QA-005h).** The remedy is QA-005g (`cd3af77` — the derived
+`DOOR_LEVELS` walk carries `test.setTimeout(90_000)`; merged `091c483`), with no assertion
+change and no retry. Since then the tip has run **three consecutive green cloud rounds
+under zero retries**, all pushes to `develop`, each verified against its own log
+(`gh run view <id> --log`):
+
+| run | tip | runner's test line | e2e job wall clock | L15 row (`latch-door.spec.ts:134:5`) |
+|---|---|---|---|---|
+| `38849186852` | `091c483` | `107 passed (21.3m)` | 22m2s | 29.4 s |
+| `38851254805` | `3592134` | `107 passed (21.0m)` | 21m32s | 29.6 s |
+| `38853247944` | `4d4e61d` | `107 passed (21.2m)` | 21m47s | 29.7 s |
+
+The row that crossed the fixed 30 s budget at 30.9 s in `38845237536` now lands
+29.4–29.7 s in all three rounds: still the suite's heaviest row, now ~3× inside the
+merged 90 s budget — headroom on a wall clock, not a hidden retry (the job runs bare
+`npx playwright test`, `retries: 0`). **Written as measured, not as dispatched:** the
+dispatch quoted the first round as `21m3m`; the runner's own line is `107 passed (21.3m)`
+and that job's wall clock was 22m2s. The other two figures (21m32s / 21m47s) are job wall
+clocks and match. Nothing about the verdict depends on which clock is quoted.
+
+### 1.9 QA-010 — the readiness gate was a frame count: silent first-input loss, and the loader arm
+
+**The red.** Two cloud rounds on `develop` failed with a signature this suite had never
+produced, while two others passed on byte-identical specs:
+
+| run | tip | runner's line | what failed |
+|---|---|---|---|
+| `38861480689` | `e469e72` | `107 passed (20.3m)` | — |
+| `38863193343` | `411bd12` | `4 failed / 103 passed (14.1m)` | latch L12/L8, playthrough L4, the L1→L15 unlock chain (10.1 s — a *move count*, not a timeout) |
+| `38863790675` | `ebc8790` | `10 failed / 97 passed (15.0m)` | controls `:121`, latch L6/L10, playthrough L5, portal L11 ×2, transient P2, mobile ×3 |
+| `38862977845` | `9d4c212` | `107 passed (31.8m)` | — |
+
+Every failure was **the same claim**: a press the page received that produced **no move** —
+`Expected: 1, Received: 0` on the first press of a route, a solver route of depth 4 counted
+as **3**, a swipe whose *delivery was asserted by the probe* yet never counted, `.ps-overlay`
+never appearing. All four `input-replay.spec.ts` rows passed, including "one press/release
+cycle inside one frame window is exactly one move" — so the game was not dropping presses it
+received. `src/**` and `playwright.config.ts` were **identical** across the red and green
+rounds below (`git diff` empty); the only test-side delta was two `test.setTimeout` budgets,
+which cannot drop input. The failing rounds were the **fast** ones.
+
+**Root cause (measured, not inferred).** `LevelScene` is `preload() → loader → create()`, and
+`create()` is where `attachInput` runs (`src/game/scenes/level-scene.ts:137`). `preload()`
+queues the five delivered-art textures as **real image fetches** (`theme/art.ts`
+`queueDeliveredArt`), so the board does not listen until an **I/O** condition is met —
+while `openLevel` stopped at `.ps-shell` + `<canvas>` + **3 animation frames**, on the stated
+premise that `create()` "runs on the first game step after the canvas exists". On a fast
+runner 3 frames are ~25–50 ms of wall clock; on a slow one they are ~100–300 ms. The gap is
+silent: no console error, no feedback, and the HUD already looks alive.
+
+| arm (`?level=1`, `ArrowRight` immediately after the frame gate) | first press lands | after a second press |
+|---|---|---|
+| no delay (art fast) | **10/10** | 10/10 = 2 moves |
+| art delayed 1200 ms | **0/10** | 0/10 = still 0 moves |
+| art delayed 1200 ms, then wait 1500 ms | 6/6 | 6/6 = 2 moves |
+
+**Through the real rows** (an external proxy adding 1200 ms to every `*.png`, suite pointed
+at it with `PS_E2E_BASE_URL`, so the helper under test is the only variable):
+
+| helper | rows: controls `:111`, playthrough L5/L11, portal L11 ×3 | verdict |
+|---|---|---|
+| before (frame gate only) | `waiting for locator('.ps-overlay')` → hidden; move counts 1 short | **6 failed / 2 passed** — the CI signature verbatim |
+| after (loader gate) | — | **8 passed** |
+
+**The fix.** `openLevel` now waits for the loader itself: request listeners attached **before
+`goto`** (a watch installed after it can miss its own condition), then
+`seen > 0 && inFlight.size === 0` where a delivered-art image is `\.png$`. It is not a sleep —
+the poll returns on the loader's own completion event — and a hung loader now fails **at that
+wait** ("the delivered-art loader never settled") instead of silently two assertions later.
+
+Two honest notes on the first cut. **(1) `\.png$`, not `\.png\?`:** the app's module graph
+also fetches each sprite as a `?url` module (`…/echo_spirit_a.png?import&url`) during `goto`,
+and counting that as delivered art let the poll return *before* `preload` even queued the
+images — the same early-return race this gate exists to remove. It surfaced under the proxy as
+an intermittent **blank-board** probe failure (`actor tile … found [] after 2014 ms; body
+anchors: vector body #F6DE9E` — no sprite entry yet, so the vector anchor was the only one, on
+a board that then drew the sprite), 2/4 on `portal.spec.ts:199`. With `\.png$`: that row
+**8/8** under the same proxy, and a diagnostic that prints `actorBodyAnchors` carries the
+delivered-spirit anchor (`rgb(244,202,108)`) in **8/8** trials. **(2)** The instrument is an
+opt-in switch, in the same spirit as the QA-007 degrade route:
+
+```bash
+PS_E2E_ART_DELAY_MS=1200 npx playwright test        # same art, served late — the window, on demand
+```
+
+**Cost, and what stays untouched.** The wait adds the loader's own time to each row's critical
+path (it was previously overlapped: the row raced ahead of it). Locally that is tens of ms per
+open; no budget moved, and the QA-005g envelopes (`90 s` / `360 s`) keep ≥ 30 % headroom on the
+worst runner observed (§1.3), so the only-up law is not engaged.
+
+**Recorded, not fixed here — a player-facing question.** The HUD and frame look alive *before*
+the board exists, and input in that window is silently ignored. The harness now waits; the
+product's behaviour is unchanged, and on a slow connection that window is real (the same
+1200 ms that reproduced this). Whether the game should show a loading affordance or queue the
+input belongs to the Game Designer / UI-Art lanes — it is logged as an open question in
+`docs/project-status.md`, item 86.
+
 ---
 
-## 2. Inventory — 88 cases
+## 2. Inventory — 107 cases in 8 files (measured)
+
+**Dated note (2026-10-16, QA-005h).** The per-ticket blocks in §1 are **historical
+snapshots**: the `88/0` rounds, the `88 tests in 8 files` `--list` lines and the per-file
+case counts in §1.3–§1.8 were true when those blocks were written and are deliberately
+left as they stand. **This section is the only present-tense inventory in this file.**
+Its header total is the tail line of `npx playwright test --list`
+(`Total: 107 tests in 8 files`) and every number in the `cases` column is that tool's own
+per-file count, read off its output rather than tallied by hand —
+`19 + 29 + 22 + 6 + 8 + 4 + 7 + 12 = 107`, with 95 desktop rows and 12 mobile rows.
 
 | file | cases | project | what it pins |
 |---|---:|---|---|
-| `playthrough.spec.ts` | 15 | desktop | L1–L11 par route → win dialog; the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the L1→L11 unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L11` |
-| `refusal.spec.ts` | 22 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one |
-| `latch-door.spec.ts` | 14 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all six latch levels, in-core and through the UI |
+| `playthrough.spec.ts` | 19 | desktop | L1–L15 par route → win dialog; the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the L1→L15 unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L15` |
+| `refusal.spec.ts` | 29 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one |
+| `latch-door.spec.ts` | 22 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all ten latch levels (L6–L15, the dataset's derived contiguous tail), in-core and through the UI |
 | `portal.spec.ts` | 6 | desktop | M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
 | `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
@@ -760,7 +1006,11 @@ directions, door states, latch fixtures and portal crossings come from `solve()`
 pixel count is typed into a spec; a level edit that removes a behaviour fails the run
 instead of leaving a stale fixture behind. The **dataset inventories** are derived
 too (`datasetIds` / `doorLevelIds` / `discoveredFileIds` / `inventoryViolation`), with
-exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3).
+exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3). A second, narrower
+hand-typed literal exists outside that helper set and is deliberate: `portal.spec.ts:91`
+re-baselines the *portal* inventory (`[11, 12, 13, 14, 15]`) against the derived
+`levelsWithPortals()` — the latches instead assert the structural rule (the door levels
+are the dataset's contiguous tail), so an unlock re-types nothing there.
 
 ---
 

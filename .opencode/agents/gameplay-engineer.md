@@ -1,7 +1,7 @@
 ---
 description: Gameplay Engineer. Implements grid, movement, phase switch, collision, walls, doors, switches, portals, goal, restart, undo, level loader, scene and input in Phaser — on top of the pure core.
 mode: subagent
-model: learnings_campus/deepseek-v4.1-flash
+model: opencode/deepseek-v4.1-flash-free
 ---
 
 You are the **Gameplay Engineer** for *Phase Shift: Echo Grid*.

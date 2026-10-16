@@ -3,22 +3,63 @@
  *
  * DEV PLACEHOLDER — A-03 echo_spirit_a / echo_spirit_b
  * (`docs/ui-ux.md` §9.1: "Player (A-03) → DEV PLACEHOLDER → filled circle +
- * `actor.ring`"). Filled round glow, 70 % of the cell (R-C1), no sprite, no art.
+ * `actor.ring`"). The delivered pair is integrated (R-005a, 2026-10-16); this
+ * vector body is what the slot **degrades to** when its texture does not mount,
+ * and it is the shape every number in this file was measured against.
+ *
+ * ── The body is now two layers of one element: paint *and* texture ───────────
+ * A `Phaser.GameObjects.Graphics` cannot draw a texture, so the L5 actor is one
+ * container whose internal order is fixed by three painters in `board-view.ts`:
+ *
+ * ```
+ *   paintActor        one-shot phase ring (R-C13.4) + the vector body fallback
+ *   <the spirit texture>   ← the delivered A/B form, cross-faded per phase
+ *   paintActorOverlay  R-C9 identity ring + §6.5 deny tint
+ * ```
+ *
+ * The split is not cosmetic, and neither position is arbitrary:
+ *
+ * - **Phase ring below the body** — R-C13.4/§6.3/R-Z7: at `scaleFrom` its radius
+ *   equals the body's, so a ring above the body would draw *over the player*,
+ *   which §6.3 forbids outright. Unchanged from V0.7.
+ * - **Identity ring + deny tint above the texture** — both sit on the **0.82 ×
+ *   cell** path (`RING_DIAMETER`), radially outside R-C1's 0.70 × cell body, so
+ *   neither ever covers a pixel of the player. Above the *texture* rather than
+ *   below it because the delivered sprite carries a soft aura: its α>0 extent is
+ *   73.2 % of the canvas (audit R-T04) against the 69.9 % body, i.e. a glow band
+ *   that reaches the ring's inner edge and would composite **over** it — dimming
+ *   R-C9's contrast channel exactly in Phase A, where that ring is the *only*
+ *   thing separating a 1.5:1 body from an ivory cell. R-C9 is a mechanic read
+ *   (`docs/ui-ux.md` §3.1a: the ring is the contrast carrier), so the ring must
+ *   land on top of the aura, not under it.
  *
  * Binding rules implemented here:
  * - **R-C9 auto contrast ring** — drawn only when `actor.ringVisible`, a value
- *   computed **once at boot** from the token map (never per frame, never a
- *   per-phase branch). Phase A: ON (body alone is 1.30:1 on an ivory cell);
- *   Phase B: OFF (12.52:1 already). `ActorLook.ringAlpha` turns that decision
- *   into a **fadeable number** so the flip can cross-fade the ring instead of
- *   popping it (§6.2's `ground.*` / `obj.*` token fade; a boolean has no
- *   midpoint, an alpha does).
+ *   decided **once at boot** per phase (never per frame, never a per-phase branch).
+ *   Its *input* is the colour the body is drawn with: the token while the vector
+ *   placeholder draws, the measured centre pixel of the delivered sprite when that
+ *   is what is on the board (`theme/tokens.ts` `applyDrawnActorBody`, R-005b /
+ *   QA-007-F1). Phase A: ON in both states (placeholder body 1.30:1 on an ivory
+ *   cell; the delivered form measures **1.53:1** — still under 3). Phase B: OFF
+ *   while the placeholder draws (12.52:1), **ON** once the delivered sprite draws —
+ *   its own centre measures **2.34:1**, under the 3:1 band, so R-C9 demands the
+ *   ring and the board now draws it. `ActorLook.ringAlpha` turns that decision into
+ *   a **fadeable number** so the flip can cross-fade the ring instead of popping it
+ *   (§6.2's `ground.*` / `obj.*` token fade; a boolean has no midpoint, an alpha
+ *   does). Measured on this tree, 1.0×128 px cells: 15/24 ring-path samples read
+ *   the ring token in art Phase B, 0/24 in the degrade Phase B, 14/24 (art) and
+ *   17/24 (degrade) in Phase A.
  * - **R-C13.1 / R-C13.3** — while the player stands inside a solidified wall the
  *   actor draws above the wall graphic (layer L5 > L4, see `board-view.ts`
  *   `DEPTH`) and keeps a visible contrast channel: in Phase A the ring is
  *   mandatory (body vs `obj.wallOccupied` is only 1.86:1, the ring is 4.86:1);
- *   Phase B needs no ring (body 4.62:1). No wall treatment may draw over any
- *   part of the player.
+ *   with the placeholder body Phase B needs no ring (body 4.62:1). **With the
+ *   delivered sprite, Phase B's embedded case is an open finding** (QA-007-F3):
+ *   the sprite body is 1.16:1 and B's ring token only 1.34:1 against B's
+ *   `wallOccupied` — the ring that R-C9 turns on is not a readable channel there.
+ *   No number is changed here by this lane: R-C13.1's art-era thresholds are a spec
+ *   question (token row + contrast check both phases, `ui-ux.md` §11 procedure).
+ *   No wall treatment may draw over any part of the player.
  * - **R-C13.4 one-shot phase ring** — at flip resolution, when the player's tile
  *   just became solid, a single `fx.phaseRing` ring pulses, 2 px stroke, 180 ms,
  *   scale 0.7 → 1.0 of the cell. **Every number comes from the `ring` row of
@@ -36,7 +77,9 @@
  *   resolved alpha and only draws it.
  * - **§6.2 hop** — 130 ms `easeOutQuad`, arc `cellSize * 0.12`, squash ≤ 6 % on
  *   landing (collapsed to nothing under reduced motion: `hop.dur = 0`, `arc = 0`,
- *   `squash = 0` ⇒ the actor is drawn exactly at its target cell, §6.4).
+ *   `squash = 0` ⇒ the actor is drawn exactly at its target cell, §6.4). The
+ *   squash is a *shape* rule, so it applies to the texture too — the pair shares
+ *   a byte-identical alpha mask, so scaling both forms identically shifts nothing.
  *
  * The deny tint is drawn **over** the identity ring rather than instead of it:
  * §6.5's wording is "tints the *player ring only* at 0.5 alpha", and replacing
@@ -55,6 +98,25 @@ const RING_DIAMETER = 0.82;
 const PHASE_RING_DIAMETER = 1.0;
 /** R-C13.4 / R-T6: 2 px strokes, expressed in CSS px and scaled by the DPR cap. */
 const STROKE_CSS = 2;
+
+/**
+ * Audit R-T04 (`docs/assets/art-acceptance-2026-10-16.md`): the delivered pair is
+ * framed at **69.9 × 70.1 %** of its 512² canvas (α ≥ 128 bbox), byte-identical
+ * between the forms. Rounded to 0.70 here because that is also R-C1's own body
+ * fraction.
+ */
+export const ACTOR_ART_FRAMING = 0.7;
+
+/**
+ * The delivered sprite's **box** size, as a fraction of the cell.
+ *
+ * The delivered files bake their headroom (framing band 65–80 %, req-08), so the
+ * box has to be divided by that framing for the *form* to land on R-C1's
+ * 0.70 × cell — the footprint every readability number in this file (the ring at
+ * 0.82, the §6.5 arc, the wall comparisons above) was measured against, and the
+ * one the vector fallback below still draws. `0.70 / 0.70 = 1.0 × cell`.
+ */
+export const ACTOR_ART_BOX = ACTOR_DIAMETER / ACTOR_ART_FRAMING;
 
 /** §6.2 `easeOutQuad` — the single easing of the flip (token fade, hop, wall swap). */
 export function easeOutQuad(t: number): number {
@@ -156,8 +218,19 @@ export interface ActorPaintContext {
   readonly denyAlpha: number | null;
   /** R-C13.4 — present for one `ring.dur` window after a flip solidified the tile. */
   readonly phaseRing: PhaseRingState | null;
+  /**
+   * `true` when the delivered spirit texture is mounted and is drawing the body in
+   * a layer between {@link paintActor} and {@link paintActorOverlay} — so this
+   * painter must **not** draw the vector body (it stays the fallback, never a
+   * second body under the sprite).
+   */
+  readonly textureBody: boolean;
 }
 
+/**
+ * The **below-the-body** half of the actor: the one-shot phase ring and, when no
+ * texture is mounted, the vector body fallback.
+ */
 export function paintActor(ctx: ActorPaintContext): void {
   const { g, cx, cy, cellSize, cssScale, look } = ctx;
 
@@ -170,6 +243,23 @@ export function paintActor(ctx: ActorPaintContext): void {
     g.strokeCircle(cx, cy, ((cellSize * PHASE_RING_DIAMETER) / 2) * scale);
   }
 
+  // DEV PLACEHOLDER — A-03 echo_spirit_a / echo_spirit_b: the vector body, drawn
+  // only when the delivered texture is not mounted (R-005a, `theme/art.ts`).
+  // Geometry, colour and squash are exactly the pre-integration paint.
+  if (ctx.textureBody) return;
+  const radius = (cellSize * ACTOR_DIAMETER) / 2;
+  g.fillStyle(toInt(look.body), 1);
+  g.fillEllipse(cx, cy, radius * 2 * ctx.squash.sx, radius * 2 * ctx.squash.sy);
+}
+
+/**
+ * The **above-the-texture** half of the actor: R-C9's identity ring and §6.5's
+ * deny tint. Both sit on the 0.82 × cell path, radially outside the body, so
+ * neither covers any part of the player (see this file's header for why they must
+ * still land *above* the sprite rather than under it).
+ */
+export function paintActorOverlay(ctx: ActorPaintContext): void {
+  const { g, cx, cy, cellSize, cssScale, look } = ctx;
   const ringRadius = (cellSize * RING_DIAMETER) / 2;
 
   // R-C9 identity ring — boot-derived per phase, cross-faded across a flip.
@@ -185,9 +275,4 @@ export function paintActor(ctx: ActorPaintContext): void {
     g.lineStyle(STROKE_CSS * cssScale, toInt(look.deny), ctx.denyAlpha);
     g.strokeCircle(cx, cy, ringRadius);
   }
-
-  // Body — filled round glow, R-C1's only solid moving element.
-  const radius = (cellSize * ACTOR_DIAMETER) / 2;
-  g.fillStyle(toInt(look.body), 1);
-  g.fillEllipse(cx, cy, radius * 2 * ctx.squash.sx, radius * 2 * ctx.squash.sy);
 }

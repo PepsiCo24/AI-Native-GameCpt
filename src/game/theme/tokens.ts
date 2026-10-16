@@ -4,15 +4,28 @@
  * Truth sources: `docs/ui-ux.md` V0.5 §4.3 (token map, measured 2026-10-14),
  * §4.6 (separation contract), §5.4 (skin system), §6.1/§6.2 (flip timing table),
  * §6.2a (Variant S / Variant CL), §6.4 (reduced motion), R-C9 (auto contrast
- * ring), R-C11 (tokens are the only source of colour), R-C12 (derived tokens are
- * **computed**, never hand-picked per level), R-C13.4 (`fx.phaseRing` is chosen at
- * boot), R-D7 + V0.5 D-3 (occupied doors; `fx.phaseRing` re-derived as a minimax).
+ * ring — whose input since R-005b is the colour the body is *actually drawn with*,
+ * see {@link applyDrawnActorBody}), R-C11 (tokens are the only source of colour),
+ * R-C12 (derived tokens are **computed**, never hand-picked per level), R-C13.4
+ * (`fx.phaseRing` is chosen at boot), R-D7 + V0.5 D-3 (occupied doors;
+ * `fx.phaseRing` re-derived as a minimax).
  *
  * V0.4 → V0.5 delta implemented here: the two `obj.door*Occupied` tokens and the
  * reserved `obj.portalEcho` (zero new hand-tuned values — both are the existing
  * blend formulas), and the `fx.phaseRing` **minimax** over every occupied interior.
  * Door *states* deliberately add no token at all: §3.1b carries open/closed by
  * geometry, so there is nothing here to re-tune when doors ship at L21.
+ *
+ * V0.9.5 delta implemented here (F3-R, `docs/ui-ux.md` §4.3/§4.5): **one value** —
+ * `actor.ring` Phase B `#5B4E96` → `#EAF0FF`, and it arrives as an **alias of
+ * `text.primary` B** (the §9.1 rule 3 parity pin), not as a second hex. The
+ * placeholder B ring measured 1.34:1 vs `wallOccupied` and 2.02:1 vs `ground.cell`
+ * — below R-C9's own 3:1 trigger — while the drawn art body killed the
+ * placeholder-era body-alone channel (1.16:1, QA-007-F3); the re-derived B ring
+ * restores the published B body ratios (wall 4.62 / red 4.38 / blue 3.63) on the
+ * element the art era actually draws. Nothing else moves: `ringVisibleFor`'s
+ * semantics, the mount-time path, `obj.wallOccupied`, Phase A and `fx.phaseRing`
+ * (same minimax winner) are all untouched.
  *
  * Path note (flagged, not silently decided): §5.4 names
  * `src/ui/theme/tokens.ts` as the home of this map. `src/ui/**` belongs to the
@@ -80,7 +93,14 @@ export interface ThemeTokens {
   readonly actor: {
     /** Echo Spirit body — DEV PLACEHOLDER A-03 `echo_spirit_a/b`. */
     readonly body: Hex;
-    /** Auto contrast ring, drawn only when R-C9 demands it. */
+    /**
+     * Auto contrast ring, drawn only when R-C9 demands it.
+     *
+     * Phase B is **derived from `text.primary` B** (§4.3 V0.9.5 token record, F3-R
+     * — the §9.1 rule 3 parity pin): authored as an alias, resolved in
+     * {@link derive}, never a second copy of the hex. Phase A keeps its own value
+     * (`#4A3216`, re-derived with `text.primary` A `#3A3226` in the V0.5 minimax).
+     */
     readonly ring: Hex;
     /** R-C9 decision, computed at boot (never per frame, never per-phase branch). */
     readonly ringVisible: boolean;
@@ -195,11 +215,31 @@ export function lerpColorInt(a: number, b: number, t: number): number {
  * §4.3 base palette (measured 2026-10-14) — the input of the derivation below.
  * ──────────────────────────────────────────────────────────────────────────── */
 
+/**
+ * An authored base-palette member that has **no hex of its own**: it *is* another
+ * token, named by path. This is the §9.1-rule-3 **parity pin** mechanism — the
+ * mechanism, not a promise: the value is read from the named source inside
+ * {@link derive}, so a copy-pasted hex cannot exist and the two cannot drift.
+ *
+ * Deliberately **not exported**: §9.1 keeps this module's public surface at
+ * §5.4's declared shape (`ThemeTokens` / `THEME` / `theme()` / `cssVars()`), and
+ * a parity pin is provable *through* that surface
+ * (`THEME.B.actor.ring === THEME.B.text.primary`).
+ */
+interface TokenAlias {
+  readonly aliasOf: "text.primary";
+}
+
+function isTokenAlias(value: Hex | TokenAlias): value is TokenAlias {
+  return typeof value !== "string";
+}
+
 interface BasePalette {
   readonly ground: ThemeTokens["ground"];
   /** `obj` minus every **derived** member — those are computed by {@link derive}. */
   readonly obj: Omit<ThemeTokens["obj"], DerivedObjKey>;
-  readonly actor: Omit<ThemeTokens["actor"], "ringVisible">;
+  /** `ring` may be an {@link TokenAlias} (F3-R) — resolved by {@link derive}. */
+  readonly actor: { readonly body: Hex; readonly ring: Hex | TokenAlias };
   readonly text: ThemeTokens["text"];
   readonly accent: Hex;
   readonly hud: Omit<ThemeTokens["hud"], "phaseGlyph" | "phaseLabel">;
@@ -277,7 +317,7 @@ const BASE: Record<Phase, BasePalette> = {
       doorBlue: "#8FC4FF",
       switch: "#C79BE8",
     },
-    actor: { body: "#EAF0FF", ring: "#5B4E96" },
+    actor: { body: "#EAF0FF", ring: { aliasOf: "text.primary" } },
     text: { primary: "#EAF0FF", secondary: "#A9B2D8" },
     accent: "#7FD8D0",
     hud: { panel: "#1B1F3B", panelAlpha: 0.88, chipFill: "#4A3D7A", chipGlyph: "#C9D6FF" },
@@ -307,13 +347,25 @@ const BASE: Record<Phase, BasePalette> = {
  * - `obj.portalEcho` = **80 % `obj.portal` + 20 % `ground.cell`** (RESERVED, §3.1c;
  *   the 70/30 variant was rejected in the spec because A lands at 2.65:1, below the
  *   3.0 stroke band).
- * - `actor.ringVisible` = `CR(actor.body, ground.cell) < 3` (R-C9, boot-time, one code path).
+ * - `actor.ringVisible` = `CR(actor.body, ground.cell) < 3` (R-C9, boot-time, one code path),
+ *   where `actor.body` is **the colour the body is drawn with**: the token itself
+ *   while the vector placeholder draws, or the measured centre pixel of the
+ *   delivered A-03 sprite when that is what is on the board
+ *   ({@link applyDrawnActorBody}, R-005b / QA-007-F1).
  * - `fx.phaseRing` = **boot-time minimax** `argmax_c min_i CR(c, i)` over candidates
  *   `{actor.ring, accent, text.primary}` × occupied interiors
  *   `{wallOccupied, doorRedOccupied, doorBlueOccupied}` (R-C13.4 as re-derived by
  *   V0.5 / D-3 — the "min" is mandatory, not cosmetic: a candidate is only
  *   acceptable if it clears **every** interior, because the flip can solidify a
  *   wall *or* a closed door under the player).
+ * - `actor.ring` = the value itself, **except** where the authored palette names
+ *   another token instead of a hex: Phase B is `{ aliasOf: "text.primary" }` and
+ *   therefore resolves to `text.primary` B `#EAF0FF` (§4.3 V0.9.5 token record,
+ *   F3-R — the §9.1 rule 3 parity pin, one source of truth). Because the alias is
+ *   resolved **before** the `fx.phaseRing` candidate list is built, a re-tune of
+ *   `text.primary` B moves the ring *and* re-runs the minimax in the same pass
+ *   (R-C12). The V0.5 winner is unchanged (`text.primary` B: min 3.63:1 — the
+ *   duplicate candidate collapses, no cascade).
  *
  * Implementing the rules (instead of copying §4.3's numbers) is what makes a
  * base-token re-tune impossible to ship without recomputing every derived value in
@@ -341,8 +393,13 @@ function derive(base: BasePalette): ThemeTokens {
   const doorBlueOccupied = blend(obj.doorBlue, ground.cell, 0.55);
   const portalEcho = blend(obj.portal, ground.cell, 0.8);
 
+  // F3-R parity pin (§4.3 V0.9.5 token record; architecture §9.1 rule 3): the
+  // Phase-B identity ring is the Phase-B `text.primary` **value**, not a second
+  // copy of its hex — resolved here, so the two cannot drift apart.
+  const ring = isTokenAlias(actor.ring) ? base.text.primary : actor.ring;
+
   // R-C13.4 / D-3 — minimax over every interior a flip can solidify under the player.
-  const ringCandidates: readonly Hex[] = [actor.ring, base.accent, base.text.primary];
+  const ringCandidates: readonly Hex[] = [ring, base.accent, base.text.primary];
   const occupiedInteriors: readonly Hex[] = [wallOccupied, doorRedOccupied, doorBlueOccupied];
   let phaseRing: Hex = ringCandidates[0] as Hex;
   let bestWorst = -Infinity;
@@ -367,7 +424,7 @@ function derive(base: BasePalette): ThemeTokens {
       doorBlueOccupied,
       portalEcho,
     },
-    actor: { ...actor, ringVisible: contrastRatio(actor.body, ground.cell) < 3 },
+    actor: { body: actor.body, ring, ringVisible: ringVisibleFor(actor.body, ground.cell) },
     text: base.text,
     accent: base.accent,
     hud: {
@@ -385,15 +442,93 @@ function derive(base: BasePalette): ThemeTokens {
   };
 }
 
+/**
+ * R-C9's rule, as one pure function: the identity ring is demanded whenever the
+ * colour the player's **body** is drawn with fails the 3:1 band against the
+ * ground cell it stands on.
+ *
+ * One rule, two inputs — never two rules. `derive()` above applies it to
+ * `actor.body` (the vector placeholder / dev form), `applyDrawnActorBody()`
+ * applies the very same function to the measured centre pixel of the delivered
+ * sprite. A second, art-only threshold here is exactly how the two answers drift
+ * apart later.
+ */
+export function ringVisibleFor(drawnBody: Hex, groundCell: Hex): boolean {
+  return contrastRatio(drawnBody, groundCell) < 3;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * R-C9 against the body that is actually drawn — QA-007-F1 (R-005b)
+ *
+ * The bug this closes: `ringVisible` was derived from `actor.body`, which is the
+ * **vector placeholder's** colour. R-005a then made the *drawn* body something
+ * else — the delivered A-03 sprite — so the decision was computed from a colour
+ * the player never sees. In Phase B the placeholder measured 12.52:1 (ring off),
+ * while the delivered sprite's own centre measures **2.34:1** against the same
+ * cell: R-C9 demands the ring, and the board drew none.
+ *
+ * The fix keeps R-C9's contract intact — *one decision, boot time, no per-frame
+ * and no per-phase branch* — by re-deciding once, at mount time, from the
+ * measured colour, and by handing the renderer an ordinary `ThemeTokens` record.
+ * `ActorLook.ringAlpha` is still `tokens.actor.ringVisible ? 1 : 0`
+ * (`objects/actor.ts`): the consumption site is a pure boolean read, unchanged.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Per-phase R-C9 override — **installed only when the drawn body changes the
+ * verdict**, and empty in every other case (no art mounted, or the same verdict).
+ * An empty map means "the token derivation", i.e. exactly the board that shipped
+ * before any art was wired.
+ */
+const drawnBodyOverrides = new Map<Phase, ThemeTokens>();
+
+/**
+ * Re-decide R-C9 for `phase` against the colour the board is drawing the body
+ * with, and publish the result through {@link theme}.
+ *
+ * Called once per boot by `theme/art.ts` right after the loader's outcome is
+ * published (see `publishArtMount`) — never per frame, never per phase flip, and
+ * never from a painter.
+ *
+ * - `null` — no delivered texture mounted (the R-005a degrade path, offline boot,
+ *   or a unit-test double with no pixel source): any override is **removed**, so
+ *   `theme(phase)` returns `THEME[phase]` *by identity*. The placeholder path is
+ *   byte-for-byte what it was before this function existed.
+ * - a colour whose verdict equals the token's: no override is installed, for the
+ *   same reason — nothing observable changed, so nothing may change.
+ * - a colour that flips the verdict: a copy of the phase record carries the new
+ *   boolean; every other token is shared by reference, so this cannot drift into a
+ *   palette re-tune (R-C12 stays "recompute, don't hand-pick").
+ */
+export function applyDrawnActorBody(phase: Phase, drawnBody: Hex | null): void {
+  const base = THEME[phase];
+  if (drawnBody === null) {
+    drawnBodyOverrides.delete(phase);
+    return;
+  }
+  const visible = ringVisibleFor(drawnBody, base.ground.cell);
+  if (visible === base.actor.ringVisible) {
+    drawnBodyOverrides.delete(phase);
+    return;
+  }
+  drawnBodyOverrides.set(phase, { ...base, actor: { ...base.actor, ringVisible: visible } });
+}
+
 /** The single lookup (§5.4). Nothing in `src/game/**` may branch on the phase instead. */
 export const THEME: Record<Phase, ThemeTokens> = {
   A: derive(BASE.A),
   B: derive(BASE.B),
 };
 
-/** `theme(phase)` — the only way the renderer/UI asks for colours. */
+/**
+ * `theme(phase)` — the only way the renderer/UI asks for colours.
+ *
+ * The override lookup is a `Map` read: with no art mounted it is `undefined` and
+ * the *identical* `THEME[phase]` object is returned, so the degrade state cannot
+ * differ from the pre-integration board (no copy, no rounding, no allocation).
+ */
 export function theme(phase: Phase): ThemeTokens {
-  return THEME[phase];
+  return drawnBodyOverrides.get(phase) ?? THEME[phase];
 }
 
 /**

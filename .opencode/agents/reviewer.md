@@ -1,7 +1,7 @@
 ---
 description: Reviewer. Read-only cross-agent review of correctness, regressions, game rules, maintainability, overengineering, secret leakage, test gaps and design drift. Reports findings by severity; never edits code.
 mode: subagent
-model: learnings_campus/qwen3.8-max
+model: opencode/deepseek-v4.1-flash-free
 permissions:
   - action: edit
     resource: "*"

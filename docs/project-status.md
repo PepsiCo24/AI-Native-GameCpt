@@ -1,6 +1,6 @@
 # Project Status — Phase Shift: Echo Grid
 
-> Owner: **Orchestrator (Agent 0)** · Updated: **2026-10-15** (ART-INTAKE close-out, item 25)
+> Owner: **Orchestrator (Agent 0)** · Updated: **2026-10-16** (QA-005e closure audit + QA-005g latch budget + CI-artifact fix, items 76–77)
 > Read this first when resuming a session; it is the recovery entry point.
 
 ---
@@ -80,6 +80,11 @@ error? It is provably inert for parity but is a legitimate shortcut. Owner: Game
 ---
 
 ## Current milestone
+
+> ⚠ **This summary block predates M1 (it was last written at the five-level feel pass).** The live
+> state today: **15 levels on `main` (`5b058ff`, Pages deploy green), `develop` tip `091c483`,
+> unit 632/3 · levels 15/15 · e2e 107/107 under the zero-retry law** — see items 73–77 below for
+> the shipped sleight of hand. Do not read the Stage-2 paragraphs beneath as current.
 
 **Stage 0 / Stage 1 — COMPLETE. GATE C = Option B (ADR-0008). GATE D = D3 (ADR-0009).**
 **Stage 2 — PLAYABLE AND FEEL-PASSED (L1–L5 shipped).** `develop` = integration round **`0a88d0c`**
@@ -242,6 +247,11 @@ and a path must be quiescent before dispatch.**
 
 ## Relevant commits / branches
 
+- **Current tips (2026-10-16):** `main` = **`5b058ff`** (L12–L15 published; deploy green; CI `38845234170`) ·
+  `develop` = **`3592134`** (merge QA-005g `cd3af77` + CI-artifact fix `9c1bb70` + LEVEL-DOCS-1 closure
+  `1eda401`+`3cd3c03` + items 76–77; above it the co-lane's QA-007a proof record and UA-0014 V0.9.4 — both
+  cloud rounds GREEN, `38849186852` and `38851254805`) — the older list below is retained for provenance,
+  not as the live state.
 - Branch model: `main` (stable) ← `develop` (integration) ← `agent/<role>/<task>`. Only the Orchestrator merges/pushes.
 - `develop` (pushed, newest first): **`HEAD`** docs(status) integration round · **`0a88d0c`** docs(assets) art-validation
   record · **`aa520ae`** merge LV-006 · **`efa6be6`** merge PA-005 · **`993bc4c`** merge UA-0006 V0.7 · **`41d5a4b`** docs(status) playable + feel-passed (LV-005/UA-0005/PA-004 landed, suite 12 files / 137 passed / 3 skipped, solver 5/5, CI green) · **`9c4b5a1`** merge R-001b + PA-004 · `db730bc` feat(game) flip cross-fade /
@@ -1355,6 +1365,292 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    law. User lanes unchanged: req-08/11 revision art, the frozen `df353a0` cohort,
    P9 video. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
+
+76. **MAIN CI ROUND for train 2 — recorded here because the LEVEL-DOCS-1 note deliberately left it to this office.**
+   `main` = **`5b058ff`** ("release(m1-train2): L12-L15 block published - 15-level ladder live"): CI run
+   **`38845234170`** success (13m54s) and Deploy to GitHub Pages run **`38845234113`** success (35s). That
+   discharges the deferral written into `docs/ai-native-pipeline.md` (LEVEL-DOCS-1 row, V1.2). Same-minute
+   context that matters for item 77: this release build ran **concurrently** with the develop push
+   `bed2cb9` — the contention the next item is about.
+
+77. **The reported CI failure was actually two different reds (one already dead, one live); both are now closed, plus the failure-artifact gap that made every red undiagnosable.**
+   (a) **The red the user reported — QA-005e, PR #2 head `9eaf7fb`, run `38795670240` — is CLOSED AS SUPERSEDED, not patched.**
+   PR #2 merged 2026-10-15T19:39. Its red was the P1 natural-arm oscillation, diagnosed as hypothesis (c)
+   (nominal rAF stamps vs the step's real `ranAt` — the runner read a true 100 ms window as 83.4 ms), and fixed
+   by **QA-005f** (PR #3 run `38804134439` success), merged `3ddc2d6`. Re-verified this session:
+   `BEAT-REQUIRED-ABSENT` occurs **0 times** in both newest rounds, and the P1 natural-grid rows are ✓
+   (6.6 s in `38843718456`; 12.4 s in `38845237536`). Nothing to patch; do not re-open.
+   (b) **The live red, found by the same audit**: run **`38845237536`** (push `bed2cb9`, e2e job `116794357318`,
+   22m14s) — `latch-door.spec.ts:134` **L15 "Test timeout of 30000ms exceeded" at a 30.9 s row** (106 passed /
+   1 failed). The same suite was green 18 minutes earlier (run **`38843718456`**, L15 21.2 s); rows grow
+   monotonically with route length — quiet round 14.0/17.5/19.9/21.2 s (L12–L15) vs contended round
+   20.3/22.6/25.3/**30.9 s**; the red commit is docs-only and overlapped the `5b058ff` release build.
+   **Class = wall clock**, not an assertion, not a game defect. Fix = **QA-005g** (`cd3af77`, branch kept for
+   provenance, merged **`091c483`**): `test.setTimeout(90_000)` as the first statement of the per-level UI walk
+   inside the *derived* `DOOR_LEVELS` loop (one budget covers L6–L15 alike), documented with both measured
+   rounds and the work size (L15 = refusal route 10 + occupancy route 9 = **19 trusted presses**, two level
+   opens), under the standing ruling `refusal.spec.ts:56` "Wall clock, never an assertion"; one row added to
+   `tests/e2e/README.md` §1.3. **Verified by me on disk before merge**: 2 QA-owned files, +21/−0, **0 changed
+   `expect(` lines**, no retries, global 30 s default untouched. Orchestrator merge-gate battery on the merged
+   tip: typecheck 0 · vitest **31 files / 632 passed / 3 skipped** · levels **15/15 PASS** · build ✓ · full
+   local e2e **107 passed (9.3m), zero retries**. Cloud round for the pushed tip: run **`38849186852`** —
+   **GREEN, `success`**: verify 32 s, e2e 22m2s, **107 passed (21.3m)**, zero retries — and the round
+   incidentally supplied the decisive control: with **no** release build overlapping, L15 still measured
+   **29.4 s** (L14 23.8 s), i.e. 98 % of the old 30 s default, so the pre-fix red was not a one-off draw
+   (this push also carried the two LEVEL-DOCS-1 closure commits `3cd3c03`+`1eda401` that were still local).
+   The docs round on the final tip **`3592134`** (items 76–77 + the co-lane's QA-007a record + UA-0014
+   V0.9.4) is **also GREEN — run `38851254805`** (verify 44 s, e2e 21m32s, **107 passed, 21.0m**), where
+   L15 measured **29.6 s** again. Four cloud observations of that row now read **21.2 / 30.9 (the red) /
+   29.4 / 29.6 s**: the old 30 s default was a coin flip in every round, which is exactly the class
+   QA-005g removed.
+   (c) **Infra: every red so far shipped zero artifacts.** The workflow uploaded `playwright-report/`, which
+   never exists under the list-only reporter — annotation "No files were found with the provided path"
+   on both `38795670240` and `38845237536` — while the traces we pay for (`trace: retain-on-failure`) land in
+   `test-results/` and were uploaded by nobody. Fixed by me in **`9c1bb70`**: failure-only upload of
+   `test-results/` (trace.zip + error-context.md) alongside the legacy path, 7-day retention. A red must be
+   diagnosable from its own artifacts.
+   (d) **Named follow-ups, deliberately not silently widened**: **QA-005h** = `tests/e2e/README.md` §2's
+   inventory is stale ("88 cases", `latch-door.spec.ts | 14`) against the live **107 tests in 8 files** (22
+   rows in that file) — QA-owned, needs the derived-count treatment QA-005c applied elsewhere; **watch rows**
+   `portal.spec.ts:265` (cloud 21.6 s = 72 % of the default, no budget) and `latch-door.spec.ts:197` L8 walk
+   (19.3 s red / 14.6 s green) — budget them only when they actually cross, per the measurement-first law;
+   the known prettier non-cleanliness of `latch-door.spec.ts` / `refusal.spec.ts` at HEAD stays with the
+   standing `chore(format)` sweep (item 11).
+
+78. **Same-hour integrations this office landed on develop (so the ledger shows both seats' hands).**
+   `32ee339` — QA-007a independent proof record for the 77(b) red (README §1.8, +72): welded-occupancy
+   uniqueness proven browser-free across L6–L15 (fixture pure in one ref), row measured 8.2/17.9/7.4 s in
+   three clean local 107/0 rounds, 343 executions zero failures; no second timeout authored. `7be2297` —
+   UA-0014 complete: ui-ux **V0.9.4** three binary rulings on the R-005a wiring (R-1 host box **KEEP**
+   `1.0 × cell`, 0.70 restated as form extent, renderer flip declined; R-2 paint order **AMENDED** to
+   shipped `phase ring < body < R-C9 identity ring < deny arc`; R-3 A4 switch-corner **ACCEPTED**) + §11
+   integration record INTEGRATED-PENDING-MERGE + manifest **V0.5.5** canvas-slot rows. The UA session died
+   three times on request-cost quota; everything is its own wording — the final three manifest cells were
+   transcribed verbatim from its committed A-03 pattern by this office as disaster recovery, zero new
+   decisions, attribution in `511401c`. In flight: QA-007-art-probes (56-red roster → art-aware, both-states
+   contract) on `76e65c3`; then the chain merge, then R-005b flips `ART_INTEGRATED`.
+
+79. **Art chain merged + RV-008b verdicts.** `agent/qa/qa-007-art-probes` (5 commits on R-005a's 6, HEAD `7334e7f`) merged into develop at **`e8d2a9e`** after the full merge-gate battery: tsc 0 · vitest **32 files / 648 passed / 3 skipped** (only-up by exactly the 16 new `art-theme.test.ts` cases) · levels 15/15 · build ✓ with **all five art PNGs emitted into dist** (first build that actually ships art) · **full e2e 107 passed (7.0 m) zero-retry** locally; cloud round **`38857692208`** in flight as the art-bundle's first cloud sample. Reviewer lane: RV-008 (full audit) died on request-cost quota, **RV-008b narrow returned the two verdicts on the books** — the degrade-console suppression (`72da294`) is **SIGNED** (triple gate: opt-in env ∧ message text ∧ URL basename ∈ derived manifest names; inert on the default art round; cannot mask non-art errors; residual degrade-round-only loader-bug ambiguity accepted with reasons), and **QA-007-F1 is REAL/HIGH** (`ringVisible` boot-derived from theme tokens, never from the drawn sprite → art-B's 2.34:1 body ships without its mandated R-C9 ring). Disposal: **R-005b** dispatched (ui_kit slot retired per UA-0013's declared consequence → dev strip empties by construction; `ART_INTEGRATED` flipped with BOTH boot-gate directions proved by measurement; F1 re-derived from `theme/art.ts`'s mounted-body measurement — same source of truth the probes use, placeholder path byte-preserved), both-state full rounds are its acceptance. The merge-message discipline held: the 56-red roster was resolved by STRENGTHENING (union anchor, ink+extent, 129-sample differential with self non-vacuity control), zero assertions lost, both art and degrade states green.
+
+80. **The shipped artifact, verified first-party — and the art bundle's first cloud sample is the clock, not the game.**
+   (a) **Live deployment driven, not assumed.** `main` = `5b058ff` serves HTTP 200 with bundle
+   `assets/index-CCs6qr4w.js` (the train-2 hash), and a temporary Playwright lane drove the **deployed Pages URL**
+   itself — `?level=1..15`, each walked along the **program solver's** par route — with the suite's own helpers
+   (`pressDirection` / `hud` / `watchErrors`), so no expectation was hand-typed and nothing was re-implemented:
+   **16/16 passed in 31.8 s** (15 par routes + the `?level=99` fallback row), each row 1.8–2.3 s, **moves == par,
+   win dialog up, ladder label carried, `console.error` and `pageerror` both empty**. Two findings the permanent
+   version must carry (dispatched as **QA-005h**): **`PS_E2E_BASE_URL` cannot target this deployment** —
+   `levelUrl()` returns a root-absolute `/?level=<n>`, which against the Pages sub-path resolves to
+   `https://pepsico24.github.io/?level=<n>`; and **the dialog is raised after the arrival beat**, so a single
+   `hud()` read right after the last press sees `won === false` with `moves` already correct (this failed all 15
+   rows in the throwaway version, and the fix is the auto-retrying locator, never a sleep). Temporary files deleted,
+   nothing committed.
+   (b) **The QA-005g deliverable is closed by three consecutive green rounds under zero retries on pushed tips:**
+   `38849186852` (e2e 22m2s, 107 passed 21.3m), `38851254805` (21m32s, 107 passed 21.0m), `38853247944`
+   (21m47s, 107 passed 21.2m).
+   (c) **RED, and it is the wall clock again — but a different mechanism.** The art bundle's first cloud sample
+   **`38857692208`** (`e8d2a9e`, verify ✓ 41 s) ran e2e **32m14s → 2 failed / 105 passed (31.6m)**: the L11 portal
+   row `portal.spec.ts:265` (**30.8 s** against its 30 s default) and the unlock chain `playthrough.spec.ts:135`
+   (**2.1m = 126 s** against its 120 s budget). Both errors are bare timeouts
+   (`page.evaluate: Test timeout of 30000ms/120000ms exceeded`) — **zero assertion flips**, so the class is
+   QA-005g's, not a game defect. The mechanism is **systematic, not a draw**: across the 63 slow desktop rows,
+   the art state inflates **every** UI row by a consistent **+50–65 %** against the pre-art green round — refusal
+   L3 30.9→48.7, L4 33.8→50.9, L8 23.5→38.9, L9 34.5→55.0, L10 26.7→42.5, L13 21.1→33.8, L14 24.4→40.3,
+   portal L11 20.7→30.8, unlock chain 96→126 s (slow-row sum 14.8m→22.2m; the same order of inflation shows
+   locally, art 8.1m vs degrade 5.9m). Consequence: heads that were comfortable pre-art are now ceilings in
+   reach — the refusal family sits at **55 s against its 90 s budget (61 %)**, so the two crossed rows need
+   **derived budgets (QA-005g class)** *and* the inflation itself needs **classification before anyone blames
+   the game**: the decisive experiment is in-page frame time in the art vs degrade state, which separates product
+   frame cost from harness cost. **Booked as QA-005i** — queued behind QA-005h on the `tests/**`
+   single-writer rule, not yet dispatched.
+   (d) **`main` is still exposed to the class we just removed** — `git show main:tests/e2e/latch-door.spec.ts |
+   grep -c setTimeout` = **0** and `git show main:.github/workflows/ci.yml | grep -c test-results` = **0**, i.e.
+   `main`'s standing gate has neither the 90 s budget nor the failure-artifact upload. Deliberately **not** merged
+   by me now: UA-0014's integration record gates the train on the art chain's own green round, which is exactly
+   what is red in (c). The next train carries QA-005g + `9c1bb70` with it.
+
+81. **The free-route ruling landed — and dispatch concurrency is now a resource.**
+   AGENTS.md §11 carries the standing user ruling (2026-10-16): every role defaults to
+   `opencode/deepseek-v4.1-flash-free`, vision tickets overriding per dispatch. Verified **on disk** by me
+   rather than assumed: `opencode.json`'s top-level `model` is the free route (`agents: {}` empty) **and all
+   ten** `.opencode/agents/*.md` frontmatter blocks carry `mode:` + `model: opencode/deepseek-v4.1-flash-free`
+   (`reviewer.md` additionally keeps its edit-deny permission block). The reason is in this ledger's own
+   casualties — RV-008's full audit, UA-0014 ×3, QA-004's batch of five — all request-cost-ceiling deaths on
+   the premium routes; the ruling is the right call for cost and it has a second-order effect the studio must
+   now plan around: **the free route rate-limits by concurrency.** Measured twice within the hour: QA-005h was
+   mid-flight and producing (`playwright.live.config.ts` + `tests/e2e-live/**` on disk) when **RV-009** and
+   then **QA-005i** were dispatched beside it — **both died instantly** on `Rate limit exceeded`, and in both
+   cases the *newcomer* died while the incumbent kept working. The law is therefore **serialize absolutely: one
+   subagent at a time** (not "≤ 2" as first written here), and a ticket that dies this way must be
+   **re-dispatched onto its own session/worktree after the incumbent returns**, never batched with it. Both
+   queued tickets already hold their worktrees (`agent/reviewer/rv-009-art-chain`,
+   `agent/qa/qa-005i-art-era-clock`), so no work is lost, only ordered. Consequence: the reviewer gap stays
+   **queued, not lost** — RV-009 (full art-chain audit, closing RV-008's quota death) re-dispatches the moment
+   a slot frees. Named, not silently widened: the ruling is **text-only**, so art-byte reads (the
+   UA-0013/UA-0014 class) and any screen-image judging must carry an explicit per-dispatch model override —
+   `ui-art-director.md`'s description still says vision-capable while its pinned route is the free one, and
+   `docs/ai-model-matrix.md` has not caught up: **DG-005 (docs lane)** owns that pass.
+
+ 82. **A friendly ghost authored a PROVEN L17 inside a live lane's worktree — and the zero-pardon law turns into a queue.**
+    (a) **LV-010d died at step-0 with zero L17 bytes authored, by a single-writer violation it proved live** —
+    mid-run the tree gained foreign writes (untracked `author-l17-candidates.ts` deleted, files checkout-restored);
+    it touched nothing and reported. Its salvage is design-grade: a bare-par census over **all 1,584 clean 7×6 cx=4
+    geometries** (`2:32 3:100 4:164 5:212 6:244 7:244 8:214 9:166 10:108 11:60 12:28 13:10 14:2`) shows **bare par 14
+    EXISTS** (2 geometries, 42/42 coverage, deadStates 0) — the long-channel family is NOT exhausted at par 13, only
+    the 2-door skeleton is; and the L16 mechanism audit found the all-OFF-UNSAT claim rests on s1 standing *on the
+    goal tile* (chimney top (4,0) is adjacent to goal (5,0)), so a genuine deeper seal needs doors on **all** goal
+    neighbours including the column neighbour — the **deep-3** spec. L16 itself unharmed: sha256 stable, prove re-run
+    at 14:29 GATES ACCEPT / controls 6/6.
+    (b) **The ghost is a competent, likely friendly concurrent author.** Its fingerprint in `lv-010-authoring`:
+    `author-l16-candidates.ts` +89/−3 — a real bug fix (spawn-collision compared by **coordKey, not object identity**),
+    **STAGE V** (re-verify the bytes on disk through schema→validate→BFS→difficulty→all-OFF→ladderGates→VERDICT:
+    "a hand-edited file cannot inherit an earlier in-memory verdict"), §6.1.4 clone-guard census, **derived rung
+    targets** `l15Par + 2·(id−15)` replacing hardcoded {8,10,12}, geosCap cost clamp — plus a modified
+    `prove-candidate.ts` and, at 14:31:34, **`src/levels/candidates/l017.json`**. Attribution is undecidable from
+    disk (GameCpt2 path unreachable; no co-lane commits since 13:40; premium-route writer). **First-party measurement
+    by this seat** on those bytes at 14:34–14:35: **par 14 · D_exec 19.027027 · ΔCUT +4.057330 · all gates ok ·
+    controls 6/6 · RESULT: PASS** — the ladder L15 par 10 → L16 17.100 → L17 19.027 is clean. Honest flag: the
+    re-measured prove print labels "rung 16" while passed `--rung 17` (ghost's modified tooling; the gates themselves
+    enforce the id-17 arithmetic) — **must be resolved before any commit body cites this transcript**.
+    (c) **Disposal protocol, named not improvised:** no kill, no eviction, no committing another writer's WIP while
+    it may still be writing. Quiet window runs since 14:32:24; after ≥20 min of zero mtime movement AND zero commit
+    on `agent/level/lv-010-authoring`, the Orchestrator commits the trio in-worktree with explicit attribution to
+    the ghost (salvage precedent = items 76–77 pattern), the STAGE V tooling is adopted as the author pipeline's
+    disk-proof stage, and **L18 dispatches only into a fresh worktree** based on that tip. If instead the ghost
+    commits first, this seat just books the SHA. Either path leaves the 50-level law untouched: solver-proven bytes,
+    single writer per file, registration waits for the L16–L20 block.
+    (d) **The queue, with the free-route serialization law of 81 in force:** UA-0015 (F3 binary ruling — accept, or
+    name exactly ONE renderer-side lever that disturbs no signed art byte and no R-C9 ring semantics) holds the
+    single live lane. Behind it, strictly serial: **QA-009** (died on rate-limit at dispatch, zero disk loss; the two
+    crossed budgets `portal:265` 30.8 s/30 s and `playthrough:135` 126 s/120 s — budgets derived per 80(c),
+    README §1.3 ledger rows), then **QA-005i** (frame-time art-vs-degrade classification, worktree reserved), then
+    **RV-009** (closes the RV-008 quota death). Train 3 stays gated on a green develop round per 80(d); the in-flight
+    control rounds are `38860398944` (d9a83dd, first with `ART_INTEGRATED=true` live fire) and its byte-equivalent
+    successor `e469e72` (config/docs-only push, test tree identical — either round is a valid sample: same two rows
+    red again ⇒ art-era load inflation is systemic and budgets must absorb it; green ⇒ the 31.6 m round was
+    contention-shaped; **both rows get budgets either way** — the law is *budget when crossed*, and they crossed).
+    QA-008 (graduate R-005b's throwaway-harness proofs into durable unit rows: ringVisibleFor parity, theme()
+    reference-identity guarantees, boot-gate three directions) re-queues last — it is the only durable coverage gap
+    the F1 fix currently rests on harness transcripts outside the repo.
+
+82. **QA-005h merged (`5b2a449`) — the deployed artifact is now a lane, not an anecdote.**
+   (a) The on-demand lane exists: `playwright.live.config.ts` + `tests/e2e-live/{deployed-artifact.spec.ts,
+   live-target.ts}` (3 new files, +283) drive the **deployed GitHub Pages build** with the *local* solver's par
+   routes for all 15 shipped levels plus the `?level=99` fallback, asserting `moves == par`, the win dialog, the
+   ladder label and both error channels empty. Its own run: **17/17 green in 43.8 s** against the live build.
+   Deliberately a separate config **and** a separate `testDir`, no `webServer`: a network/CDN incident must never
+   be able to turn the zero-retry CI gate red, and a mis-set `baseURL` can never silently pass against the
+   working tree. Because the expectations come from the checked-out dataset, the lane is green **exactly while
+   the deployed build ships the same ladder as the tree** — which turns "did the train ship the right artifact?"
+   into one command instead of an argument.
+   (b) Both findings from the throwaway run became **assertions** rather than comments: `PS_E2E_BASE_URL` cannot
+   target a sub-path deployment (`levelUrl()` answers a root-absolute `/?level=<n>`, which against the Pages
+   project root drops `/AI-Native-GameCpt/`) — the lane pins that resolution so it goes red if `levelUrl()` ever
+   becomes deployment-safe; and the win dialog is raised **after** the arrival beat, so the lane reads it with
+   the auto-retrying locator, never a sleep.
+   (c) The README truth-up: §2 is now the only present-tense inventory — **107 cases in 8 files**, per-file
+   counts read off `--list` — with a dated note that the per-ticket blocks in §1 are historical snapshots and are
+   left byte-as-written (§1.8's `PENDING-CI` is closed with the three gh-verified green rounds).
+   (d) **Verified by me on disk before merge, not accepted on report**: the diff touches only the four owned
+   files (`playwright.config.ts` untouched, byte-identical), worktree clean, roster isolation proven from the
+   test side (`--list` = `Total: 107 tests in 8 files`), and **every derived number re-measured independently
+   here** — `refusal 29 · latch-door 22 · playthrough 19 · mobile 12 · controls 8 · transient 7 · portal 6 ·
+   input-replay 4 = 107`, and `95 desktop + 12 mobile`. Zero assertions changed.
+   (e) Infra hygiene in the same pass: a **leaked `vite --strictPort` had been holding port 5218 for 10.6 hours**
+   (no connections — a 2026-10-16 04:00-era lane's orphan), which is exactly why QA-005i's first local run died
+   with `Timed out waiting 60000ms from config.webServer` rather than starting: killed, port verified free. Lane
+   ports in use: 5217 QA-005h's roster run, 5219 the reviewer's, 5221 reserved for the clock measurement.
+
+83. **QA-005i closed by the *Orchestrator* seat as quota disaster recovery — strike it from the co-lane's serial queue.**
+   **Numbering reconciliation first, because two seats wrote "82" in the same hour:** the co-lane's item 82 is the
+   ghost-authored L17 entry at line ~1494 (indented inside its block); **this** entry is the Orchestrator seat's
+   third CI-ledger item and the art-era clock record. Reading order for the next session: my items are 80, 81 and
+   this 83; the co-lane's are 79 and 82.
+   (a) **The fix is merged and pushed** — `b9a9721` on `agent/qa/qa-005i-art-era-clock`, merged `9d4c212`,
+   `origin/develop` = `9d4c212`. Two rows, two budgets, derived by QA-005g's own rule (~3× the worst observed
+   wall clock, rounded inside the suite's envelope convention): `portal.spec.ts:265` **30 s → 90 s** (it had been
+   a named *watch row* with no budget, and measured 30.8 s in the red round against 20.7 s pre-art) and
+   `playthrough.spec.ts:135` (unlock chain) **120 s → 360 s** (96 s pre-art → 126 s art-age). Each row carries
+   its measurements in its own comment; the unlock-chain comment's stale "11 par routes / 10 `Next` clicks" was
+   corrected to the shipped 15/14 while QA-005c's own numbers stay untouched as history. **No blanket raising:**
+   `playwright.config.ts`'s 30 s default is byte-identical (still the sentinel that makes a *new* unbudgeted slow
+   row fail loudly) and the refusal family's 90 s is left alone at ~55 s used (61 %). README §1.3 gained the two
+   envelope rows in QA-005g's shape, historical rows byte-as-written.
+   (b) **Evidence, not assertion:** `git diff -U0 -- tests/e2e | grep -c '^[+-].*expect('` = **0**;
+   `npx tsc --noEmit` 0; `npx playwright test --list` = **107 tests in 8 files** (the on-demand
+   `playwright.live.config.ts` lane stays out of the CI roster); and both rows green in the art state locally —
+   unlock **55.4 s**, portal **11.7 s**, `2 passed (1.1m)`. Cloud ran ~2.4× slower than this machine on the same
+   rows (126 s / 30.8 s), which is precisely what the 3× envelope covers.
+   (c) **Attribution, recorded rather than hidden:** this seat authored `tests/**` content, which is the QA
+   Engineer's column. Reason: **three dispatches died instantly on provider rate limits** (RV-009, then QA-005i
+   twice — the free route serializes hard), no QA writer was active (`agent/qa/qa-005h-*` merged and idle,
+   `qa-005i` dead), and `develop` was red on a known clock class with two more rounds landing on it. The
+   precedent is this ledger's own disaster-recovery entry (UA-0014's last manifest cells, transcribed verbatim by
+   the office with zero new decisions) — so: **no new decisions were made here either** (same class, same rule,
+   same remedy as QA-005g), the seat is named, and **a QA-lane review of the two constants is booked**; if the
+   QA lane disagrees with the envelope it re-derives it and this record follows.
+   (d) **Queue correction:** the co-lane's serial queue reads `UA-0015 > QA-009 > QA-005i > RV-009 > QA-008` —
+   **QA-005i is done**; drop it. `RV-009` (full art-chain audit, closing RV-008's quota death) still holds its
+   worktree `agent/reviewer/rv-009-art-chain` and re-dispatches when the window is quiet.
+   (e) **Still OPEN, deliberately not claimed:** the *classification* of the +50–65 % (product frame cost vs
+   harness cost). Not measured — so not asserted. The shape evidence for the next lane: the inflation is
+   roughly **fixed per row** rather than proportional to presses (Δ ≈ 13–20 s per single-level row on the 2-core
+   runner, while the 15-load unlock row absorbed only Δ30 s), and the harness decode path
+   (`helpers/game.ts` `decodeSpiritCentre`) is cached **per page** and is *skipped entirely* in the degrade arm
+   because the art fetch is aborted — either would produce exactly this shape. The decisive experiment stays
+   the in-page art-vs-degrade frame delta, interleaved in one run so machine load cancels.
+
+84. **ERRATUM to item 80(c): the art-era "inflation" is **runner variance**, not art — proved by a same-code control, and the two budgets stand as the right remedy.**
+   (a) **The control.** Two rounds ran the **same game and test code**: `git diff --stat d9a83dd e469e72 -- tests/ src/ playwright.config.ts` is **empty**, and `d9a83dd` is an ancestor of `e469e72`.
+   - `38860398944` (`d9a83dd`) → **failure, 2 failed / 105 passed (31.4m)**: `playthrough.spec.ts:135` unlock chain **2.0m** (`locator.click: Test timeout of 120000ms exceeded`) and `portal.spec.ts:265` **30.9 s** (`page.evaluate: Test timeout of 30000ms exceeded`) — the two predicted rows, nothing else.
+   - `38861480689` (`e469e72`) → **success, 107 passed (20.3m)**, art bundle live and `ART_INTEGRATED` true.
+   Identical code, 31.4m against 20.3m: the +55 % is the environment. Item 80(c)'s "+50–65 % systematic art-state inflation across every row" is therefore **withdrawn as an art effect** and re-attributed to runner/network variance — the pre-art rounds were uniformly fast (21.0 / 21.2 / 21.3m) and the art era produced *both* a 20.3m green and a 31.4m red on the same code.
+   (b) **Independent local controls agree (measured, interleaved in one run so machine load cancels; the box was at load ≈19):** art vs no-art —
+   idle **frame delta 40 ms vs 45 ms (ratio 0.90)**; **`goto` → canvas ready 675 ms vs 826 ms (0.82)**; and **the suite's own per-row opening path** (`installPixelReadback` + `openLevel` + `boardGeometry` + `actorCell`, i.e. the path that contains the art-aware `decodeSpiritCentre`) **1476 ms vs 1546 ms (0.95)**. The art state is **not** more expensive on any of the three paths — so neither the per-frame hypothesis nor the harness-decode hypothesis (item 83(e)) survives, and nobody should blame the game's runtime: the player pays a one-time load for five PNGs (two of them 1920×1080 backgrounds), not a slower game.
+   (c) **What this makes of the remedy.** The budgets are exactly right and should NOT be reverted: they absorb an *environment* wall clock, which is QA-005g's class by definition. But the new reading sharpens the watch list — the refusal family sits at ~55 s of its 90 s budget (61 %), and a slow round multiplies everything by ~1.5, so a refusal row on a slow runner lands at ~80 s: **inside, but close**. Named, not silently widened: the next round that shows any refusal row above ~75 s gets its own derived envelope rather than a blanket change.
+   (d) **New risk recorded for the CI design itself:** two rounds running concurrently produced the slow ones (31.6m and 31.4m both overlapped another in-flight round; the 20.3m green ran beside them). Not proven causal — recorded as an observation with the timeline, because if concurrency at the account level really does degrade runners, the studio's habit of pushing a round per commit is paying a hidden tax, and batching pushes (one round per batch) becomes a cost decision, not just an economy.
+   (e) **In flight:** the fix round **`38862977845`** on `9d4c212` (the two budgets) — the authoritative proof of (c); its result updates this item.
+    (f) **VERDICT on 84(e), 15:2x: `38862977845` (`9d4c212`, budgets live) → 107 passed / 0 failed at 31.8 m —
+    the slowest-round shape. The remedy is proven: the budgets absorb the environment wall clock at the worst
+    observed load; all three heavy rounds (31.6/31.4/31.8 m) now accounted — two red without budgets, one green
+    with. Nothing else moved.**
+
+85. **QA-009 dedupe autopsy + the F3-R lever goes live + the push batch law.**
+    (a) **Three free-route deaths and one premium run bought a single README row.** The QA-009 ticket (budgets on the two crossed rows) was re-dispatched on the free route twice, died both times at global rate-limit, then ran on a documented premium override — to discover the budgets had **already landed under QA-005i** at base (`portal` 30 s→90 s, `playthrough` 120 s→**360 s**, `b9a9721`/`9d4c212`): my requested 330 s was **correctly refused** by the lane — only-up law, a documented ceiling is never lowered. The lane's real delivery is the §1.3 ledger row for the second red round (verbatim timeouts ×2 vs the byte-identical green shape, expect-diff 0, local two-spec timings 8.0 s / 66 s far inside budget). Root cause of the waste is mine: the queue model was built from a lossy checkpoint instead of `git log` — **standing correction: before dispatching any ticket whose subject is a file, re-derive state from disk first; checkpoint summaries are hints, not ledgers.**
+    (b) **Caught-before-push erratum:** the merged row initially carried the withdrawn "+50–65 % art-era inflation" attribution (the ticket predated item 84); corrected in-place by orchestrator transcription (`bb33449`, message transparent) to runner-variance + environment-ceiling language. The budgets themselves stand untouched.
+    (c) **R-006 dispatched (gameplay lane, premium override, base `bb33449`):** the F3-R lever — `actor.ring` B `#5B4E96 → #EAF0FF` derived/aliased to text.primary B (parity pin by shared source, not duplicated hex), nothing else moves (ring semantics, mount path, wallOccupied, A-phase, signed art bytes, geometry all fixed); acceptance = tsc 0 + vitest only-up vs **648|3** (develop baseline — the 662 figure is the LV branch, not develop) + build ✓ + BOTH-state zero-retry 107 rounds; presence-count probes must NOT move (geometry untouched), a color-equality probe failure would be a stale expectation to report as a finding, not to patch from this lane.
+    (d) **In flight:** LV-010f (L19/L20 census+authoring, fresh tree), fix round `38862977845` (watched — the authoritative budget proof), round on `411bd12` (watched). **Push discipline (from 84(d)):** unpushed batch = item 85 + QA-009 merge + addendum; held until R-006 returns, so the next cloud round carries BOTH the landed lever and the budgets — one round proving the shipped state instead of three proving intermediates.
+    (e) **Queue after R-006:** deny-beat probe + §3.3 tests 4/8a frame re-run + QA-008 ring unit graduation (one QA batch), the 84(c) watch list (refusal family at 61 % — next round with any refusal row above ~75 s gets its own derived envelope), RV-009 full art-chain audit last.
+
+86. **L19 proves the 7×6 ceiling; the cloud grows a new failure species (mid-walk races); and the user asked where the art is.**
+    (a) **LV-010f returned with L19 PROVEN and L20 honestly NOT authored.** Ladder now 14.969697 → 17.100000 → 19.027027 → 20.907923 → **22.885157** (L19: par 18, esc-Δ +7.915460, B 1.6284 **in band** — seal closes its FOURTH side: goal INTERIOR, four doors; the taught shape walks 2→2→3→4 doors). Commits `3b614af` + `0bbf794` on `agent/level/lv-010f-l19-l20`; block test extended, vitest on the LV branch 673|3 (only-up). **The census is exhaustive**: 7×6 sealed-column grammar ceilings at par 18 (arity-4: 17,160 tuples enumerated COMPLETELY, 26 accepts at 18, 0 over-rung); 7×7 reaches 22 but only with a seal BYTE-IDENTICAL to L19's at the same bare 12 — refused as a shape step, structurally explained (full seal ⇒ one press always suffices ⇒ par = min over switch legs). **L20 needs a NEW mechanism** — either a gauntlet (≥6 doors on a goal ring) or the sealed-landing ordered land/press/leave/press chain (the still-undelivered "2-step lookahead" of docs/level-design.md §5); both need a new lattice stage, neither exists. F-L19-2 is doctrine: phase walls in the far region kill 42/42 coverage — every blocker in this device MUST be an openable door. Findings F-L19-1/-3/-4 named; no gate widened, L16's 1.7000 stays the single registered excursion. **Registration decision (R-003c): register the 4-rung block L16–L19** — 5-rung waits for a real L20 mechanism, not a padded one.
+    (b) **NEW RED CLASS — mid-walk HUD-read assertion flips, cloud-only.** Runs 38863193343 (103/4) and 38863790675 (5 red) flip assertions (`expect(before.moves…)`, "moves after ArrowRight", "HUD counter reach 1", R-T6 hover-ring) on trees whose bytes pass 107/0 locally in BOTH states and passed 107/0 in cloud 38862977845 — same src+tests. The suite's single-`evaluate` HUD snapshot races the arrival beat under runner contention; wall-clock budgets (QA-005g/QA-005i class) do not cover it because the failure is an inner predicate window, not the test budget. **QA-010 filed** (premium override, in flight): classify all five row-families by read primitive → forced-concurrency local repro → remedy at the SOURCE (route mid-walk reads through the beat-aware retrying path; no timeout raises, no sleeps, no weakened assertions). Until it lands, the cloud census is only trustworthy as a FLAKE sampler, not a gate.
+    (c) **User-visible art answer, delivered same hour:** the 4173 preview was serving the stale 13:37 dist (pre-art-wiring). Root dist rebuilt at `db49823` — bundle now **`index-r6pZvEiE.js`**, 5 PNGs in dist/assets — hard-refresh shows the real art + R-P6-armed boot locally. **Pages `main` (`5b058ff`) still shows placeholders BY GATE, not by omission** — train 3 carries the art and waits on the shipped-state verdict: round **38867895111** (`db49823`, watched) plus the QA-010 disposition. No further pushes until it returns (84(d): adding rounds feeds the very contention that kills them).
+
+
+86. **QA-010 — the two post-budget reds were NOT the budgets: `openLevel`'s readiness gate was a frame count, and the board is not listening until the art loader resolves. Fixed in the helper; the product question is delegated.**
+    (a) **The red, verbatim.** Two rounds on the same `src/**` and the same specs as two green ones, and *not* the timeout class:
+    - `411bd12` / run `38863193343` → **4 failed / 103 passed (14.1 m)**: latch L12 (2.4 s), latch L8 (4.7 s), playthrough L4 (1.2 s), and the L1→L15 unlock chain at **10.1 s** — a *move-count* failure, not a 360 s timeout.
+    - `ebc8790` / run `38863790675` → **10 failed / 97 passed (15.0 m)**: controls `:121`, latch L6/L10, playthrough L5, portal L11 ×2, transient P2, mobile ×3.
+    Identical trees: `e469e72` → **107 passed (20.3 m)**, `9d4c212` (budgets live) → **107 passed (31.8 m)**. Only test-side delta on the reds = the two QA-005i budgets, which cannot drop input. **Every failure is one claim: a press the page received produced no move** (`Expected 1 / Received 0` on a route's first press; a depth-4 solver route counted as 3; a swipe whose delivery the probe *asserted* yet never counted; `.ps-overlay` never visible). All four `input-replay.spec.ts` rows passed, including the one-frame-window pin — so the game was not losing presses it received. **The failing rounds were the fast ones** (14–15 m), the passing ones slow (20.3 / 31.8 m).
+    (b) **Root cause, measured.** `LevelScene` = `preload() → loader → create()`, and `create()` is where `attachInput` runs (`src/game/scenes/level-scene.ts:137`); `preload()` queues the five delivered-art PNGs as *real image fetches*, so the board listens only after an **I/O** condition. `openLevel` stopped at `.ps-shell` + `<canvas>` + **3 animation frames** on the false premise that `create()` runs on the first game step after the canvas exists — 3 frames are ~25–50 ms of wall clock on a fast runner and ~100–300 ms on a slow one. Scratch probe, `?level=1`, `ArrowRight` immediately after the frame gate, 10 trials/arm: art **delayed 1200 ms ⇒ first press lost 10/10** (0 moves, and the second press with it); **delayed 1200 ms + wait 1500 ms ⇒ 6/6**; **no delay ⇒ 10/10**. Silent by construction: no console error, HUD already alive.
+    (c) **Proved on the real rows, not a harness replica.** An external proxy (`+1200 ms` on every `*.png`, suite pointed at it with `PS_E2E_BASE_URL`, so the helper is the only variable) over controls `:111` + playthrough L5/L11 + portal L11 ×3: **HEAD helper → 6 failed / 2 passed** with the CI signature verbatim (`waiting for locator('.ps-overlay')` hidden; move counts 1 short) → **fixed helper → 8 passed**.
+    (d) **The fix (QA lane, `tests/e2e/helpers/game.ts` only):** `openLevel` waits for the loader — request listeners attached **before `goto`**, then `seen > 0 && inFlight.size === 0` for `\.png$`. Not a sleep: it returns on the loader's own completion event, and a hung loader now fails **there** ("the delivered-art loader never settled"). Honest record of the first cut: matching `\.png\?` also caught the `?url` **module** fetch (`…/echo_spirit_a.png?import&url`) that `goto` makes, so the poll could return before `preload` queued the images — the same race, seen under the proxy as an intermittent **blank-board** probe failure (`actor tile … found [] after 2014 ms; body anchors: vector body #F6DE9E` — no sprite entry, so the vector anchor stood alone on a board that then drew the sprite), 2/4 on `portal.spec.ts:199`. With `\.png$`: that row **8/8** on the same proxy and a diagnostic printing `actorBodyAnchors` carries the delivered-spirit anchor in **8/8** trials.
+    (e) **The arm + the cost.** New opt-in switch `PS_E2E_ART_DELAY_MS=<ms>` (same art, served late; inert unless set — the QA-007 degrade route's shape) is the *only* on-demand reproduction of the window and is how (b)/(c) were measured: `PS_E2E_ART_DELAY_MS=1200 npx playwright test`. The wait adds the loader's own time to each row's critical path (it was previously overlapped), tens of ms per open locally; **no budget moves** — the QA-005g envelopes keep ≥ 30 % headroom on the worst runner observed, so the only-up law is not engaged. `tsc` clean; `--list` still 107 in 8 files.
+    (f) **Delegated, not silently absorbed — a player-facing question.** The HUD and frame look alive before the board exists, and input in that window is silently ignored — on a slow connection a real second-scale window (the same 1200 ms that reproduced this). Whether the game should show a loading affordance or queue that input is a Game Designer / UI-Art decision, not a harness one; the harness fix changes **no** product behaviour. 
+    (g) **Landing.** An atomic `fix(qa):` commit on `develop`, held in the item 85(d) push batch (it does not touch R-006's files), so the next single cloud round carries the lever + the budgets + this gate — one round proving the shipped state. The pushed tip remains `ebc8790` until then; the red emails for `e8d2a9e`/`d9a83dd` are historical and will not recur.
+
+87. **Two item 86s, one red: QA-010's root cause is MEASURED (loader readiness, `768e93e`); the co-lane's "inner-predicate read race" is refuted as the class — counter-evidence and the coordination hazard stated, verdict pending.**
+    (a) **The collision, recorded not silently renumbered** (precedent: the co-lane's indented item 82). `8f81696` carries item 86 = *L19 proven + QA-010 filed*; `867e3c7`/`768e93e` carry item 86 = *QA-010 root cause + fix*. Both reached `origin/develop` in the same push (below).
+    (b) **The two claims are not the same claim.** Co-lane (86(b)): "the suite's single-`evaluate` HUD snapshot races the arrival beat under runner contention … an inner predicate window, not the test budget"; remedy proposed at the read path via a "beat-aware retrying" path. This seat (item 86): the board is not *listening* yet, because `openLevel`'s gate was a frame count while `create()`/`attachInput` wait on the delivered-art loader.
+    (c) **Four discriminators, all measured, all against the read-race class:**
+    1. **The probe.** With *only* the art loader slowed 1200 ms and the frame gate untouched: the first press is lost **10/10** (0 moves — and the second with it); the same delay **plus a 1500 ms wait** is **6/6**; no delay **10/10**. A HUD-read race cannot destroy a press the DOM received.
+    2. **The 2 s poll.** `mobile.mobile.spec.ts:331` failed *inside* `expectMoves` ("the HUD move counter should reach 1 once the gesture commits") after `expectSwipeDelivered` had already asserted the page received the gesture. A bounded 2 s poll is not an "inner predicate window".
+    3. **The beat class was exercised and green.** All four `input-replay.spec.ts` rows passed in *both* red rounds, including "one press/release cycle inside one frame window is exactly one move" — the exact frame-window predicate the hypothesis names.
+    4. **The real-row A/B.** HEAD helper behind a `+1200 ms`/png proxy ⇒ **6 failed / 2 passed** with the CI signature verbatim; the gate ⇒ **8 passed**; `portal.spec.ts:199` **8/8** after `\\.png$`.
+    (d) **Where the read-race class could still be real: only as a residual.** The verdict is round **38869874603** (tip `8f81696`, lever + budgets + gate). **107/0 ⇒ the readiness window was the whole of the observed class** and the read-path remedy has no target; **residual flips ⇒ the class is real in addition** and the dispatched remedy is aimed. Either way the law is unchanged: no assertion weakened, no timeout raised, no sleep added.
+    (e) **Coordination hazard, recorded.** The co-lane's in-flight premium QA-010 dispatch proposes a change in `tests/e2e/**` — the area this seat has already pushed a fix into. Two overlapping remedies for one ticket is the duplication AGENTS.md §4 forbids. Orchestrator ruling: **QA-010 is frozen to the landed readiness fix** unless `38869874603` shows residual flips; the dispatch's result is to be compared against that round, never merged blind.
+    (f) **Deviation, recorded rather than glossed.** The push at 07:51 (which also carried the co-lane's own `8f81696`) created a **second concurrent round** while `38867895111` (`db49823`) was in flight — against that same commit's stated "no further pushes until it returns (84(d))". Reason: the gate's cloud proof is the only thing that ends the red-email class, and the batch was otherwise complete (R-006 landed ⇒ item 85(d)'s hold satisfied). Commitment: **no further pushes until both rounds return**; the next push carries the verdict plus this entry's outcome in one go.
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the

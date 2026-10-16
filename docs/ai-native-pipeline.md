@@ -1,7 +1,7 @@
 # AI Native Pipeline — Phase Shift: Echo Grid
 
 > Owner: **Level AI + Solver** with **Orchestrator** (formatting maintenance by Docs + GitHub; content belongs to the owners)
-> Version: V1.1 · Date: 2026-10-16
+> Version: V1.2 · Date: 2026-10-16
 
 ---
 
@@ -647,6 +647,64 @@ PS_E2E_PORT=5219 node_modules/.bin/playwright test --retries=0  # 107 tests / 8 
 The ten pre-LV-008 dump lines are byte-identical; L11–L15 are appended in order and the only
 other diffs are the aggregate count lines. ADR-0004 in force throughout: reject, never repair.
 
+**Item 6, closed — the handover landed, in the order item 6 named it (2026-10-16).** Every pen item 6
+pointed at has written, and nothing was re-attributed afterwards to make the census prettier.
+
+- **The registry gap closed first.** R-003b landed as `3cd643e` (four imports + four
+  `LEVEL_SOURCES` entries, matching the L11 precedent `f484e23`; no scene logic, `src/levels/**`
+  untouched) and merged to develop in `96cd43c`. Its census on its own tree: **105 passed · 2 failed
+  (6.2 m)**, no retries. The arithmetic stated plainly, because 20 → 2 does not mean 19: **exactly 18
+  rows flipped green** (87 + 18 = 105, same 107-row inventory) — the 4 playthrough HUD rows that had
+  read `L 01`, L11's own dialog, the L1→L15 unlock chain, the end-dialog row, the **4 UI latch-door
+  rows for L12–L15**, and all 7 refusal rows. **The row that did not flip is
+  `tests/e2e/latch-door.spec.ts:102`**, the L12 discriminating-pair row, and it is **browser-free**
+  (it resolves both fixtures against the dataset file and calls `isLegalMove` directly — it never
+  touches the page), so the registry could not have moved it either way: item 6's 19-row registry
+  bucket carried one row with a second cause, the probe that fixed the registry is what had already
+  pulled that row out, and the unlock census **confirms the probe** — red for its own reason
+  (fixture selection), before and after. One count to retire with it: R-003b's prose lists "5x
+  latch-door" among the rows that go green; 4 of the 5 flipped, the fifth is the survivor.
+- **The 2 survivors are exactly the 2 rows item 6 foreclosed as not-this-lane**, both QA's pen:
+  `tests/e2e/latch-door.spec.ts:102` (L12 fixture selection — `cheapestDoorFixtures()` picking each
+  kind's cheapest independently) and `tests/e2e/portal.spec.ts:82` (the dataset-derived portal
+  list). No third cause appeared and none of the 20 was left unexplained.
+- **The two foreclosed pins moved under QA's pen.** QA-006 (`0f08c95`, merged `db9536d`) migrated
+  **10 unit + 2 e2e rows derivation-first** and welded the latch refusal to the chosen occupancy
+  fixture with a browser-free regression.
+- **The chain to develop closed at `ff0a8f8`**, every link a two-parent merge, verified pairwise:
+  LV-009-B `c34e0d1` ← R-003b `96cd43c` (← `3cd643e`) ← QA-006 `db9536d` (← `0f08c95`) ← UA-0011
+  `ff0a8f8` (← `c05885d`).
+- **FIRST FULL GREEN under the zero-retry law.** Local: **107/107** e2e in **6.8 m**, zero retry
+  consumed, held under one foreign runner contention, on a round whose other gates read
+  `tsc` 0 · levels 15/15 · `vitest` 632 passed / 3 skipped (QA-006's round). Cloud: **107/107 in
+  16.0 m** on the develop tip `ff0a8f8`, run **38843718456**, zero retry. No retry, no pardon, no
+  named-survivor list — because there are zero survivors.
+- **ADR-design-0003 §8 item 6 — EXECUTED AND JUDGED: 5/5 clauses PASS.** UA-0011's capture-entry
+  round is a measurement now, not a requirement: 33 PNG + 4 capture logs committed in-repo at
+  `docs/evidence/entry4-block/` (provenance README + programmatically verified integrity table,
+  tree `3cd643e`, `pageErrors: []` ×4, routes solver-enumerated with **no hand-typed move** and
+  `tests/**` untouched), verdict recorded as **Entry 4** in `docs/ui-ux.md` **V0.9.2 §3.3b** — the
+  door × portal seam, the sealed channel reading as a wall column, the teal pair reading as a pair
+  in both phases, phone pitch classes **8/8 formula-exact**, zero page errors. R-003b made the block
+  *playable*; this round's verdict, not the import list, is what makes that registration honest.
+- **L12–L15 are LIVE.** Train 2 `5b058ff` merged the develop tip `ff0a8f8` into `main`
+  (`3da1240` + `ff0a8f8`), and Pages published the 15-level ladder; the publisher round reads the
+  deep link per level — `L 12` / `L 13` / `L 14` / `L 15` banners render, console **0 errors**,
+  serving bundle `index-CCs6qr4w.js`. The ladder a visitor loads is the ladder the Solver proved.
+- **main CI round: recorded by the Orchestrator in `docs/project-status.md` item 76** — deliberately
+  **not** claimed here; it was still running when this closure was written, and a pending verdict
+  written as a fact would be exactly the kind of claim this section exists to refuse.
+
+**Falsification kept on the books (acceptance-criteria hygiene).** R-003b's dispatch acceptance
+criterion **#2** — "the unit pins go green **derived**" — was **falsified by measurement**: the ten
+red unit pins are **hand-typed** (`tests/unit/renderer-level-unlock.test.ts:69,86,125,137,150,195`,
+`tests/unit/player-embedded-home.test.ts:89`, `tests/unit/hud-end-panel-copy.test.ts:118,145,164`,
+reading `expected 11, received 15` / `'L1-L15 cleared'` vs `'L1-L11'`), so no registry change could
+ever have greened them. The agent stopped at the `tests/**` boundary and routed them; QA-006
+discharged them. The rule this buys: **predict derivation only where the file actually derives** —
+an acceptance criterion that assumes a property the code does not have is a broken instrument, not
+a work item.
+
 ### 8.11 Sibling records
 
 The **player-facing** half of this record — which painter seam each new object needs, and what
@@ -671,3 +729,4 @@ the block must *read* as on screen before it may be registered — belongs to `d
 | 2026-10-15 | V0.9 | **LV-007E — the metrics sidecar: ADR-architecture-0003 Ruling 3 executed.** The accepted-set metrics stop being recompute-only: `docs/level-difficulty.report.json` is the committed artifact, emitted by `node_modules/.bin/tsx scripts/solve-levels.ts --report` (builder `scripts/metrics-report.ts`, calling the same `auditLevel` the gate and §4's inventory already name) and carrying one record per shipped level (the §8 contract fields + `par` read back from the file + the §2 breakdown `L B T R M D D_exec` + the diagnostics + the ordered/unordered latch tile lists + `parRoutes`/`embedRoutes`/`embedForced` + the per-level escalations, today exactly one: `l008`'s `dual-phase-tiles`), the weight vector, the two published seam read-outs with their weighted decomposition, and a `generatedFrom` block hashing the level files' **canonical content** (no git sha, no timestamp — reproducible across worktrees, still tree-bound). Freshness is a test, not a promise: `tests/solver/metrics-sidecar.test.ts` rebuilds the file and asserts byte-equality with the committed bytes, so a level edit, a weight re-calibration or a solver change without a regeneration is RED at the causing commit; it also pins `docs/level-difficulty.md` §5.2's cells against the artifact at the table's printed precision and cross-checks `tests/solver/difficulty.test.ts`'s hand-typed pins (non-vacuity: a builder bug cannot agree with itself). §8.9's reproduce list gains the emit; `docs/level-difficulty.md` §5.2 declares itself the human mirror and §5's stale "no sidecar exists" sentence is corrected. **The CLI's stdout dump is unchanged** — `--report` writes silently, so this document's §8.6/§8.9 baselines stay diffable; the sidecar adds no print, no metric and no rule | Level AI + Solver (LV-007E) |
 | 2026-10-16 | V1.0 | **LV-009-B — the L12–L15 block integrated: the law first, the program second, the data third.** New **§8.10** records the integration end-to-end: the **STEP 0** attestation commit (`e8a456d`, `scripts/attest-lv009-block.ts` + committed transcript) that re-derived *every* constant of **ADR-design-0003** from the four candidates as an **isolated, sha256-verified dataset** **before any dataset byte moved** (`LAW-MATCH`, exit 0, no `STOP_AND_ROUTE`: par 4/6/8/10 · `D_exec` 8.230769/10.898734/12.957895/14.969697 · `T ≡ R ≡ 0` · 0 dead states · coverage 100 % · portal-free 7 / UNSATISFIABLE · all-OFF advantage **+2** on 4/4 · 19/16/20/15 dual-phase tiles · 3/5/5/6 refusal tiles, ordered == unordered 4/4); then the **law encoded before the data** (six `BlockGateId`s, six `gate-block-*` codes, the `block-l1215` obligation rows, `allOffShortestSolution()`, `blockL1215Gates()`, the dip ceiling re-read from the live `l011.json` at **8.573171**, and the debut's `PORTAL_DEBUT_EXEC_BUDGET` deliberately **not** re-purposed); then a **byte-copy** of the four candidate files, never an edit; then **one measured negative control per new code** — four surgical, two deliberately coupled with the coupling named (the latch control couples with gate (ii) by **theorem**: gate (ii) PASS ⇒ no all-OFF route is as short as par, so G1 can never fail alone, asserted as an implication over every board; the tail control is the interior member wearing the last member's id because a 48-slot / 1128-pair wall search measured that no sealing pulls L15's execution axis under 13.64). Acceptance on this tree: validator **15/15 ok · 0 errors · 28 warnings** · solver **15/15 PASS** (1 standing escalation) · sidecar regenerated to 15 records · `tsc` 0 · vitest **30 files · 617 passed · 3 skipped** · build ok. Recorded as **not** this role's to do: the **registry unlock** (`src/game/levels/level-registry.ts` still imports `l001`–`l011`) and the **UA capture-entry round** of ADR-design-0003 §8 item 6 — both handed over by name, so the remaining RED rows name the *registry*, not the data. New **§8.11** points at the sibling records instead of restating them | Level AI + Solver (LV-009-B) |
 | 2026-10-16 | V1.1 | **LV-009-B, the e2e half — the red rows stop being inferred.** §8.10 gains **item 6**: one managed full run (`PS_E2E_PORT=5219 … --retries=0`) at **107 tests / 8 files → 20 failed · 87 passed (6.0 m)**, with **every** red row named and attributed — 19 of 20 from the registry gap (quoted at the mechanism: `startIndexForLevel`'s *"unknown ⇒ index 0 (L1)"*, so `?level=12` plays L1: 4 HUD labels, L11's own dialog, the L1→L15 unlock chain, the end-dialog row, 5 latch-door, 7 refusal) and **1** from a *dataset-derived* pin that the block law legitimately invalidates (`portal.spec.ts:82`, `[11]` → `[11,12,13,14,15]`, QA's pen). Then the **transient registry probe** — clearly labelled, uncommitted, reverted (`git status` clean, bytes back to `HEAD`) — which lifts the four UI-walk specs to **74 passed · 2 failed (3.6 m)** and thereby proves the four boards are **winnable through the real UI**: the L1→L15 unlock chain included. The surviving L12 latch row is triaged by a new committed audit tool, **`scripts/latch-pair-audit.ts`** (two independent arms: the spec's own fixture bookkeeping and `isLegalMove` alone over the reachable set): L12 ships **2 / 12** co-located discriminating pairs while L6–L11 and L13–L15 read HOLDS, so the row is **fixture selection** in `cheapestDoorFixtures()`' independent cheapest-of-each-kind pick (the tie that lands on `(5,1)A down` instead of the pairing `(4,2)A right`), not a board gap — the spec's docstring describes a search the helper does not perform. No data byte, no solver number and no test changed; handover is three named items (registry unlock, UA capture-entry round, two QA pins). Header version resynced to the changelog | Level AI + Solver (LV-009-B) |
+| 2026-10-16 | V1.2 | **LEVEL-DOCS-1 — §8.10 item 6 CLOSED: the handover landed and the round is discharged.** Registry unlock `3cd643e` (R-003b, merged `96cd43c`) measured **105/107** on its own tree, i.e. **18 of the 20 named reds green** (87 + 18 = 105, same 107-row inventory; the row that did not flip is the **browser-free** L12 pair row `latch-door.spec.ts:102`, which the registry could never have moved and which item 6's fix-the-registry probe had already isolated for fixture selection) with the 2 survivors *exactly* the 2 rows item 6 had foreclosed as not-this-lane (`latch-door.spec.ts:102` L12 fixture selection, `portal.spec.ts:82` dataset-derived list) → QA-006 (`0f08c95`, merged `db9536d`) moved 10 unit + 2 e2e rows derivation-first → **FIRST FULL GREEN under the zero-retry law: local 107/107 in 6.8 m** (tsc 0 · levels 15/15 · vitest 632/3) **and cloud 107/107 in 16.0 m on develop tip `ff0a8f8`, run `38843718456`**, zero retry in both; chain `c34e0d1` ← `96cd43c` ← `db9536d` ← `ff0a8f8` verified pairwise (each a two-parent merge). **ADR-design-0003 §8 item 6 EXECUTED AND JUDGED 5/5 PASS** (UA-0011: 33 PNG + 4 logs in-repo at `docs/evidence/entry4-block/`, verdict `docs/ui-ux.md` V0.9.2 §3.3b Entry 4, no hand-typed move, `tests/**` untouched). **L12–L15 LIVE on Pages** via train 2 `5b058ff` (deep-link `L 12`…`L 15` banners, console 0 errors, bundle `index-CCs6qr4w.js`); **main CI round recorded by the Orchestrator in `docs/project-status.md` item 76, deliberately not claimed here.** Falsification kept on the books: R-003b's dispatch criterion #2 ("unit pins go green derived") **falsified by measurement** — 10 hand-typed pins, agent stopped at the `tests/**` boundary, routed to QA-006; rule bought = predict derivation only where the file actually derives | Level AI + Solver (LEVEL-DOCS-1) |

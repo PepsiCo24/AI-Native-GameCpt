@@ -103,3 +103,5 @@ Out of scope: accounts, servers, login, shop, ads, check-in, progression, equipm
 ## 11. Model routing
 
 See `docs/ai-model-matrix.md`. Roles are abstract (`REASONING_MODEL`, `CODING_MODEL`, `FAST_MODEL`, `REVIEW_MODEL`, `VISION_MODEL`); a model name is config, not architecture. Solvability is **always** judged by the program Solver, never a model.
+
+> **User ruling 2026-10-16 (standing):** default route for every role is `opencode/deepseek-v4.1-flash-free` (pinned in `opencode.json` + all `.opencode/agents/*.md` frontmatter), after repeated request-cost-ceiling deaths on the learnings_campus premium routes. Tickets that genuinely need vision (art-byte reads, screen-image judging) override per-dispatch with an explicit model — the free route is text-only. Matrix sync is the Docs lane's next pass.

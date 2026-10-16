@@ -35,8 +35,12 @@ import { hasQueryFlag, IS_PROD } from "@/game/env";
 import { FONT_STACK, injectHudStyles } from "@/game/hud/hud-styles";
 import type { AppIntents } from "@/game/systems/app-intents";
 import type { GameSession } from "@/game/systems/session";
-import { PLACEHOLDER_SLOTS } from "@/game/theme/assets";
+import { unresolvedSlots } from "@/game/theme/assets";
+import type { PlaceholderSlot } from "@/game/theme/assets";
 import { cssVars, flipTimings, HUD_FLAGS, LAYOUT, theme } from "@/game/theme/tokens";
+
+/** R-P3's badge copy — one string, so the label cannot drift from its spec line. */
+const DEV_BADGE_TEXT = "DEV PLACEHOLDER ART — NOT FINAL";
 
 /** The three actions the DOM can dispatch, plus two flow queries. */
 export interface HudHooks extends AppIntents {
@@ -113,6 +117,10 @@ export class Hud {
   private readonly dialogActions: HTMLDivElement;
   private readonly nextButton: HTMLButtonElement;
   private readonly replayButton: HTMLButtonElement;
+  /** R-P3 — `null` in a production build (no dev labels exist there at all). */
+  private readonly devBadge: HTMLDivElement | null;
+  /** R-P3 `?placeholders=1` — `null` unless a dev build was opened with the flag. */
+  private readonly devStrip: HTMLDivElement | null;
 
   private readonly unsubscribes: (() => void)[] = [];
   private winTimer: number | null = null;
@@ -158,10 +166,11 @@ export class Hud {
     );
 
     // R-P3 — dev-only honesty labels; a production build renders none of this.
-    if (!IS_PROD) {
-      const badge = el("div", "ps-devbadge", "DEV PLACEHOLDER ART — NOT FINAL");
-      topBar.append(badge);
-    }
+    // Both describe what is **actually being drawn**: the declared unresolved
+    // slots at construction, then whatever `setPlaceholderSlots()` publishes once
+    // the loader has resolved (a degraded mount puts its slot back on the list).
+    this.devBadge = IS_PROD ? null : el("div", "ps-devbadge", DEV_BADGE_TEXT);
+    if (this.devBadge !== null) topBar.append(this.devBadge);
 
     this.hint = el("div", "ps-hint");
     this.hint.hidden = true;
@@ -197,18 +206,18 @@ export class Hud {
 
     this.shell.append(topBar);
 
-    // R-P3 `?placeholders=1` — Asset-ID list, one row per placeholder slot.
-    if (!IS_PROD && hasQueryFlag("placeholders")) {
-      const strip = el("div", "ps-devstrip");
-      for (const slot of PLACEHOLDER_SLOTS) {
-        const item = el("span", "ps-devstrip-item", `${slot.assetId} ${slot.assetName}`);
-        item.title = slot.usage;
-        strip.append(item);
-      }
-      this.shell.append(strip);
-    }
+    // R-P3 `?placeholders=1` — the Asset-ID list. Its rows are the slots a
+    // placeholder is being drawn for (never "every slot the manifest ever had"),
+    // so the strip shrinks as integration lands and grows again if a delivered
+    // file fails to mount.
+    this.devStrip = !IS_PROD && hasQueryFlag("placeholders") ? el("div", "ps-devstrip") : null;
+    if (this.devStrip !== null) this.shell.append(this.devStrip);
 
     this.shell.append(this.playArea, bottomBar, this.overlay);
+
+    // The declaration is the honest starting point — the loader has not resolved
+    // yet (`LevelScene.create()` calls this again with the measured answer).
+    this.setPlaceholderSlots(unresolvedSlots());
 
     // Token hand-off (§5.4): numbers first, then the phase colours.
     this.applyStaticVars();
@@ -220,6 +229,31 @@ export class Hud {
   }
 
   /* ── public surface ─────────────────────────────────────────────────────── */
+
+  /**
+   * R-P2/R-P3 honesty — publish which slots are **being drawn as placeholders**.
+   *
+   * The input is a measurement, not a status: `theme/art.ts` derives it from what
+   * the loader actually mounted (declared-unresolved ∪ failed-to-mount), so with
+   * every canvas slot integrated and A-07 retired (UA-0013) the list is **empty in
+   * the art-mounted state** — both labels hide — while a delivered file that fails
+   * to load puts its own Asset ID back on the list: the degraded boot still says
+   * "placeholder art", which is the whole point of R-P3.
+   *
+   * In a production build both labels are absent and this is a no-op.
+   */
+  setPlaceholderSlots(slots: readonly PlaceholderSlot[]): void {
+    if (this.devBadge !== null) this.devBadge.hidden = slots.length === 0;
+    if (this.devStrip === null) return;
+    this.devStrip.replaceChildren(
+      ...slots.map((slot) => {
+        const item = el("span", "ps-devstrip-item", `${slot.assetId} ${slot.assetName}`);
+        item.title = slot.usage;
+        return item;
+      }),
+    );
+    this.devStrip.hidden = slots.length === 0;
+  }
 
   /**
    * R-T5: the one-time swipe hint for sub-44 px cells. Called by the renderer's
