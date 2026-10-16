@@ -897,6 +897,83 @@ dispatch quoted the first round as `21m3m`; the runner's own line is `107 passed
 and that job's wall clock was 22m2s. The other two figures (21m32s / 21m47s) are job wall
 clocks and match. Nothing about the verdict depends on which clock is quoted.
 
+### 1.9 QA-010 — the readiness gate was a frame count: silent first-input loss, and the loader arm
+
+**The red.** Two cloud rounds on `develop` failed with a signature this suite had never
+produced, while two others passed on byte-identical specs:
+
+| run | tip | runner's line | what failed |
+|---|---|---|---|
+| `38861480689` | `e469e72` | `107 passed (20.3m)` | — |
+| `38863193343` | `411bd12` | `4 failed / 103 passed (14.1m)` | latch L12/L8, playthrough L4, the L1→L15 unlock chain (10.1 s — a *move count*, not a timeout) |
+| `38863790675` | `ebc8790` | `10 failed / 97 passed (15.0m)` | controls `:121`, latch L6/L10, playthrough L5, portal L11 ×2, transient P2, mobile ×3 |
+| `38862977845` | `9d4c212` | `107 passed (31.8m)` | — |
+
+Every failure was **the same claim**: a press the page received that produced **no move** —
+`Expected: 1, Received: 0` on the first press of a route, a solver route of depth 4 counted
+as **3**, a swipe whose *delivery was asserted by the probe* yet never counted, `.ps-overlay`
+never appearing. All four `input-replay.spec.ts` rows passed, including "one press/release
+cycle inside one frame window is exactly one move" — so the game was not dropping presses it
+received. `src/**` and `playwright.config.ts` were **identical** across the red and green
+rounds below (`git diff` empty); the only test-side delta was two `test.setTimeout` budgets,
+which cannot drop input. The failing rounds were the **fast** ones.
+
+**Root cause (measured, not inferred).** `LevelScene` is `preload() → loader → create()`, and
+`create()` is where `attachInput` runs (`src/game/scenes/level-scene.ts:137`). `preload()`
+queues the five delivered-art textures as **real image fetches** (`theme/art.ts`
+`queueDeliveredArt`), so the board does not listen until an **I/O** condition is met —
+while `openLevel` stopped at `.ps-shell` + `<canvas>` + **3 animation frames**, on the stated
+premise that `create()` "runs on the first game step after the canvas exists". On a fast
+runner 3 frames are ~25–50 ms of wall clock; on a slow one they are ~100–300 ms. The gap is
+silent: no console error, no feedback, and the HUD already looks alive.
+
+| arm (`?level=1`, `ArrowRight` immediately after the frame gate) | first press lands | after a second press |
+|---|---|---|
+| no delay (art fast) | **10/10** | 10/10 = 2 moves |
+| art delayed 1200 ms | **0/10** | 0/10 = still 0 moves |
+| art delayed 1200 ms, then wait 1500 ms | 6/6 | 6/6 = 2 moves |
+
+**Through the real rows** (an external proxy adding 1200 ms to every `*.png`, suite pointed
+at it with `PS_E2E_BASE_URL`, so the helper under test is the only variable):
+
+| helper | rows: controls `:111`, playthrough L5/L11, portal L11 ×3 | verdict |
+|---|---|---|
+| before (frame gate only) | `waiting for locator('.ps-overlay')` → hidden; move counts 1 short | **6 failed / 2 passed** — the CI signature verbatim |
+| after (loader gate) | — | **8 passed** |
+
+**The fix.** `openLevel` now waits for the loader itself: request listeners attached **before
+`goto`** (a watch installed after it can miss its own condition), then
+`seen > 0 && inFlight.size === 0` where a delivered-art image is `\.png$`. It is not a sleep —
+the poll returns on the loader's own completion event — and a hung loader now fails **at that
+wait** ("the delivered-art loader never settled") instead of silently two assertions later.
+
+Two honest notes on the first cut. **(1) `\.png$`, not `\.png\?`:** the app's module graph
+also fetches each sprite as a `?url` module (`…/echo_spirit_a.png?import&url`) during `goto`,
+and counting that as delivered art let the poll return *before* `preload` even queued the
+images — the same early-return race this gate exists to remove. It surfaced under the proxy as
+an intermittent **blank-board** probe failure (`actor tile … found [] after 2014 ms; body
+anchors: vector body #F6DE9E` — no sprite entry yet, so the vector anchor was the only one, on
+a board that then drew the sprite), 2/4 on `portal.spec.ts:199`. With `\.png$`: that row
+**8/8** under the same proxy, and a diagnostic that prints `actorBodyAnchors` carries the
+delivered-spirit anchor (`rgb(244,202,108)`) in **8/8** trials. **(2)** The instrument is an
+opt-in switch, in the same spirit as the QA-007 degrade route:
+
+```bash
+PS_E2E_ART_DELAY_MS=1200 npx playwright test        # same art, served late — the window, on demand
+```
+
+**Cost, and what stays untouched.** The wait adds the loader's own time to each row's critical
+path (it was previously overlapped: the row raced ahead of it). Locally that is tens of ms per
+open; no budget moved, and the QA-005g envelopes (`90 s` / `360 s`) keep ≥ 30 % headroom on the
+worst runner observed (§1.3), so the only-up law is not engaged.
+
+**Recorded, not fixed here — a player-facing question.** The HUD and frame look alive *before*
+the board exists, and input in that window is silently ignored. The harness now waits; the
+product's behaviour is unchanged, and on a slow connection that window is real (the same
+1200 ms that reproduced this). Whether the game should show a loading affordance or queue the
+input belongs to the Game Designer / UI-Art lanes — it is logged as an open question in
+`docs/project-status.md`, item 86.
+
 ---
 
 ## 2. Inventory — 107 cases in 8 files (measured)
