@@ -250,6 +250,7 @@ runner measured **7 failed / 79 passed (16.9 min)** with `--retries=1`:
 | `refusal.spec.ts:48` (all params, on loaded machines) | the `cells: []` single-instant probe | the bounded poll above |
 | `transient.spec.ts:116` / `:257` (`frames > 15`, `gridMs < 60`) | local-calibrated constants | runner-aware: the idle frame grid is **measured first**, the recorder window is sized from it, and the `gridMs` ceiling is `max(60, 2 × idle)` |
 | `mobile.mobile.spec.ts:207` R-T4, `Expected: 1, Received: 0` | gesture commit vs HUD read | cached CDP session + a frame after `touchEnd` + the bounded `expectMoves` poll |
+| `controls.spec.ts:111`, `latch-door.spec.ts:134` L6/L10, `playthrough.spec.ts:79` L5, `portal.spec.ts:199` — runs `38863193343` / `38863790675`, `Expected 1, Received 0` and a depth-4 route counted **3** | **a press LOST at the input-attach window** — *not* a HUD-read race: the counter/phase are written **synchronously inside the DOM `keydown`'s own task** (§1.9 verification probe: an in-event read sees `moves 1` on a listening board and `moves 0` — still `0` three seconds later — when only the art loader is slowed) | `openLevel` waits for the delivered-art loader (`768e93e`, §1.9). The five rows A/B under `+1200 ms`/png: **5 failed → 5 passed**. The read path is deliberately **not** changed: a retrying read cannot recover a press that was never handled — the 2 s `expectMoves` poll on `mobile.mobile.spec.ts:331` failed exactly that way under the same cause |
 
 **Both crossed rows crossed twice (QA-009).** The two QA-005i rows above went red *again* in
 run **38860398944** (`d9a83dd`), on the same messages and zero assertion flips —
@@ -973,6 +974,93 @@ product's behaviour is unchanged, and on a slow connection that window is real (
 1200 ms that reproduced this). Whether the game should show a loading affordance or queue the
 input belongs to the Game Designer / UI-Art lanes — it is logged as an open question in
 `docs/project-status.md`, item 86.
+
+**Independent verification of the class claim (QA-010-midwalk-race dispatch, 2026-10-16).**
+A second dispatch filed QA-010 with a rival class — "the harness samples the HUD between the
+press and the arrival beat and reads a stale or doubled value", remedy "route the racing reads
+through a beat-aware/auto-retrying path". Its premise is true and its conclusion does not
+follow, and that gap is now measured rather than argued.
+
+*Classification (read-only).* All five cloud row-families read the HUD through the **same
+single-`page.evaluate` snapshot** (`hud()`, `helpers/game.ts:307`) — so the dispatch's premise
+holds as stated:
+
+| cloud row (test id) | failing assertion | read | file:line |
+|---|---|---|---|
+| `latch-door.spec.ts:134:5` L6/L10 | `"the searched route is a legal route of exactly that depth"` | one snapshot | `latch-door.spec.ts:170` → `:171` |
+| `latch-door.spec.ts:217:3` L8 | `"latched: the same direction now lands"` | one snapshot | `latch-door.spec.ts:249` → `:250` |
+| `playthrough.spec.ts:79:5` L5/L1 | `` `moves after ${leg.key} (move ${leg.moveCount})` `` | one snapshot | `playthrough.spec.ts:97` → `:98` |
+| `portal.spec.ts:199:3` L11 | `` `moves after ${leg.key} (teleport leg)` `` | one snapshot | `portal.spec.ts:224` → `:229` |
+| `controls.spec.ts:111:3` | `(await hud(page)).moves` | one snapshot | `controls.spec.ts:120` → `:121` |
+
+*Why the premise does not imply the class.* The HUD write is **synchronous with the input**:
+`host.move` → `scene.tryMove` (`level-scene.ts:197`) → `session.move`, the core reducer
+(`session.ts:135`) → `events.emit("move")` (`session.ts:158`) → the HUD's own subscription
+`renderCounters` (`hud.ts:333`), which writes `movesLabel.textContent` (`hud.ts:320`) — all in
+the call stack of the DOM `keydown` that Phaser re-emits synchronously (`input-map.ts:129`; the
+queue re-walk is documented in `key-handler.ts`). A snapshot therefore cannot read a value
+"short by one" on a listening board; only a retrying read of an *in-flight* write could — and
+`pressDirection` already waits two rendered frames after the press resolves.
+
+*The probe that separates loss from staleness.* Three reads per trial, 8 trials per arm, same
+bytes, `?level=5`, one `ArrowDown` straight after `openLevel`: (i) the suite's own snapshot read;
+(ii) a `keydown` listener registered **after boot** (so it runs after Phaser's), reading
+`.ps-moves` synchronously **inside the DOM event's task**; (iii) the same snapshot **3 s later**.
+
+| arm (identical `src/**`; only art delivery differs) | (i) after press | (ii) in-event, same task | (iii) after 3 s |
+|---|---|---|---|
+| pre-fix base `db49823`, fast art | `moves=1 phase=B` (8/8) | **`moves 1`** (8/8) | `1 / B` |
+| pre-fix base `db49823`, art `+1200 ms` | `moves=0 phase=A` (8/8) | **`moves 0`** (8/8) | **`0 / A` — still lost** |
+| post-fix (`768e93e`), art `+1200 ms` | `moves=1 phase=B` (8/8) | `moves 1` (8/8) | `1 / B` |
+
+Read (ii) closes the staleness hypothesis for good: on a listening board the counter is already
+`1` **before the keydown task ends**, so no later read — snapshot or poll — can lag it. Read
+(iii) shows the failed press never commits, in a slow-loader window of over three seconds. The
+reds are a **loss function of the input-attach window**, not a **read function of scheduling**;
+"(ii)=1 must hold or the press was lost" is the invariant the class needs and does not have.
+
+*The real rows, A/B, same instrument (`--workers=2`, zero retries).* The five families under
+`+1200 ms`/png through an external proxy on the pre-fix base: **5 failed** (the CI signature
+verbatim). Post-fix with the in-tree `PS_E2E_ART_DELAY_MS=1200`: **5 passed**.
+
+*The forcing condition, honestly.* One dev server (`:5233`), `--workers=6`, zero retries:
+pre-fix round 1 **55 passed / 0 failed (3.5 m)**; post-fix rounds 1–3 **55 / 0** (3.2 m / 3.5 m /
+3.5 m). **Contention alone does not reproduce this class locally** — consistent with §1.9's
+cloud observation that the *fast* rounds were the red ones: the window needs the loader slow,
+not the CPU busy. No fabricated repro is claimed: the reproduction is the delayed-art arm, and
+it is a positive control (it fails before the gate and passes after it, on the same rows).
+
+**The full census round at that same forcing condition — and the one red it produced, classified
+apart.** `npx playwright test --workers=6` (both projects, zero retries, one `:5233` server):
+**106 passed / 1 failed (6.3 m)**. The red is `portal.spec.ts:199` — one of the five families
+above — and its error is **`Test timeout of 30000ms exceeded`**, stack
+`waitForFrames (helpers/game.ts:49) ← pressDirection (game.ts:423) ← portal.spec.ts:223`: the
+row ran **31.7 s** against the global 30 s default, i.e. it *timed out mid-walk*; **no assertion
+flipped** (`Expected 1 / Received 0` does not appear, and every one of the five rows was green
+in the three targeted `--workers=6` rounds). This is the **wall-clock class** of §1.3, not a
+residual instance of the read class: the 6-worker protocol made the machine's own frame grid
+**244.4 ms** (≈4× off 60 Hz; recorded `gridMs` values 83.3 / 116.7 / 139.0 / 199.9 / 244.4).
+**Not budgeted here, deliberately** — the shipped CI configuration is `workers: 1` (the config's
+own choice, for the transient frame protocol), so the condition that crossed this row is this
+ticket's non-shipped forcing protocol, not the product; portal rows crossing in-budget is
+already what §1.3's watch rows track (item 77(d)'s budget-when-crossed law), and no `expect(`
+line was touched.
+
+*Standing rule — corrected, not restated.* The dispatch's proposed rule
+("mid-walk state reads must settle the beat before asserting") is **refused as false for
+this path**: there is no beat to settle between a keydown and `.ps-moves`. The law is
+**"a short walk counter is a LOST press, never a stale read: check the input-attach window
+(`openLevel`'s loader gate is the source of truth), and do not answer it with a retry"** —
+a retry converts a loud lost-input red into a silent delay and hides the class. The
+counter-example is already on the record: the mobile row failed *inside* a bounded 2 s
+`expectMoves` poll (`38863790675`), which is precisely the remedy that was proposed.
+
+*Disposition.* The dispatch's remedy has **no target**; nothing in `tests/e2e/**` was changed by
+this ticket beyond this ledger (assertion count, messages and the 107 census untouched), and
+`db49823 → develop` changes **no `src/**` byte**, so the A/B isolates the loader gate exactly.
+The probe is a ~40-line throwaway spec (run as `tests/e2e/zz-qa010-probe.spec.ts` in the
+dispatch worktree, **deleted before the census round** so the inventory stays at 107) — the
+three reads above are its whole content, so it rebuilds from this paragraph alone.
 
 ---
 
