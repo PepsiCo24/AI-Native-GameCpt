@@ -1491,6 +1491,48 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    `ui-art-director.md`'s description still says vision-capable while its pinned route is the free one, and
    `docs/ai-model-matrix.md` has not caught up: **DG-005 (docs lane)** owns that pass.
 
+ 82. **A friendly ghost authored a PROVEN L17 inside a live lane's worktree — and the zero-pardon law turns into a queue.**
+    (a) **LV-010d died at step-0 with zero L17 bytes authored, by a single-writer violation it proved live** —
+    mid-run the tree gained foreign writes (untracked `author-l17-candidates.ts` deleted, files checkout-restored);
+    it touched nothing and reported. Its salvage is design-grade: a bare-par census over **all 1,584 clean 7×6 cx=4
+    geometries** (`2:32 3:100 4:164 5:212 6:244 7:244 8:214 9:166 10:108 11:60 12:28 13:10 14:2`) shows **bare par 14
+    EXISTS** (2 geometries, 42/42 coverage, deadStates 0) — the long-channel family is NOT exhausted at par 13, only
+    the 2-door skeleton is; and the L16 mechanism audit found the all-OFF-UNSAT claim rests on s1 standing *on the
+    goal tile* (chimney top (4,0) is adjacent to goal (5,0)), so a genuine deeper seal needs doors on **all** goal
+    neighbours including the column neighbour — the **deep-3** spec. L16 itself unharmed: sha256 stable, prove re-run
+    at 14:29 GATES ACCEPT / controls 6/6.
+    (b) **The ghost is a competent, likely friendly concurrent author.** Its fingerprint in `lv-010-authoring`:
+    `author-l16-candidates.ts` +89/−3 — a real bug fix (spawn-collision compared by **coordKey, not object identity**),
+    **STAGE V** (re-verify the bytes on disk through schema→validate→BFS→difficulty→all-OFF→ladderGates→VERDICT:
+    "a hand-edited file cannot inherit an earlier in-memory verdict"), §6.1.4 clone-guard census, **derived rung
+    targets** `l15Par + 2·(id−15)` replacing hardcoded {8,10,12}, geosCap cost clamp — plus a modified
+    `prove-candidate.ts` and, at 14:31:34, **`src/levels/candidates/l017.json`**. Attribution is undecidable from
+    disk (GameCpt2 path unreachable; no co-lane commits since 13:40; premium-route writer). **First-party measurement
+    by this seat** on those bytes at 14:34–14:35: **par 14 · D_exec 19.027027 · ΔCUT +4.057330 · all gates ok ·
+    controls 6/6 · RESULT: PASS** — the ladder L15 par 10 → L16 17.100 → L17 19.027 is clean. Honest flag: the
+    re-measured prove print labels "rung 16" while passed `--rung 17` (ghost's modified tooling; the gates themselves
+    enforce the id-17 arithmetic) — **must be resolved before any commit body cites this transcript**.
+    (c) **Disposal protocol, named not improvised:** no kill, no eviction, no committing another writer's WIP while
+    it may still be writing. Quiet window runs since 14:32:24; after ≥20 min of zero mtime movement AND zero commit
+    on `agent/level/lv-010-authoring`, the Orchestrator commits the trio in-worktree with explicit attribution to
+    the ghost (salvage precedent = items 76–77 pattern), the STAGE V tooling is adopted as the author pipeline's
+    disk-proof stage, and **L18 dispatches only into a fresh worktree** based on that tip. If instead the ghost
+    commits first, this seat just books the SHA. Either path leaves the 50-level law untouched: solver-proven bytes,
+    single writer per file, registration waits for the L16–L20 block.
+    (d) **The queue, with the free-route serialization law of 81 in force:** UA-0015 (F3 binary ruling — accept, or
+    name exactly ONE renderer-side lever that disturbs no signed art byte and no R-C9 ring semantics) holds the
+    single live lane. Behind it, strictly serial: **QA-009** (died on rate-limit at dispatch, zero disk loss; the two
+    crossed budgets `portal:265` 30.8 s/30 s and `playthrough:135` 126 s/120 s — budgets derived per 80(c),
+    README §1.3 ledger rows), then **QA-005i** (frame-time art-vs-degrade classification, worktree reserved), then
+    **RV-009** (closes the RV-008 quota death). Train 3 stays gated on a green develop round per 80(d); the in-flight
+    control rounds are `38860398944` (d9a83dd, first with `ART_INTEGRATED=true` live fire) and its byte-equivalent
+    successor `e469e72` (config/docs-only push, test tree identical — either round is a valid sample: same two rows
+    red again ⇒ art-era load inflation is systemic and budgets must absorb it; green ⇒ the 31.6 m round was
+    contention-shaped; **both rows get budgets either way** — the law is *budget when crossed*, and they crossed).
+    QA-008 (graduate R-005b's throwaway-harness proofs into durable unit rows: ringVisibleFor parity, theme()
+    reference-identity guarantees, boot-gate three directions) re-queues last — it is the only durable coverage gap
+    the F1 fix currently rests on harness transcripts outside the repo.
+
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
 root cause in **my own** out-of-repo harness: it fabricated the initial state as `{ doorsOpen: {} }` instead of calling `initialState(level)`. Door openness is
