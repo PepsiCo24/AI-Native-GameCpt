@@ -1,0 +1,1341 @@
+{
+  "generatedFrom": "solver via tests/e2e/helpers/levels.ts (loadReferenceLevels)",
+  "tree": "3cd643ead96fc01de59e1a22cc0254c1eae8f259",
+  "levels": [
+    {
+      "id": 12,
+      "width": 7,
+      "height": 3,
+      "par": 4,
+      "startPhase": "A",
+      "route": "DRRR",
+      "legs": [
+        {
+          "n": 1,
+          "dir": "down",
+          "key": "ArrowDown",
+          "player": [
+            3,
+            2
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": true,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 2,
+          "dir": "right",
+          "key": "ArrowRight",
+          "player": [
+            4,
+            2
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": true,
+          "switchPressed": true,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 3,
+          "dir": "right",
+          "key": "ArrowRight",
+          "player": [
+            5,
+            2
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": true,
+          "doorsOpen": {
+            "d1": false
+          }
+        },
+        {
+          "n": 4,
+          "dir": "right",
+          "key": "ArrowRight",
+          "player": [
+            6,
+            2
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        }
+      ],
+      "facts": {
+        "teleportLeg": 1,
+        "latchLeg": 2,
+        "doorLeg": 3,
+        "seamLeg": 2,
+        "entryEnd": [
+          0,
+          2
+        ],
+        "exitEnd": [
+          3,
+          2
+        ]
+      },
+      "portal": {
+        "pair": [
+          [
+            0,
+            2
+          ],
+          [
+            3,
+            2
+          ]
+        ],
+        "activePhase": "A",
+        "nearEnd": [
+          0,
+          2
+        ],
+        "farEnd": [
+          3,
+          2
+        ]
+      },
+      "door": {
+        "id": "d1",
+        "color": "blue",
+        "tiles": [
+          [
+            5,
+            2
+          ]
+        ]
+      },
+      "switch": {
+        "id": "s1",
+        "tile": [
+          4,
+          2
+        ],
+        "activePhase": "B",
+        "targets": [
+          "d1"
+        ]
+      },
+      "goal": [
+        6,
+        2
+      ],
+      "channel": null,
+      "probeTiles": {
+        "portalNear": [
+          0,
+          2
+        ],
+        "portalFar": [
+          3,
+          2
+        ],
+        "door": [
+          5,
+          2
+        ],
+        "switch": [
+          4,
+          2
+        ],
+        "goal": [
+          6,
+          2
+        ],
+        "channel": []
+      },
+      "shots": {
+        "desktop": [
+          {
+            "name": "l012_initial",
+            "atLeg": 0,
+            "kind": "initial",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "l012_m1_crossing",
+            "atLeg": 1,
+            "kind": "crossing",
+            "pairDiff": false,
+            "entryResidual": true
+          },
+          {
+            "name": "l012_m2_seam",
+            "atLeg": 2,
+            "kind": "seam",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "l012_m3_postlatch",
+            "atLeg": 3,
+            "kind": "postlatch",
+            "pairDiff": false,
+            "entryResidual": false
+          },
+          {
+            "name": "l012_win",
+            "atLeg": 4,
+            "kind": "win",
+            "pairDiff": false,
+            "entryResidual": false
+          }
+        ],
+        "mobile": [
+          {
+            "name": "mobile_390_l012_initial",
+            "atLeg": 0,
+            "kind": "initial",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "mobile_390_l012_m1_crossing",
+            "atLeg": 1,
+            "kind": "crossing",
+            "pairDiff": false,
+            "entryResidual": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "width": 6,
+      "height": 4,
+      "par": 6,
+      "startPhase": "A",
+      "route": "ULLUUU",
+      "legs": [
+        {
+          "n": 1,
+          "dir": "up",
+          "key": "ArrowUp",
+          "player": [
+            2,
+            1
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 2,
+          "dir": "left",
+          "key": "ArrowLeft",
+          "player": [
+            1,
+            1
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": false
+          }
+        },
+        {
+          "n": 3,
+          "dir": "left",
+          "key": "ArrowLeft",
+          "player": [
+            5,
+            3
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": true,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 4,
+          "dir": "up",
+          "key": "ArrowUp",
+          "player": [
+            5,
+            2
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": true,
+          "switchPressed": true,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 5,
+          "dir": "up",
+          "key": "ArrowUp",
+          "player": [
+            5,
+            1
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": true,
+          "doorsOpen": {
+            "d1": false
+          }
+        },
+        {
+          "n": 6,
+          "dir": "up",
+          "key": "ArrowUp",
+          "player": [
+            5,
+            0
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        }
+      ],
+      "facts": {
+        "teleportLeg": 3,
+        "latchLeg": 4,
+        "doorLeg": 5,
+        "seamLeg": 2,
+        "entryEnd": [
+          0,
+          1
+        ],
+        "exitEnd": [
+          5,
+          3
+        ]
+      },
+      "portal": {
+        "pair": [
+          [
+            0,
+            1
+          ],
+          [
+            5,
+            3
+          ]
+        ],
+        "activePhase": "A",
+        "nearEnd": [
+          0,
+          1
+        ],
+        "farEnd": [
+          5,
+          3
+        ]
+      },
+      "door": {
+        "id": "d1",
+        "color": "blue",
+        "tiles": [
+          [
+            5,
+            1
+          ]
+        ]
+      },
+      "switch": {
+        "id": "s1",
+        "tile": [
+          5,
+          2
+        ],
+        "activePhase": "B",
+        "targets": [
+          "d1"
+        ]
+      },
+      "goal": [
+        5,
+        0
+      ],
+      "channel": {
+        "column": 4,
+        "perPhase": {
+          "A": {
+            "solid": [
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                3
+              ]
+            ],
+            "ghost": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                2
+              ]
+            ]
+          },
+          "B": {
+            "solid": [
+              [
+                4,
+                0
+              ],
+              [
+                4,
+                2
+              ]
+            ],
+            "ghost": [
+              [
+                4,
+                1
+              ],
+              [
+                4,
+                3
+              ]
+            ]
+          }
+        }
+      },
+      "probeTiles": {
+        "portalNear": [
+          0,
+          1
+        ],
+        "portalFar": [
+          5,
+          3
+        ],
+        "door": [
+          5,
+          1
+        ],
+        "switch": [
+          5,
+          2
+        ],
+        "goal": [
+          5,
+          0
+        ],
+        "channel": [
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            4,
+            0
+          ],
+          [
+            4,
+            2
+          ]
+        ]
+      },
+      "shots": {
+        "desktop": [
+          {
+            "name": "l013_initial",
+            "atLeg": 0,
+            "kind": "initial",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "l013_m2_seam",
+            "atLeg": 2,
+            "kind": "seam",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "l013_m3_crossing",
+            "atLeg": 3,
+            "kind": "crossing",
+            "pairDiff": false,
+            "entryResidual": true
+          },
+          {
+            "name": "l013_m4_latch",
+            "atLeg": 4,
+            "kind": "latch",
+            "pairDiff": false,
+            "entryResidual": false
+          },
+          {
+            "name": "l013_m5_postlatch",
+            "atLeg": 5,
+            "kind": "postlatch",
+            "pairDiff": false,
+            "entryResidual": false
+          },
+          {
+            "name": "l013_win",
+            "atLeg": 6,
+            "kind": "win",
+            "pairDiff": false,
+            "entryResidual": false
+          }
+        ],
+        "mobile": [
+          {
+            "name": "mobile_390_l013_initial",
+            "atLeg": 0,
+            "kind": "initial",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "mobile_390_l013_m3_crossing",
+            "atLeg": 3,
+            "kind": "crossing",
+            "pairDiff": false,
+            "entryResidual": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 14,
+      "width": 7,
+      "height": 4,
+      "par": 8,
+      "startPhase": "A",
+      "route": "UULLLDDD",
+      "legs": [
+        {
+          "n": 1,
+          "dir": "up",
+          "key": "ArrowUp",
+          "player": [
+            3,
+            2
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 2,
+          "dir": "up",
+          "key": "ArrowUp",
+          "player": [
+            3,
+            1
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": false
+          }
+        },
+        {
+          "n": 3,
+          "dir": "left",
+          "key": "ArrowLeft",
+          "player": [
+            2,
+            1
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 4,
+          "dir": "left",
+          "key": "ArrowLeft",
+          "player": [
+            1,
+            1
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": false
+          }
+        },
+        {
+          "n": 5,
+          "dir": "left",
+          "key": "ArrowLeft",
+          "player": [
+            6,
+            0
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": true,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 6,
+          "dir": "down",
+          "key": "ArrowDown",
+          "player": [
+            6,
+            1
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": true,
+          "switchPressed": true,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 7,
+          "dir": "down",
+          "key": "ArrowDown",
+          "player": [
+            6,
+            2
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": true,
+          "doorsOpen": {
+            "d1": false
+          }
+        },
+        {
+          "n": 8,
+          "dir": "down",
+          "key": "ArrowDown",
+          "player": [
+            6,
+            3
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        }
+      ],
+      "facts": {
+        "teleportLeg": 5,
+        "latchLeg": 6,
+        "doorLeg": 7,
+        "seamLeg": 4,
+        "entryEnd": [
+          0,
+          1
+        ],
+        "exitEnd": [
+          6,
+          0
+        ]
+      },
+      "portal": {
+        "pair": [
+          [
+            0,
+            1
+          ],
+          [
+            6,
+            0
+          ]
+        ],
+        "activePhase": "A",
+        "nearEnd": [
+          0,
+          1
+        ],
+        "farEnd": [
+          6,
+          0
+        ]
+      },
+      "door": {
+        "id": "d1",
+        "color": "blue",
+        "tiles": [
+          [
+            6,
+            2
+          ]
+        ]
+      },
+      "switch": {
+        "id": "s1",
+        "tile": [
+          6,
+          1
+        ],
+        "activePhase": "B",
+        "targets": [
+          "d1"
+        ]
+      },
+      "goal": [
+        6,
+        3
+      ],
+      "channel": {
+        "column": 5,
+        "perPhase": {
+          "A": {
+            "solid": [
+              [
+                5,
+                0
+              ],
+              [
+                5,
+                2
+              ]
+            ],
+            "ghost": [
+              [
+                5,
+                1
+              ],
+              [
+                5,
+                3
+              ]
+            ]
+          },
+          "B": {
+            "solid": [
+              [
+                5,
+                1
+              ],
+              [
+                5,
+                3
+              ]
+            ],
+            "ghost": [
+              [
+                5,
+                0
+              ],
+              [
+                5,
+                2
+              ]
+            ]
+          }
+        }
+      },
+      "probeTiles": {
+        "portalNear": [
+          0,
+          1
+        ],
+        "portalFar": [
+          6,
+          0
+        ],
+        "door": [
+          6,
+          2
+        ],
+        "switch": [
+          6,
+          1
+        ],
+        "goal": [
+          6,
+          3
+        ],
+        "channel": [
+          [
+            5,
+            0
+          ],
+          [
+            5,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            3
+          ]
+        ]
+      },
+      "shots": {
+        "desktop": [
+          {
+            "name": "l014_initial",
+            "atLeg": 0,
+            "kind": "initial",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "l014_m4_seam",
+            "atLeg": 4,
+            "kind": "seam",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "l014_m5_crossing",
+            "atLeg": 5,
+            "kind": "crossing",
+            "pairDiff": false,
+            "entryResidual": true
+          },
+          {
+            "name": "l014_m6_latch",
+            "atLeg": 6,
+            "kind": "latch",
+            "pairDiff": false,
+            "entryResidual": false
+          },
+          {
+            "name": "l014_m7_postlatch",
+            "atLeg": 7,
+            "kind": "postlatch",
+            "pairDiff": false,
+            "entryResidual": false
+          },
+          {
+            "name": "l014_win",
+            "atLeg": 8,
+            "kind": "win",
+            "pairDiff": false,
+            "entryResidual": false
+          }
+        ],
+        "mobile": [
+          {
+            "name": "mobile_390_l014_initial",
+            "atLeg": 0,
+            "kind": "initial",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "mobile_390_l014_m5_crossing",
+            "atLeg": 5,
+            "kind": "crossing",
+            "pairDiff": false,
+            "entryResidual": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "width": 7,
+      "height": 5,
+      "par": 10,
+      "startPhase": "A",
+      "route": "UUUULLDDDD",
+      "legs": [
+        {
+          "n": 1,
+          "dir": "up",
+          "key": "ArrowUp",
+          "player": [
+            2,
+            3
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 2,
+          "dir": "up",
+          "key": "ArrowUp",
+          "player": [
+            2,
+            2
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": false
+          }
+        },
+        {
+          "n": 3,
+          "dir": "up",
+          "key": "ArrowUp",
+          "player": [
+            2,
+            1
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 4,
+          "dir": "up",
+          "key": "ArrowUp",
+          "player": [
+            2,
+            0
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": false
+          }
+        },
+        {
+          "n": 5,
+          "dir": "left",
+          "key": "ArrowLeft",
+          "player": [
+            1,
+            0
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 6,
+          "dir": "left",
+          "key": "ArrowLeft",
+          "player": [
+            5,
+            0
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": true,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": false
+          }
+        },
+        {
+          "n": 7,
+          "dir": "down",
+          "key": "ArrowDown",
+          "player": [
+            5,
+            1
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": false,
+          "onSwitchTile": true,
+          "switchPressed": true,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": false
+          }
+        },
+        {
+          "n": 8,
+          "dir": "down",
+          "key": "ArrowDown",
+          "player": [
+            5,
+            2
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        },
+        {
+          "n": 9,
+          "dir": "down",
+          "key": "ArrowDown",
+          "player": [
+            5,
+            3
+          ],
+          "phase": "B",
+          "prevPhase": "A",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": true,
+          "doorsOpen": {
+            "d1": false
+          }
+        },
+        {
+          "n": 10,
+          "dir": "down",
+          "key": "ArrowDown",
+          "player": [
+            5,
+            4
+          ],
+          "phase": "A",
+          "prevPhase": "B",
+          "teleport": false,
+          "onSwitchTile": false,
+          "switchPressed": false,
+          "onDoorTile": false,
+          "doorsOpen": {
+            "d1": true
+          }
+        }
+      ],
+      "facts": {
+        "teleportLeg": 6,
+        "latchLeg": 7,
+        "doorLeg": 9,
+        "seamLeg": 5,
+        "entryEnd": [
+          0,
+          0
+        ],
+        "exitEnd": [
+          5,
+          0
+        ]
+      },
+      "portal": {
+        "pair": [
+          [
+            0,
+            0
+          ],
+          [
+            5,
+            0
+          ]
+        ],
+        "activePhase": "B",
+        "nearEnd": [
+          0,
+          0
+        ],
+        "farEnd": [
+          5,
+          0
+        ]
+      },
+      "door": {
+        "id": "d1",
+        "color": "blue",
+        "tiles": [
+          [
+            5,
+            3
+          ]
+        ]
+      },
+      "switch": {
+        "id": "s1",
+        "tile": [
+          5,
+          1
+        ],
+        "activePhase": "A",
+        "targets": [
+          "d1"
+        ]
+      },
+      "goal": [
+        5,
+        4
+      ],
+      "channel": {
+        "column": 3,
+        "perPhase": {
+          "A": {
+            "solid": [
+              [
+                3,
+                0
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ],
+            "ghost": [
+              [
+                3,
+                1
+              ],
+              [
+                3,
+                3
+              ]
+            ]
+          },
+          "B": {
+            "solid": [
+              [
+                3,
+                1
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "ghost": [
+              [
+                3,
+                0
+              ],
+              [
+                3,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ]
+          }
+        }
+      },
+      "probeTiles": {
+        "portalNear": [
+          0,
+          0
+        ],
+        "portalFar": [
+          5,
+          0
+        ],
+        "door": [
+          5,
+          3
+        ],
+        "switch": [
+          5,
+          1
+        ],
+        "goal": [
+          5,
+          4
+        ],
+        "channel": [
+          [
+            3,
+            0
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            3,
+            3
+          ]
+        ]
+      },
+      "shots": {
+        "desktop": [
+          {
+            "name": "l015_initial",
+            "atLeg": 0,
+            "kind": "initial",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "l015_m5_seam",
+            "atLeg": 5,
+            "kind": "seam",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "l015_m6_crossing",
+            "atLeg": 6,
+            "kind": "crossing",
+            "pairDiff": false,
+            "entryResidual": true
+          },
+          {
+            "name": "l015_m7_latch",
+            "atLeg": 7,
+            "kind": "latch",
+            "pairDiff": false,
+            "entryResidual": false
+          },
+          {
+            "name": "l015_m8_postlatch",
+            "atLeg": 8,
+            "kind": "postlatch",
+            "pairDiff": false,
+            "entryResidual": false
+          },
+          {
+            "name": "l015_win",
+            "atLeg": 10,
+            "kind": "win",
+            "pairDiff": false,
+            "entryResidual": false
+          }
+        ],
+        "mobile": [
+          {
+            "name": "mobile_390_l015_initial",
+            "atLeg": 0,
+            "kind": "initial",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "mobile_390_l015_m5_seam",
+            "atLeg": 5,
+            "kind": "seam",
+            "pairDiff": true,
+            "entryResidual": false
+          },
+          {
+            "name": "mobile_390_l015_m6_crossing",
+            "atLeg": 6,
+            "kind": "crossing",
+            "pairDiff": false,
+            "entryResidual": true
+          }
+        ]
+      }
+    }
+  ]
+}
