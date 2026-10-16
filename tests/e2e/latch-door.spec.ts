@@ -160,6 +160,17 @@ test.describe("switch latch ⇒ door blocking (R-D1) and door occupancy (R-D7)",
       // L17 11.0 s / L18 12.0 s / L19 12.7 → 13.4 s locally — 14–15 % of the budget
       // at the peak, so the row is inside with room. The next round that shows any
       // latch row above ~75 s gets its own derived envelope.
+      //
+      // QA-014 at 20 rows — the press count is derived per level and L20 does NOT
+      // extend the peak; it *lowers* it. Measured on this round's bytes from the same
+      // fixtures the test uses (`cheapestDoorFixtures`, route lengths only — the same
+      // arithmetic the table above uses): L15 19 / L16 25 / L17 23 / L18 27 / L19 27 /
+      // **L20 21** (refusal route 11 + occupancy route 10). The sealed landing's
+      // pocket is entered by a portal and walked as a *shorter* occupancy route, so
+      // the heaviest latch walk stays L18/L19. Wall clock agrees: this round
+      // (`PS_E2E_PORT=5244`, `--retries=0`, art-era bytes, 132/132 green, 11.1 m)
+      // measured **L20 11.6 s vs L19 13.3 s**, i.e. **12.9 % of the 90 s budget** and
+      // below the previous peak — so no row crossed and the budget stands unchanged.
       // Cloud policy is zero retries (INFRA-001): a red is diagnosed, not
       // pardoned.
       test.setTimeout(90_000);

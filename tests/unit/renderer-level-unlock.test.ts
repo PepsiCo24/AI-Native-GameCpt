@@ -3,9 +3,10 @@
  * progression through the door/switch content and the R-T6 hover gate.
  *
  * L11 (R-003) is the first unlocked board that carries a **portal**; R-003b then
- * registered ADR-design-0003's L12–L15 block and R-003c/GAME-001 the L16–L19 block
- * (`docs/ai-native-pipeline.md` §8.10/§8.13: `par == shortestSolution 19/19`,
- * validator 19/19 ok · 0 errors), so the portal
+ * registered ADR-design-0003's L12–L15 block, R-003c/GAME-001 the L16–L19 block and
+ * GAME-002/QA-014 the L20 terminal rung
+ * (`docs/ai-native-pipeline.md` §8.10/§8.13: `par == shortestSolution 20/20`,
+ * validator 20/20 ok · 0 errors), so the portal
  * assertions below are no longer "no shipped level has one" and the unlock sweep
  * covers the whole shipped slice (QA-011: the registry census here derives from the
  * dataset on disk and from the shared `EXPECTED_LEVEL_COUNT`; the typed id ladder
@@ -76,7 +77,7 @@ function hoverCell(session: GameSession, cell: Vec): Vec | null {
   return dir !== null && session.movePreview(dir) ? cell : null;
 }
 
-describe("level registry — L6–L19 are unlocked", () => {
+describe("level registry — L6–L20 are unlocked", () => {
   it("lists the whole authored slice, in order", () => {
     // The registry's file list is checked against the **dataset on disk** (QA-011,
     // derivation-first): `discoveredFileIds()` is an independent fs scan, so a

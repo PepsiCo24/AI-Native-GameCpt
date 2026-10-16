@@ -95,7 +95,7 @@ describe("isPlayerEmbedded — core owns it via solidAt (R-004)", () => {
     // the shared `EXPECTED_LEVEL_COUNT` (the one hand-typed count in `tests/**`), the
     // fs scan must agree with it, and the id ladder is a rule over the registry's own
     // rows — contiguous `1 … count`. The typed `15` + `[1…15]` pair this used to hold
-    // was a second hand-typed count beside the dataset pin, and R-003c's L16–L19
+    // was a second hand-typed count beside the dataset pin, and R-003c's L16–L20
     // registration is what exposed it.
     expect(LEVEL_SOURCES).toHaveLength(levels.length);
     expect(levels.length).toBe(EXPECTED_LEVEL_COUNT);

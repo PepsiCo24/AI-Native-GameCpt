@@ -438,6 +438,9 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
       "19.03",
       "20.91",
       "22.89",
+      // QA-014 — R-003d's terminal rung (the sealed landing): 24.729412, the first
+      // value past L19, mirrored out of the *other* file's table again below.
+      "24.73",
     ]);
     expect(HAND_PINS.get(11)?.dexec.toFixed(2)).toBe("8.57");
     expect(HAND_PINS.get(12)?.dexec.toFixed(2)).toBe("8.23");
@@ -446,6 +449,9 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
     // the mirror above is checked against a table the report builder never wrote.
     expect(HAND_PINS.get(16)?.dexec.toFixed(2)).toBe("17.10");
     expect(HAND_PINS.get(19)?.dexec.toFixed(2)).toBe("22.89");
+    // QA-014 — and the terminal rung's row with them, so the census pin and the
+    // mirror are re-taken together (the builder cannot agree with itself here).
+    expect(HAND_PINS.get(20)?.dexec.toFixed(2)).toBe("24.73");
   });
 });
 

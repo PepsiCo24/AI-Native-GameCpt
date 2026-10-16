@@ -635,17 +635,22 @@ const BLOCK_L1619_UNNAMED_B_EXCURSION: Level = {
 };
 
 /**
- * **B12** — the block's LAST member (`l019`) wearing an interior member's board — the
- * same shape as {@link BLOCK_TAIL_INTERIOR_MEMBER_AS_LAST} above, and for the same
- * reason: the terminal-ceiling clause is only reachable on the block's last rung, so
- * the honest counter-example is a rung that is not the ceiling. `l018` carries par 16
- * (not 18) and `D_exec = 20.907923` (not 22.885157), so `block-l1619-tail-ceiling`
- * fails by name; the rung gate fails with it, because the block's members are not
- * interchangeable rungs.
+ * **B12** — the block's LAST member wearing an interior member's board — the same
+ * shape as {@link BLOCK_TAIL_INTERIOR_MEMBER_AS_LAST} above, and for the same reason:
+ * the terminal-ceiling clause is only reachable on the block's last rung, so the honest
+ * counter-example is a rung that is not the ceiling. `l018` carries par 16 (not 20) and
+ * `D_exec = 20.907923` (not 24.729412), so `block-l1619-tail-ceiling` fails by name; the
+ * rung gate fails with it, because the block's members are not interchangeable rungs.
+ *
+ * QA-014 re-point: the last member is now **`l020`** (R-003d registered the sealed
+ * landing at the root), so the id is taken from `BLOCK_L1619_IDS` instead of a typed
+ * `19`. The control's *shape* is unchanged — an interior member's board wearing the
+ * tail's rung — which is why the board stays `l018`'s: `l019` is no longer the tail,
+ * so it is a legitimate interior member to borrow from.
  */
 const BLOCK_L1619_INTERIOR_MEMBER_AS_LAST: Level = {
   ...shippedBoard(18),
-  id: 19,
+  id: BLOCK_L1619_IDS.at(-1) as number,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -703,7 +708,7 @@ const NEGATIVE_CONTROLS: Readonly<Record<PolicyViolationCode, readonly Level[]>>
     "gate-block-portal-load": [BLOCK_MANDATORY_GRADE_WITH_OPEN_WALK],
     "gate-block-dip-ceiling": [BLOCK_DIP_CEILING_ENLARGED],
     "gate-block-tail-exec-budget": [BLOCK_TAIL_INTERIOR_MEMBER_AS_LAST],
-    // ── QA-011 — the L16–L19 registered root rows' six gates (LV-010-law) ────
+    // ── QA-011 — the L16–L20 registered root rows' six gates (LV-010-law) ────
     "gate-block-l1619-rung": [BLOCK_L1619_RUNG_OFF_BY_ONE],
     "gate-block-l1619-grid-coverage": [BLOCK_L1619_GRID_ENLARGED],
     "gate-block-l1619-device-existence": [BLOCK_L1619_SEAL_OPENED],
@@ -1204,7 +1209,7 @@ describe("LV-009-B — the L12–L15 block's gates have teeth, and the four ship
     expect(l11.violations).toEqual([]);
   });
 
-  // ── QA-011 — the L16–L19 registered root block's six gates, control by control ─
+  // ── QA-011 — the L16–L20 registered root block's six gates, control by control ─
   // The ladder is read from the registry, never typed: this section's controls are
   // the *same* six gates the rows land under, so a re-registration moves both at once.
   const BLOCK_GATE_IDS = [
@@ -1216,8 +1221,8 @@ describe("LV-009-B — the L12–L15 block's gates have teeth, and the four ship
     "block-l1619-tail-ceiling",
   ] as const;
 
-  it("the registered rows are the discrimination side: every block gate PASSes on l016–l019 with zero violations", () => {
-    // Derivation-first: the member ids come from the registry, not from a typed 16–19.
+  it("the registered rows are the discrimination side: every block gate PASSes on l016–l020 with zero violations", () => {
+    // Derivation-first: the member ids come from the registry, not from a typed 16–20.
     for (const id of BLOCK_L1619_IDS) {
       const audit = auditLevel(shippedBoard(id));
       expect(audit.violations, `l${id}`).toEqual([]);
@@ -1329,10 +1334,11 @@ describe("LV-009-B — the L12–L15 block's gates have teeth, and the four ship
     ).toEqual(["gate-block-l1619-rung", "gate-block-l1619-tail-ceiling"]);
     const tail = audit.gates.find((g) => g.id === "block-l1619-tail-ceiling");
     expect(tail?.status).toBe("FAIL");
-    expect(tail?.detail).toContain("par=16 (ceiling 18)");
-    expect(tail?.detail).toContain("Dexec=20.907923 (ceiling 22.885157)");
+    expect(tail?.detail).toContain("par=16 (ceiling 20)");
+    expect(tail?.detail).toContain("Dexec=20.907923 (ceiling 24.729412)");
     // The clause is reachable only on the registry's last member; the control has to
-    // *be* that member to ask the question, which is why the id is re-labelled.
+    // *be* that member to ask the question, which is why the id is re-labelled — and
+    // why that id comes from the registry rather than a typed 19 (QA-014 / R-003d).
     expect(BLOCK_L1619_INTERIOR_MEMBER_AS_LAST.id).toBe(
       BLOCK_L1619_IDS.at(-1),
     );

@@ -98,6 +98,13 @@ test.describe("par route → win → HUD contract", () => {
       // the budget either way, so **L19 is a named WATCH ROW** (project-status
       // item 84 doctrine: named, not silently widened) and the budget is left at
       // the QA-005j derivation.
+      //
+      // QA-014 at 20 rows: the tail grew one rung and the row re-measured at
+      // **L20 10.8 s** (vs L19 9.1 s, L18 8.2 s, L17 7.6 s, L16 6.8 s in the same
+      // 132/132-green round, `PS_E2E_PORT=5244`, `--retries=0`) — **12.0 % of the
+      // 90 s budget**, still 2.3× under the widest QA-011 projection for this row
+      // class. L20 is the per-level playthrough peak by par, as expected, and it did
+      // **not** cross: the budget stands at the QA-005j derivation.
       test.setTimeout(90_000);
 
       await installPixelReadback(page);
@@ -185,6 +192,28 @@ test.describe("par route → win → HUD contract", () => {
     // (`budget when crossed`, and this row has not crossed at 19 rows yet).
     // The budget is wall clock, never an assertion: every claim below is
     // unchanged.
+    //
+    // ── QA-014 at 20 rows: RE-MEASURED, and it did NOT cross. Arithmetic, not a
+    //    feeling (item 77(d): fitted × safety ≥ 1.5, and never a silent raise) ─────
+    // This round (`PS_E2E_PORT=5244`, `--retries=0`, art-era bytes, 132/132 green,
+    // 11.1 m total) drove the whole ladder once: **L1 → L20 — 20 par routes, 20 HUD
+    // reads, 19 `Next` clicks — in 57.1 s.** Against QA-011's two green rounds at 19
+    // rows (51.4 s / 56.3 s) the +1 rung costs **+0.8 … +5.7 s (+1.6 % … +11 %)**,
+    // which is the route-length delta and nothing else (route moves 150 → 170, i.e.
+    // +13 %); against the *worst* 19-row observation the row moved **+1.4 %**.
+    //   • budget used: **57.1 / 360 = 15.9 %** — the same room it had at 19 rows (16 %).
+    //   • suite-level projection (QA-011's own band, 2.7–3.2× from these rounds'
+    //     local-vs-cloud ratio): 57.1 × 2.7…3.2 = **154…183 s < 360** ✓.
+    //   • row-class projection (this row's history: 12 s local → 96 s pre-art cloud =
+    //     8×): 57.1 × 8 = **457 s > 360** ✗.
+    // The two models disagree by 2.5×, so an envelope derived *now* would be a
+    // choice between projections rather than a fitted observation — exactly what
+    // QA-013 replaced with measurement. **The constant stays at 360 s**: nothing is
+    // raised and nothing is derived from a guess, so there is no silent widening to
+    // report; the row stays a NAMED WATCH ROW. The next cloud round is the crossing
+    // observation item 77(d) requires, and if it crosses the envelope is
+    // `E = 1.5 × (fitted local(rows) + worst residual) × cloud factor` taken from
+    // *that* round's numbers with the fitted×safety ≥ 1.5 leg quoted beside it.
     test.setTimeout(360_000);
 
     await openLevel(page, levelUrl(1));

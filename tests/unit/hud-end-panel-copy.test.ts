@@ -6,7 +6,7 @@
  * QA-005 pinned the defect as a `test.fail()`: `hud.ts` built the last level's
  * dialog body from a literal `L1–L5 cleared · <level>: <moves>`, written when the
  * playable slice was five levels, while the registry has since grown well past
- * that (it ships **nineteen** on this chain). The pin's own expectation was
+ * that (it ships **twenty** on this chain). The pin's own expectation was
  * `expect(won.dialogBody).not.toContain("L1–L5")` + "contains `moves <par>`". The
  * copy now reads the range from the **registry's own list**
  * (`ladderLabelOf(loadPlayableLevels())`, injected by the composition root as the

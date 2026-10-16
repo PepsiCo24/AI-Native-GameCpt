@@ -1077,45 +1077,140 @@ three reads above are its whole content, so it rebuilds from this paragraph alon
 
 ---
 
-## 2. Inventory — 127 cases in 8 files (measured)
+### 1.10 QA-014 — the 20-row pin migration, and the shelf guard it had to keep live
+
+The migration itself is one number (`EXPECTED_LEVEL_COUNT` 19 → 20) plus every derived
+row that moved with it; §2 is the present-tense inventory. Two things in it are worth
+their own record, because both are *liveness* claims rather than counts.
+
+**The shelf's booked set is now empty, and empty is compared, not counted.**
+`tests/solver/l16-l20-candidates.test.ts` asserted its candidate shelf against a
+**booked** list (`["l020.json"]`) while that rung sat above the registered root max.
+R-003d registered the rung, so the booking is `[]` — but the assertion stayed **set
+equality** (`expect(shelf).toEqual([...BOOKED_CANDIDATE_IDS_IN_SHELF])`) precisely so
+the empty case cannot go vacuous. Proved live, on this branch, by dropping files in and
+watching the guard fire by name (each `cp` followed by an `rm`, `src/**` left
+byte-identical — the worktree is clean afterwards):
+
+```
+$ cp src/levels/l020.json src/levels/candidates/l020.json
+  × the shelf holds only the booked pre-registration candidates (now none), all above the census ceiling
+    AssertionError: expected [ 'l020.json' ] to deeply equal []      # a re-appearing registered rung
+$ cp src/levels/l012.json src/levels/candidates/l012.json
+    AssertionError: expected [ 'l012.json' ] to deeply equal []      # a root row hiding outside the census (BELOW rootMax)
+$ cp src/levels/l020.json src/levels/candidates/l021.json
+    AssertionError: expected [ 'l021.json' ] to deeply equal []      # an UNREGISTERED extra (ABOVE rootMax)
+```
+
+The second half of the law — every shelf rung must strictly exceed the registered root
+max — is kept as written and is now **live for the next booking** (`rootMax` itself is
+asserted against the shared dataset pin, so the ceiling still cannot be justified by a
+dataset that moved without the pin moving). With the booking empty its loop is
+unreachable today; that is stated rather than hidden, and the emptiness is what the
+set-equality tooth above actually guards.
+
+**The latch-removed control was re-pointed, not inherited or deleted.** QA-012's drift
+note (F-L20-2) booked the semantics: the *switch-gated-door* reading of "remove the
+latch" (bare board still SOLVABLE, refusal named `door-without-switch`) is **by
+construction false** for a sealed-landing board, because there the latch carries
+*existence*. `base` is `BLOCK_MIN` = l016, so the original control was kept **verbatim**
+(its class is real and still shipped) and the landing rung got the **named `unsolvable`
+reading as its own control**, measured on the registered bytes:
+
+```
+$ # l020 with its switches dropped, via the shipped readers
+naked.solvable            = false          # the reading that does NOT transfer from l016's class
+naked.violations          ⊇ door-without-switch  # the collapse is attributable, not a mystery
+naked.allOffShortest      = null           # and null BEFORE the mutation too
+```
+
+The `allOffStaysDefined` clause got the same treatment: on this class the sanctioned
+measurement is `null` before *and* after the mutation, so it is replaced by the equality
+`null === null` — the honest form of the same emptiness — instead of the weaker
+`not.toBeNull()` that only holds on l016's class.
+
+**A third row moved by rule, not by edit: L20's exhaustive-leg branch.** `route-budget`'s
+n-11 row attempts the unpruned walk and, when the production cap refuses it, asserts the
+refusal; QA-011 derived that at 19 rungs and the admitting set was L1–L16. The new rung
+takes the **refusal leg** — measured here with a throwaway probe on the registered bytes:
+`l020` raises `RouteEnumerationError` at `cap = 2,000,000`, `visits = 2,000,001`,
+`par = 20`, while `l15` (76,132 visits) and `l16` (1,363,684) still fit, i.e. the
+admitting set is unchanged and **no test edit was needed for the branch**; only the
+comment that recorded the QA-011 measurement gained the continuation row (776 / 844 /
+881 / **1,157 ms** for l017–l020 under a concurrent e2e round, all far inside the row's
+30 s guard).
+
+**No production byte was touched.** `git status --porcelain` on the dispatch worktree
+lists `tests/**` only.
+
+---
+
+## 2. Inventory — 132 cases in 8 files (measured)
 
 **Dated note (2026-10-16, QA-005h).** The per-ticket blocks in §1 are **historical
 snapshots**: the `88/0` rounds, the `88 tests in 8 files` `--list` lines and the per-file
 case counts in §1.3–§1.8 were true when those blocks were written and are deliberately
 left as they stand. **This section is the only present-tense inventory in this file.**
 
-**Update (2026-10-16, QA-011 — the 19-row migration).** R-003c registered L16–L19 and
-the three specs that pin the *ladder* grew with it, so the present-tense inventory is
-now `127 tests in 8 files` (115 desktop + 12 mobile), the tail line of
-`npx playwright test --list`: `23 + 30 + 37 + 6 + 8 + 4 + 7 + 12 = 127`. The rows below
-are that tool's own per-file counts, read off its output. The whole suite ran green
-under **zero retries** on the frozen bytes of this branch (`PS_E2E_PORT=5234 npx
-playwright test --retries=0`) — **127 passed / 0 failed / 0 flaky** in two rounds:
-**597.4 s = 10.0 m** and **705.3 s = 11.8 m** (round-to-round variance ×1.18 on this
-machine, project-status item 84's class) — the migration's own proof, and the number
-the next cloud round must reproduce. Slow-row sums, in the QA-005g shape, for the two
-rounds: refusal 207.6 → 282.3 s, playthrough 150.9 → 163.4 s, latch-door 121.8 →
-124.2 s, mobile 35.7 → 43.8 s, transient 33.9 → 39.5 s, controls 26.0 → 26.3 s, portal
-13.5 → 17.1 s, input-replay 5.3 → 5.8 s (Σ 594.7 → 702.3 s).
+**Update (2026-10-16, QA-014 — the 20-row migration, and the FIRST browser walk of
+L20 ever).** GAME-002 registered LV-011's sealed landing at the dataset root (`l020.json`
++ registry row 20 at `4deeb50`), so `EXPECTED_LEVEL_COUNT` moved **19 → 20** in the same
+batch, and the three specs that pin the *ladder* grew with it — 127 → **132 tests in 8
+files** (120 desktop + 12 mobile), the tail line of `npx playwright test --list`:
+`24 + 32 + 39 + 6 + 8 + 4 + 7 + 12 = 132`. The rows below are that tool's own per-file
+counts, read off its output. The whole suite ran green under **zero retries** on the
+frozen bytes of this branch (`PS_E2E_PORT=5244 npx playwright test --retries=0`) —
+**132 passed / 0 failed / 0 flaky** in **666 s = 11.1 m**, i.e. **inside the 19-row
+envelope band** (597.4 s = 10.0 m and 705.3 s = 11.8 m, the two QA-011 rounds) even
+though the census grew and the tail is heavier: slow-row sums, in the QA-005g shape,
+are refusal 246.8 s, playthrough 168.0 s, latch-door 133.4 s, transient 35.2 s, mobile
+34.9 s, controls 24.9 s, portal 14.4 s, input-replay 4.8 s (Σ 662.4 s).
 
-**The two derived budgets were re-derived, not raised.** Both rows the ladder grows are
-now **named WATCH ROWS** with their measurements in their own comments, because
-`budget when crossed` is the standing law and neither has crossed at 19 rows: the
-unlock chain (`playthrough.spec.ts:144`) measured **51.4 s and 56.3 s** across the two
-green rounds against its 360 s budget (16 % used; projection band 165–450 s — *inside*
-the budget, so it is filed, not widened), and the per-level rows measured
-6.7 → 7.1 s (L16), 7.6 s (L17), 8.6 s (L18) and 9.3 → 10.1 s (L19) against their 90 s
-budget. `refusal.spec.ts` gets the sharpest flag: its per-level walk is now the suite's
-slowest class (L19 **20.1 → 28.4 s** local, i.e. up to 32 % of the budget on a fast
-machine), and the row-class factor its own history suggests would put it near
-~120–170 s — **above** the 90 s it carries — so L17–L19 are named for the next cloud
-round. No budget was silently widened and no default was touched.
+**Three green rounds, and which one is the frozen-bytes evidence.** Round 1 was taken
+*before* this batch's own comment insertions, which moved the chain row
+`playthrough.spec.ts:156 → :163`; rounds 2 and 3 ran after, on the shipped spec bytes
+(`PS_E2E_PORT=5244 npx playwright test --retries=0`, `EXIT=0` each):
+**132 passed / 0 failed in 660 s = 11.0 m (round 2) and 636 s = 10.6 m (round 3)**. The
+four ladder-growing rows across the three rounds, largest-first:
+
+| row | round 1 | round 2 | round 3 | envelope |
+|---|---|---|---|---|
+| unlock chain `playthrough.spec.ts:163` | **57.1 s** | 55.3 s | 52.8 s | 360 s (15.9 % worst) |
+| L20 refusal (`refusal.spec.ts:48`) | **28.1 s** | 28.1 s | 26.6 s | `refusalRouteEnvelopeMs(20)` = 223 s (12.6 % worst) |
+| L20 par walk (`playthrough.spec.ts:79`) | **10.8 s** | 10.2 s | 9.7 s | 90 s (12.0 % worst) |
+| L20 latch-door (`latch-door.spec.ts:134`) | 11.6 s | 11.6 s | **12.3 s** | 90 s (13.7 % worst) |
+| …L19 latch-door, for the ordering claim | 13.3 s | 12.3 s | 12.9 s | — |
+
+Three green rounds differing by ≤ 4 s on every pinned row, with **L20 < L19 on the latch
+row in all three**, is why the numbers below are quoted as observations rather than as a
+best case; the **worst leg of each triple** (bold) is the one used in every envelope
+comparison, and both reference tables below are still true on it.
+
+**No budget was re-derived for this migration, and the arithmetic is why.** The rung is
+the one the derived `refusalRouteEnvelopeMs(par)` was written for (QA-013), so it was
+absorbed with **zero re-migration**: `refusalRouteEnvelopeMs(20) = 223 s` against the
+measured **L20 refusal row 28.1 s = 12.6 % of budget** — while the flat `90_000` it
+replaced would have read 31 % locally and ≈166 s on QA-013's own conservative cloud
+factor, i.e. crossed. The other three ladder-growing rows are unchanged and **none
+crossed**: the unlock chain (`playthrough.spec.ts:163`) re-measured at **57.1 / 55.3 / 52.8 s
+of its 360 s** across the three rounds (15.9 % worst; QA-011's two 19-row rounds were
+51.4 s and 56.3 s, so +1 rung costs +0.8…+5.7 s — the route-length delta), the per-level
+playthrough row at **L20 10.8 / 10.2 / 9.7 s of 90 s** (12.0 % worst, the par-20 peak), and
+the latch-door row at **L20 11.6 / 11.6 / 12.3 s of 90 s** (13.7 % worst) — which is still
+*below* L19 in every round (13.3 / 12.3 / 12.9 s), because the
+sealed landing's portal-entered
+pocket yields a **shorter** occupancy route (measured presses L19 27 → **L20 21**). The
+chain stays a **named WATCH ROW** with its constant *held*, not raised: its two
+projection models disagree by 2.5× (suite-level 2.7–3.2× ⇒ 154–183 s ✓; row-class 8× ⇒
+457 s ✗), so an envelope derived now would be a choice between projections rather than
+a fitted observation — the next cloud round is the crossing observation item 77(d)
+requires. No default was touched and no constant was silently widened.
 
 | file | cases | project | what it pins |
 |---|---:|---|---|
-| `playthrough.spec.ts` | 23 | desktop | L1–L19 par route → win dialog (one row per shipped level, from the dataset); the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the **L1→L19** unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L19` and never a stale `L1–L5` |
-| `refusal.spec.ts` | 37 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one (now including L16–L19) |
-| `latch-door.spec.ts` | 30 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all **fourteen** latch levels (L6–L19, the dataset's derived contiguous tail — the rule, not a typed list), in-core and through the UI |
+| `playthrough.spec.ts` | 24 | desktop | L1–L20 par route → win dialog (one row per shipped level, from the dataset); the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the **L1→L20** unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L20` and never a stale `L1–L5` |
+| `refusal.spec.ts` | 39 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one (now including L16–L20) — each row's wall-clock budget is the par-derived `refusalRouteEnvelopeMs(ref.par)`, so L20 arrived with its own 223 s envelope and no test edit |
+| `latch-door.spec.ts` | 32 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all **fifteen** latch levels (L6–L20, the dataset's derived contiguous tail — the rule, not a typed list), in-core and through the UI |
 | `portal.spec.ts` | 6 | desktop | the **portal column is every level from L11's debut to the tail** (the rule; QA-011 retired the typed `[11…15]` literal); M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
 | `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |

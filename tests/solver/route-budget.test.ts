@@ -19,8 +19,9 @@
  *      walk therefore emit the *same route sequence, in the same order* (pruning is
  *      a pure filter: it drops prefixes, never reorders the surviving children and
  *      never drops a prefix that any route passes through). The equivalence is
- *      asserted on every shipped level the production cap admits — L1–L16 at QA-011's
- *      19-level dataset, with the over-cap rungs asserting the cap refusal itself
+ *      asserted on every shipped level the production cap admits — L1–L16 on the
+ *      current 20-rung dataset (QA-011's decision row below tabulated it at 19), with
+ *      the over-cap rungs asserting the cap refusal itself
  *      (see the decision row in §1) — and on three synthetic boards — M0 open,
  *      M1+M3 latch, M2 portal — because "portal-safe" is a claim about real edges,
  *      not about a Manhattan/parity bound.
@@ -185,6 +186,17 @@ function exhaustiveOrNull(level: Level, par: number): Walk | null {
  * | L18 | 98.7 M | **no** | over cap in 571 ms; 20 M units = 5,981 ms → **3.34 M units/s** |
  * | L19 | > 5 × 10⁸ | **no** | ≥ 150 s by the same rate, unbounded above |
  *
+ * **QA-014 continuation (20 rungs).** R-003d registered L20, and the row moved the way
+ * the rule says rather than the way a typed list would: the new rung is **past the cap
+ * too**, so it joins L17–L19 on the derived refusal leg. Measured on the registered
+ * bytes (throwaway probe, this branch): `l020` raises `RouteEnumerationError` with
+ * `cap = 2,000,000`, `visits = 2,000,001`, `par = 20`; `l15` = 76,132 and `l16` =
+ * 1,363,684 visits still fit, unchanged, i.e. **the admitting set is still L1–L16** and
+ * nothing had to be re-pointed — the row re-derives it per run. The refusal leg's own
+ * wall clock on this machine read 776 ms (l017) / 844 ms (l018) / 881 ms (l019) /
+ * **1,157 ms (l020)** while an e2e round shared the box, so the tail's cost is in the
+ * same band as its predecessors and the 30 s per-row guard below still has its margin.
+ *
  * **Decision: Option B — the exhaustive leg stays bounded by the production cap, and
  * the bound is DERIVED AT RUN TIME rather than typed as an id list.** Each row runs the
  * pruned walk unconditionally; it then *attempts* the exhaustive walk and, when the
@@ -262,7 +274,10 @@ describe("LV-007B · n-11 — the lookahead prune is a pure filter (shipped leve
     // Wall-clock guard, never an assertion (the e2e budget's rule applied to the one
     // solver row that walks to the cap on purpose): the over-cap rungs run the
     // exhaustive walk until `PAR_ROUTE_VISIT_CAP` refuses it, measured at 507 ms (l017),
-    // 571 ms (l018) and ~1.4 s (l019) on an idle machine — and one full-suite run on
+    // 571 ms (l018) and ~1.4 s (l019) on an idle machine — and QA-014's L20 (the
+    // registered terminal rung, refusal leg confirmed: `visits = cap + 1`, par 20) read
+    // 1,157 ms under a concurrent e2e round, i.e. in the same band as L17–L19 — and one
+    // full-suite run on
     // 2026-10-16 was observed stalled ~40× end to end (vitest import time 2.6 s → 112 s),
     // which puts those rows past Vitest's 5 s default. 30 s is 20× the worst measured
     // row, so it cannot fire on a legitimately slow machine but still fails a hang.
@@ -638,6 +653,17 @@ const PINS: Readonly<Record<number, ShippedPin>> = {
   17: { shortest: 14, reachable: 259, positions: 42, maxDepth: 20, dualPhaseTiles: 24, refusedThenEnteredTiles: 8, refusedThenEnteredTileList: ["4,0", "4,1", "4,2", "4,3", "4,4", "4,5", "5,5", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 60, embedRoutes: 60, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 63, cost: { visits: 529, lookaheadVisits: 2424, prunedChildren: 885 } },
   18: { shortest: 16, reachable: 467, positions: 42, maxDepth: 28, dualPhaseTiles: 18, refusedThenEnteredTiles: 9, refusedThenEnteredTileList: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "5,1", "6,0", "6,2"], deadStates: 0, unrecoverableStates: 0, parRoutes: 189, embedRoutes: 189, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 56, cost: { visits: 1322, lookaheadVisits: 4835, prunedChildren: 2509 } },
   19: { shortest: 18, reachable: 923, positions: 42, maxDepth: 35, dualPhaseTiles: 18, refusedThenEnteredTiles: 10, refusedThenEnteredTileList: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "4,4", "5,3", "5,5", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 231, embedRoutes: 231, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 54, cost: { visits: 2162, lookaheadVisits: 7386, prunedChildren: 3811 } },
+  // R-003d / QA-014 — the L16–L20 block's **terminal** rung, registered at the dataset
+  // root by GAME-002 (`4deeb50`). The sealed landing is the block's widest board
+  // (`reachable` 1275, `maxDepth` 38, both block records) and it is the first rung whose
+  // refusal column is a *contiguous door line plus a sealed goal entry* (14 tiles: the
+  // `3,0…3,5` line, `4,1`/`4,4` and the `5,0…6,4` goal approaches) — the same class as
+  // L18/L19, measured on the new mechanism. The n-11 prune still bounds the walk:
+  // `visits` 1658 against `par` 20 and `parRoutes` 252 (the 252/252 route coincidence
+  // ADR-design-0004 records), so the derived `routeVisitBudget` is untouched and the
+  // registered tail stays enumerable. `allOffGoalReachable: false` (22/1275 states, no
+  // goal) is the block's existence grade, unchanged.
+  20: { shortest: 20, reachable: 1275, positions: 42, maxDepth: 38, dualPhaseTiles: 18, refusedThenEnteredTiles: 14, refusedThenEnteredTileList: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "4,1", "4,4", "5,0", "5,2", "5,3", "5,5", "6,3", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 252, embedRoutes: 252, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 22, cost: { visits: 1658, lookaheadVisits: 6299, prunedChildren: 2866 } },
 };
 
 /** Everything the CLI prints for a level, projected off the audit — one object, one diff. */
@@ -730,12 +756,13 @@ describe("LV-007B · n-11 — the shipped L1–L10 numbers are unchanged (LV-008
     // the blocks behind it, so the aggregate line names the whole column rather than
     // counting it. L11 still leads it (21/21 tiles), the L12–L15 block follows
     // (19/21, 16/24, 20/28, 15/35) and R-003c's registered block closes it
-    // (24/42, 24/42, 18/42, 18/42 — the 7 × 6 device).
+    // (24/42, 24/42, 18/42, 18/42 — the 7 × 6 device), with QA-014's registered
+    // terminal rung at the same 18/42 as L18/L19.
     expect(
       table
         .filter((pin) => pin.dualPhaseTiles > 0)
         .map((pin) => pin.dualPhaseTiles),
-    ).toEqual([21, 19, 16, 20, 15, 24, 24, 18, 18]);
+    ).toEqual([21, 19, 16, 20, 15, 24, 24, 18, 18, 18]);
     // The escalation count of the CLI run is one, and it is gate (iv)'s — unchanged
     // by n-11 but printed next to the same lines, so it is pinned with them.
     const escalations = SHIPPED_IDS.flatMap((id) =>

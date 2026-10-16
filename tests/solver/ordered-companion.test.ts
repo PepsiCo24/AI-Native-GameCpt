@@ -384,6 +384,17 @@ const ORDERED_PINS: Readonly<
     unordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "4,4", "5,3", "5,5", "6,4"],
     ordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "4,4", "5,3", "5,5", "6,4"],
   },
+  // R-003d / QA-014 — the block's terminal rung: the sealed landing. The refusal the
+  // player is meant to witness is the *door line plus the sealed goal approaches*
+  // (14 tiles, the block's widest column: the `3,0…3,5` line, `4,1`/`4,4`, and the
+  // `5,0…6,4` entries on the landing's walk-sealed pocket), and the two readers agree
+  // again — the ordered list is the unordered one — so ADR-0002's coincidence holds on
+  // the 5th rung too. This is the block's §5 substitute for gate (i): the latch is
+  // witnessed, not merely load-bearing (`allOffGoalReachable: false` measured 22/1275).
+  20: {
+    unordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "4,1", "4,4", "5,0", "5,2", "5,3", "5,5", "6,3", "6,4"],
+    ordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "4,1", "4,4", "5,0", "5,2", "5,3", "5,5", "6,3", "6,4"],
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
