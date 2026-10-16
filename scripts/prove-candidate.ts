@@ -25,8 +25,8 @@
  *      latch-route / refused-beat / coverage / validator / well-formed), each
  *      printing the number it read;
  *   2b. for `--rung=20` and above, the **block-escalation** pair
- *      (`rung-plus-block-escalation`: `D_exec > BLOCK_L1619_TAIL_EXEC_CEILING` with
- *      `B` inside `BLOCK_L1619_B_BAND` — the rung must climb out of the *registered*
+ *      (`rung-plus-block-escalation`: `D_exec > BLOCK_L1619_PRE_R003D_TAIL_EXEC` with
+ *      `B` inside `BLOCK_L1619_B_BAND` — the rung must climb out of the *pre-R-003d*
  *      block, not merely out of the L1–L15 cut) and `par-rung-exact`, plus the five
  *      **sealed-landing** gates `g1`–`g5` of `docs/level-design.md` §6.2.6, measured
  *      on the landed bytes with the pocket **derived from those bytes**
@@ -55,6 +55,7 @@ import { hashState } from "@/core/state/hash";
 import type { SearchState } from "@/core/state/types";
 import {
   BLOCK_L1619_B_BAND,
+  BLOCK_L1619_PRE_R003D_TAIL_EXEC,
   BLOCK_L1619_IDS,
   BLOCK_L1619_TAIL_EXEC_CEILING,
   allOffShortestSolution,
@@ -241,9 +242,9 @@ function judge(level: Level, floor: number, l15Par: number, rung: number, viewOv
     const inBand = diff.B >= BLOCK_L1619_B_BAND[0] && diff.B <= BLOCK_L1619_B_BAND[1];
     extras.push({
       id: "rung-plus-block-escalation",
-      ok: dexec !== null && dexec > BLOCK_L1619_TAIL_EXEC_CEILING && inBand,
+      ok: dexec !== null && dexec > BLOCK_L1619_PRE_R003D_TAIL_EXEC && inBand,
       detail:
-        `D_exec=${dexec === null ? "n/a" : dexec.toFixed(6)} > block ceiling ${BLOCK_L1619_TAIL_EXEC_CEILING.toFixed(6)} ` +
+        `D_exec=${dexec === null ? "n/a" : dexec.toFixed(6)} > block ceiling ${BLOCK_L1619_PRE_R003D_TAIL_EXEC.toFixed(6)} (the pre-R-003d stop the rung had to beat; the block\u2019s tail is now ${BLOCK_L1619_TAIL_EXEC_CEILING.toFixed(6)}) ` +
         `(BLOCK_L1619, the registered L16–L19 stop — a rung above the block must clear the block, not only the L1–L15 cut) ` +
         `AND B=${diff.B.toFixed(4)} ∈ [${BLOCK_L1619_B_BAND[0].toFixed(4)}, ${BLOCK_L1619_B_BAND[1].toFixed(4)}]`,
     });
@@ -649,7 +650,10 @@ const controls: { name: string; board: Level; expect: readonly string[]; view?: 
   // of the clauses this mutation may trip", with the full reason string printed.
   // A mutation that is ACCEPTED still fails the battery: it cannot be made vacuous
   // by widening this list.
-  { name: "latch removed (switches dropped)", board: { ...level, switches: [] }, expect: ["latch-grade", "par-stamped", "unsolvable"] },
+  // R-003d / F-L20-2: on a SEALED-LANDING board the latch carries existence, so this mutation is
+  // measured as the NAMED `unsolvable` refusal — the bare-board-solvable reading of the ladder's
+  // boards does not transfer (QA-012's drift note; this file's control table).
+  { name: "latch removed (switches dropped)", board: { ...level, switches: [] }, expect: RUNG >= 20 ? ["unsolvable"] : ["latch-grade", "par-stamped", "unsolvable"] },
   {
     // `switch-without-targets` (policy.ts) must fire: the mirror of M1-alone. When
     // the muted latch also seals the goal, the BFS names it first.
@@ -706,6 +710,22 @@ if (RUNG >= 20) {
     const pocketDoor = view.pocketDoor;
     const pocketDoorId = pocketDoor?.id ?? "-";
     controls.push(
+      {
+        // R-003d `-rung at 20`: the rung clause is an EQUALITY at rung 20 too, and this is the
+        // cheapest mutation that can lie about it — the registered bytes with the authored `par`
+        // moved off the derived rung (20 -> 19).
+        name: "rung-20 control — `-rung`: par mis-stamped 19 under rung 20 (the derived rung is an equality)",
+        board: { ...level, par: Math.max(1, level.par - 1) },
+        expect: ["par-rung-exact", "par-stamped"],
+      },
+      {
+        // R-003d F-L20-2: the control QA-012 named. Dropping every switch on the landed L20 bytes
+        // removes the pocket exit AND the goal's four seal doors, so the world has no goal state
+        // at all — the named refusal must be `unsolvable`.
+        name: "F-L20-2 control — every switch dropped (the latch carries EXISTENCE: the named refusal is `unsolvable`)",
+        board: { ...level, switches: [] },
+        expect: ["unsolvable"],
+      },
       {
         name: `g1 control — the pocket door "${pocketDoorId}" dropped (the pocket becomes on-foot reachable)`,
         board: { ...level, doors: level.doors.filter((d) => d.id !== pocketDoorId) },

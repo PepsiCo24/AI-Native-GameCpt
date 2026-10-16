@@ -1014,6 +1014,90 @@
       "lookaheadDepth": 17,
       "unrecoverableRatio": 0,
       "escalations": []
+    },
+    {
+      "id": 20,
+      "file": "l020.json",
+      "solvable": true,
+      "shortestSolution": 20,
+      "par": 20,
+      "parMatch": true,
+      "reachableStates": 1275,
+      "distinctPositions": 42,
+      "maxDepth": 38,
+      "deadStates": 0,
+      "noUnrecoverableOk": true,
+      "unrecoverableStates": 0,
+      "dualPhaseTiles": 18,
+      "dualPhaseTileList": [
+        "0,0",
+        "0,1",
+        "0,2",
+        "0,3",
+        "0,4",
+        "0,5",
+        "1,0",
+        "1,1",
+        "1,2",
+        "1,3",
+        "1,4",
+        "1,5",
+        "2,0",
+        "2,1",
+        "2,2",
+        "2,3",
+        "2,4",
+        "2,5"
+      ],
+      "refusedThenEnteredTiles": 14,
+      "refusedThenEnteredTileList": [
+        "3,0",
+        "3,1",
+        "3,2",
+        "3,3",
+        "3,4",
+        "3,5",
+        "4,1",
+        "4,4",
+        "5,0",
+        "5,2",
+        "5,3",
+        "5,5",
+        "6,3",
+        "6,4"
+      ],
+      "refusedBeforeEnteredTiles": 14,
+      "refusedBeforeEnteredTileList": [
+        "3,0",
+        "3,1",
+        "3,2",
+        "3,3",
+        "3,4",
+        "3,5",
+        "4,1",
+        "4,4",
+        "5,0",
+        "5,2",
+        "5,3",
+        "5,5",
+        "6,3",
+        "6,4"
+      ],
+      "parRoutes": 252,
+      "embedRoutes": 252,
+      "embedForced": true,
+      "L": 20,
+      "B": 1.576470588235294,
+      "T": 0,
+      "R": 0,
+      "M": 4,
+      "D": 44.72941176470589,
+      "Dexec": 24.729411764705883,
+      "bRaw": 3.036862745098039,
+      "forcedMoveRatio": 0.05333333333333334,
+      "lookaheadDepth": 19,
+      "unrecoverableRatio": 0,
+      "escalations": []
     }
   ],
   "seams": [
@@ -1063,7 +1147,7 @@
     "builder": "scripts/metrics-report.ts",
     "hashAlgorithm": "sha256",
     "hashInput": "canonical JSON of each parsed level file (object keys sorted recursively, whitespace-insensitive) — a content hash, not a git sha, so the report is reproducible across worktrees",
-    "datasetHash": "c0102d8f7d37d66c7b7622bc7eda77203d267c87e5c7c153845b0d1089f53874",
+    "datasetHash": "5b5c46c7b03fe438094114960e3036a2e9f5b9ddaa5b2146c55099474a2fd644",
     "levels": [
       {
         "file": "l001.json",
@@ -1159,6 +1243,11 @@
         "file": "l019.json",
         "id": 19,
         "sha256": "d22d3e891985bd92e3640736f00a008b6c3bbbe2f541c8ba0f706f466370273d"
+      },
+      {
+        "file": "l020.json",
+        "id": 20,
+        "sha256": "93b7f6d51fc5439bdcbc26be58b454cef86162802247bd0e01ea4a8a10cfd39d"
       }
     ]
   }

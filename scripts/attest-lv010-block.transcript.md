@@ -1,49 +1,19 @@
-R-003c — L16–L19 registration re-attestation transcript
-task:    R-003c (REGISTER the proven four-rung block L16–L19: root bytes, block law, sidecar, docs)
-law:     docs/ai-native-pipeline.md §8.12 (LV-010 / LV-010f: the nine-gate chain + 6/6 mutation controls per rung)
-         + §8.13 (R-003c: the registration and its block law) · docs/level-difficulty.md §2/§2b/§5.2
-         (the execution axis + the 6-dp per-level rows) · ADR-0004 (reject, never repair)
-source:  src/levels/l016.json … l019.json at 3cc6df2 (root bytes, registered)
-origin:  3cc6df2:src/levels/candidates/l016.json … l019.json (the shelf the bytes were byte-copied from)
-booked:  the dispatch's L16–L19 evidence — par/D_exec 12/17.100000 · 14/19.027027 · 16/20.907923 · 18/22.885157,
-         B 1.7000/1.6757/1.6360/1.6284, routes 20/60/189/231, refusals 8/8/9/10, coverage 42/42, all-OFF UNSATISFIABLE
-
-Why this attester exists: the four rungs were proven as CANDIDATES (§8.12). R-003c claims something
-different — that moving them into the shipped root changed nothing, and that the law they are now judged
-by (`blockL1619Gates`) really refuses the boards it must refuse. So this harness (1) proves byte identity
-against the candidate blobs by git blob hash, (2) re-derives the law's basis (par(L15), the frozen cut,
-the B band) from the live L1–L15 files, (3) re-measures EVERY booked number from the root bytes with the
-shipped readers, (4) runs the block's gates per rung, (5) checks the ladder properties no single board can
-carry, and (6) runs one negative control per new gate — a mutated board that must be refused BY NAME.
-
-`tests/**` is not this dispatch's lane, so table (6) is the R-003c one-control-per-gate evidence and
-`tests/solver/policy-negative-controls.test.ts`'s `Record<PolicyViolationCode, …>` is deliberately left RED
-with the six new keys missing (QA's pin-migration ticket). No gate was added without a control.
-
-verbatim numbers come from the program solver on the registered bytes; the BOOKED table is the dispatch's
-evidence, typed once, and every row is compared against a fresh measurement. A single divergence exits
-non-zero (STOP_AND_ROUTE) — the candidate bytes are immutable and are never re-authored to fit a reading.
-
-invocation:
-  node_modules/.bin/tsx scripts/attest-lv010-block.ts   # exit code 0
-  node_modules/.bin/tsc --noEmit                        # production clean; one TEST-file red (the R-003c QA pin)
-
-output (verbatim):
-attest-lv010-block — R-003c registration re-attestation
-levels dir: /Users/Admin/.local/share/opencode/worktree/f9a5d9/r-003c-reg/src/levels/
-origin:     3cc6df2:src/levels/candidates (the shelf the bytes were copied from)
+attest-lv010-block — R-003c/R-003d registration re-attestation (L16–L20)
+levels dir: /Users/Admin/.local/share/opencode/worktree/f9a5d9/r-003d-reg/src/levels/
+origin(s):  L16–L19 3cc6df2:src/levels/candidates · L20 2ea83ac:src/levels/candidates (the shelves the bytes were copied from)
 
 [1/6] byte identity — the registered root files are byte-copies, not edits
   MATCH      l016.json blob identity — root 4635a8664ecc9a5c15a3174fe676895f4e96ce18 == 3cc6df2:src/levels/candidates/l016.json 4635a8664ecc9a5c15a3174fe676895f4e96ce18
   MATCH      l017.json blob identity — root 97ce1448c667f2cd876bc28a647b232117999ee2 == 3cc6df2:src/levels/candidates/l017.json 97ce1448c667f2cd876bc28a647b232117999ee2
   MATCH      l018.json blob identity — root 486fedac159a97eb61fe152470e2bd55e312c82c == 3cc6df2:src/levels/candidates/l018.json 486fedac159a97eb61fe152470e2bd55e312c82c
   MATCH      l019.json blob identity — root 3feca9106030d1bab1d8339cbea19dcd2160d831 == 3cc6df2:src/levels/candidates/l019.json 3feca9106030d1bab1d8339cbea19dcd2160d831
+  MATCH      l020.json blob identity — root 78acaed0921202eebf8bd3e8eba86d4e4d92be54 == 2ea83ac:src/levels/candidates/l020.json 78acaed0921202eebf8bd3e8eba86d4e4d92be54
 
 [2/6] the law's basis — re-derived from the 15 L1–L15 files
   MATCH      par(L15) = BLOCK_L1619_PAR_BASE — measured 10 · constant 10
   MATCH      cut = BLOCK_L1619_CUT_FLOOR — measured 14.969697 · constant 14.969697
   MATCH      B band = BLOCK_L1619_B_BAND — measured [1.2500, 1.6875] · constant [1.2500, 1.6875]
-  MATCH      the registered set is the 15-level basis + the 4 rungs — root 19 files = 15 basis + 4 rungs
+  MATCH      the registered set is the 15-level basis + the 5 rungs — root 20 files = 15 basis + 5 rungs
 
 [3/6] booked numbers — re-measured from the ROOT bytes, never read from a note
   l016.json (rung 16)
@@ -86,56 +56,77 @@ origin:     3cc6df2:src/levels/candidates (the shelf the bytes were copied from)
   MATCH        l019.json all-OFF world — allOffShortest null (UNSATISFIABLE) · allOffGoalReachable false
   MATCH        l019.json region — deadStates 0 · noUnrecoverableOk true · T 0 · R 0.000000
   MATCH        l019.json D_exec identity — D_exec − (par + 3·B) = 0.00e+0
+  l020.json (rung 20)
+  MATCH        l020.json par — solver 20 · file 20 · booked 20
+  MATCH        l020.json D_exec — 24.729412 · booked 24.729412
+  MATCH        l020.json B — 1.5765 · booked 1.5765
+  MATCH        l020.json par routes — 252 · booked 252
+  MATCH        l020.json ordered refusals — 14 · booked 14
+  MATCH        l020.json coverage — 42/42 · booked 42
+  MATCH        l020.json all-OFF world — allOffShortest null (UNSATISFIABLE) · allOffGoalReachable false
+  MATCH        l020.json region — deadStates 0 · noUnrecoverableOk true · T 0 · R 0.000000
+  MATCH        l020.json D_exec identity — D_exec − (par + 3·B) = 0.00e+0
 
 [4/6] block law gates — `blockL1619Gates`, read through `auditLevel`
   MATCH        l016.json gates — 7 gate(s) [block-l1619-rung block-l1619-grid-coverage block-l1619-device-existence block-l1619-escalation-cut shortest-solution-presses-switch-and-crosses-door refused-then-entered block-l1619-b-band] · FAIL [] · policyViolations []
-      PASS block-l1619-rung — par=12 (solver shortest=12); this member expects 12; the derived ladder is 12 / 14 / 16 / 18 from BLOCK_L1619_IDS=[16, 17, 18, 19] (base par(L15) = 10 + step 2). The selection gate was the lower bound; the REGISTRATION law is the exact rung, because the block ships only after the rung has been measured on the landed bytes — a longer board under the same id would silently re-price the ladder.
+      PASS block-l1619-rung — par=12 (solver shortest=12); this member expects 12; the derived ladder is 12 / 14 / 16 / 18 / 20 from BLOCK_L1619_IDS=[16, 17, 18, 19, 20] (base par(L15) = 10 + step 2). The selection gate was the lower bound; the REGISTRATION law is the exact rung, because the block ships only after the rung has been measured on the landed bytes — a longer board under the same id would silently re-price the ladder.
       PASS block-l1619-grid-coverage — grid 7 × 6 (law: 7 × 6); distinctPositions=42 of 42. The grid is law, not decoration: the ceiling argument is a 7 × 6 census (the same seal on 7 × 7 reaches par 22 with a byte-identical shape and was refused as an escalation), so a member authored elsewhere is a different device and must bring its own census. Coverage 42/42 is how §1's board cap is honoured: the board is sized to the route.
-      PASS block-l1619-device-existence — switch(es)=2 door(s)=2; allOffGoalReachable=false allOffShortest=null (UNSATISFIABLE — the required reading) par=12. allOffShortest is a restricted walk over the all-OFF subgraph. Measured null on 4/4 (all-OFF subgraph 64/259, 63/259, 56/467, 54/923 states with no goal in it) — the device's whole point: every approach to the goal is a door, so the switch is not a shortcut, it is the difference between solvable and not.
+      PASS block-l1619-device-existence — switch(es)=2 door(s)=2; allOffGoalReachable=false allOffShortest=null (UNSATISFIABLE — the required reading) par=12. allOffShortest is a restricted walk over the all-OFF subgraph. Measured null on 5/5 (all-OFF subgraph 64/259, 63/259, 56/467, 54/923 states with no goal in it) — the device's whole point: every approach to the goal is a door, so the switch is not a shortcut, it is the difference between solvable and not.
       PASS block-l1619-escalation-cut — Dexec=17.100000 > 14.969697 (re-attested on an isolated byte-copy of L1–L15 at a19a347, re-derived by scripts/attest-lv010-block.ts); identity Dexec − (par + 3·B) = 0.00e+0 (B=1.700000, T=0, R=0.000000). The cut is the frozen basis, not a moving one: the block's own members must not raise the filter they are judged by.
       PASS shortest-solution-presses-switch-and-crosses-door — par=12: routes=20; press-then-cross-door=20; …and that door is one of the refused tiles: routes=20; parRoutes=20 embedRoutes=20
       PASS refused-then-entered — refusedBeforeEnteredTiles=8 tiles=[4,0 4,1 4,2 4,3 4,4 4,5 5,1 6,0] (ORDERED reader — LV-007C); unordered companion refusedThenEnteredTiles=8 tiles=[4,0 4,1 4,2 4,3 4,4 4,5 5,1 6,0] (canonical #7, §8.5's acceptance carrier — the difference between the two is the trapped-refusal set, a beat no player can witness)
       PASS block-l1619-b-band — B=1.7000 vs [1.2500, 1.6875]; named excursion: F-L16-2: B=1.7000 above the shipped band top; the rung escalates on D_exec, the excursion is named, never widened. §6.1.1's self-correcting guard says an out-of-band B must be named and the ramp re-checked on D_exec — never that the band may be widened. The band is re-derived from the live L1–L15 files by scripts/attest-lv010-block.ts on every run.
   MATCH        l017.json gates — 7 gate(s) [block-l1619-rung block-l1619-grid-coverage block-l1619-device-existence block-l1619-escalation-cut shortest-solution-presses-switch-and-crosses-door refused-then-entered block-l1619-b-band] · FAIL [] · policyViolations []
-      PASS block-l1619-rung — par=14 (solver shortest=14); this member expects 14; the derived ladder is 12 / 14 / 16 / 18 from BLOCK_L1619_IDS=[16, 17, 18, 19] (base par(L15) = 10 + step 2). The selection gate was the lower bound; the REGISTRATION law is the exact rung, because the block ships only after the rung has been measured on the landed bytes — a longer board under the same id would silently re-price the ladder.
+      PASS block-l1619-rung — par=14 (solver shortest=14); this member expects 14; the derived ladder is 12 / 14 / 16 / 18 / 20 from BLOCK_L1619_IDS=[16, 17, 18, 19, 20] (base par(L15) = 10 + step 2). The selection gate was the lower bound; the REGISTRATION law is the exact rung, because the block ships only after the rung has been measured on the landed bytes — a longer board under the same id would silently re-price the ladder.
       PASS block-l1619-grid-coverage — grid 7 × 6 (law: 7 × 6); distinctPositions=42 of 42. The grid is law, not decoration: the ceiling argument is a 7 × 6 census (the same seal on 7 × 7 reaches par 22 with a byte-identical shape and was refused as an escalation), so a member authored elsewhere is a different device and must bring its own census. Coverage 42/42 is how §1's board cap is honoured: the board is sized to the route.
-      PASS block-l1619-device-existence — switch(es)=2 door(s)=2; allOffGoalReachable=false allOffShortest=null (UNSATISFIABLE — the required reading) par=14. allOffShortest is a restricted walk over the all-OFF subgraph. Measured null on 4/4 (all-OFF subgraph 64/259, 63/259, 56/467, 54/923 states with no goal in it) — the device's whole point: every approach to the goal is a door, so the switch is not a shortcut, it is the difference between solvable and not.
+      PASS block-l1619-device-existence — switch(es)=2 door(s)=2; allOffGoalReachable=false allOffShortest=null (UNSATISFIABLE — the required reading) par=14. allOffShortest is a restricted walk over the all-OFF subgraph. Measured null on 5/5 (all-OFF subgraph 64/259, 63/259, 56/467, 54/923 states with no goal in it) — the device's whole point: every approach to the goal is a door, so the switch is not a shortcut, it is the difference between solvable and not.
       PASS block-l1619-escalation-cut — Dexec=19.027027 > 14.969697 (re-attested on an isolated byte-copy of L1–L15 at a19a347, re-derived by scripts/attest-lv010-block.ts); identity Dexec − (par + 3·B) = 0.00e+0 (B=1.675676, T=0, R=0.000000). The cut is the frozen basis, not a moving one: the block's own members must not raise the filter they are judged by.
       PASS shortest-solution-presses-switch-and-crosses-door — par=14: routes=60; press-then-cross-door=60; …and that door is one of the refused tiles: routes=60; parRoutes=60 embedRoutes=60
       PASS refused-then-entered — refusedBeforeEnteredTiles=8 tiles=[4,0 4,1 4,2 4,3 4,4 4,5 5,5 6,4] (ORDERED reader — LV-007C); unordered companion refusedThenEnteredTiles=8 tiles=[4,0 4,1 4,2 4,3 4,4 4,5 5,5 6,4] (canonical #7, §8.5's acceptance carrier — the difference between the two is the trapped-refusal set, a beat no player can witness)
       PASS block-l1619-b-band — B=1.6757 vs [1.2500, 1.6875]; named excursion: none. §6.1.1's self-correcting guard says an out-of-band B must be named and the ramp re-checked on D_exec — never that the band may be widened. The band is re-derived from the live L1–L15 files by scripts/attest-lv010-block.ts on every run.
   MATCH        l018.json gates — 7 gate(s) [block-l1619-rung block-l1619-grid-coverage block-l1619-device-existence block-l1619-escalation-cut shortest-solution-presses-switch-and-crosses-door refused-then-entered block-l1619-b-band] · FAIL [] · policyViolations []
-      PASS block-l1619-rung — par=16 (solver shortest=16); this member expects 16; the derived ladder is 12 / 14 / 16 / 18 from BLOCK_L1619_IDS=[16, 17, 18, 19] (base par(L15) = 10 + step 2). The selection gate was the lower bound; the REGISTRATION law is the exact rung, because the block ships only after the rung has been measured on the landed bytes — a longer board under the same id would silently re-price the ladder.
+      PASS block-l1619-rung — par=16 (solver shortest=16); this member expects 16; the derived ladder is 12 / 14 / 16 / 18 / 20 from BLOCK_L1619_IDS=[16, 17, 18, 19, 20] (base par(L15) = 10 + step 2). The selection gate was the lower bound; the REGISTRATION law is the exact rung, because the block ships only after the rung has been measured on the landed bytes — a longer board under the same id would silently re-price the ladder.
       PASS block-l1619-grid-coverage — grid 7 × 6 (law: 7 × 6); distinctPositions=42 of 42. The grid is law, not decoration: the ceiling argument is a 7 × 6 census (the same seal on 7 × 7 reaches par 22 with a byte-identical shape and was refused as an escalation), so a member authored elsewhere is a different device and must bring its own census. Coverage 42/42 is how §1's board cap is honoured: the board is sized to the route.
-      PASS block-l1619-device-existence — switch(es)=3 door(s)=3; allOffGoalReachable=false allOffShortest=null (UNSATISFIABLE — the required reading) par=16. allOffShortest is a restricted walk over the all-OFF subgraph. Measured null on 4/4 (all-OFF subgraph 64/259, 63/259, 56/467, 54/923 states with no goal in it) — the device's whole point: every approach to the goal is a door, so the switch is not a shortcut, it is the difference between solvable and not.
+      PASS block-l1619-device-existence — switch(es)=3 door(s)=3; allOffGoalReachable=false allOffShortest=null (UNSATISFIABLE — the required reading) par=16. allOffShortest is a restricted walk over the all-OFF subgraph. Measured null on 5/5 (all-OFF subgraph 64/259, 63/259, 56/467, 54/923 states with no goal in it) — the device's whole point: every approach to the goal is a door, so the switch is not a shortcut, it is the difference between solvable and not.
       PASS block-l1619-escalation-cut — Dexec=20.907923 > 14.969697 (re-attested on an isolated byte-copy of L1–L15 at a19a347, re-derived by scripts/attest-lv010-block.ts); identity Dexec − (par + 3·B) = 0.00e+0 (B=1.635974, T=0, R=0.000000). The cut is the frozen basis, not a moving one: the block's own members must not raise the filter they are judged by.
       PASS shortest-solution-presses-switch-and-crosses-door — par=16: routes=189; press-then-cross-door=189; …and that door is one of the refused tiles: routes=189; parRoutes=189 embedRoutes=189
       PASS refused-then-entered — refusedBeforeEnteredTiles=9 tiles=[3,0 3,1 3,2 3,3 3,4 3,5 5,1 6,0 6,2] (ORDERED reader — LV-007C); unordered companion refusedThenEnteredTiles=9 tiles=[3,0 3,1 3,2 3,3 3,4 3,5 5,1 6,0 6,2] (canonical #7, §8.5's acceptance carrier — the difference between the two is the trapped-refusal set, a beat no player can witness)
       PASS block-l1619-b-band — B=1.6360 vs [1.2500, 1.6875]; named excursion: none. §6.1.1's self-correcting guard says an out-of-band B must be named and the ramp re-checked on D_exec — never that the band may be widened. The band is re-derived from the live L1–L15 files by scripts/attest-lv010-block.ts on every run.
-  MATCH        l019.json gates — 8 gate(s) [block-l1619-rung block-l1619-grid-coverage block-l1619-device-existence block-l1619-escalation-cut shortest-solution-presses-switch-and-crosses-door refused-then-entered block-l1619-b-band block-l1619-tail-ceiling] · FAIL [] · policyViolations []
-      PASS block-l1619-rung — par=18 (solver shortest=18); this member expects 18; the derived ladder is 12 / 14 / 16 / 18 from BLOCK_L1619_IDS=[16, 17, 18, 19] (base par(L15) = 10 + step 2). The selection gate was the lower bound; the REGISTRATION law is the exact rung, because the block ships only after the rung has been measured on the landed bytes — a longer board under the same id would silently re-price the ladder.
+  MATCH        l019.json gates — 7 gate(s) [block-l1619-rung block-l1619-grid-coverage block-l1619-device-existence block-l1619-escalation-cut shortest-solution-presses-switch-and-crosses-door refused-then-entered block-l1619-b-band] · FAIL [] · policyViolations []
+      PASS block-l1619-rung — par=18 (solver shortest=18); this member expects 18; the derived ladder is 12 / 14 / 16 / 18 / 20 from BLOCK_L1619_IDS=[16, 17, 18, 19, 20] (base par(L15) = 10 + step 2). The selection gate was the lower bound; the REGISTRATION law is the exact rung, because the block ships only after the rung has been measured on the landed bytes — a longer board under the same id would silently re-price the ladder.
       PASS block-l1619-grid-coverage — grid 7 × 6 (law: 7 × 6); distinctPositions=42 of 42. The grid is law, not decoration: the ceiling argument is a 7 × 6 census (the same seal on 7 × 7 reaches par 22 with a byte-identical shape and was refused as an escalation), so a member authored elsewhere is a different device and must bring its own census. Coverage 42/42 is how §1's board cap is honoured: the board is sized to the route.
-      PASS block-l1619-device-existence — switch(es)=4 door(s)=4; allOffGoalReachable=false allOffShortest=null (UNSATISFIABLE — the required reading) par=18. allOffShortest is a restricted walk over the all-OFF subgraph. Measured null on 4/4 (all-OFF subgraph 64/259, 63/259, 56/467, 54/923 states with no goal in it) — the device's whole point: every approach to the goal is a door, so the switch is not a shortcut, it is the difference between solvable and not.
+      PASS block-l1619-device-existence — switch(es)=4 door(s)=4; allOffGoalReachable=false allOffShortest=null (UNSATISFIABLE — the required reading) par=18. allOffShortest is a restricted walk over the all-OFF subgraph. Measured null on 5/5 (all-OFF subgraph 64/259, 63/259, 56/467, 54/923 states with no goal in it) — the device's whole point: every approach to the goal is a door, so the switch is not a shortcut, it is the difference between solvable and not.
       PASS block-l1619-escalation-cut — Dexec=22.885157 > 14.969697 (re-attested on an isolated byte-copy of L1–L15 at a19a347, re-derived by scripts/attest-lv010-block.ts); identity Dexec − (par + 3·B) = 0.00e+0 (B=1.628386, T=0, R=0.000000). The cut is the frozen basis, not a moving one: the block's own members must not raise the filter they are judged by.
       PASS shortest-solution-presses-switch-and-crosses-door — par=18: routes=231; press-then-cross-door=231; …and that door is one of the refused tiles: routes=231; parRoutes=231 embedRoutes=231
       PASS refused-then-entered — refusedBeforeEnteredTiles=10 tiles=[3,0 3,1 3,2 3,3 3,4 3,5 4,4 5,3 5,5 6,4] (ORDERED reader — LV-007C); unordered companion refusedThenEnteredTiles=10 tiles=[3,0 3,1 3,2 3,3 3,4 3,5 4,4 5,3 5,5 6,4] (canonical #7, §8.5's acceptance carrier — the difference between the two is the trapped-refusal set, a beat no player can witness)
       PASS block-l1619-b-band — B=1.6284 vs [1.2500, 1.6875]; named excursion: none. §6.1.1's self-correcting guard says an out-of-band B must be named and the ramp re-checked on D_exec — never that the band may be widened. The band is re-derived from the live L1–L15 files by scripts/attest-lv010-block.ts on every run.
-      PASS block-l1619-tail-ceiling — par=18 (ceiling 18); Dexec=22.885157 (ceiling 22.885157). The equality is deliberate and it is the block's HONEST STOP: the census measured par 18 as the ceiling at every seal arity on 7 × 6 (arity 2 → 16, arity 3 → 18, arity 4 → 18), so there is no rung above this one to climb to with this device. A par-20 rung needs a NEW mechanism (a gauntlet: every approach to the goal's ring itself behind a door; or a sealed landing: the portal lands in a pocket whose exit is a door — an ordered two-step chain) — neither is built, and L20 is deliberately NOT authored. Widening this number instead of building a mechanism is what this gate forbids.
+  MATCH        l020.json gates — 8 gate(s) [block-l1619-rung block-l1619-grid-coverage block-l1619-device-existence block-l1619-escalation-cut shortest-solution-presses-switch-and-crosses-door refused-then-entered block-l1619-b-band block-l1619-tail-ceiling] · FAIL [] · policyViolations []
+      PASS block-l1619-rung — par=20 (solver shortest=20); this member expects 20; the derived ladder is 12 / 14 / 16 / 18 / 20 from BLOCK_L1619_IDS=[16, 17, 18, 19, 20] (base par(L15) = 10 + step 2). The selection gate was the lower bound; the REGISTRATION law is the exact rung, because the block ships only after the rung has been measured on the landed bytes — a longer board under the same id would silently re-price the ladder.
+      PASS block-l1619-grid-coverage — grid 7 × 6 (law: 7 × 6); distinctPositions=42 of 42. The grid is law, not decoration: the ceiling argument is a 7 × 6 census (the same seal on 7 × 7 reaches par 22 with a byte-identical shape and was refused as an escalation), so a member authored elsewhere is a different device and must bring its own census. Coverage 42/42 is how §1's board cap is honoured: the board is sized to the route.
+      PASS block-l1619-device-existence — switch(es)=5 door(s)=5; allOffGoalReachable=false allOffShortest=null (UNSATISFIABLE — the required reading) par=20. allOffShortest is a restricted walk over the all-OFF subgraph. Measured null on 5/5 (all-OFF subgraph 64/259, 63/259, 56/467, 54/923 states with no goal in it) — the device's whole point: every approach to the goal is a door, so the switch is not a shortcut, it is the difference between solvable and not.
+      PASS block-l1619-escalation-cut — Dexec=24.729412 > 14.969697 (re-attested on an isolated byte-copy of L1–L15 at a19a347, re-derived by scripts/attest-lv010-block.ts); identity Dexec − (par + 3·B) = 0.00e+0 (B=1.576471, T=0, R=0.000000). The cut is the frozen basis, not a moving one: the block's own members must not raise the filter they are judged by.
+      PASS shortest-solution-presses-switch-and-crosses-door — par=20: routes=252; press-then-cross-door=252; …and that door is one of the refused tiles: routes=252; parRoutes=252 embedRoutes=252
+      PASS refused-then-entered — refusedBeforeEnteredTiles=14 tiles=[3,0 3,1 3,2 3,3 3,4 3,5 4,1 4,4 5,0 5,2 5,3 5,5 6,3 6,4] (ORDERED reader — LV-007C); unordered companion refusedThenEnteredTiles=14 tiles=[3,0 3,1 3,2 3,3 3,4 3,5 4,1 4,4 5,0 5,2 5,3 5,5 6,3 6,4] (canonical #7, §8.5's acceptance carrier — the difference between the two is the trapped-refusal set, a beat no player can witness)
+      PASS block-l1619-b-band — B=1.5765 vs [1.2500, 1.6875]; named excursion: none. §6.1.1's self-correcting guard says an out-of-band B must be named and the ramp re-checked on D_exec — never that the band may be widened. The band is re-derived from the live L1–L15 files by scripts/attest-lv010-block.ts on every run.
+      PASS block-l1619-tail-ceiling — par=20 (ceiling 20); Dexec=24.729412 (ceiling 24.729412). The equality is deliberate and it is the block's HONEST STOP: the census measured par 18 as the ceiling at every seal arity on 7 × 6 (arity 2 → 16, arity 3 → 18, arity 4 → 18) — rung 5 could not be built on that device, so R-003d device. re-registered this clause on a NEW mechanism instead of a longer walk: the sealed landing, where the portal hands the player a new start inside a walk-sealed pocket whose only exit is a door, so the shortest plan is the ORDERED land → press → leave → press chain (L20; ADR-design-0004; 252/252 par routes, measured). Widening this number instead of building a mechanism is what this gate forbids.
 
 [5/6] the ladder — exact rungs, strict rise, terminal ceiling
-  MATCH      the derived ladder is 12 / 14 / 16 / 18 — BLOCK_L1619_PAR_EXPECTATION = [12, 14, 16, 18]
+  MATCH      the derived ladder is 12 / 14 / 16 / 18 / 20 — BLOCK_L1619_PAR_EXPECTATION = [12, 14, 16, 18, 20] over BLOCK_L1619_IDS=[16, 17, 18, 19, 20] (R-003d: five rungs, the derived rung matched exactly on every member - the ladder is a re-derivation, not a second literal)
   MATCH        l016.json sits exactly on its rung — par 12 · rung 12
   MATCH        l017.json sits exactly on its rung — par 14 · rung 14
   MATCH        l018.json sits exactly on its rung — par 16 · rung 16
   MATCH        l019.json sits exactly on its rung — par 18 · rung 18
+  MATCH        l020.json sits exactly on its rung — par 20 · rung 20
   MATCH        rung rise 16 → 17 — D_exec 17.100000 → 19.027027 (+1.927027)
   MATCH        rung rise 17 → 18 — D_exec 19.027027 → 20.907923 (+1.880896)
   MATCH        rung rise 18 → 19 — D_exec 20.907923 → 22.885157 (+1.977234)
+  MATCH        rung rise 19 → 20 — D_exec 22.885157 → 24.729412 (+1.844255)
   MATCH        l016.json clears the frozen cut — D_exec 17.100000 > 14.969697
   MATCH        l017.json clears the frozen cut — D_exec 19.027027 > 14.969697
   MATCH        l018.json clears the frozen cut — D_exec 20.907923 > 14.969697
   MATCH        l019.json clears the frozen cut — D_exec 22.885157 > 14.969697
-  MATCH      the last member sits on the terminal ceiling — D_exec 22.885157 · ceiling 22.885157
+  MATCH        l020.json clears the frozen cut — D_exec 24.729412 > 14.969697
+  MATCH      the last member sits on the terminal ceiling — D_exec 24.729412 · ceiling 24.729412
 
 [6/6] negative controls — one per new gate, refused BY NAME
   CAUGHT  block-l1619-rung
@@ -164,7 +155,7 @@ origin:     3cc6df2:src/levels/candidates (the shelf the bytes were copied from)
           measured: FAIL gates [block-l1619-rung block-l1619-tail-ceiling] · codes [gate-block-l1619-rung gate-block-l1619-tail-ceiling] · solvable=true · par=16
   MATCH      every new gate has exactly one control — 6/6 caught · uncovered []
 
-RESULT: REGISTERED-MATCH — the four rungs are byte-identical to 3cc6df2:src/levels/candidates, every booked
+RESULT: REGISTERED-MATCH — the five rungs are byte-identical to the shelves they were copied from (L16–L19 3cc6df2:src/levels/candidates · L20 2ea83ac:src/levels/candidates), every booked
 number (par / D_exec / B / routes / refusals / coverage / all-OFF / region) is reproduced by the program
-solver on the registered bytes, the ladder is 12 / 14 / 16 / 18 rising strictly to the 22.885157 ceiling,
+solver on the registered bytes, the ladder is 12 / 14 / 16 / 18 / 20 rising strictly to the 24.729412 ceiling,
 and 6/6 gate controls are refused by name.
