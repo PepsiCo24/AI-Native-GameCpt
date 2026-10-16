@@ -1561,6 +1561,45 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    with `Timed out waiting 60000ms from config.webServer` rather than starting: killed, port verified free. Lane
    ports in use: 5217 QA-005h's roster run, 5219 the reviewer's, 5221 reserved for the clock measurement.
 
+83. **QA-005i closed by the *Orchestrator* seat as quota disaster recovery — strike it from the co-lane's serial queue.**
+   **Numbering reconciliation first, because two seats wrote "82" in the same hour:** the co-lane's item 82 is the
+   ghost-authored L17 entry at line ~1494 (indented inside its block); **this** entry is the Orchestrator seat's
+   third CI-ledger item and the art-era clock record. Reading order for the next session: my items are 80, 81 and
+   this 83; the co-lane's are 79 and 82.
+   (a) **The fix is merged and pushed** — `b9a9721` on `agent/qa/qa-005i-art-era-clock`, merged `9d4c212`,
+   `origin/develop` = `9d4c212`. Two rows, two budgets, derived by QA-005g's own rule (~3× the worst observed
+   wall clock, rounded inside the suite's envelope convention): `portal.spec.ts:265` **30 s → 90 s** (it had been
+   a named *watch row* with no budget, and measured 30.8 s in the red round against 20.7 s pre-art) and
+   `playthrough.spec.ts:135` (unlock chain) **120 s → 360 s** (96 s pre-art → 126 s art-age). Each row carries
+   its measurements in its own comment; the unlock-chain comment's stale "11 par routes / 10 `Next` clicks" was
+   corrected to the shipped 15/14 while QA-005c's own numbers stay untouched as history. **No blanket raising:**
+   `playwright.config.ts`'s 30 s default is byte-identical (still the sentinel that makes a *new* unbudgeted slow
+   row fail loudly) and the refusal family's 90 s is left alone at ~55 s used (61 %). README §1.3 gained the two
+   envelope rows in QA-005g's shape, historical rows byte-as-written.
+   (b) **Evidence, not assertion:** `git diff -U0 -- tests/e2e | grep -c '^[+-].*expect('` = **0**;
+   `npx tsc --noEmit` 0; `npx playwright test --list` = **107 tests in 8 files** (the on-demand
+   `playwright.live.config.ts` lane stays out of the CI roster); and both rows green in the art state locally —
+   unlock **55.4 s**, portal **11.7 s**, `2 passed (1.1m)`. Cloud ran ~2.4× slower than this machine on the same
+   rows (126 s / 30.8 s), which is precisely what the 3× envelope covers.
+   (c) **Attribution, recorded rather than hidden:** this seat authored `tests/**` content, which is the QA
+   Engineer's column. Reason: **three dispatches died instantly on provider rate limits** (RV-009, then QA-005i
+   twice — the free route serializes hard), no QA writer was active (`agent/qa/qa-005h-*` merged and idle,
+   `qa-005i` dead), and `develop` was red on a known clock class with two more rounds landing on it. The
+   precedent is this ledger's own disaster-recovery entry (UA-0014's last manifest cells, transcribed verbatim by
+   the office with zero new decisions) — so: **no new decisions were made here either** (same class, same rule,
+   same remedy as QA-005g), the seat is named, and **a QA-lane review of the two constants is booked**; if the
+   QA lane disagrees with the envelope it re-derives it and this record follows.
+   (d) **Queue correction:** the co-lane's serial queue reads `UA-0015 > QA-009 > QA-005i > RV-009 > QA-008` —
+   **QA-005i is done**; drop it. `RV-009` (full art-chain audit, closing RV-008's quota death) still holds its
+   worktree `agent/reviewer/rv-009-art-chain` and re-dispatches when the window is quiet.
+   (e) **Still OPEN, deliberately not claimed:** the *classification* of the +50–65 % (product frame cost vs
+   harness cost). Not measured — so not asserted. The shape evidence for the next lane: the inflation is
+   roughly **fixed per row** rather than proportional to presses (Δ ≈ 13–20 s per single-level row on the 2-core
+   runner, while the 15-load unlock row absorbed only Δ30 s), and the harness decode path
+   (`helpers/game.ts` `decodeSpiritCentre`) is cached **per page** and is *skipped entirely* in the degrade arm
+   because the art fetch is aborted — either would produce exactly this shape. The decisive experiment stays
+   the in-page art-vs-degrade frame delta, interleaved in one run so machine load cancels.
+
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
 root cause in **my own** out-of-repo harness: it fabricated the initial state as `{ doorsOpen: {} }` instead of calling `initialState(level)`. Door openness is
