@@ -15,8 +15,10 @@
  *
  * What it proves, in order:
  *
- *   0. the CUT (`max D_exec` over `src/levels/*.json`) and `par(L15)` are
- *      re-measured from the shipped dataset — the rung's obligation is never typed;
+ *   0. the CUT (`max D_exec` over `src/levels/*.json`, **excluding the L16–L19
+ *      ladder itself** — R-003c: a registered block must not raise the filter it is
+ *      judged by) and `par(L15)` are re-measured from the shipped dataset — the
+ *      rung's obligation is never typed;
  *   1. `par` is **stamped by the solver** (`analyse(...).shortestSolution`), not
  *      read from the file's claim: a mismatch is a REJECT, not a softer target;
  *   2. the ten rung gates (region / escalation / par-step / latch-grade /
@@ -38,7 +40,12 @@ import { LevelSchema, coordKey, validateLevel } from "@/core/level";
 import type { ReachableGraph } from "@/core/solver/bfs";
 import { analyse, explore, forEachParRoute } from "@/core/solver/bfs";
 import { analyseDifficulty } from "@/core/solver/difficulty";
-import { allOffShortestSolution, auditLevel, firingSwitches } from "@/core/solver/policy";
+import {
+  BLOCK_L1619_IDS,
+  allOffShortestSolution,
+  auditLevel,
+  firingSwitches,
+} from "@/core/solver/policy";
 
 const LEVELS_DIR = fileURLToPath(new URL("../src/levels/", import.meta.url));
 const argOf = (name: string): string | null => {
@@ -73,17 +80,30 @@ function shipped(): { file: string; level: Level }[] {
     }));
 }
 
-function measureCut(): { floor: number; l15Par: number; n: number } {
+function measureCut(): { floor: number; l15Par: number; n: number; basis: readonly number[] } {
   let floor = Number.NEGATIVE_INFINITY;
   let l15Par = 0;
   let n = 0;
+  const basis: number[] = [];
   for (const { level } of shipped()) {
     n += 1;
+    // ── The basis is FROZEN at the world below the ladder under construction ────
+    // R-003c: once L16–L19 are registered, they are *in the root* — and the cut is
+    // defined as "the highest D_exec this candidate must beat", i.e. the world it is
+    // climbing out of. Letting the ladder raise its own filter would make the tool
+    // reject the blocks it proved (L16's 17.100000 is not > L19's 22.885157), which
+    // is an instrument artefact, never a finding. So the members of the L16–L19
+    // ladder are excluded from the cut basis, by the law's own id list
+    // (`BLOCK_L1619_IDS`), and the basis is printed. The rung-to-rung rise, which the
+    // cut cannot see, is judged by `block-l1619-rung` / the ladder rows of
+    // `scripts/attest-lv010-block.ts` and by `blockL1619Gates`.
+    if (BLOCK_L1619_IDS.includes(level.id)) continue;
+    basis.push(level.id);
     const d = analyseDifficulty(level, explore(level));
     if (d.Dexec !== null && d.Dexec > floor) floor = d.Dexec;
     if (level.id === 15) l15Par = level.par;
   }
-  return { floor, l15Par, n };
+  return { floor, l15Par, n, basis };
 }
 
 /** The rung gates. `floor`/`l15Par` arrive measured; the board arrives from disk. */
@@ -210,7 +230,8 @@ function judge(level: Level, floor: number, l15Par: number): Verdict {
 
 const cut = measureCut();
 console.log(`prove-candidate — CUT re-measured from the shipped set: D_exec max = ${cut.floor.toFixed(6)} ` +
-  `· par(L15) = ${String(cut.l15Par)} · ${String(cut.n)} shipped files`);
+  `· par(L15) = ${String(cut.l15Par)} · ${String(cut.n)} shipped files · basis ids [${cut.basis.join(", ")}] ` +
+  `(the L16–L19 ladder is excluded from its own filter — see measureCut)`);
 console.log(`candidate ${CANDIDATE} · rung ${String(RUNG)}`);
 
 const raw = JSON.parse(readFileSync(CANDIDATE, "utf8")) as unknown;
