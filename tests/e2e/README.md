@@ -251,6 +251,14 @@ runner measured **7 failed / 79 passed (16.9 min)** with `--retries=1`:
 | `transient.spec.ts:116` / `:257` (`frames > 15`, `gridMs < 60`) | local-calibrated constants | runner-aware: the idle frame grid is **measured first**, the recorder window is sized from it, and the `gridMs` ceiling is `max(60, 2 × idle)` |
 | `mobile.mobile.spec.ts:207` R-T4, `Expected: 1, Received: 0` | gesture commit vs HUD read | cached CDP session + a frame after `touchEnd` + the bounded `expectMoves` poll |
 
+**Both crossed rows crossed twice (QA-009).** The two QA-005i rows above went red *again* in
+run **38860398944** (`d9a83dd`), on the same messages and zero assertion flips —
+`Test timeout of 30000ms exceeded.` / `Test timeout of 120000ms exceeded.` — while run
+**38861480689** (`e469e72`, **byte-identical test tree**) went **107 passed / 0 failed (20.3 m)**.
+Class: contention on top of the systematic +50–65 % art-era inflation — wall clock, never an
+assertion; the budgets above are the art-era ceilings, sized by the budget-when-crossed law
+(item 77(d)) at ≥2.5× the observed art-era row. No other row is budgeted.
+
 The `frames > 15` tooth survives by construction: the window is `max(700 ms,
 24 × idle grid)`, so it spans ≥ ~24 of the *runner's own* frames on any machine
 (local: 700 ms; a 125 ms runner: 3 s). The `gridMs` guard's semantic stays "the
