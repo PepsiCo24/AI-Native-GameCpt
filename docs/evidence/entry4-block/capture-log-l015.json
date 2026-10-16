@@ -1,0 +1,1350 @@
+[
+  {
+    "where": "desktop geometry",
+    "viewport": "1000x620 CSS @2",
+    "canvas": [
+      2000,
+      984
+    ],
+    "plateSpanDevice": [
+      920,
+      920
+    ],
+    "cellSizeDevice": 131,
+    "pitchCSS": 65.5,
+    "method": "plate-edge derivation (Entry-3 pass-2 class): plate extent vs page-bg corner, cellSize = floor(span/longestSide)"
+  },
+  {
+    "shot": "l015_initial",
+    "kind": "initial",
+    "atLeg": 0,
+    "viewport": "desktop",
+    "h": {
+      "lvl": "15",
+      "moves": "0",
+      "phase": "白昼",
+      "won": false
+    },
+    "legMatch": true,
+    "expect": {
+      "moves": 0,
+      "phase": "A"
+    },
+    "probes": [
+      {
+        "role": "portalNear",
+        "tile": [
+          0,
+          0
+        ],
+        "ground": [
+          255,
+          253,
+          247
+        ],
+        "inkPct": 14.8,
+        "deepInkPct": 12.8
+      },
+      {
+        "role": "portalFar",
+        "tile": [
+          5,
+          0
+        ],
+        "ground": [
+          242,
+          234,
+          219
+        ],
+        "inkPct": 14.8,
+        "deepInkPct": 12.8
+      },
+      {
+        "role": "door",
+        "tile": [
+          5,
+          3
+        ],
+        "ground": [
+          46,
+          98,
+          184
+        ],
+        "inkPct": 42.6,
+        "deepInkPct": 42.6
+      },
+      {
+        "role": "switch",
+        "tile": [
+          5,
+          1
+        ],
+        "ground": [
+          255,
+          253,
+          247
+        ],
+        "inkPct": 14.2,
+        "deepInkPct": 11.8
+      },
+      {
+        "role": "goal",
+        "tile": [
+          5,
+          4
+        ],
+        "ground": [
+          242,
+          234,
+          219
+        ],
+        "inkPct": 17.4,
+        "deepInkPct": 15.7
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          0
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          2
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          4
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          1
+        ],
+        "ground": [
+          187,
+          176,
+          155
+        ],
+        "inkPct": 4.6,
+        "deepInkPct": 4.2
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          3
+        ],
+        "ground": [
+          187,
+          176,
+          155
+        ],
+        "inkPct": 4.6,
+        "deepInkPct": 4.2
+      }
+    ],
+    "pairDiff": {
+      "mismatches": 0,
+      "pixels": 8281
+    },
+    "bytes": 52607
+  },
+  {
+    "shot": "l015_m5_seam",
+    "kind": "seam",
+    "atLeg": 5,
+    "viewport": "desktop",
+    "h": {
+      "lvl": "15",
+      "moves": "5",
+      "phase": "夜晚",
+      "won": false
+    },
+    "legMatch": true,
+    "expect": {
+      "moves": 5,
+      "phase": "B",
+      "player": [
+        1,
+        0
+      ]
+    },
+    "probes": [
+      {
+        "role": "portalNear",
+        "tile": [
+          0,
+          0
+        ],
+        "ground": [
+          34,
+          40,
+          74
+        ],
+        "inkPct": 21,
+        "deepInkPct": 18.2
+      },
+      {
+        "role": "portalFar",
+        "tile": [
+          5,
+          0
+        ],
+        "ground": [
+          42,
+          49,
+          87
+        ],
+        "inkPct": 21,
+        "deepInkPct": 18.2
+      },
+      {
+        "role": "door",
+        "tile": [
+          5,
+          3
+        ],
+        "ground": [
+          34,
+          40,
+          74
+        ],
+        "inkPct": 26.8,
+        "deepInkPct": 25.6
+      },
+      {
+        "role": "switch",
+        "tile": [
+          5,
+          1
+        ],
+        "ground": [
+          34,
+          40,
+          74
+        ],
+        "inkPct": 14.2,
+        "deepInkPct": 11.8
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          0
+        ],
+        "ground": [
+          88,
+          87,
+          134
+        ],
+        "inkPct": 5.1,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          2
+        ],
+        "ground": [
+          88,
+          87,
+          134
+        ],
+        "inkPct": 5.1,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          4
+        ],
+        "ground": [
+          88,
+          87,
+          134
+        ],
+        "inkPct": 5.1,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          1
+        ],
+        "ground": [
+          167,
+          149,
+          238
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          3
+        ],
+        "ground": [
+          167,
+          149,
+          238
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      }
+    ],
+    "pairDiff": {
+      "mismatches": 0,
+      "pixels": 8281
+    },
+    "bytes": 50979
+  },
+  {
+    "shot": "l015_m6_crossing",
+    "kind": "crossing",
+    "atLeg": 6,
+    "viewport": "desktop",
+    "h": {
+      "lvl": "15",
+      "moves": "6",
+      "phase": "白昼",
+      "won": false
+    },
+    "legMatch": true,
+    "expect": {
+      "moves": 6,
+      "phase": "A",
+      "player": [
+        5,
+        0
+      ]
+    },
+    "probes": [
+      {
+        "role": "door",
+        "tile": [
+          5,
+          3
+        ],
+        "ground": [
+          46,
+          98,
+          184
+        ],
+        "inkPct": 42.6,
+        "deepInkPct": 42.6
+      },
+      {
+        "role": "portalFarLanded",
+        "tile": [
+          5,
+          0
+        ],
+        "ground": [
+          246,
+          222,
+          158
+        ],
+        "inkPct": 21.2,
+        "deepInkPct": 19.3
+      },
+      {
+        "role": "entryEnd",
+        "tile": [
+          0,
+          0
+        ],
+        "ground": [
+          255,
+          253,
+          247
+        ],
+        "inkPct": 14.8,
+        "deepInkPct": 12.8
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          0
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          2
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          4
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          1
+        ],
+        "ground": [
+          187,
+          176,
+          155
+        ],
+        "inkPct": 4.6,
+        "deepInkPct": 4.2
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          3
+        ],
+        "ground": [
+          187,
+          176,
+          155
+        ],
+        "inkPct": 4.6,
+        "deepInkPct": 4.2
+      }
+    ],
+    "entryResidual": {
+      "mismatches": 0,
+      "pixels": 8281
+    },
+    "actorResidual": {
+      "actorColor": [
+        246,
+        222,
+        158
+      ],
+      "entryActorPx": 0,
+      "entryTotalPx": 8281,
+      "farActorPx": 6477,
+      "farTotalPx": 8281
+    },
+    "entryResidualNote": "crossing frame is in the SAME phase as the initial frame — the mask delta is a valid like-for-like residual metric",
+    "bytes": 50800
+  },
+  {
+    "shot": "l015_m7_latch",
+    "kind": "latch",
+    "atLeg": 7,
+    "viewport": "desktop",
+    "h": {
+      "lvl": "15",
+      "moves": "7",
+      "phase": "夜晚",
+      "won": false
+    },
+    "legMatch": true,
+    "expect": {
+      "moves": 7,
+      "phase": "B",
+      "player": [
+        5,
+        1
+      ]
+    },
+    "probes": [
+      {
+        "role": "portalNear",
+        "tile": [
+          0,
+          0
+        ],
+        "ground": [
+          34,
+          40,
+          74
+        ],
+        "inkPct": 21,
+        "deepInkPct": 18.2
+      },
+      {
+        "role": "portalFar",
+        "tile": [
+          5,
+          0
+        ],
+        "ground": [
+          42,
+          49,
+          87
+        ],
+        "inkPct": 21,
+        "deepInkPct": 18.2
+      },
+      {
+        "role": "door",
+        "tile": [
+          5,
+          3
+        ],
+        "ground": [
+          143,
+          196,
+          255
+        ],
+        "inkPct": 42.6,
+        "deepInkPct": 40.4
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          0
+        ],
+        "ground": [
+          88,
+          87,
+          134
+        ],
+        "inkPct": 5.1,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          2
+        ],
+        "ground": [
+          88,
+          87,
+          134
+        ],
+        "inkPct": 5.1,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          4
+        ],
+        "ground": [
+          88,
+          87,
+          134
+        ],
+        "inkPct": 5.1,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          1
+        ],
+        "ground": [
+          167,
+          149,
+          238
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          3
+        ],
+        "ground": [
+          167,
+          149,
+          238
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      }
+    ],
+    "bytes": 49765
+  },
+  {
+    "shot": "l015_m8_postlatch",
+    "kind": "postlatch",
+    "atLeg": 8,
+    "viewport": "desktop",
+    "h": {
+      "lvl": "15",
+      "moves": "8",
+      "phase": "白昼",
+      "won": false
+    },
+    "legMatch": true,
+    "expect": {
+      "moves": 8,
+      "phase": "A",
+      "player": [
+        5,
+        2
+      ]
+    },
+    "probes": [
+      {
+        "role": "portalNear",
+        "tile": [
+          0,
+          0
+        ],
+        "ground": [
+          255,
+          253,
+          247
+        ],
+        "inkPct": 14.8,
+        "deepInkPct": 12.8
+      },
+      {
+        "role": "portalFar",
+        "tile": [
+          5,
+          0
+        ],
+        "ground": [
+          242,
+          234,
+          219
+        ],
+        "inkPct": 14.8,
+        "deepInkPct": 12.8
+      },
+      {
+        "role": "door",
+        "tile": [
+          5,
+          3
+        ],
+        "ground": [
+          255,
+          253,
+          247
+        ],
+        "inkPct": 26.8,
+        "deepInkPct": 26.8
+      },
+      {
+        "role": "switch",
+        "tile": [
+          5,
+          1
+        ],
+        "ground": [
+          255,
+          253,
+          247
+        ],
+        "inkPct": 15.2,
+        "deepInkPct": 12.8
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          0
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          2
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          4
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          1
+        ],
+        "ground": [
+          187,
+          176,
+          155
+        ],
+        "inkPct": 4.6,
+        "deepInkPct": 4.2
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          3
+        ],
+        "ground": [
+          187,
+          176,
+          155
+        ],
+        "inkPct": 4.6,
+        "deepInkPct": 4.2
+      }
+    ],
+    "bytes": 51477
+  },
+  {
+    "shot": "l015_win",
+    "kind": "win",
+    "atLeg": 10,
+    "viewport": "desktop",
+    "h": {
+      "lvl": "15",
+      "moves": "10",
+      "phase": "白昼",
+      "won": true
+    },
+    "legMatch": true,
+    "expect": {
+      "moves": 10,
+      "phase": "A",
+      "player": [
+        5,
+        4
+      ]
+    },
+    "winPanelInnerText": "L 15 moves 10 白昼 / Light 原型结束 / Prototype over. L1–L15 cleared · L 15: moves 10 DEV PLACEHOLDER ART — NOT FINAL Undo Restart 原型结束 / Prototype over L1–L15 cleared · L 15: moves 10 Replay",
+    "bytes": 92457
+  },
+  {
+    "where": "mobile geometry",
+    "viewport": "390x844 CSS @2",
+    "canvas": [
+      780,
+      1432
+    ],
+    "plateSpanDevice": [
+      716,
+      716
+    ],
+    "cellSizeDevice": 102,
+    "pitchCSS": 51,
+    "method": "plate-edge derivation (Entry-3 pass-2 class): plate extent vs page-bg corner, cellSize = floor(span/longestSide)"
+  },
+  {
+    "shot": "mobile_390_l015_initial",
+    "kind": "initial",
+    "atLeg": 0,
+    "viewport": "mobile",
+    "h": {
+      "lvl": "15",
+      "moves": "0",
+      "phase": "白昼",
+      "won": false
+    },
+    "legMatch": true,
+    "expect": {
+      "moves": 0,
+      "phase": "A"
+    },
+    "probes": [
+      {
+        "role": "portalNear",
+        "tile": [
+          0,
+          0
+        ],
+        "ground": [
+          255,
+          253,
+          247
+        ],
+        "inkPct": 18.5,
+        "deepInkPct": 16
+      },
+      {
+        "role": "portalFar",
+        "tile": [
+          5,
+          0
+        ],
+        "ground": [
+          242,
+          234,
+          219
+        ],
+        "inkPct": 18.5,
+        "deepInkPct": 16
+      },
+      {
+        "role": "door",
+        "tile": [
+          5,
+          3
+        ],
+        "ground": [
+          46,
+          98,
+          184
+        ],
+        "inkPct": 45.2,
+        "deepInkPct": 45.2
+      },
+      {
+        "role": "switch",
+        "tile": [
+          5,
+          1
+        ],
+        "ground": [
+          255,
+          253,
+          247
+        ],
+        "inkPct": 16.9,
+        "deepInkPct": 15.1
+      },
+      {
+        "role": "goal",
+        "tile": [
+          5,
+          4
+        ],
+        "ground": [
+          242,
+          234,
+          219
+        ],
+        "inkPct": 20.6,
+        "deepInkPct": 18.9
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          0
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          2
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          4
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          1
+        ],
+        "ground": [
+          187,
+          176,
+          155
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          3
+        ],
+        "ground": [
+          187,
+          176,
+          155
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      }
+    ],
+    "pairDiff": {
+      "mismatches": 0,
+      "pixels": 5184
+    },
+    "bytes": 42161
+  },
+  {
+    "shot": "mobile_390_l015_m5_seam",
+    "kind": "seam",
+    "atLeg": 5,
+    "viewport": "mobile",
+    "h": {
+      "lvl": "15",
+      "moves": "5",
+      "phase": "夜晚",
+      "won": false
+    },
+    "legMatch": true,
+    "expect": {
+      "moves": 5,
+      "phase": "B",
+      "player": [
+        1,
+        0
+      ]
+    },
+    "probes": [
+      {
+        "role": "portalNear",
+        "tile": [
+          0,
+          0
+        ],
+        "ground": [
+          34,
+          40,
+          74
+        ],
+        "inkPct": 26,
+        "deepInkPct": 22.8
+      },
+      {
+        "role": "portalFar",
+        "tile": [
+          5,
+          0
+        ],
+        "ground": [
+          42,
+          49,
+          87
+        ],
+        "inkPct": 26,
+        "deepInkPct": 22.8
+      },
+      {
+        "role": "door",
+        "tile": [
+          5,
+          3
+        ],
+        "ground": [
+          34,
+          40,
+          74
+        ],
+        "inkPct": 27.2,
+        "deepInkPct": 25.9
+      },
+      {
+        "role": "switch",
+        "tile": [
+          5,
+          1
+        ],
+        "ground": [
+          34,
+          40,
+          74
+        ],
+        "inkPct": 16.9,
+        "deepInkPct": 15.1
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          0
+        ],
+        "ground": [
+          88,
+          87,
+          134
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          2
+        ],
+        "ground": [
+          88,
+          87,
+          134
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          4
+        ],
+        "ground": [
+          88,
+          87,
+          134
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          1
+        ],
+        "ground": [
+          167,
+          149,
+          238
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          3
+        ],
+        "ground": [
+          167,
+          149,
+          238
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      }
+    ],
+    "pairDiff": {
+      "mismatches": 0,
+      "pixels": 5184
+    },
+    "bytes": 40287
+  },
+  {
+    "shot": "mobile_390_l015_m6_crossing",
+    "kind": "crossing",
+    "atLeg": 6,
+    "viewport": "mobile",
+    "h": {
+      "lvl": "15",
+      "moves": "6",
+      "phase": "白昼",
+      "won": false
+    },
+    "legMatch": true,
+    "expect": {
+      "moves": 6,
+      "phase": "A",
+      "player": [
+        5,
+        0
+      ]
+    },
+    "probes": [
+      {
+        "role": "portalNear",
+        "tile": [
+          0,
+          0
+        ],
+        "ground": [
+          255,
+          253,
+          247
+        ],
+        "inkPct": 18.5,
+        "deepInkPct": 16
+      },
+      {
+        "role": "portalFar",
+        "tile": [
+          5,
+          0
+        ],
+        "ground": [
+          246,
+          222,
+          158
+        ],
+        "inkPct": 24.2,
+        "deepInkPct": 21.5
+      },
+      {
+        "role": "door",
+        "tile": [
+          5,
+          3
+        ],
+        "ground": [
+          46,
+          98,
+          184
+        ],
+        "inkPct": 45.2,
+        "deepInkPct": 45.2
+      },
+      {
+        "role": "door",
+        "tile": [
+          5,
+          3
+        ],
+        "ground": [
+          46,
+          98,
+          184
+        ],
+        "inkPct": 45.2,
+        "deepInkPct": 45.2
+      },
+      {
+        "role": "portalFarLanded",
+        "tile": [
+          5,
+          0
+        ],
+        "ground": [
+          246,
+          222,
+          158
+        ],
+        "inkPct": 24.2,
+        "deepInkPct": 21.5
+      },
+      {
+        "role": "entryEnd",
+        "tile": [
+          0,
+          0
+        ],
+        "ground": [
+          255,
+          253,
+          247
+        ],
+        "inkPct": 18.5,
+        "deepInkPct": 16
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          0
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          2
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          4
+        ],
+        "ground": [
+          110,
+          91,
+          62
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          1
+        ],
+        "ground": [
+          187,
+          176,
+          155
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      },
+      {
+        "role": "channel",
+        "tile": [
+          3,
+          3
+        ],
+        "ground": [
+          187,
+          176,
+          155
+        ],
+        "inkPct": 0,
+        "deepInkPct": 0
+      }
+    ],
+    "entryResidual": {
+      "mismatches": 0,
+      "pixels": 5184
+    },
+    "actorResidual": {
+      "actorColor": [
+        246,
+        222,
+        158
+      ],
+      "entryActorPx": 0,
+      "entryTotalPx": 5184,
+      "farActorPx": 3900,
+      "farTotalPx": 5184
+    },
+    "entryResidualNote": "crossing frame is in the SAME phase as the initial frame — the mask delta is a valid like-for-like residual metric",
+    "bytes": 41220
+  },
+  {
+    "where": "L15 ?placeholders=1 dev channel",
+    "stripText": "A-03 echo_spirit_aA-03 echo_spirit_bA-04 bg_phase_a_1920x1080A-05 bg_phase_b_1920x1080A-06 goalA-07 ui_kit",
+    "badgeVisible": true,
+    "portalMentioned": false,
+    "shot": "l015_dev_channel",
+    "bytes": 68214,
+    "h": {
+      "lvl": "15",
+      "moves": "0",
+      "phase": "白昼",
+      "won": false
+    }
+  },
+  {
+    "pageErrors": [],
+    "level": 15,
+    "tree": "3cd643ead96fc01de59e1a22cc0254c1eae8f259",
+    "treeShort": "3cd643e",
+    "worktree": "/Users/Admin/.local/share/opencode/worktree/f9a5d9/ua-0011-capture",
+    "serverPort": 5223,
+    "chromium": "156.0.8078.4",
+    "playwright": "1.64.1",
+    "date": "2026-10-16T02:35:27.524Z",
+    "routeEnumeratedFrom": "plan-entry4.json (solver via tests/e2e/helpers/levels.ts — no hand-typed moves)",
+    "probeMethod": "tile ink coverage vs per-tile modal ground; thresholds: ink >=24, deep ink >=48 (max-channel distance); masks ground-normalised per tile"
+  }
+]
