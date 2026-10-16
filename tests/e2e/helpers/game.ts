@@ -768,8 +768,12 @@ export interface InkRun {
  * fraction of the scanline it owns (coverage) — neither of which needs the body's
  * colour at all.
  *
- * Throws when no reference pixel is readable: a dead read-back channel must fail
- * loudly, never report "no ink".
+ * ── A dead read-back channel fails loudly, not silently ──────────────────────
+ * `sampleCanvas` answers a black pixel for every point when the presented frame is
+ * not readable, so both references are `[0,0,0]` and every sample equals them:
+ * nothing is ink, `longest` is 0 and `coversCentre` is `false`. The callers assert
+ * `coversCentre`, so the "the pixels are all black" failure is a failure — it can
+ * never be read as "the actor covers everything".
  */
 export async function centreRowInk(
   page: Page,
@@ -787,14 +791,10 @@ export async function centreRowInk(
     offsets.map((dx) => ({ x: centre.x + dx, y: centre.y })),
   );
   const referenceOffset = Math.round(cell * INK_REFERENCE_FRACTION);
-  const raw = await sampleCanvas(page, [
+  const references = await sampleCanvas(page, [
     { x: centre.x + referenceOffset, y: centre.y },
     { x: centre.x - referenceOffset, y: centre.y },
   ]);
-  const references = raw.filter((sample): sample is Rgb => sample !== undefined);
-  if (references.length === 0) {
-    throw new Error("[e2e] no background reference readable on the centre row");
-  }
   const isInk = (sample: Rgb | undefined): boolean =>
     sample !== undefined &&
     references.every((reference) => rgbDistance(sample, reference) > INK_THRESHOLD);
