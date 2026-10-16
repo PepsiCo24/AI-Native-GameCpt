@@ -115,24 +115,64 @@ export async function settle(page: Page, ms = 320): Promise<void> {
  *
  * Only `error`-level console output is collected: Phaser logs `info`/`warn` on a
  * normal boot, and treating those as failures would make the probe unusable.
+ *
+ * The one carve-out is the QA-007 degrade harness: when `PS_E2E_ART_DEGRADE=1`
+ * makes {@link openLevel} abort the art PNGs, Chromium reports each aborted request
+ * as a `console.error` of its own. Those lines are *the harness's damage*, not the
+ * page's, so they are collected separately
+ * ({@link PageErrorWatch.suppressedByDegradeHarness}) instead of failing the walk —
+ * and only on that opt-in round, and only for the manifest basenames it aborted.
  */
 export interface PageErrorWatch {
   /** `console.error` texts seen so far, in order. */
   readonly consoleErrors: readonly string[];
   /** Uncaught page exception messages seen so far, in order. */
   readonly pageErrors: readonly string[];
+  /**
+   * `console.error` lines the **degrade harness itself** caused and which are
+   * therefore not page errors: Chromium's `Failed to load resource: net::ERR_FAILED`
+   * for an art PNG that {@link openLevel} deliberately aborted. Non-empty only in a
+   * `PS_E2E_ART_DEGRADE=1` round; on an art round this list is always empty and the
+   * full channel is asserted unchanged. Kept (not dropped) so the degrade round's
+   * report can cite exactly how many lines were its own doing.
+   */
+  readonly suppressedByDegradeHarness: readonly string[];
+}
+
+/**
+ * The basenames a degrade round is expected to abort — the delivered art the
+ * bundle ships, **derived** from the manifest's resolved slots (never typed out),
+ * each with the `.png` extension Phaser requested.
+ */
+function degradeArtBasenames(): readonly string[] {
+  return PLACEHOLDER_SLOTS.filter((slot) => slot.resolved).map((slot) => `${slot.assetName}.png`);
+}
+
+/** `true` when this `console.error` is the harness's own aborted-art noise. */
+function isHarnessArtNoise(text: string, url: string): boolean {
+  if (!text.startsWith("Failed to load resource")) return false;
+  const basename = url.split("/").pop() ?? "";
+  return degradeArtBasenames().includes(basename);
 }
 
 export function watchErrors(page: Page): PageErrorWatch {
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
+  const suppressedByDegradeHarness: string[] = [];
+  const degrading = process.env["PS_E2E_ART_DEGRADE"] === "1";
   page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
+    if (message.type() !== "error") return;
+    const text = message.text();
+    if (degrading && isHarnessArtNoise(text, message.location().url)) {
+      suppressedByDegradeHarness.push(text);
+      return;
+    }
+    consoleErrors.push(text);
   });
   page.on("pageerror", (error) => {
     pageErrors.push(error.message);
   });
-  return { consoleErrors, pageErrors };
+  return { consoleErrors, pageErrors, suppressedByDegradeHarness };
 }
 
 /** Assert both channels stayed empty, with the label that says which walk this was. */
