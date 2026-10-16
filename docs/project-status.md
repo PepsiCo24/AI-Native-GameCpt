@@ -247,9 +247,11 @@ and a path must be quiescent before dispatch.**
 
 ## Relevant commits / branches
 
-- **Current tips (2026-10-16):** `main` = **`5b058ff`** (L12–L15 published; deploy green) · `develop` =
-  **`091c483`** (merge QA-005g `cd3af77`; CI-artifact fix `9c1bb70`; LEVEL-DOCS-1 closure `1eda401`+`3cd3c03`) —
-  the older list below is retained for provenance, not as the live state.
+- **Current tips (2026-10-16):** `main` = **`5b058ff`** (L12–L15 published; deploy green; CI `38845234170`) ·
+  `develop` = **`3592134`** (merge QA-005g `cd3af77` + CI-artifact fix `9c1bb70` + LEVEL-DOCS-1 closure
+  `1eda401`+`3cd3c03` + items 76–77; above it the co-lane's QA-007a proof record and UA-0014 V0.9.4 — both
+  cloud rounds GREEN, `38849186852` and `38851254805`) — the older list below is retained for provenance,
+  not as the live state.
 - Branch model: `main` (stable) ← `develop` (integration) ← `agent/<role>/<task>`. Only the Orchestrator merges/pushes.
 - `develop` (pushed, newest first): **`HEAD`** docs(status) integration round · **`0a88d0c`** docs(assets) art-validation
   record · **`aa520ae`** merge LV-006 · **`efa6be6`** merge PA-005 · **`993bc4c`** merge UA-0006 V0.7 · **`41d5a4b`** docs(status) playable + feel-passed (LV-005/UA-0005/PA-004 landed, suite 12 files / 137 passed / 3 skipped, solver 5/5, CI green) · **`9c4b5a1`** merge R-001b + PA-004 · `db730bc` feat(game) flip cross-fade /
@@ -1396,6 +1398,11 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    incidentally supplied the decisive control: with **no** release build overlapping, L15 still measured
    **29.4 s** (L14 23.8 s), i.e. 98 % of the old 30 s default, so the pre-fix red was not a one-off draw
    (this push also carried the two LEVEL-DOCS-1 closure commits `3cd3c03`+`1eda401` that were still local).
+   The docs round on the final tip **`3592134`** (items 76–77 + the co-lane's QA-007a record + UA-0014
+   V0.9.4) is **also GREEN — run `38851254805`** (verify 44 s, e2e 21m32s, **107 passed, 21.0m**), where
+   L15 measured **29.6 s** again. Four cloud observations of that row now read **21.2 / 30.9 (the red) /
+   29.4 / 29.6 s**: the old 30 s default was a coin flip in every round, which is exactly the class
+   QA-005g removed.
    (c) **Infra: every red so far shipped zero artifacts.** The workflow uploaded `playwright-report/`, which
    never exists under the list-only reporter — annotation "No files were found with the provided path"
    on both `38795670240` and `38845237536` — while the traces we pay for (`trace: retain-on-failure`) land in
