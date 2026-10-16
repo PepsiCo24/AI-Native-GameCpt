@@ -1,12 +1,15 @@
 /**
- * L6–L11 unlock evidence — the playable slice, the `?level=` deep link, the
+ * L6–L15 unlock evidence — the playable slice, the `?level=` deep link, the
  * progression through the door/switch content and the R-T6 hover gate.
  *
- * L11 (R-003) is the first unlocked board that carries a **portal**, so the
- * portal assertions below are no longer "no shipped level has one": the registry
- * now ships the frozen `l011.json` and the solver-verified route runs through the
- * shipped `GameSession` like every other level. The board file itself is data
- * owned by Level AI + Solver and is never edited from here.
+ * L11 (R-003) is the first unlocked board that carries a **portal**; R-003b then
+ * registered ADR-design-0003's L12–L15 block (`docs/ai-native-pipeline.md` §8.10:
+ * `par == shortestSolution` 15/15, validator 15/15 ok · 0 errors), so the portal
+ * assertions below are no longer "no shipped level has one" and the unlock sweep
+ * covers the whole shipped slice. The registry pin re-typed here is **15** — the
+ * L12–L15 block's own dossier value — and everything that can derive from the
+ * loaded registry does (see `UNLOCKED_IDS` / `LEVEL_IDS`). The board files
+ * themselves are data owned by Level AI + Solver and are never edited from here.
  *
  * Everything here goes through the **shipped** path: `loadLevels()` (schema +
  * `validateLevel`), `startIndexForLevel` (`src/main.ts`'s deep-link resolution),
@@ -44,6 +47,12 @@ import { GameSession } from "@/game/systems/session";
 
 const { levels, rejected } = loadLevels();
 
+/** Every registry id, in play order — the derived deep-link/deep-sweep domain. */
+const LEVEL_IDS = levels.map((level) => level.id);
+
+/** Registry ids from the L6 unlock on: the M3 door/switch slice and its block. */
+const UNLOCKED_IDS = LEVEL_IDS.filter((id) => id >= 6);
+
 function levelById(id: number): Level {
   const level = levels.find((candidate) => candidate.id === id);
   if (level === undefined) throw new Error(`level ${String(id)} is not playable`);
@@ -64,8 +73,12 @@ function hoverCell(session: GameSession, cell: Vec): Vec | null {
   return dir !== null && session.movePreview(dir) ? cell : null;
 }
 
-describe("level registry — L6–L11 are unlocked", () => {
+describe("level registry — L6–L15 are unlocked", () => {
   it("lists the whole authored slice, in order", () => {
+    // The registry's file list is the deliberately hand-typed pin (a silent
+    // `LEVEL_SOURCES` edit must fail here, not self-derive green): re-typed to the
+    // 15-level dataset of `docs/ai-native-pipeline.md` §8.10 (LV-009-B), whose
+    // registry unlock is R-003b / ADR-design-0003 §8 item 6.
     expect(LEVEL_SOURCES.map((source) => source.file)).toEqual([
       "l001.json",
       "l002.json",
@@ -78,15 +91,21 @@ describe("level registry — L6–L11 are unlocked", () => {
       "l009.json",
       "l010.json",
       "l011.json",
+      "l012.json",
+      "l013.json",
+      "l014.json",
+      "l015.json",
     ]);
   });
 
-  it("accepts every file: ids 1..11, nothing rejected, nothing dropped", () => {
+  it("accepts every file: ids 1..15, nothing rejected, nothing dropped", () => {
     expect(rejected).toEqual([]);
-    expect(levels.map((level) => level.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    expect(levels.map((level) => level.id)).toEqual(
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    );
   });
 
-  it("carries the M3 content from L6 on and the M2 portal from L11 only", () => {
+  it("carries the M3 content from L6 on and a portal on every level from L11 on", () => {
     for (const level of levels) {
       if (level.id < 6) {
         expect(level.doors, `level ${String(level.id)}`).toEqual([]);
@@ -95,10 +114,13 @@ describe("level registry — L6–L11 are unlocked", () => {
         expect(level.doors.length, `level ${String(level.id)}`).toBeGreaterThan(0);
         expect(level.switches.length, `level ${String(level.id)}`).toBeGreaterThan(0);
       }
-      // R-003: L11 is the M2 debut — the first shipped board with a portal, and
-      // the only one. L1–L10 stay portal-free until a later unlock says otherwise.
+      // R-003: L11 is the M2 debut; R-003b's block follows ADR-design-0003 §8
+      // (L12 the portal shortcut, L13–L15 the channel-mandatory tail), so every
+      // level from the debut on ships a pair. L1–L10 stay portal-free.
       if (level.id < 11) {
         expect(level.portals, `level ${String(level.id)}`).toEqual([]);
+      } else {
+        expect(level.portals.length, `level ${String(level.id)}`).toBeGreaterThan(0);
       }
     }
     const l11 = levels.find((level) => level.id === 11);
@@ -113,16 +135,18 @@ describe("level registry — L6–L11 are unlocked", () => {
 });
 
 describe("?level=<n> deep link — resolves by Level.id for the new levels", () => {
-  it("maps 6..11 to their indices and keeps L1..L5 intact", () => {
-    for (const id of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) {
+  it("maps every registry id to its own index, so the link never shifts by one", () => {
+    for (const id of LEVEL_IDS) {
       expect(startIndexForLevel(levels, id), `?level=${String(id)}`).toBe(id - 1);
     }
   });
 
   it("falls back to L1 for absent / unknown / out-of-range values", () => {
     expect(startIndexForLevel(levels, null)).toBe(0);
-    // 11 is *in* the slice now (R-003), so the honest out-of-range probe is 12.
-    expect(startIndexForLevel(levels, 12)).toBe(0);
+    // The ladder now runs through L15 (R-003b), so the honest out-of-range probe
+    // is the id just past its last rung — "unknown id ⇒ index 0" is the meaning.
+    const beyond = Math.max(...LEVEL_IDS) + 1;
+    expect(startIndexForLevel(levels, beyond)).toBe(0);
     expect(startIndexForLevel(levels, 99)).toBe(0);
     expect(startIndexForLevel(levels, -3)).toBe(0);
     expect(startIndexForLevel(levels, 0)).toBe(0);
@@ -134,7 +158,7 @@ describe("?level=<n> deep link — resolves by Level.id for the new levels", () 
     });
     expect(session.level.id).toBe(8);
     expect(session.levelIndex).toBe(7);
-    expect(session.levelCount).toBe(11);
+    expect(session.levelCount).toBe(levels.length);
     // The deep link selects where the session starts; it grants nothing.
     expect(session.moveCount).toBe(0);
     expect(session.isWon).toBe(false);
@@ -147,7 +171,7 @@ describe("?level=<n> deep link — resolves by Level.id for the new levels", () 
     });
     expect(session.level.id).toBe(11);
     expect(session.levelIndex).toBe(10);
-    expect(session.levelCount).toBe(11);
+    expect(session.levelCount).toBe(levels.length);
     expect(session.level.portals).toHaveLength(1);
     expect(session.phase).toBe("A");
     expect(session.moveCount).toBe(0);
@@ -190,15 +214,16 @@ describe("progression — the win dialog walks L5 into L6", () => {
   });
 
   it("'Next' is refused only after the last unlocked level", () => {
-    const session = new GameSession(levels, { startIndex: 10 });
-    expect(session.level.id).toBe(11);
+    const lastIndex = levels.length - 1;
+    const session = new GameSession(levels, { startIndex: lastIndex });
+    expect(session.level.id).toBe(LEVEL_IDS[lastIndex]);
     expect(session.next()).toBe(false);
-    expect(session.level.id).toBe(11);
+    expect(session.level.id).toBe(LEVEL_IDS[lastIndex]);
   });
 });
 
-describe("L6–L11 are playable end-to-end (solver-verified routes)", () => {
-  for (const id of [6, 7, 8, 9, 10, 11]) {
+describe("L6–L15 are playable end-to-end (solver-verified routes)", () => {
+  for (const id of UNLOCKED_IDS) {
     it(`L${String(id)}: the shortest route wins in exactly \`par\` moves`, () => {
       const session = new GameSession(levels, {
         startIndex: startIndexForLevel(levels, id),
@@ -340,7 +365,7 @@ describe("R-T6 hover — the ring appears only where the core accepts the move",
     // same step — so the probe may win without touching the session under test. The
     // path is then walked for real, and every step is pinned: exactly one move per step,
     // and no win before the last one.
-    for (const id of [6, 7, 8, 9, 10, 11]) {
+    for (const id of UNLOCKED_IDS) {
       const level = levelById(id);
       const startIndex = startIndexForLevel(levels, id);
       const session = new GameSession(levels, { startIndex });

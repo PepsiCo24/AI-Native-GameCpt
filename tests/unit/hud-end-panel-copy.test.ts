@@ -6,7 +6,7 @@
  * QA-005 pinned the defect as a `test.fail()`: `hud.ts` built the last level's
  * dialog body from a literal `L1–L5 cleared · <level>: <moves>`, written when the
  * playable slice was five levels, while the registry has since grown well past
- * that (it ships **eleven** on this chain). The pin's own expectation was
+ * that (it ships **fifteen** on this chain). The pin's own expectation was
  * `expect(won.dialogBody).not.toContain("L1–L5")` + "contains `moves <par>`". The
  * copy now reads the range from the **registry's own list**
  * (`ladderLabelOf(loadPlayableLevels())`, injected by the composition root as the
@@ -42,6 +42,15 @@ import type { HudHooks } from "@/game/hud/hud";
 
 const levels = loadPlayableLevels();
 const LAST = levels[levels.length - 1] as Level;
+
+/**
+ * The last rung's two derived forms — the range (`ladderLabelOf`) and the padded
+ * label (`levelLabelOf`). Both come from the registry's own `LAST`, never a typed
+ * 15: UA-0009's contract is "`{max}`/`{N}` = registry **ids**", so the day the
+ * ladder grows past L15 this file needs no number edit.
+ */
+const LAST_LADDER = `L1–L${String(LAST.id)}`;
+const LAST_LABEL = `L ${String(LAST.id).padStart(2, "0")}`;
 
 /** The production solver's shortest route — no test-local search (AGENTS.md §3). */
 function shortestPath(level: Level): readonly Direction[] {
@@ -114,9 +123,15 @@ afterEach(() => {
 });
 
 describe("ladderLabelOf — the shipped range comes from the registry", () => {
-  it("names the ladder the repository actually ships (L1–L11)", () => {
-    expect(levels.map((level) => level.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
-    expect(ladderLabelOf(levels)).toBe("L1–L11");
+  it("names the ladder the repository actually ships (L1–L15)", () => {
+    // The id ladder is the hand-typed registry pin (`docs/ai-native-pipeline.md`
+    // §8.10: the 15-level dataset; R-003b's registry unlock). The label itself is
+    // DERIVED — from `LAST`, the registry's own last level — so the range never
+    // needs a second literal when the ladder grows.
+    expect(levels.map((level) => level.id)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    ]);
+    expect(ladderLabelOf(levels)).toBe(`L1–L${String(LAST.id)}`);
   });
 
   it("is derived, not typed: a shorter or gapped list reads its own range", () => {
@@ -129,7 +144,7 @@ describe("ladderLabelOf — the shipped range comes from the registry", () => {
 });
 
 describe("the end panel copy (TICKET-QA-005-2)", () => {
-  it("the last level's dialog is honest about the shipped eleven and still carries the move count", () => {
+  it("the last level's dialog is honest about the shipped fifteen and still carries the move count", () => {
     vi.useFakeTimers();
     const mounted = mount(levels.length - 1);
     solve(mounted);
@@ -140,12 +155,13 @@ describe("the end panel copy (TICKET-QA-005-2)", () => {
     expect(body).not.toContain("L1–L5"); // the pinned defect, gone
     // …and the whole drift class is gone: no *other* stale range either. The exact
     // equality below is what really holds this line, but the pair of negations names
-    // both instances the repo has actually shipped (five, then ten).
+    // both instances the repo has actually shipped (five, then ten, then eleven).
     expect(body).not.toContain("L1–L10");
-    expect(body).toContain("L1–L11 cleared");
-    expect(body).toContain("L 11");
+    expect(body).not.toContain("L1–L11");
+    expect(body).toContain(`${LAST_LADDER} cleared`);
+    expect(body).toContain(LAST_LABEL);
     expect(body).toContain(`moves ${String(LAST.par)}`); // the e2e's own contract
-    expect(body).toBe(`L1–L11 cleared · L 11: moves ${String(LAST.par)}`);
+    expect(body).toBe(`${LAST_LADDER} cleared · ${LAST_LABEL}: moves ${String(LAST.par)}`);
     mounted.hud.destroy();
   });
 
@@ -160,8 +176,12 @@ describe("the end panel copy (TICKET-QA-005-2)", () => {
     // U+00B7 + space; `L {N}` = the padded `levelLabelOf` form; `cleared`/`moves`
     // lowercase; **never par** (OQ1's REFUSED ruling). Written with escapes on
     // purpose: U+2013/U+00B7 are not interchangeable with the em dash or bullet a
-    // hand edit reaches for, and the escapes are what makes that checkable.
-    expect(mounted.body()).toBe(`L1\u2013L11 cleared \u00B7 L 11: moves ${String(LAST.par)}`);
+    // hand edit reaches for, and the escapes are what makes that checkable. The
+    // **range endpoints are derived from the registry's last id** (R-003b moved it
+    // to 15) — the frozen FORM stays, only the range it names follows the ladder.
+    expect(mounted.body()).toBe(
+      `L1\u2013L${String(LAST.id)} cleared \u00B7 L ${String(LAST.id).padStart(2, "0")}: moves ${String(LAST.par)}`,
+    );
     expect(mounted.body()).toContain("\u2013"); // en dash, U+2013
     expect(mounted.body()).toContain("\u00B7"); // middle dot, U+00B7
     expect(mounted.body()).not.toContain("\u2014"); // em dash is a different ruling

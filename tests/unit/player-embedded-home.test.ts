@@ -84,10 +84,17 @@ function graphOf(level: Level): ReachableGraph {
  * ──────────────────────────────────────────────────────────────────────────── */
 
 describe("isPlayerEmbedded — core owns it via solidAt (R-004)", () => {
-  it("the registry is the shipped eleven (the sweep below is over real content)", () => {
+  it("the registry is the shipped fifteen (the sweep below is over real content)", () => {
     expect(rejected).toEqual([]);
-    expect(LEVEL_SOURCES).toHaveLength(11);
-    expect(levels.map((level) => level.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    // The registry pin is the hand-typed id ladder (anti-re-baseline); the count
+    // is derived from it, so a dropped source fails the ladder, not a duplicated literal.
+    // Re-typed to the 15-level dataset of `docs/ai-native-pipeline.md` §8.10 (R-003b,
+    // ADR-design-0003 §8 item 6: L12–L15 registered as data).
+    expect(LEVEL_SOURCES).toHaveLength(levels.length);
+    expect(levels.length).toBe(15);
+    expect(levels.map((level) => level.id)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    ]);
   });
 
   it("agrees with solidAt at every state of every shipped par route", () => {
@@ -135,13 +142,15 @@ describe("isPlayerEmbedded — core owns it via solidAt (R-004)", () => {
     expect(embedded, "the shipped ladder contains embedded states").toBeGreaterThan(0);
     expect(levelsWithEmbeddedStates.length).toBeGreaterThan(0);
     // The beat is L4/L5's lesson (docs/level-design.md §2; ADR-0009 lesson (b): the
-    // embedded state must read as "safe — walk out"). Measured on this tree: 13
-    // embedded states over 339 reachable ones, on L4–L11 (the 11-level registry grew
-    // the sweep from 257/11 on L4–L10; L11's switch-driven door adds two more). A
+    // embedded state must read as "safe — walk out"). Measured on this tree: 48
+    // embedded states over 690 reachable ones, on L4–L15 (the sweep grew
+    // 257/11 on L4–L10 → 339/13 on L4–L11 → 690/48 once R-003b registered the
+    // L12–L15 block, whose every board carries a switch-driven door). A
     // re-authoring that deletes the beat from L4/L5 has to change this line deliberately.
     expect(levelsWithEmbeddedStates).toEqual(expect.arrayContaining([4, 5]));
-    // The 11-level growth is itself evidence the sweep is not vacuous on the new board.
+    // The block growth is itself evidence the sweep is not vacuous on the new boards.
     expect(levelsWithEmbeddedStates).toContain(11);
+    expect(levelsWithEmbeddedStates).toEqual(expect.arrayContaining([12, 13, 14, 15]));
   });
 
   it("is false for a tile the player is not standing on, whatever that tile is", () => {
