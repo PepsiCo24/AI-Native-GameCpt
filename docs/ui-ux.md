@@ -567,6 +567,15 @@ Every "fresh viewer" item above runs under this protocol. **Agent 5 owns the cri
 
 **Status:** JUDGED by this record; ADR-design-0003 §8 item 6's capture-entry round is **discharged** on these frames (the registry shipped the block at R-003b `3cd643e` with this round pre-registered; the round's verdict is this entry). Division of labour unchanged: no renderer line was edited from this file; any future fix routes to the Gameplay Engineer inside the failing clause's own bounds (seam → §3.1b/§3.1c geometry, never re-hue; channel → the §3.1a wall/ghost construction; pair → the §3.1c channel pair).
 
+**Entry 5 — ART-WIRING RULING RECORD · 2026-10-16 · UA-0014 · status RULED (no new capture round — frames = the R-005a dossier evidence pack `rt005a-frames/`: art / degrade / base captures at `?level=1`, 1280×900 @1×, cell 128 px, plus the cell crops read by the spec authority; the rulings are the V0.9.4 change note's, transcribed here per its "Sections touched" column).**
+
+| # | Verdict | Recorded facts |
+|---|---|---|
+| **R-1 host box** | **KEEP the shipped `1.0 × cell` container — §11's `cellSize * 0.70` restated as the FORM extent; the one-line renderer flip is DECLINED, no flip ordered** | A literal 0.70 box would land the form at ≈ 0.49 cell (the delivered 512² files bake the req-08 framing band, α-bbox 69.9 × 70.1 %) — ~30 % under R-C1's own footprint and under every measured clearance (ring/arc 0.82 path, switch corner 0.283). With the 1.0 box the R-C1 census parity holds: art ink run 78 px vs the placeholder's 90 px core, α-extent 44.8 px vs disc radius 44.0 px — the same 0.70-cell footprint. Cell crops (actor `(0,1)` A, actor `(1,1)` B, goal `(4,1)` A): the signed form sits inside the intact R-C9 ring on the placeholder disc's footprint, the silhouette tapers at the 45° diagonals (the figure is not a disc), the annulus is hollow and crisp |
+| **R-3 A4 switch corner** | **ACCEPTED as a delivered-art consequence — no tweak ordered, no re-tune, no ticket** | With the signed form the switch box's 45° corner (37.7 px) falls outside the sprite silhouette, so probe 6 at (+26,+26) reads the switch token exactly (`#C79BE8`, distance 0) where the placeholder disc (radius 44 px) covered it — the A4-family probe anchored at `tests/e2e/transient.spec.ts:1004`; the centre probe still reads the spirit core (d(body) = 152), so actor and switch **coexist readably**. Every candidate one-lever "fix" violates a frozen number or the gate: bigger host box (R-1/R-C1 extent), smaller switch box (§3.1a 0.40 + K-3), sprite alpha/back-plate (Asset Gate — signed art is not re-edited by agents), z-order (the switch is already L4 under L5; order cannot cover a transparent pixel) |
+
+**QA-007 scope note (R-3):** QA-007-art-probes makes the pixel probes art-aware; QA-005 P2's occlusion proof is re-scoped by this record to **placeholder-disc geometry** (the signed form is not a disc — its silhouette tapers at the 45° diagonals), and the A4 corner probe above is its art-era boundary.
+
 ---
 
 ## 4. Theme tokens — Phase A / Phase B
