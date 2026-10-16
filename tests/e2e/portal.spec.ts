@@ -6,7 +6,8 @@
  * portal column five rows (L12 is the **shortcut** — a portal-free walk still solves it
  * — while L13–L15 are **channel-mandatory**: walk-only UNSAT, `docs/ai-native-pipeline.md`
  * §8.10), and R-003c registered L16–L19 carrying the column to the dataset tail, so
- * the census is now nine (L11–L19). QA-011 replaced the pre-registration
+ * the census is now ten (L11–L20) — QA-014/R-003d appended the registered terminal
+ * rung. QA-011 replaced the pre-registration
  * `[11…15]` literal with the *rule* the dataset obeys ("no portal-free level from
  * L11 to the tail") because the literal could not see a portal-free rung at L16+.
  * The phase-gate claims below are pinned on L11's debut board: one portal

@@ -192,6 +192,19 @@ const PINS: Readonly<Record<number, DifficultyPin>> = {
   17: { L: 14, B: 1.675676, T: 0, R: 0, M: 4, D: 39.027027, dexec: 19.027027, bRaw: 3.27, forced: 0.01, lookahead: 13, states: 259 },
   18: { L: 16, B: 1.635974, T: 0, R: 0, M: 4, D: 40.907923, dexec: 20.907923, bRaw: 3.20, forced: 0.01, lookahead: 15, states: 467 },
   19: { L: 18, B: 1.628386, T: 0, R: 0, M: 4, D: 42.885157, dexec: 22.885157, bRaw: 3.15, forced: 0.02, lookahead: 17, states: 923 },
+  // R-003d / QA-014 — the block's **terminal** rung, registered by GAME-002 at
+  // `4deeb50`. L20 is the sealed landing (ADR-design-0004): the portal hands the
+  // player a new start inside a walk-sealed pocket whose only exit is a door, so the
+  // shortest plan is the ORDERED `land → press → leave → press` chain. Shape in one
+  // column: `L = par = 20` (the P2 rung `par(L15) + 2·(20 − 15)`), `M = 4`,
+  // `T ≡ R ≡ 0` (§4's region holds — 0 dead, `noUnrecoverableOk` true), `B` 1.576471
+  // settles the excursion back into the L1–L15 band `[1.25, 1.6875]` (so no new
+  // entry in `BLOCK_L1619_NAMED_B_EXCURSIONS`), and `D_exec = 24.729412` rises past
+  // L19's 22.885157 — which is what re-registered the tail ceiling at R-003d.
+  // Values measured HERE from the landed bytes by the shipped metric functions
+  // (`scripts/solve-levels.ts`'s read-out, `docs/level-difficulty.report.json`
+  // record 20) — derived, then typed, exactly like every row above.
+  20: { L: 20, B: 1.576471, T: 0, R: 0, M: 4, D: 44.729412, dexec: 24.729412, bRaw: 3.04, forced: 0.05, lookahead: 19, states: 1275 },
 };
 
 describe("LV-007B · item 3 — the shipped dataset's difficulty table, measured", () => {
@@ -378,6 +391,10 @@ describe("LV-007C · item 2 — `D_exec` is a derived reading of the published t
       "19.03",
       "20.91",
       "22.89",
+      // QA-014 — R-003d's terminal rung: the sealed landing's measured 24.729412,
+      // i.e. the column's first value past L19. Par 20 is what the derived refusal
+      // envelope (`refusalRouteEnvelopeMs`, tests/e2e/helpers/levels.ts) absorbs.
+      "24.73",
     ]);
   });
 });

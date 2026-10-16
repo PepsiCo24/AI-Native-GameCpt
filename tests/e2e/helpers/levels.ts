@@ -27,9 +27,10 @@
  * is a **test** file, so this is not a second production path.
  *
  * The file list is discovered from the directory; the hand-pinned count is
- * {@link EXPECTED_LEVEL_COUNT} (the dataset's **19**-level ladder — R-002 tree →
+ * {@link EXPECTED_LEVEL_COUNT} (the dataset's **20**-level ladder — R-002 tree →
  * R-003's L11 unlock at `f484e23` → LV-009-B's L12–L15 block, ADR-design-0003 §8 →
- * R-003c's L16–L19 registration at `208c5eb`/`a75b420`), which `playthrough.spec.ts`
+ * R-003c's L16–L19 registration at `208c5eb`/`a75b420` → LV-011/R-003d's L20 sealed
+ * landing, registered at `4deeb50`), which `playthrough.spec.ts`
  * compares the discovered set against. **Every other inventory is derived**
  * (QA-005c OQ2): {@link datasetIds}, {@link doorLevelIds}, {@link discoveredFileIds}
  * and {@link inventoryViolation} — so an unlock costs one pin, not three, while a
@@ -64,6 +65,11 @@ import { sameVec } from "@/core/state/types";
  * root (`src/levels/l016.json … l019.json`, `208c5eb` + the registry rows at
  * `a75b420`; `npm run levels` = 19/19 PASS, `docs/level-difficulty.report.json`
  * regenerated to 19 records).
+ * **QA-014 re-pinned 19 → 20** one batch later, when GAME-002 registered LV-011's
+ * sealed landing at the dataset root (`src/levels/l020.json` + registry row 20 at
+ * `4deeb50`; `npm run levels` = 20/20 PASS, the sidecar regenerated to 20 records).
+ * The pin moves **only** with a registration commit — it is the alarm, and the
+ * registration is the event the alarm is *for*.
  *
  * **This is the one deliberately hand-typed dataset pin** (QA-005c, OQ2 ruling at
  * project-status item 58; re-affirmed by QA-011): a dataset change cannot silently
@@ -78,13 +84,14 @@ import { sameVec } from "@/core/state/types";
  *
  * ⚠ The pin names the **dataset**, and the dataset is what it is checked against.
  * The *playable* registry (`src/game/levels/level-registry.ts`) is a second,
- * independent list; R-003b registered L12–L15 (`3cd643e`) and R-003c/GAME-001 the
- * L16–L19 rows (`a75b420`), so it now ships the same nineteen, and the UI-walk specs
- * (playthrough rows for every level, the L1→L19 unlock chain, `?level=16..19`) resolve
- * off it and run green. The dataset pin stays independent on purpose: it is the alarm
- * that fires when the files move, whether or not the registry follows.
+ * independent list; R-003b registered L12–L15 (`3cd643e`), R-003c/GAME-001 the
+ * L16–L19 rows (`a75b420`) and GAME-002 the L20 row (`4deeb50`), so it now ships the
+ * same twenty, and the UI-walk specs (playthrough rows for every level, the
+ * L1→L20 unlock chain, `?level=16..20`) resolve off it and run green. The dataset pin
+ * stays independent on purpose: it is the alarm that fires when the files move,
+ * whether or not the registry follows.
  */
-export const EXPECTED_LEVEL_COUNT = 19;
+export const EXPECTED_LEVEL_COUNT = 20;
 
 /**
  * The dataset directory — resolved **lazily**, at call time, so importing this
@@ -479,7 +486,7 @@ export function cheapestDoorFixtures(ref: LevelRef): {
   return { occupancy, refusedEntry };
 }
 
-/** Levels that ship at least one door — the dataset's latch levels (L6–L19). */
+/** Levels that ship at least one door — the dataset's latch levels (L6–L20). */
 export function levelsWithDoors(refs: readonly LevelRef[]): readonly LevelRef[] {
   return refs.filter((ref) => ref.level.doors.length > 0);
 }
@@ -599,7 +606,7 @@ export function cheapestPortalFixtures(ref: LevelRef): {
   return { teleport, inactive, pair };
 }
 
-/** Levels that ship at least one portal — the dataset's M2 levels (L11–L19). */
+/** Levels that ship at least one portal — the dataset's M2 levels (L11–L20). */
 export function levelsWithPortals(refs: readonly LevelRef[]): readonly LevelRef[] {
   return refs.filter((ref) => ref.level.portals.length > 0);
 }
@@ -665,6 +672,25 @@ export function resolveRoute(level: Level, route: readonly Direction[]): SearchS
  * |---|---|---|---|---|---|---|---|
  * | upper-bound cloud s | 79.2 | 93.0 | 106.8 | 120.6 | 134.4 | 148.2 | 162.0 |
  * | envelope s | 119 | 140 | 161 | 181 | 202 | 223 | 240 (cap) |
+ *
+ * ── QA-014: the par-20 rung ran, and the formula absorbed it with no edit ─────
+ * The 20-level round (`PS_E2E_PORT=5244`, `--retries=0`, art-era bytes, 132/132
+ * green, 11.1 m) is the **first browser walk of L20 ever**, and its refusal row is
+ * the predicted `refusalRouteEnvelopeMs(20) = 223 s` claim tested end to end:
+ *
+ * | round | L15 | L16 | L17 | L18 | L19 | **L20** |
+ * |---|---|---|---|---|---|---|
+ * | QA-013 local (19 rows) | 10.4 | 13.4 | 14.0 | 17.8 | 19.9 | — |
+ * | QA-014 local (20 rows) | 11.6 | 14.8 | 15.9 | 19.5 | 21.8 | **28.1** |
+ *
+ * L20 comes in at **28.1 s = 12.6 % of its 223 s envelope**, i.e. the affine fit's
+ * own prediction (`1.17 × 20 − 1.28 = 22.1 s`, +3.0 residual ⇒ 25.1; worst-case
+ * cloud ⇒ 148.2; ×1.5 ⇒ 223) sits *above* the observation with the designed margin.
+ * That is the whole point of the derived form: the flat `90_000` this replaced would
+ * have read 28.1/90 = **31 % locally** and `28.1 × 5.9 ≈ 166 s` on the conservative
+ * cloud factor — **crossed**, exactly like L18/L19 did at 19 rows. So the rung that
+ * the derivation was written *for* is the rung that proves it, and **no constant was
+ * touched for this migration**.
  *
  * The cap binds from par 22 on. That is **deliberate and loud**: a future rung
  * that reaches it is a *named* re-derivation, not a silently clamped number

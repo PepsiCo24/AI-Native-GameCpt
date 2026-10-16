@@ -1,7 +1,7 @@
 /**
- * `tests/solver/l16-l20-candidates.test.ts` — the durable pin on the L16–L19
+ * `tests/solver/l16-l20-candidates.test.ts` — the durable pin on the L16–L20
  * registered root block (QA-011, retargeted from the pre-registration candidate
- * shelf).
+ * shelf; QA-014 extended to the registered terminal rung).
  *
  * Why this file exists: `scripts/author-l16-candidates.ts` proposes and
  * `scripts/prove-candidate.ts` proves, but both are *runs* — their output lives in
@@ -12,16 +12,19 @@
  * the rung come from the shipped rows *below the block*, and the band is re-derived
  * from that same pre-block set.
  *
- * Scope boundary (QA-011 / R-003c landed): the block is now **registered**. The four
- * members live in `src/levels/` root and the lessons that carry the `block-l1619`
- * obligation are their registry rows, so this suite walks the root set and derives
- * `BLOCK_IDS` from `documentedLesson(id)?.obligation` — never from a typed 16–19.
+ * Scope boundary (QA-011 / R-003c landed, QA-014 / R-003d closed): the block is
+ * **registered**. The five members live in `src/levels/` root and the lessons that
+ * carry the `block-l1619` obligation are their registry rows, so this suite walks the
+ * root set and derives `BLOCK_IDS` from `documentedLesson(id)?.obligation` — never from
+ * a typed 16–20.
  * The candidate shelf (`src/levels/candidates/`) is asserted to hold **exactly the
- * booked pre-registration set**, and only rungs strictly above the registered root
- * max: the shelf's role is to hold a proven candidate *while its rung is above the
- * census ceiling* (QA-012; R-003c moved l016–l019 off it the same way when they were
- * registered). A shelf file at or below the ceiling is a root row hiding outside the
- * census, and the pin below still catches it.
+ * booked pre-registration set** — which, with R-003d's landing registered at the root,
+ * is now the **empty set** — and only rungs strictly above the registered root max: the
+ * shelf's role is to hold a proven candidate *while its rung is above the census
+ * ceiling* (QA-012; R-003c moved l016–l019 off it, LV-011 → R-003d moved the landing
+ * rung off it last). A shelf file at or below the ceiling is a root row hiding outside
+ * the census, and the pin below still catches it **as a live guard, not as a count**:
+ * the empty booking is asserted by set equality, so a stray candidate is still caught.
  *
  * Why the pre-block filter matters: the block's own rows clear the cut by design
  * (`D_exec` 17.1 … 22.9) and `l016` carries the one NAMED `B` excursion (1.7000).
@@ -51,6 +54,7 @@ import {
   BLOCK_L1619_NAMED_B_EXCURSIONS,
   documentedLesson,
 } from "@/core/solver/policy";
+import { EXPECTED_LEVEL_COUNT } from "../e2e/helpers/levels";
 
 const LEVELS_DIR = new URL("../../src/levels/", import.meta.url).pathname;
 const CANDIDATES_DIR = join(LEVELS_DIR, "candidates");
@@ -99,7 +103,7 @@ const bBand: readonly [number, number] = [
   Math.max(...preBlockMetrics.map((m) => m.diff.B)),
 ];
 
-describe("L16–L19 block — derived obligations, re-measured per run", () => {
+describe("L16–L20 block — derived obligations, re-measured per run", () => {
   it("re-derives the cut, the first rung and the band from the pre-block set (the obligations are measured, not typed)", () => {
     expect(PRE_BLOCK).toHaveLength(15);
     expect(l15Par).toBe(10);
@@ -110,8 +114,8 @@ describe("L16–L19 block — derived obligations, re-measured per run", () => {
     expect(PRE_BLOCK.at(-1)?.id).toBe(BLOCK_MIN - 1);
   });
 
-  it("is registered as the L16–L19 ladder the law publishes, above a shelf that is pinned to the booked candidate", () => {
-    // The four rows the `block-l1619` obligation names are exactly `BLOCK_L1619_IDS`.
+  it("is registered as the L16–L20 ladder the law publishes, above an EMPTY shelf that is a live guard, not a count", () => {
+    // The five rows the `block-l1619` obligation names are exactly `BLOCK_L1619_IDS`.
     expect([...BLOCK_IDS]).toEqual([...BLOCK_L1619_IDS]);
     // Contiguous, one rung per id, id === file name — a mis-named rung would break
     // the `SHIPPED_IDS`-style readers the moment they read it.
@@ -134,10 +138,18 @@ describe("L16–L19 block — derived obligations, re-measured per run", () => {
    * their rung sat above the registered root max. Registering a candidate moves it
    * to `src/levels/` *and* off this list, in the same commit — so this pin cannot
    * silently absorb a new shelf file, and a *missing* booked file fails too.
+   *
+   * **QA-014: the booking is EMPTY.** R-003d registered `l020` at the root
+   * (`4deeb64` lineage → `4deeb50`), which was the last booked entry, so the list is
+   * `[]` and it stays a **live guard rather than a count**: the assertion below is
+   * *set equality*, so a stray `l021.json` (or a re-appearing `l020.json`) on the
+   * shelf still fails by name. The empty case is proved non-vacuous the same way
+   * QA-012 proved the booked case — by dropping a file in and watching the guard
+   * fire (`cp`/`del` transcript in the QA-014 ledger, README §1).
    */
-  const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = ["l020.json"];
+  const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = [];
 
-  it("the shelf holds only the booked pre-registration candidates, all above the census ceiling", () => {
+  it("the shelf holds only the booked pre-registration candidates (now none), all above the census ceiling", () => {
     const rootMax = Math.max(...shipped.map((level) => level.id));
     const shelf = existsSync(CANDIDATES_DIR)
       ? readdirSync(CANDIDATES_DIR)
@@ -146,12 +158,15 @@ describe("L16–L19 block — derived obligations, re-measured per run", () => {
       : [];
     // (a) Set equality with the booking: the shelf's role is a *named* hold, not a
     //     dumping ground. A stray `l012.json` (a root row hiding outside the census)
-    //     or an unregistered extra is caught here.
+    //     or an unregistered extra is caught here — including now, when the booked
+    //     set is empty: `[]` is compared, not "length 0".
     expect(shelf).toEqual([...BOOKED_CANDIDATE_IDS_IN_SHELF]);
     // (b) The honest law, re-derived per run: a shelf rung must strictly exceed the
     //     registered root max. At or below it there is no "candidate" — there is a
-    //     duplicate of a registered rung, which would be a census lie.
-    expect(rootMax).toBe(19);
+    //     duplicate of a registered rung, which would be a census lie. The ceiling is
+    //     the shared dataset pin, so a shelf file cannot be justified by a dataset
+    //     that moved without the pin moving.
+    expect(rootMax).toBe(EXPECTED_LEVEL_COUNT);
     for (const name of shelf) {
       const id = Number(/^l(\d+)\.json$/.exec(name)?.[1]);
       expect(id, `${name} sits at or below the registered root max ${rootMax}`).toBeGreaterThan(
@@ -160,17 +175,27 @@ describe("L16–L19 block — derived obligations, re-measured per run", () => {
     }
   });
 
-  it("L20 is the documented ABSENT rung: the ladder's tail is the dataset's tail, and nothing claims to be above it", () => {
+  it("L20 is the registered TERMINAL rung: the ladder's tail is the dataset's tail, and nothing claims to be above it", () => {
     const maxShipped = Math.max(...shipped.map((level) => level.id));
     // The block's last member is the last shipped row: the ladder stops where the
     // dataset stops (the device's census ceiling, `BLOCK_L1619_TAIL_EXEC_CEILING`).
     expect(BLOCK_IDS.at(-1)).toBe(maxShipped);
-    expect(maxShipped).toBe(19);
-    // No L20 file, no L20 lesson row, no `block-l1619` obligation above the tail.
-    expect(existsSync(join(LEVELS_DIR, "l020.json"))).toBe(false);
-    expect(documentedLesson(20)).toBeNull();
+    expect(maxShipped).toBe(EXPECTED_LEVEL_COUNT);
+    // QA-014 re-point (QA-012's drift note): the tail rung is now REGISTERED, so the
+    // claim is no longer "no L20 file" — it is that the registered tail is the
+    // dataset's tail and that nothing sits above it. Both halves stay live:
+    const tailFile = `l${String(maxShipped).padStart(3, "0")}.json`;
     expect(
-      shipped.filter((level) => level.id >= 20).map((level) => level.id),
+      existsSync(join(LEVELS_DIR, tailFile)),
+      `${tailFile} is the registered terminal rung and must live in the root set`,
+    ).toBe(true);
+    expect(documentedLesson(maxShipped)?.obligation).toBe("block-l1619");
+    // …and the ABSENCE clause, re-derived rather than deleted: rung max+1 must have no
+    // file, no lesson row and no `block-l1619` obligation.
+    expect(existsSync(join(LEVELS_DIR, `l${String(maxShipped + 1).padStart(3, "0")}.json`))).toBe(false);
+    expect(documentedLesson(maxShipped + 1)).toBeNull();
+    expect(
+      shipped.filter((level) => level.id > maxShipped).map((level) => level.id),
     ).toEqual([]);
   });
 
@@ -314,21 +339,22 @@ describe("L16–L19 block — derived obligations, re-measured per run", () => {
     });
 
     /**
-     * SEMANTICS DRIFT — booked for R-003d (F-L20-2). No logic change in this control.
+     * ── QA-014: the semantics-drift note this control carried is now DISCHARGED ───
      *
-     * What this control encodes is the *switch-gated-door* reading of "latch removed":
+     * QA-012 booked the drift (F-L20-2): what this control encodes is the *switch-gated-door* reading of "latch removed":
      * the bare board is still SOLVABLE, because the door's own phase colour keeps it
      * passable in the other phase, and the refusal is named by the audit
      * (`door-without-switch`) rather than by solvability. That reading is **by
-     * construction FALSE for a sealed-landing board**: `l020.json` (on the shelf) uses
+     * construction FALSE for a sealed-landing board**: `l020.json` (shelf-booked when
+     * QA-012 wrote the note, registered at the root by R-003d since) uses
      * the latch as the landing device, so dropping `switches` makes the bare board
      * UNSOLVABLE — which is why `scripts/prove-candidate.ts:652` already lists
      * `"unsolvable"` beside `"latch-grade"` in that mutation's accepted-refusal set.
-     * When the registration train moves l020 into root, `base` becomes that board and
-     * this control MUST be re-pointed (assert the named `unsolvable` refusal) rather
-     * than inherited verbatim; the same applies to `allOffShortestSolution`'s
-     * "stays defined" clause below. Root rows l016–l019 are unaffected today: `base`
-     * is `BLOCK_MIN` = l016, a plain switch-gated door, so both clauses hold there.
+     * R-003d registered that rung at the root, so QA-014 closes the note the right way
+     * round: `base` is still `BLOCK_MIN` = l016 (a plain switch-gated door), so this
+     * control is kept *verbatim* — its class is real and still shipped — and the
+     * landing rung gets the **named `unsolvable` refusal as its own control** below.
+     * Neither clause is inherited across the class boundary, and neither is deleted.
      */
     it("refuses a board with its latch removed (a bare door is a violation, not a puzzle)", () => {
       const naked: Level = { ...base, switches: [] };
@@ -347,6 +373,42 @@ describe("L16–L19 block — derived obligations, re-measured per run", () => {
       // existence/grade readers keep working rather than silently treating "no latch"
       // as "UNSATISFIABLE": a null here would have been the weaker reading.
       expect(allOffShortestSolution(naked, nakedGraph)).not.toBeNull();
+    });
+
+    /**
+     * The landing rung's own reading of the same mutation — the QA-012 drift note's
+     * prescribed re-point, measured on the registered bytes rather than described.
+     *
+     * The shipped landing already carries `allOffShortestSolution === null`: the latch
+     * is the *existence* device, so the all-OFF world cannot finish. Dropping the
+     * switches therefore cannot move that reading, and the bare board's own solvability
+     * is what collapses — which is exactly the "by construction FALSE" the note names.
+     * The audit still names the latch, so the collapse is attributable.
+     */
+    it("refuses a SEALED LANDING with its latch removed: the named `unsolvable` reading, not the door-without-switch one", () => {
+      const landingId = BLOCK_IDS.at(-1) as number;
+      const landing = readLevel(
+        LEVELS_DIR,
+        `l${String(landingId).padStart(3, "0")}.json`,
+      );
+      // Non-vacuity: the shipped landing really is the sealed-landing class.
+      expect(allOffShortestSolution(landing, explore(landing))).toBeNull();
+
+      const naked: Level = { ...landing, switches: [] };
+      const nakedGraph = explore(naked);
+      // The reading that does NOT transfer from l016's class: a bare landing is
+      // unsolvable, because the latch was carrying existence, not an advantage.
+      expect(analyse(naked, nakedGraph).solvable).toBe(false);
+      // …and the audit still names the latch by code, so "unsolvable" is a *consequence*
+      // of removing the latch, not a mystery failure.
+      expect(auditLevel(naked, nakedGraph).violations.map((v) => v.code)).toContain(
+        "door-without-switch",
+      );
+      // The `allOffStaysDefined` clause gets the same treatment: on this class the
+      // sanctioned measurement is null **before and after** the mutation, so "stays
+      // defined" is not a claim this board can carry — it is replaced by the equality
+      // `null === null`, which is the honest form of the same emptiness.
+      expect(allOffShortestSolution(naked, nakedGraph)).toBeNull();
     });
 
     it("refuses a sealed goal (the region check is not vacuous)", () => {
