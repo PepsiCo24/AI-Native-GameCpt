@@ -39,11 +39,11 @@
  *   not drawn, the vector placeholder is, and R-P2/R-P3 must stay honest about
  *   that. A static flag cannot answer it, and a runtime answer cannot arm R-P6.
  *
- * R-P6 (`assertNoPlaceholders` throwing in a release build) is implemented but
- * gated by {@link ART_INTEGRATED}: while any slot is unresolved the production gate
- * would fail and make the build unplayable, which is the opposite of what R-P6
- * exists for. Flipping `ART_INTEGRATED` to `true` is the documented integration
- * switch (§11 "re-run §3.3 QA, then flip").
+ * R-P6 (`assertNoPlaceholders` throwing in a release build) is implemented and
+ * **armed** by {@link ART_INTEGRATED}: a slot declared unresolved fails the boot
+ * loudly instead of shipping placeholder art behind a playable board. The switch
+ * was held `false` only while a slot was still open (the documented §11 sequence
+ * is "re-run §3.3 QA, then flip"); that condition is now met and it is `true`.
  */
 
 /** One drawn placeholder and the manifest row it stands in for. */
@@ -165,12 +165,16 @@ export function integratedSlots(): readonly PlaceholderSlot[] {
 }
 
 /**
- * R-P6 — the production gate. Called once at boot.
+ * R-P6 — the production gate. Called once at boot (`src/main.ts`).
  *
- * `throw` is required by the spec, so it throws — but only when art is expected
- * to be integrated ({@link ART_INTEGRATED}). Until GATE A delivers, a release
- * build must still run: the vertical slice is the Stage-2 measurement instrument
- * and a boot throw would delete the evidence instead of protecting it.
+ * `throw` is required by the spec, so it throws — whenever a slot is declared
+ * unresolved while {@link ART_INTEGRATED} is armed. The earlier leniency ("until
+ * GATE A delivers, a release build must still run") existed for one reason only:
+ * a boot throw while the vertical slice was *still* the Stage-2 measurement
+ * instrument would have deleted evidence instead of protecting it. That reason is
+ * gone — every drawn slot is integrated — so the gate is live and stays live: the
+ * next `resolved: false` row added here, or the next delivery rolled back to
+ * placeholder, fails the build at boot rather than shipping silently.
  *
  * @throws Error listing every unresolved Asset ID, when the gate is armed.
  */
@@ -185,15 +189,24 @@ export function assertNoPlaceholders(): void {
 }
 
 /**
- * Integration switch (ui-ux.md §11). Flipping it to `true` without a resolved
- * every slot is a build failure — and that is exactly the point of R-P6.
+ * Integration switch (ui-ux.md §11). Flipping it to `true` while any slot is
+ * unresolved is a build failure — and that is exactly the point of R-P6.
  *
- * **`false` as of 2026-10-16 (R-005a), on purpose.** The Asset Gate signed the
- * revision round (docs/assets/art-acceptance-2026-10-16.md) and the five canvas
- * slots are integrated, but {@link unresolvedAssetIds} still returns `["A-07"]`
- * (`ui_kit`, whose L8/DOM disposition waits on the UA spec ruling = R-005b), so
- * arming R-P6 here would make `assertNoPlaceholders()` throw at boot — i.e. it
- * would ship the *deletion* of the playable build instead of its protection.
- * Flipping this to `true` belongs to R-005b, when that list is empty.
+ * **`true` as of 2026-10-16 (R-005b, first live round).** Three conditions hold,
+ * each one a separate act by someone other than this module:
+ *
+ * 1. the Asset Gate **signed the revision round** (`docs/assets/art-acceptance-
+ *    2026-10-16.md`, human-signed "签 R-005"), and R-005a wired the five canvas
+ *    slots (A-03 pair, A-04/A-05 plates, A-06 goal) as texture-key swaps;
+ * 2. A-07 `ui_kit` was ruled CSS-by-design FINAL by UA-0013 (`ui-ux.md` V0.9.4
+ *    §9.1) and its row retired from `PLACEHOLDER_SLOTS` above — so
+ *    {@link unresolvedAssetIds} returns **`[]`**, measured, not assumed;
+ * 3. both boot guards pass on this tree: this gate (no unresolved slot) and
+ *    `theme/art.ts`'s `assertArtSourcesMatchSlots()` (the five shipped URLs are
+ *    exactly the five `resolved: true` rows, both directions).
+ *
+ * This is the switch's *armed* state, not a one-shot: any future slot added here
+ * without its delivered file — or any delivery reverted to placeholder — throws
+ * at boot, which is R-P6 working rather than a reason to flip it back.
  */
-export const ART_INTEGRATED = false;
+export const ART_INTEGRATED = true;
