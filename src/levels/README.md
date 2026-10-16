@@ -473,6 +473,61 @@ clearing every gate at exactly the rung value. The rung pin (`par === l15Par + 2
 exactly, not merely `≥`) is printed by the generator and asserted in the suite, so an accept that
 is longer than its rung is *named and dropped* rather than silently shipped as the rung.
 
+### L20 is **not authored** — the measured exhaustion of the goal-gated full-seal device
+
+No par-20 rung was written, and nothing was fabricated to reach one. What the census
+*measured* is below; the honest reading is that the device L16–L19 are built from cannot reach
+`par 20` without repeating a shape the ladder has already taught, so the block waits for a
+mechanism (`R-003c` registration is unaffected: it registers whatever rungs exist).
+
+**The device, stated as what it is.** Each of L16–L19 is a **full seal**: every neighbour of the
+goal is a door, each door is targeted by exactly one switch, and the all-OFF world is
+unsatisfiable. In that device the *shortest* plan opens exactly **one** door, because each seal
+tile is directly adjacent to the free far region — so
+
+    par = min over doors i of ( d(start → s_i) + 1 + d(s_i → goal) )
+
+and the rung's escalation can only come from where the cheapest switch sits. Measured, not
+argued: on `l019.json` and `l018.json` every **single-door** board (that door plus only its own
+switch, every other door deleted) is solvable at `shortest = 12` — the bare route — while the
+all-OFF world is unsatisfiable. **One press always suffices.**
+
+**Par ceilings, enumerated (not sampled) on `7×6` with the sealed-column grammar.**
+
+| grid / cx | seal arity | geometry | tuples judged | measured `par` census | ceiling |
+|---|---|---|---|---|---|
+| 7×6 / 3 | 2 | `2,5↔4,0`/A goal `6,5` (bare 14) | 210 (complete) | `14:201 16:9` | **16** |
+| 7×6 / 3 | 2 | `2,5↔6,0`/A goal `4,5` (bare 14) | 210 (complete) | `14:201 16:9` | **16** |
+| 7×6 / 3 | 3 | `2,5↔4,0`/A goal `6,3` (bare 12) | 2 184 (complete) | `12:1584 14:452 16:139 18:9` | **18** |
+| 7×6 / 3 | 3 | `2,5↔4,4`/A goal `5,0` (bare 12) | 2 184 (complete) | `12:1224 14:910 16:50` | **16** |
+| 7×6 / 3 | 4 | `2,5↔4,0`/A goal `5,4` (bare 12) — **L19's board** | 17 160 (complete) | `12:10230 14:6450 16:446 18:34` | **18** |
+
+So on `7×6` the whole device has a measured ceiling of **18** — which is exactly L19. `par 20` is
+not reachable there at any arity, and the rung-20 window (`bare ∈ {20,18,16,14,12}`) admits only
+bare 12 and bare 14 on this grid, so those rows are the whole search space the window can reach.
+
+**And `7×7` is not a shape step.** The taller grid does reach `par 22` (arity 4, cx 3, geometry
+`2,5↔6,0`/A goal `5,4`, 43 680 tuples complete: `12:21840 14:18018 16:2457 18:1197 20:108 22:60`),
+but its seal is **byte-identical in shape to L19's** — goal `(5,4)`, doors `(5,3) (4,4) (6,4) (5,5)`
+— at the **same bare par 12**. The extra 2 moves are press-detour length on the seal the ladder
+already taught at L19: a re-ran longer walk, which §6 forbids as a rung's escalation.
+
+**What par 20 needs (recorded for the next lane, not assumed).** A device in which **two presses
+are mandatory**, i.e. one where no single door admits the player to the goal. The two candidate
+constructions both need a *new* lattice stage, because neither is expressible as "the doors are
+the goal's neighbours":
+
+1. **Gauntlet / two doors in series.** Every approach to the goal's ring is itself behind a
+   door, so entering needs a seal door *and* a corridor door. Needs ≥ 6 doors on a 7×6 arity-3
+   ring; must be checked against `coverage` (42/42) because *walls* cannot be used to remove an
+   approach — a far-region phase wall makes its tile unstandable and the coverage gate fails,
+   which is why every blocker in this device has to be an openable door.
+2. **Sealed landing (two lattices).** The portal landing sits in its own pocket whose exit is a
+   door, so the player must land, press, leave, and press again — an *ordered* two-step chain
+   (`docs/level-design.md` §5's "2-step lookahead", which L16–L19 have still not delivered).
+
+Both were identified from these measurements; neither was built, and no rung claims them.
+
 ### Named findings, recorded not smoothed
 
 - **F-L16-1 (inert second latch).** In `l016.json` the switch `s1` sits on `(5,0)`, which *is*
