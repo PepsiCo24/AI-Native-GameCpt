@@ -54,10 +54,12 @@ import goalUrl from "../../../assets/art/props/goal.png?url";
  *
  * **The five ASSET-GATE-approved canvas slots and nothing else.** `portal_a/b`
  * are out by ruling — portals are vector-by-design (`ui-ux.md` V0.8 §3.1c/§9.1)
- * and the raster pair is optional Stage-5 polish; `ui_kit` is DOM/CSS per §9.1
- * (R-005b); logo/cover are not renderer slots at all. Listing a file here is what
- * *ships* it, so listing one the renderer never draws would be both a lie and
- * dead weight in the bundle.
+ * and the raster pair is optional Stage-5 polish; `ui_kit` was ruled CSS-by-design
+ * FINAL by UA-0013 (2026-10-16, `ui-ux.md` V0.9.4 §9.1/§11 + manifest V0.5.4:
+ * A-07 DELIVERED as a **reference kit**, never loaded at runtime) and its row left
+ * `theme/assets.ts`; logo/cover are not renderer slots at all. Listing a file here
+ * is what *ships* it, so listing one the renderer never draws would be both a lie
+ * and dead weight in the bundle.
  */
 export const ART_SOURCES: Readonly<Record<string, string>> = Object.freeze({
   echo_spirit_a: echoSpiritAUrl,

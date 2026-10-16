@@ -14,6 +14,21 @@
  * `PLACEHOLDER_SLOTS` additionally records the manifest export name, which is the
  * texture key the delivered image is registered under.
  *
+ * ── One slot left this table (A-07 `ui_kit`, 2026-10-16) ─────────────────────
+ * "A slot in this table" means "a drawn thing that stands in for art". A-07 was
+ * ruled **CSS-by-design FINAL** (UA-0013, `docs/ui-ux.md` V0.9.4 §9.1 + §11; the
+ * manifest's A-07 row, `docs/assets/asset-manifest.md` V0.5.4): the HUD ships its
+ * token CSS, and the delivered, signed sheet is a **reference kit** — style canon,
+ * never a DOM skin and never a runtime dependency. Its row is therefore **removed**
+ * rather than flipped to `resolved: true`, which is deliberately *not* the
+ * integration path: `resolved` says "the delivered file is the thing being drawn",
+ * and for A-07 the drawn thing is CSS, not the sheet. This is the K-4 portal-shape
+ * precedent (`ui-ux.md` V0.8: no placeholder slot, no `PLACEHOLDER_TO_ASSET`
+ * entry, no runtime consumer) applied to a sheet that *was* accepted. Consequence
+ * chain, by construction: A-07 leaves {@link unresolvedAssetIds}, the R-P3 dev
+ * strip loses its item (it lists the slot table), and R-P6's gate then covers
+ * exactly the canvas set A-03 / A-04 / A-05 / A-06.
+ *
  * ── Two different questions, deliberately two different mechanisms ───────────
  * - **`resolved`** (this file) is a *declaration*: has the delivered art for this
  *   slot been accepted by the Asset Gate and shipped? It changes only when the
@@ -87,16 +102,21 @@ export const PLACEHOLDER_SLOTS: readonly PlaceholderSlot[] = [
     usage: "Goal (L4 object) — the delivered annulus, ring + centre dot while unmounted",
     resolved: true,
   },
-  {
-    placeholder: "ui_kit",
-    assetId: "A-07",
-    assetName: "ui_kit",
-    usage: "HUD buttons / chips / panels (L8 DOM) — CSS-only per §9.1; disposition is R-005b",
-    resolved: false,
-  },
 ];
 
-/** R-P5: one lookup table, placeholder → manifest Asset ID. */
+/**
+ * R-P5: one lookup table, placeholder → manifest Asset ID.
+ *
+ * **A-07 `ui_kit` is absent on purpose (retired 2026-10-16, R-005b).** It *had* an
+ * entry (`ui_kit` → `A-07`) until UA-0013 ruled the slot CSS-by-design FINAL
+ * (`docs/ui-ux.md` V0.9.4 §9.1 + §11; manifest `docs/assets/asset-manifest.md`
+ * V0.5.4: A-07 → DELIVERED, integrated as a **reference kit**). The sheet is never
+ * loaded at runtime, so there is no texture key to map and no runtime consumer to
+ * rename from a placeholder: the row left the table, exactly as the K-4 portal
+ * ruling left `portal_a/b` out (no slot, no entry, R-P5-consistent). A future
+ * Stage-4+ adoption of a sheet export re-enters through the §11 gate with a spec
+ * row first, never by re-adding a line here.
+ */
 export const PLACEHOLDER_TO_ASSET: Readonly<Record<string, string>> = Object.fromEntries(
   PLACEHOLDER_SLOTS.map((slot) => [slot.placeholder, slot.assetId]),
 );
@@ -123,9 +143,12 @@ export function placeholderTag(placeholder: string): string {
 /**
  * Every Asset ID whose delivered art has not shipped — R-P6's input.
  *
- * After R-005a (2026-10-16) this is exactly `["A-07"]`: the five canvas slots
- * (A-03 pair, A-04/A-05 pair, A-06 goal) are integrated, and A-07 `ui_kit` stays
- * open until the R-005b ruling on its L8/DOM disposition.
+ * **Empty since 2026-10-16 (R-005b).** R-005a integrated the five canvas slots
+ * (A-03 pair, A-04/A-05 plates, A-06 goal); UA-0013 then retired the sixth row —
+ * A-07 `ui_kit`, CSS-by-design FINAL, see the header. Routing A-07 out of this
+ * table rather than flipping it to `resolved: true` is what makes emptiness the
+ * *declared* answer: this list is derived from `resolved`, never from whether a
+ * file happened to load.
  */
 export function unresolvedAssetIds(): string[] {
   return [...new Set(unresolvedSlots().map((slot) => slot.assetId))];
