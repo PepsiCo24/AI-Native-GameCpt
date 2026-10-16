@@ -1,0 +1,506 @@
+{
+ "files": {
+  "echo_spirit_a": {
+   "path": "assets/art/character/echo_spirit_a.png",
+   "size": [
+    512,
+    512
+   ],
+   "mode": "RGBA",
+   "bytes": 79915,
+   "mtime": 1792115984.3360496
+  },
+  "echo_spirit_b": {
+   "path": "assets/art/character/echo_spirit_b.png",
+   "size": [
+    512,
+    512
+   ],
+   "mode": "RGBA",
+   "bytes": 88060,
+   "mtime": 1792115984.3412764
+  },
+  "portal_a": {
+   "path": "assets/art/props/portal_a.png",
+   "size": [
+    512,
+    512
+   ],
+   "mode": "RGBA",
+   "bytes": 69712,
+   "mtime": 1792115984.3439903
+  },
+  "portal_b": {
+   "path": "assets/art/props/portal_b.png",
+   "size": [
+    512,
+    512
+   ],
+   "mode": "RGBA",
+   "bytes": 71257,
+   "mtime": 1792115984.346778
+  },
+  "goal(untouched)": {
+   "path": "assets/art/props/goal.png",
+   "size": [
+    512,
+    512
+   ],
+   "mode": "RGBA",
+   "bytes": 215392,
+   "mtime": 1792064085.8079135
+  },
+  "bg_phase_a": {
+   "path": "assets/art/background/bg_phase_a_1920x1080.png",
+   "size": [
+    1920,
+    1080
+   ],
+   "mode": "RGB",
+   "bytes": 444699,
+   "mtime": 1792115984.3496635
+  },
+  "bg_phase_b": {
+   "path": "assets/art/background/bg_phase_b_1920x1080.png",
+   "size": [
+    1920,
+    1080
+   ],
+   "mode": "RGB",
+   "bytes": 437650,
+   "mtime": 1792115984.3520672
+  },
+  "logo_primary": {
+   "path": "assets/art/logo/logo_primary.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "mode": "RGBA",
+   "bytes": 133893,
+   "mtime": 1792115984.355025
+  },
+  "ui_kit": {
+   "path": "assets/art/ui/ui_kit.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "mode": "RGBA",
+   "bytes": 192543,
+   "mtime": 1792115984.3579686
+  }
+ },
+ "spirit_pair": {
+  "raw_iou": 1.0,
+  "alpha_equal_exact": true,
+  "bbox_aligned_iou": 1.0,
+  "chamfer_px": 0.0,
+  "chamfer_px_legacy_batch1_yardstick": 52.425049165589705,
+  "fill_pct": {
+   "a": [
+    69.9,
+    70.1
+   ],
+   "b": [
+    69.9,
+    70.1
+   ]
+  },
+  "a_bbox": [
+   82,
+   87,
+   439,
+   445
+  ],
+  "b_bbox": [
+   82,
+   87,
+   439,
+   445
+  ],
+  "core_a": {
+   "present": true,
+   "pixels": 88182,
+   "mean_rgb_srgb": [
+    244.3,
+    204.9,
+    115.9
+   ],
+   "luminance_of_mean": 0.6413,
+   "hue_deg": 41.6,
+   "saturation": 0.526,
+   "value": 0.958
+  },
+  "core_b": {
+   "present": true,
+   "pixels": 88182,
+   "mean_rgb_srgb": [
+    114.7,
+    99.7,
+    162.8
+   ],
+   "luminance_of_mean": 0.1532,
+   "hue_deg": 254.2,
+   "saturation": 0.387,
+   "value": 0.638
+  }
+ },
+ "portal_pair": {
+  "near_white_core_pixels_a": [
+   0,
+   74106
+  ],
+  "near_white_core_pixels_b": [
+   0,
+   74106
+  ],
+  "raw_iou": 1.0,
+  "alpha_equal_exact": true,
+  "chamfer_px": 0.0,
+  "chamfer_px_legacy_batch1_yardstick": 21.322554307817917,
+  "fill_pct": {
+   "a": [
+    78.7,
+    78.9
+   ],
+   "b": [
+    78.7,
+    78.9
+   ],
+   "goal": [
+    78.9,
+    79.1
+   ]
+  },
+  "core_a": {
+   "present": true,
+   "pixels": 74106,
+   "mean_rgb_srgb": [
+    68.7,
+    185.7,
+    209.1
+   ],
+   "luminance_of_mean": 0.4084,
+   "hue_deg": 190.0,
+   "saturation": 0.672,
+   "value": 0.82
+  },
+  "core_b": {
+   "present": true,
+   "pixels": 74106,
+   "mean_rgb_srgb": [
+    55.2,
+    94.2,
+    138.8
+   ],
+   "luminance_of_mean": 0.1071,
+   "hue_deg": 212.0,
+   "saturation": 0.602,
+   "value": 0.544
+  },
+  "core_goal": {
+   "present": true,
+   "pixels": 67392,
+   "mean_rgb_srgb": [
+    211.7,
+    160.9,
+    68.6
+   ],
+   "luminance_of_mean": 0.3982,
+   "hue_deg": 38.7,
+   "saturation": 0.676,
+   "value": 0.83
+  }
+ },
+ "backgrounds": {
+  "blurred_structural_correlation": 0.9951400890250532,
+  "center_a": {
+   "crop_fraction": 0.6,
+   "grid": 20,
+   "mean_lum": 0.8373132726800042,
+   "p50_lum": 0.8400267692344496,
+   "p2_block": 0.8361463880950525,
+   "p98_block": 0.840771975381757,
+   "contrast_2_98": 1.005219890696218,
+   "contrast_minmax": 1.0083044693337166,
+   "std_lum": 0.0037058072763265287
+  },
+  "center_b": {
+   "crop_fraction": 0.6,
+   "grid": 20,
+   "mean_lum": 0.015228265545216073,
+   "p50_lum": 0.015812790032860794,
+   "p2_block": 0.014977261540875492,
+   "p98_block": 0.015889817067284956,
+   "contrast_2_98": 1.014044228777407,
+   "contrast_minmax": 1.0205451144380033,
+   "std_lum": 0.0007850771356620604
+  },
+  "portrait": {
+   "a": {
+    "center_contrast": 1.0042298162399603,
+    "center_mean_lum": 0.8367851315169634
+   },
+   "b": {
+    "center_contrast": 1.0125247775811725,
+    "center_mean_lum": 0.01512024170015378
+   }
+  },
+  "phase_contrast": 13.46896638097441,
+  "mean_lum": {
+   "a": 0.8430907565404484,
+   "b": 0.016307297180723823
+  },
+  "crossfade": {
+   "normalised_mean_abs_diff": 0.5831084704221363,
+   "mean_lum_a": 0.8430907565404484,
+   "mean_lum_b": 0.016307297180723823,
+   "max_lum_delta_per_step_8": 0.11016674379952403
+  }
+ },
+ "logo_primary": {
+  "ink_bbox": [
+   239,
+   599,
+   1825,
+   1243
+  ],
+  "margins_pct": [
+   11.67,
+   29.25,
+   10.84,
+   39.26
+  ],
+  "lines_check": "VISUAL (spelling/line-count adjudicated by reviewer eyes)",
+  "fringe": {
+   "semi128_pixels": 23666,
+   "dark_fraction": 0.327896560466492,
+   "gray_fraction": 0.1794980140285642,
+   "bright_fraction": 0.4926054255049438,
+   "mean_edge_alpha": 25.68832924871123,
+   "edge_width_rows": 399
+  }
+ },
+ "ui_kit": {
+  "coarse_components": 25,
+  "component_boxes": [
+   {
+    "x": 90,
+    "y": 1050,
+    "w": 831,
+    "h": 466,
+    "area": 382390
+   },
+   {
+    "x": 1128,
+    "y": 1050,
+    "w": 831,
+    "h": 466,
+    "area": 382390
+   },
+   {
+    "x": 105,
+    "y": 80,
+    "w": 741,
+    "h": 236,
+    "area": 162969
+   },
+   {
+    "x": 1203,
+    "y": 80,
+    "w": 741,
+    "h": 236,
+    "area": 161369
+   },
+   {
+    "x": 255,
+    "y": 1675,
+    "w": 606,
+    "h": 251,
+    "area": 138636
+   },
+   {
+    "x": 1188,
+    "y": 1675,
+    "w": 606,
+    "h": 251,
+    "area": 138636
+   },
+   {
+    "x": 1285,
+    "y": 732,
+    "w": 207,
+    "h": 237,
+    "area": 20073
+   },
+   {
+    "x": 73,
+    "y": 458,
+    "w": 217,
+    "h": 162,
+    "area": 15192
+   },
+   {
+    "x": 445,
+    "y": 465,
+    "w": 197,
+    "h": 161,
+    "area": 14566
+   },
+   {
+    "x": 597,
+    "y": 797,
+    "w": 107,
+    "h": 107,
+    "area": 9014
+   },
+   {
+    "x": 1355,
+    "y": 473,
+    "w": 84,
+    "h": 145,
+    "area": 7452
+   },
+   {
+    "x": 1680,
+    "y": 473,
+    "w": 84,
+    "h": 145,
+    "area": 7452
+   },
+   {
+    "x": 756,
+    "y": 466,
+    "w": 95,
+    "h": 159,
+    "area": 6890
+   },
+   {
+    "x": 1074,
+    "y": 466,
+    "w": 95,
+    "h": 159,
+    "area": 6890
+   },
+   {
+    "x": 1784,
+    "y": 485,
+    "w": 92,
+    "h": 121,
+    "area": 5269
+   },
+   {
+    "x": 1496,
+    "y": 487,
+    "w": 37,
+    "h": 117,
+    "area": 1890
+   },
+   {
+    "x": 554,
+    "y": 754,
+    "w": 50,
+    "h": 50,
+    "area": 1312
+   },
+   {
+    "x": 696,
+    "y": 754,
+    "w": 50,
+    "h": 50,
+    "area": 1312
+   },
+   {
+    "x": 554,
+    "y": 896,
+    "w": 50,
+    "h": 50,
+    "area": 1312
+   },
+   {
+    "x": 696,
+    "y": 896,
+    "w": 50,
+    "h": 50,
+    "area": 1312
+   },
+   {
+    "x": 721,
+    "y": 839,
+    "w": 61,
+    "h": 23,
+    "area": 1295
+   },
+   {
+    "x": 639,
+    "y": 921,
+    "w": 23,
+    "h": 61,
+    "area": 1295
+   },
+   {
+    "x": 639,
+    "y": 719,
+    "w": 23,
+    "h": 61,
+    "area": 1262
+   },
+   {
+    "x": 519,
+    "y": 839,
+    "w": 61,
+    "h": 23,
+    "area": 1262
+   },
+   {
+    "x": 1460,
+    "y": 515,
+    "w": 25,
+    "h": 60,
+    "area": 888
+   }
+  ],
+  "chevron_candidates": 15,
+  "best_mirror_pair": {
+   "iou": 1.0,
+   "boxes": [
+    {
+     "area": 6890,
+     "bbox": [
+      756,
+      466,
+      850,
+      624
+     ],
+     "size": [
+      95,
+      159
+     ],
+     "x": 756,
+     "y": 466,
+     "w": 95,
+     "h": 159
+    },
+    {
+     "area": 6890,
+     "bbox": [
+      1074,
+      466,
+      1168,
+      624
+     ],
+     "size": [
+      95,
+      159
+     ],
+     "x": 1074,
+     "y": 466,
+     "w": 95,
+     "h": 159
+    }
+   ]
+  },
+  "element_census_14": "VISUAL (14-element + icon_back presence adjudicated on ui_kit_flat_1024.png)"
+ }
+}

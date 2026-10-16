@@ -1,0 +1,51 @@
+[PASS] echo_spirit_a·native-size :: (512, 512) expected (512, 512)
+[PASS] echo_spirit_a·alpha-mode :: mode=RGBA
+[PASS] echo_spirit_b·native-size :: (512, 512) expected (512, 512)
+[PASS] echo_spirit_b·alpha-mode :: mode=RGBA
+[PASS] R-T04·silhouette-IoU≥0.99 :: raw_iou=1.0000 chamfer=0.00px (legacy-depth 52.4)
+[PASS] R-T04·chamfer≤8px :: chamfer=0.0000
+[PASS] R-T04·alpha-mask-identity :: alpha_equal_exact=True
+[PASS] R-T04·bbox-fill-A∈[65,80] :: w=69.9% h=70.1%
+[PASS] R-T04·bbox-fill-B∈[65,80] :: w=69.9% h=70.1%
+[PASS] R-T04·A/B-size-diff≤2% :: diff=0.00%
+[PASS] R-T04·centroid-shift≤2% :: shift=0.00%
+[PASS] R-T04·A-core-lum∈[0.55,0.70] :: lum=0.6413
+[PASS] R-T04·A-core-hue∈[35,50] :: hue=41.6°
+[PASS] R-T04·corner-alpha-A=0 :: {'tl': 0.0, 'tr': 0.0, 'bl': 0.0, 'br': 0.0}
+[PASS] R-T04·fringe-dark≤0.05-A :: dark_fraction=0.0
+[PASS] R-T04·corner-alpha-B=0 :: {'tl': 0.0, 'tr': 0.0, 'bl': 0.0, 'br': 0.0}
+[PASS] R-T04·fringe-dark≤0.05-B :: dark_fraction=0.0
+[PASS] portal_a·native-size :: (512, 512) expected (512, 512)
+[PASS] portal_a·alpha-mode :: mode=RGBA
+[PASS] portal_b·native-size :: (512, 512) expected (512, 512)
+[PASS] portal_b·alpha-mode :: mode=RGBA
+[PASS] goal(untouched)·native-size :: (512, 512) expected (512, 512)
+[PASS] goal(untouched)·alpha-mode :: mode=RGBA
+[PASS] R-T06·silhouette-IoU≥0.99 :: raw_iou=1.0000 chamfer=0.00px (legacy-depth 21.3)
+[PASS] R-T06·chamfer≤8px :: chamfer=0.0000
+[PASS] R-T06·alpha-mask-identity :: alpha_equal_exact=True
+[PASS] R-T06·portal-fill-w∈[76.9,80.0] :: {'a': [78.7, 78.9], 'b': [78.7, 78.9], 'goal': [78.9, 79.1]}
+[PASS] R-T06·portal-fill-h∈[77.1,80.0] :: {'a': [78.7, 78.9], 'b': [78.7, 78.9], 'goal': [78.9, 79.1]}
+[PASS] R-T06·triad-framing-spread≤2% :: w_spread=0.20% h_spread=0.20%
+[PASS] R-T06·portal-core-hue∈[170,230] :: a=190.0° b=212.0°
+[PASS] R-T06·portal-goal-hue-distance≥100 :: Δhue=151.3° goal_hue=38.7°
+[PASS] R-T06·goal-core-hue∈[30,55] (regression) :: hue=38.7°
+[PASS] bg_phase_a·native-size :: (1920, 1080) expected (1920, 1080)
+[PASS] bg_phase_a·alpha-mode :: mode=RGB
+[PASS] bg_phase_b·native-size :: (1920, 1080) expected (1920, 1080)
+[PASS] bg_phase_b·alpha-mode :: mode=RGB
+[PASS] R-T11·blurred-structural-corr≥0.9 :: corr=0.9951 (batch1 rejected value −0.0712)
+[PASS] R-T11·center60-quiet-minmax≤1.6-A :: minmax=1.008 p2/p98=1.005
+[PASS] R-T11·center60-quiet-minmax≤1.6-B :: minmax=1.021 p2/p98=1.014
+[PASS] R-T11·916crop-contrast≤1.2 :: a=1.004 b=1.013
+[PASS] R-T11·lum-separation≥10:1 (A bright) :: contrast=13.47:1 meanA=0.8431 meanB=0.0163
+[PASS] logo_primary·native-size :: (2048, 2048) expected (2048, 2048)
+[PASS] logo_primary·alpha-mode :: mode=RGBA
+[PASS] R-T10·margins≥8% all sides :: L=11.67% R=10.84% T=29.25% B=39.26% (rejected take: 6.15/5.86)
+[PASS] R-T10·corner-alpha=0 :: {'tl': 0.0, 'tr': 0.0, 'bl': 0.0, 'br': 0.0}
+[FAIL] R-T10·fringe-dark≤0.05 :: dark_fraction=0.327896560466492 (reference logo_mark, batch-1 PASSED: 0.5390403596208345)
+[PASS] ui_kit·native-size :: (2048, 2048) expected (2048, 2048)
+[PASS] ui_kit·alpha-mode :: mode=RGBA
+[PASS] R-T12·back/next-mirror-IoU≥0.95 :: best mirror IoU=1.0000 (chevron-size candidates=15, coarse components=25)
+[PASS] R-T12·corner-alpha=0 (sheet bg really transparent) :: {'tl': 0.0, 'tr': 0.0, 'bl': 0.0, 'br': 0.0}
+RESULT 49/50 numeric gates PASS
