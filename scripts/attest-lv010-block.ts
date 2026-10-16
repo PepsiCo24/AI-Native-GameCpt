@@ -3,22 +3,23 @@
  * re-attestation (the LV-009-B / LV-010-STEP-0 pattern, pointed at a block that has
  * just been moved into the shipped root instead of at one about to be authored).
  *
- * Why it exists. The four rungs were proven *on the candidate bytes* by
+ * Why it exists. The five rungs were proven *on the candidate bytes* by
  * `scripts/prove-candidate.ts` (nine gates + a six-control mutation battery each,
  * `docs/ai-native-pipeline.md` §8.12) — but "proven as a candidate" and "registered"
  * are two different claims, and the dispatch that registers them must not be able to
  * re-type a number. So this script
  *
  *   1. proves the **bytes did not move**: each root file's git blob hash equals the
- *      blob hash of the candidate it came from at the commit the dispatch names
- *      (`3cc6df2:src/levels/candidates/lNNN.json`). A byte-copy is not an edit, and
- *      this is the check that says so — if git cannot answer, the check FAILS
- *      (a control that did not run is never a pass);
+ *      blob hash of the candidate it came from at the commit that rung's shelf names
+ *      (`RUNG_ORIGINS` — L16–L19 from `3cc6df2:src/levels/candidates`, L20 from
+ *      `2ea83ac:src/levels/candidates`). A byte-copy is not an edit, and this is the
+ *      check that says so — if git cannot answer, the check FAILS (a control that did
+ *      not run is never a pass);
  *   2. proves the **law's basis** is unchanged on the registered set: `par(L15)`, the
  *      frozen cut (`max D_exec` over L1–L15) and the `B` band are re-derived from the
  *      live L1–L15 files and compared against the constants `@/core/solver/policy`
  *      imports into `blockL1619Gates` (nothing is transcribed here);
- *   3. re-measures every **booked** number of the four rungs (par, `D_exec`, `B`,
+ *   3. re-measures every **booked** number of the five rungs (par, `D_exec`, `B`,
  *      par routes, refusals, coverage, the all-OFF world, `T`/`R`/dead states) from
  *      the **root bytes** with the shipped readers, and compares against
  *      {@link BOOKED} — the dispatch's booked evidence, typed once, *to be falsified*;
@@ -81,10 +82,47 @@ const argOf = (name: string): string | null => {
   return hit === undefined ? null : hit.slice(name.length + 3);
 };
 
-/** Where the registered bytes came from: `<sha>:<dir>` (the candidate shelf at that commit). */
+/** Where the registered bytes came from when a rung has no shelf of its own. */
 const origin = argOf("origin") ?? "3cc6df2:src/levels/candidates";
-const originSha = origin.split(":")[0] ?? origin;
-const originDir = origin.split(":").slice(1).join(":");
+
+/**
+ * `R-003d` — the **per-rung origin**: this registration train has two shelves behind it.
+ * L16–L19 were byte-copied from the LV-010 shelf at `3cc6df2`; L20 was byte-copied from the
+ * shelf's state at the dispatch base `2ea83ac`, where `src/levels/candidates/` held exactly
+ * `l020.json`. `--origin=<sha>:<dir>` still overrides every rung, and a rung with no known
+ * origin is refused rather than skipped.
+ */
+const RUNG_ORIGINS: Readonly<Record<number, string>> = {
+  16: "3cc6df2:src/levels/candidates",
+  17: "3cc6df2:src/levels/candidates",
+  18: "3cc6df2:src/levels/candidates",
+  19: "3cc6df2:src/levels/candidates",
+  20: "2ea83ac:src/levels/candidates",
+};
+
+/** The shelf this rung was copied from — an explicit `--origin` overrides every rung. */
+const shelfOf = (id: number): string =>
+  argOf("origin") ?? RUNG_ORIGINS[id] ?? origin;
+
+/** `L16–L19 3cc6df2:src/levels/candidates · L20 2ea83ac:src/levels/candidates` */
+const shelfSummary = (): string => {
+  const grouped = new Map<string, number[]>();
+  for (const id of BLOCK_L1619_IDS) {
+    const shelf = shelfOf(id);
+    const seen = grouped.get(shelf);
+    if (seen === undefined) grouped.set(shelf, [id]);
+    else seen.push(id);
+  }
+  return [...grouped]
+    .map(([shelf, ids]) => {
+      const first = ids[0] ?? 0;
+      const last = ids[ids.length - 1] ?? first;
+      return first === last
+        ? `L${String(last)} ${shelf}`
+        : `L${String(first)}–L${String(last)} ${shelf}`;
+    })
+    .join(" · ");
+};
 
 const fileOf = (id: number): string => `l${String(id).padStart(3, "0")}.json`;
 const pathOf = (id: number): string => join(LEVELS_DIR, fileOf(id));
@@ -102,11 +140,12 @@ const shipped = (): readonly { id: number; level: Level }[] =>
     }));
 
 /**
- * The **booked** evidence of the four rungs, typed once so the program can falsify it.
+ * The **booked** evidence of the five rungs, typed once so the program can falsify it.
  *
  * Source: the LV-010 / LV-010f records (`docs/ai-native-pipeline.md` §8.12) repeated by
  * the R-003c dispatch — par / `D_exec` pairs `12/17.100000`, `14/19.027027`,
- * `16/20.907923`, `18/22.885157`. NOTHING here is read from a candidate file's notes:
+ * `16/20.907923`, `18/22.885157` — plus, for the fifth rung, the R-003d dispatch's
+ * `20/24.729412`. NOTHING here is read from a candidate file's notes:
  * every field is compared against a fresh measurement, and a single disagreement is a
  * `STOP_AND_ROUTE` (the bytes are immutable — a mismatch means the registration, not
  * the board, is wrong).
@@ -156,6 +195,15 @@ const BOOKED: Readonly<
     refusals: 10,
     coverage: 42,
   },
+  20: {
+    par: 20,
+    dexec: 24.729412,
+    b: 1.5765,
+    parRoutes: 252,
+    refusals: 14,
+    coverage: 42,
+  },
+
 };
 
 /** The precision the law's constants are published at (6 dp) — see `blockL1619Gates`. */
@@ -171,11 +219,9 @@ function check(label: string, ok: boolean, detail: string): void {
 // 1. the bytes did not move — git blob identity against the candidate origin
 // ─────────────────────────────────────────────────────────────────────────────
 
-console.log(`attest-lv010-block — R-003c registration re-attestation`);
+console.log(`attest-lv010-block — R-003c/R-003d registration re-attestation (L16–L20)`);
 console.log(`levels dir: ${LEVELS_DIR}`);
-console.log(
-  `origin:     ${originSha}:${originDir} (the shelf the bytes were copied from)`,
-);
+console.log(`origin(s):  ${shelfSummary()} (the shelves the bytes were copied from)`);
 console.log("");
 
 console.log(
@@ -183,7 +229,10 @@ console.log(
 );
 for (const id of BLOCK_L1619_IDS) {
   const rootPath = pathOf(id);
-  const candidatePath = `${originDir}/${fileOf(id)}`;
+  const rungOrigin = shelfOf(id);
+  const rungSha = rungOrigin.split(":")[0] ?? rungOrigin;
+  const rungDir = rungOrigin.split(":").slice(1).join(":");
+  const candidatePath = `${rungDir}/${fileOf(id)}`;
   let rootBlob = "";
   let originBlob = "";
   let error: string | null = null;
@@ -193,7 +242,7 @@ for (const id of BLOCK_L1619_IDS) {
     }).trim();
     originBlob = execFileSync(
       "git",
-      ["rev-parse", `${originSha}:${candidatePath}`],
+      ["rev-parse", `${rungSha}:${candidatePath}`],
       {
         encoding: "utf8",
       },
@@ -206,7 +255,7 @@ for (const id of BLOCK_L1619_IDS) {
     `${fileOf(id)} blob identity`,
     error === null && rootBlob !== "" && rootBlob === originBlob,
     error === null
-      ? `root ${rootBlob} == ${originSha}:${candidatePath} ${originBlob}`
+      ? `root ${rootBlob} == ${rungSha}:${candidatePath} ${originBlob}`
       : `NOT RUN — git could not answer (${error ?? ""}); a check that did not run is never a pass`,
   );
 }
@@ -251,8 +300,8 @@ check(
     `[${BLOCK_L1619_B_BAND[0].toFixed(4)}, ${BLOCK_L1619_B_BAND[1].toFixed(4)}]`,
 );
 check(
-  "the registered set is the 15-level basis + the 4 rungs",
-  shipped().length === 19 && basis.length === 15,
+  "the registered set is the 15-level basis + the 5 rungs",
+  shipped().length === 20 && basis.length === 15,
   `root ${String(shipped().length)} files = ${String(basis.length)} basis + ${String(BLOCK_L1619_IDS.length)} rungs`,
 );
 console.log("");
@@ -384,14 +433,16 @@ console.log("");
 // ─────────────────────────────────────────────────────────────────────────────
 
 console.log("[5/6] the ladder — exact rungs, strict rise, terminal ceiling");
-const expectedRungs = BLOCK_L1619_IDS.map(
-  (id) => BLOCK_L1619_PAR_BASE + BLOCK_L1619_PAR_STEP * (id - 15),
-);
 check(
-  "the derived ladder is 12 / 14 / 16 / 18",
-  expectedRungs.join(",") === BLOCK_L1619_PAR_EXPECTATION.join(",") &&
-    BLOCK_L1619_PAR_EXPECTATION.join(",") === "12,14,16,18",
-  `BLOCK_L1619_PAR_EXPECTATION = [${BLOCK_L1619_PAR_EXPECTATION.join(", ")}]`,
+  "the derived ladder is " + BLOCK_L1619_PAR_EXPECTATION.join(" / "),
+  BLOCK_L1619_PAR_EXPECTATION.length === BLOCK_L1619_IDS.length &&
+    BLOCK_L1619_IDS.every(
+      (id, i) =>
+        BLOCK_L1619_PAR_EXPECTATION[i] ===
+        BLOCK_L1619_PAR_BASE + BLOCK_L1619_PAR_STEP * (id - 15),
+    ),
+  `BLOCK_L1619_PAR_EXPECTATION = [${BLOCK_L1619_PAR_EXPECTATION.join(", ")}] over BLOCK_L1619_IDS=[${BLOCK_L1619_IDS.join(", ")}] ` +
+    `(R-003d: five rungs, the derived rung matched exactly on every member - the ladder is a re-derivation, not a second literal)`,
 );
 for (const m of measured) {
   const index = BLOCK_L1619_IDS.indexOf(m.id);
@@ -508,7 +559,7 @@ const controls: readonly Control[] = [
     mustFire: "block-l1619-tail-ceiling",
     coupling:
       "named: the relabel also moves the rung expectation, so the rung gate fires too (the same B6-family construction as above)",
-    board: { ...l018, id: 19 },
+    board: { ...l018, id: BLOCK_L1619_IDS[BLOCK_L1619_IDS.length - 1] ?? 19 },
   },
 ];
 
@@ -563,13 +614,13 @@ if (divergences.length > 0) {
   process.exit(1);
 }
 console.log(
-  `RESULT: REGISTERED-MATCH — the four rungs are byte-identical to ${originSha}:${originDir}, every booked`,
+  `RESULT: REGISTERED-MATCH — the five rungs are byte-identical to the shelves they were copied from (${shelfSummary()}), every booked`,
 );
 console.log(
   "number (par / D_exec / B / routes / refusals / coverage / all-OFF / region) is reproduced by the program",
 );
 console.log(
-  `solver on the registered bytes, the ladder is 12 / 14 / 16 / 18 rising strictly to the ${BLOCK_L1619_TAIL_EXEC_CEILING.toFixed(6)} ceiling,`,
+  `solver on the registered bytes, the ladder is 12 / 14 / 16 / 18 / 20 rising strictly to the ${BLOCK_L1619_TAIL_EXEC_CEILING.toFixed(6)} ceiling,`,
 );
 console.log(
   `and ${String(controls.length)}/${String(controls.length)} gate controls are refused by name.`,

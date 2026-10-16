@@ -317,19 +317,19 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
     evidence:
       "docs/level-design.md §6 (block-end clause, frozen V0.6) + §6.1.2 + §6.1.3 G4 · ADR-design-0003 §6.4 (122 block-floor rejections: the clause was a filter, never a target) · measured: par 10 (exactly the P3 ceiling), D_exec 14.969697 > 13.64 AND > 13.642857, coverage 35/35 at par (every tile visited), portalFree FALSE, allOffShortest − par = 2 · docs/level-difficulty.md §5.2 · src/levels/README.md §0b/§2c",
   },
-  // ── L16–L19 — the L16+ block's four members, on the law R-003c encodes ─────
+  // ── L16–L19 — the L16+ block's five members, on the law R-003c encodes (rung 5 added by R-003d) ─────
   //
   // One obligation kind (`block-l1619`) for the four rows, for the same reason as
   // `block-l1215`: the rung is a property of a **member's index in the ladder**
   // (`par = par(L15) + 2·(id − 15)`), coverage/grid is a property of the device,
   // and the tail ceiling is a property of the last member. `blockL1619Gates`
   // therefore reads `BLOCK_L1619_PAR_EXPECTATION` by member index and is the
-  // single implementation behind all four rows.
+  // single implementation behind all five rows.
   //
   // `switchRequired: "required"` on all four — and it is **measured**, not
   // asserted: the device is a **goal-gated full seal** (every approach to the goal
   // is a door), so with every switch OFF the goal is unreachable
-  // (`allOffGoalReachable = false`, all-OFF goal-unreachable on 4/4; the
+  // (`allOffGoalReachable = false`, all-OFF goal-unreachable on 5/5; the
   // all-OFF subgraph is 64/259, 63/259, 56/467, 54/923 states). That is strictly
   // **stronger** than the L12–L15 block's `"exempt"` rows, where the all-OFF world
   // still solves exactly 2 moves slower: here the latch carries *existence*, which
@@ -370,6 +370,15 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
     switchRequired: "required",
     evidence:
       "docs/ai-native-pipeline.md §8.12 (LV-010f rung 4: door count 3 → 4, the goal's own geometry) + §8.13 (the stop, and the two mechanisms a par-20 rung still needs) · measured: par 18 = par(L15) + 2·4 = the device's census ceiling on 7 × 6, D_exec 22.885157 = the block's execution ceiling, B 1.6284 (in band), coverage 42/42, all-OFF UNSATISFIABLE, press-then-cross 231/231, refusals 10 · docs/level-difficulty.md §5.2 · src/levels/README.md §2e",
+  },
+  {
+    levelId: 20,
+    lesson:
+      "the sealed landing: the portal does not cut a corner, it hands the player a new start — the landing is a walk-sealed pocket whose only exit is a door, so the plan is ORDERED (land, press the pocket switch, step back through the portal, press a seal switch) and the second press cannot be taken first",
+    obligation: "block-l1619",
+    switchRequired: "required",
+    evidence:
+      "docs/decisions/design-0004-l20-mechanism-sealed-landing.md (GD-007 ruling, adopted) + docs/level-design.md §5 (the two-step lookahead this pays) + §6.1.3 G2/G3 · docs/ai-native-pipeline.md §8.14 (LV-011 authoring) + §8.15 (R-003d registration) · measured on the ROOT bytes: par 20 = par(L15) + 2·5 exactly, D_exec 24.729412 = the first rung ABOVE the 7 × 6 full-seal ceiling 22.885157, B 1.5765 (in band), coverage 42/42, all-OFF UNSATISFIABLE, 252/252 par routes execute the ordered two-press chain, refusedBeforeEnteredTiles 14, and all 252 re-land through the landing portal (P-1 readout, PA-003) · docs/level-difficulty.md §5.2 · src/levels/README.md §2e-5",
   },
 ];
 
@@ -431,7 +440,7 @@ export type BlockGateId =
   | "block-tail-exec-budget";
 
 /**
- * The named gates the **L16–L19 block law** adds (R-003c, `docs/ai-native-pipeline.md`
+ * The named gates the **L16–L20 block law** adds (R-003c, `docs/ai-native-pipeline.md`
  * §8.13): the derived rung (`par(L15) + 2·(id − 15)`, exactly — this block's rung is a
  * *pin*, not the L12–L15 lower bound), the device's grid + coverage, the goal-gated
  * seal's **existence** grade (the all-OFF world is unsatisfiable — strictly stronger
@@ -893,7 +902,7 @@ export const BLOCK_L1619_PAR_BASE = 10;
 export const BLOCK_L1619_PAR_STEP = 2;
 
 /** The block's members, in order (`docs/game-design.md` §8; L15 is the predecessor rung). */
-export const BLOCK_L1619_IDS: readonly number[] = [16, 17, 18, 19];
+export const BLOCK_L1619_IDS: readonly number[] = [16, 17, 18, 19, 20];
 
 /**
  * `par(L15) + 2·(id − 15)` for the four members ⇒ `12 / 14 / 16 / 18`. Derived from
@@ -926,6 +935,16 @@ export const BLOCK_L1619_GRID: readonly [number, number] = [7, 6];
 export const BLOCK_L1619_DEVICE_CEILING_PAR = 18;
 
 /**
+ * `R-003d` - the block's **terminal rung**, re-registered when L20 joined the dataset.
+ * The tail is par 20 (`BLOCK_L1619_PAR_BASE + 2*5`, the derived rung, matched exactly) and
+ * {@link BLOCK_L1619_TAIL_EXEC_CEILING} moves with it (18/22.885157 -> 20/24.729412). Both
+ * values are Solver read-outs of the ROOT bytes, and the re-registration happened only
+ * after that read-out reproduced the booked trio `20 / 24.729412 / 1.5765` digit for digit
+ * (`scripts/attest-lv010-block.ts`, `RESULT: REGISTERED-MATCH`, exit 0).
+ */
+export const BLOCK_L1619_TAIL_PAR = 20;
+
+/**
  * **C5** — the **terminal ceiling**: `D_exec(L19) = 22.885157` at `par 18`. An
  * equality on purpose, and the difference from
  * {@link BLOCK_L1215_TAIL_EXEC_FLOOR} is the point: L12–L15's last member had to
@@ -936,7 +955,22 @@ export const BLOCK_L1619_DEVICE_CEILING_PAR = 18;
  * and it may not be claimed by relaxing this number. Re-authoring L19 itself would
  * move this constant in the same commit as its re-measurement, never afterwards.
  */
-export const BLOCK_L1619_TAIL_EXEC_CEILING = 22.885157;
+// R-003d re-registration. The docstring above records the DOOR-COUNT full-seal device's
+// ceiling (par 18 / 22.885157) - still exactly what the census measured - and it is also the
+// standard rung 5 had to BEAT: L20 measures 24.729412 > 22.885157, i.e. the fifth rung is
+// above the old stop, which is what "the block waits for a new mechanism" meant. The tail
+// clause therefore compares against the NEW terminal value, and only on registered bytes.
+export const BLOCK_L1619_TAIL_EXEC_CEILING = 24.729412;
+
+/**
+ * `R-003d` - the **frozen** terminal value the fifth rung had to beat: the door-count
+ * full-seal device's ceiling on 7 x 6 (`l019`'s `D_exec`, published at R-003c). It is what
+ * the rung-above-the-block reader compares against, because a rung that *is* the block's
+ * tail cannot be required to exceed itself - the clause means "a rung above the block must
+ * clear the block as it stood", and this is that standard, kept as data so the
+ * re-registration above cannot quietly turn the clause into a tautology.
+ */
+export const BLOCK_L1619_PRE_R003D_TAIL_EXEC = 22.885157;
 
 /**
  * **C6** — the `B` band, as the shipped L1–L15 set itself reports it: `[1.2500,
@@ -1035,7 +1069,7 @@ export function blockL1619Gates(
     {
       id: "block-l1619-rung",
       label:
-        "C1 / P2 — par is EXACTLY par(L15) + 2·(id − 15) for this member of the L16–L19 ladder (the derived rung, not a lower bound; docs/level-design.md §6.1.1 P2)",
+        "C1 / P2 — par is EXACTLY par(L15) + 2·(id − 15) for this member of the L16–L20 ladder (the derived rung, not a lower bound; docs/level-design.md §6.1.1 P2)",
       status:
         expected !== null && level.par === expected && par === expected
           ? "PASS"
@@ -1051,7 +1085,7 @@ export function blockL1619Gates(
     {
       id: "block-l1619-grid-coverage",
       label:
-        "C5 / P4 — the device's grid and full coverage: 7 × 6 and distinctPositions == width × height (42/42 at par on all four rungs)",
+        "C5 / P4 — the device's grid and full coverage: 7 × 6 and distinctPositions == width × height (42/42 at par on all five rungs)",
       status:
         onGrid && result.distinctPositions === level.width * level.height
           ? "PASS"
@@ -1072,7 +1106,7 @@ export function blockL1619Gates(
         `switch(es)=${String(level.switches.length)} door(s)=${String(level.doors.length)}; ` +
         `allOffGoalReachable=${String(goalReachableWithAllSwitchesOff(level, graph))} ` +
         `allOffShortest=${allOff === null ? "null (UNSATISFIABLE — the required reading)" : String(allOff)} par=${String(par)}. ` +
-        `allOffShortest is a restricted walk over the all-OFF subgraph. Measured null on 4/4 (all-OFF subgraph 64/259, 63/259, ` +
+        `allOffShortest is a restricted walk over the all-OFF subgraph. Measured null on 5/5 (all-OFF subgraph 64/259, 63/259, ` +
         `56/467, 54/923 states with no goal in it) — the device's whole point: every approach to the goal is a door, so the ` +
         `switch is not a shortcut, it is the difference between solvable and not.`,
     },
@@ -1113,21 +1147,21 @@ export function blockL1619Gates(
     gates.push({
       id: "block-l1619-tail-ceiling",
       label:
-        `C7 — the terminal ceiling: the block's LAST member is par ${String(BLOCK_L1619_DEVICE_CEILING_PAR)} at D_exec ${BLOCK_L1619_TAIL_EXEC_CEILING.toFixed(6)} — the measured ceiling of the 7 × 6 goal-gated full-seal device, not a floor to beat`,
+        `C7 — the terminal ceiling: the block's LAST member is par ${String(BLOCK_L1619_TAIL_PAR)} at D_exec ${BLOCK_L1619_TAIL_EXEC_CEILING.toFixed(6)} — the block's terminal rung on the registered bytes, re-registered at R-003d (18/22.885157 → 20/24.729412), not a floor to beat`,
       status:
         dexec !== null &&
-        par === BLOCK_L1619_DEVICE_CEILING_PAR &&
+        par === BLOCK_L1619_TAIL_PAR &&
         Math.abs(dexec - BLOCK_L1619_TAIL_EXEC_CEILING) < LAW_PRECISION
           ? "PASS"
           : "FAIL",
       detail:
-        `par=${String(par)} (ceiling ${String(BLOCK_L1619_DEVICE_CEILING_PAR)}); ` +
+        `par=${String(par)} (ceiling ${String(BLOCK_L1619_TAIL_PAR)}); ` +
         `Dexec=${dexec === null ? "n/a (unsolvable)" : dexec.toFixed(6)} (ceiling ${BLOCK_L1619_TAIL_EXEC_CEILING.toFixed(6)}). ` +
         `The equality is deliberate and it is the block's HONEST STOP: the census measured par 18 as the ceiling at every seal ` +
-        `arity on 7 × 6 (arity 2 → 16, arity 3 → 18, arity 4 → 18), so there is no rung above this one to climb to with this ` +
-        `device. A par-20 rung needs a NEW mechanism (a gauntlet: every approach to the goal's ring itself behind a door; or a ` +
-        `sealed landing: the portal lands in a pocket whose exit is a door — an ordered two-step chain) — neither is built, and ` +
-        `L20 is deliberately NOT authored. Widening this number instead of building a mechanism is what this gate forbids.`,
+        `arity on 7 × 6 (arity 2 → 16, arity 3 → 18, arity 4 → 18) — rung 5 could not be built on that device, so R-003d ` +
+        `device. re-registered this clause on a NEW mechanism instead of a longer walk: the sealed landing, where the portal ` +
+        `hands the player a new start inside a walk-sealed pocket whose only exit is a door, so the shortest plan is the ORDERED ` +
+        `land → press → leave → press chain (L20; ADR-design-0004; 252/252 par routes, measured). Widening this number instead of building a mechanism is what this gate forbids.`,
     });
   }
 

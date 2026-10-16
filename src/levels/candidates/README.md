@@ -30,7 +30,7 @@ identity, the registry row (`src/game/levels/level-registry.ts`), the count pin
 tables in `src/levels/README.md` §7. **The registered `block-l1619-tail-ceiling` must not move just
 because a candidate exists** — par 18 / `D_exec` 22.885157 is the registered stop, and the ladder's
 strict-`D_exec`-rise obligation is what would judge a future registration. Nothing here claims the
-dataset contains L20: `EXPECTED_LEVEL_COUNT`, the sidecar and the registry still read **19**.
+dataset contains L20: `EXPECTED_LEVEL_COUNT`, the sidecar and the registry still read **19** until GAME-002/QA-014 follow; **R-003d moved `l020.json` to the root**, so this shelf is empty again (graduated, not lost).
 
 `l016.json` … `l019.json` were the shelf's previous occupants and **graduated** by R-003c
 (`git mv`, hashes verified against `3cc6df2:src/levels/candidates/lNNN.json`) after being proven on
