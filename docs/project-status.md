@@ -1477,14 +1477,16 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    (`reviewer.md` additionally keeps its edit-deny permission block). The reason is in this ledger's own
    casualties — RV-008's full audit, UA-0014 ×3, QA-004's batch of five — all request-cost-ceiling deaths on
    the premium routes; the ruling is the right call for cost and it has a second-order effect the studio must
-   now plan around: **the free route rate-limits by concurrency.** Measured within minutes of the ruling:
-   QA-005h was mid-flight and producing (`playwright.live.config.ts` + `tests/e2e-live/**` on disk), RV-009
-   was dispatched beside it and died **instantly** on `Rate limit exceeded` — the same disease in a new
-   costume, not a code problem. Operational rule I am adopting and recording here: **serialize heavy lanes
-   (≤ 2 concurrent subagents) and re-dispatch onto an existing session instead of batching new ones.**
-   Consequence: the reviewer gap is **queued, not lost** — RV-009 (full art-chain audit, closing RV-008's
-   quota death) is re-dispatched the moment a slot frees; its worktree `agent/reviewer/rv-009-art-chain`
-   already exists. Named, not silently widened: the ruling is **text-only**, so art-byte reads (the
+   now plan around: **the free route rate-limits by concurrency.** Measured twice within the hour: QA-005h was
+   mid-flight and producing (`playwright.live.config.ts` + `tests/e2e-live/**` on disk) when **RV-009** and
+   then **QA-005i** were dispatched beside it — **both died instantly** on `Rate limit exceeded`, and in both
+   cases the *newcomer* died while the incumbent kept working. The law is therefore **serialize absolutely: one
+   subagent at a time** (not "≤ 2" as first written here), and a ticket that dies this way must be
+   **re-dispatched onto its own session/worktree after the incumbent returns**, never batched with it. Both
+   queued tickets already hold their worktrees (`agent/reviewer/rv-009-art-chain`,
+   `agent/qa/qa-005i-art-era-clock`), so no work is lost, only ordered. Consequence: the reviewer gap stays
+   **queued, not lost** — RV-009 (full art-chain audit, closing RV-008's quota death) re-dispatches the moment
+   a slot frees. Named, not silently widened: the ruling is **text-only**, so art-byte reads (the
    UA-0013/UA-0014 class) and any screen-image judging must carry an explicit per-dispatch model override —
    `ui-art-director.md`'s description still says vision-capable while its pinned route is the free one, and
    `docs/ai-model-matrix.md` has not caught up: **DG-005 (docs lane)** owns that pass.
