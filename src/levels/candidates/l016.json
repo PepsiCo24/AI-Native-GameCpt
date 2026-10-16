@@ -1,0 +1,105 @@
+{
+  "id": 16,
+  "width": 7,
+  "height": 6,
+  "startPhase": "A",
+  "player": [
+    0,
+    0
+  ],
+  "goal": [
+    5,
+    0
+  ],
+  "phaseAWalls": [
+    [
+      4,
+      1
+    ],
+    [
+      4,
+      3
+    ],
+    [
+      4,
+      5
+    ]
+  ],
+  "phaseBWalls": [
+    [
+      4,
+      0
+    ],
+    [
+      4,
+      2
+    ],
+    [
+      4,
+      4
+    ]
+  ],
+  "doors": [
+    {
+      "id": "d1",
+      "color": "blue",
+      "tiles": [
+        [
+          6,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "d2",
+      "color": "blue",
+      "tiles": [
+        [
+          5,
+          1
+        ]
+      ]
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "tile": [
+        5,
+        0
+      ],
+      "activePhase": "B",
+      "targets": [
+        "d1"
+      ]
+    },
+    {
+      "id": "s2",
+      "tile": [
+        6,
+        1
+      ],
+      "activePhase": "B",
+      "targets": [
+        "d2"
+      ]
+    }
+  ],
+  "portals": [
+    {
+      "id": "p1",
+      "pair": [
+        [
+          3,
+          3
+        ],
+        [
+          6,
+          5
+        ]
+      ],
+      "activePhase": "B"
+    }
+  ],
+  "par": 12
+}

@@ -354,6 +354,243 @@ dead states, coverage, the all-OFF advantage, the portal-free verdict, `dualPhas
 and the ordered/unordered refusal counts **from the candidate files alone**, and every
 number matched the ADR before a single dataset byte moved.
 
+## 2e. L16–L20 — the M2 latch block, **UNREGISTERED candidates** (`src/levels/candidates/`)
+
+`src/levels/candidates/` is a **subdirectory of `src/levels/`, deliberately outside the
+dataset**. It exists because the three suites that own the shipped-set census all read the
+root non-recursively — `tests/solver/difficulty.test.ts` derives `SHIPPED_IDS` from
+`readdirSync(src/levels).filter(/^l\d+\.json$/)` and asserts `Object.keys(PINS).sort() ===
+SHIPPED_IDS`; `tests/solver/metrics-sidecar.test.ts` asserts `REPORT.levels.length === 15`
+plus file-list equality; `src/game/levels/level-registry.ts` uses **explicit imports**, not
+`import.meta.glob`. A candidate placed in the root therefore breaks two suites and
+auto-registers a level the game is not ready to show. Measured, not assumed: the placement was
+chosen after those three readers were opened, and `npm run levels` (15/15 PASS,
+`RESULT: PASS`) plus `npx vitest run` (32 files, 654 passed, 3 skipped) are unchanged by a
+candidate landing here.
+
+**Registration — wiring the candidates into the root, `EXPECTED_LEVEL_COUNT`, the metrics
+sidecar and the block-law policy — is the R-003c ticket's work.** This directory is the
+proposal shelf, not the shelf.
+
+### The rung law the candidates are filtered against
+
+Derived, never chosen (`scripts/prove-candidate.ts` re-measures both constants from the 15
+shipped files on every run — the values below are read-outs, not typed):
+
+| constant | value | source |
+|---|---|---|
+| `par(L15)` | 10 | `l015.json` |
+| the rung's minimum par | `l15Par + 2·(id − 15)` | §6.1.1 **P2** (non-seam block ⇒ `Δpar ≥ 2`) |
+| the escalation cut | `D_exec ≤ 14.969697` is the old ceiling | max `D_exec` over L1–L15 (`a19a347` transcript) |
+| the `B` band | `[1.2500, 1.6875]` | §6.1.1 P2 / §5.2, re-measured over the shipped set |
+
+Pipeline for each rung: `scripts/author-l16-candidates.ts` (propose: schema → rules → BFS →
+derived gates → census, seeded, `par` stamped by the solver) → `--write` lands the bytes →
+`scripts/prove-candidate.ts <file>` **re-reads those bytes** and re-proves them plus six
+negative controls → `tests/solver/l16-l20-candidates.test.ts` pins the obligations so a
+regression is a red test rather than a lost terminal.
+
+### Accepted candidates (proven on the landed bytes)
+
+| rung | board | `par` | `D_exec` | `B` | region | latch (all-OFF) | shortest routes | refusals | coverage |
+|---|---|---|---|---|---|---|---|---|---|
+| L16 `l016.json` | 7 × 6, sealed column `x = 4`, portal `(3,3)↔(6,5)`/B, goal `(5,0)`, doors `(6,0)`+`(5,1)` blue, switches `(5,0)`/B + `(6,1)`/B | 12 | 17.100000 | 1.7000 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 20/20 press-then-cross | 8 tiles | 42/42 |
+| L17 `l017.json` | 7 × 6, sealed column `x = 4`, portal `(3,3)↔(5,2)`/B, goal `(6,5)`, doors `(6,4)`+`(5,5)` blue, switches `(6,0)`/A + `(5,0)`/B | 14 | 19.027027 | 1.6757 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 60/60 press-then-cross | 8 tiles | 42/42 |
+| L18 `l018.json` | 7 × 6, sealed column `x = 3`, portal `(2,5)↔(4,4)`/A, goal `(6,1)`, **three** blue doors `(6,0)`+`(5,1)`+`(6,2)` (every neighbour of the goal), switches `(6,3)`/B + `(6,5)`/B + `(5,0)`/B | 16 | 20.907923 | 1.6360 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 189/189 press-then-cross | 9 tiles | 42/42 |
+| L19 `l019.json` | 7 × 6, sealed column `x = 3`, portal `(2,5)↔(4,0)`/A, goal `(5,4)` — **interior**, `x = 5` is the middle column — **four** blue doors `(5,3)`+`(4,4)`+`(6,4)`+`(5,5)` (every neighbour, all four), switches `(6,5)`/B + `(6,3)`/B + `(4,5)`/B + `(5,0)`/B | 18 | 22.885157 | 1.6284 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 231/231 press-then-cross | 10 tiles | 42/42 |
+
+All are in the §4 acceptance region and all carry `D_exec = par + 3·B` exactly (the identity
+that makes the escalation check mean `par + 3·B`, not something else).
+
+**L16's taught beat** — *the latch is the door's only approach*: both of the goal's neighbours
+are doors, so the goal is sealed until a switch has been pressed at all; the all-OFF world is
+**unsatisfiable**, not merely slower.
+
+**L17's taught beat** — *the same lesson with a real detour and two valid plans*: the goal
+`(6,5)` is again sealed by both of its neighbours (doors `(6,4)` and `(5,5)`), but the two
+switches now sit **two tiles off the landing column** (`(6,0)` and `(5,0)`), so neither press
+is free: `par` grows from the bare 10 to 14, i.e. `Δpar = 4`, and the two plans
+(land → up column 6 → `s1` → back down to `(6,4)`; or land → up column 5 → `s2` → down to
+`(5,5)`) are **the same length**, which is what makes the second plan discoverable rather than
+punished.
+
+**L18's taught beat** — *the seal widens: every way in is a door.* The goal `(6,1)` has
+**three** neighbours and all three are doors, so there is no free approach left at all and the
+all-OFF world is again unsatisfiable — but now the player has to find one of **three** switches
+(`(6,3)`, `(6,5)`, `(5,0)`, all phase B), none of which sits on the landing column of the portal
+`(4,4)`. `par` grows from the bare 12 to 16 (`Δpar = 4`, two presses at +2 each) and the
+escalation over L17 comes from the **shape** (door count 2 → 3, goal moved inward) rather than
+from lengthening a walk: the door count is the goal's own geometry, not an axis the author
+dials. `tests/solver/l16-l20-candidates.test.ts` pins all three rungs' obligations; the suite
+picks a new candidate up automatically because it walks the directory rather than a typed list.
+
+**L19's taught beat** — *the seal closes all four sides: the goal is in the middle of the room.*
+L18's three-door seal still left the goal **against an edge**, so three of its four sides were
+walls/door and the shape was "one edge, three doors". In `l019.json` the goal `(5,4)` is the
+**interior** tile of the far region (`x = 5` of `4…6`, `y = 4` of `0…5`) and therefore has
+**four** neighbours — and all four are doors (`(5,3)`, `(4,4)`, `(6,4)`, `(5,5)`), so there is no
+edge to lean on and four switches to find instead of three. The arity is still the goal's own
+geometry rather than a dial the author turns: on `7×6` a full seal is 2 (corner), 3 (edge) or 4
+(interior), and the ladder now walks that sequence 2 → 2 → 3 → 4. The escalation over L18 is
+measured, not asserted: `D_exec` rises `20.907923 → 22.885157` while `B` stays **in band**
+(1.6284) and `par` steps `16 → 18`.
+
+### The family census behind the L19 rung (measure, never tune-to-pass)
+
+`--stage=f` measures what each geometry family can carry *before* a lattice is run, so the shape
+step is picked from numbers. On `7×6` with the sealed-column grammar (`--stage=f --w=7 --h=6
+--id=19 --cxs=2,3,4 --seal=2-4`), 14 310 bare boards scanned, every family full-coverage:
+
+| cx | seal arity | scanned | clean | bare `par` max | on-rung (`bare ∈ {18,16,14}`) |
+|---|---|---|---|---|---|
+| 2 | 2 | 1012 | 506 | 14 | 2 |
+| 2 | 3 | 3036 | 1518 | 13 | 0 |
+| 2 | 4 | 2024 | 1012 | 12 | 0 |
+| 3 | 2 | 1156 | 578 | 14 | 2 |
+| 3 | 3 | 2890 | 1445 | 13 | 0 |
+| 3 | 4 | 1156 | 578 | 12 | 0 |
+| 4 | 2 | 1012 | 506 | 14 | 2 |
+| 4 | 3 | 2024 | 1012 | 13 | 0 |
+
+Two measured consequences. (1) **The bare route reaches 14 and no further on `7×6`**, and only at
+arity 2 — a corner goal. Arity 3 caps at 13 and arity 4 at 12, so a par-18 rung cannot come from
+the bare route at all on this grid; it must come from the press detour. (2) The arity-2 row is
+**L16/L17's shape already**: a par-18 board built there would be the same seal with a longer walk,
+which is exactly the escalation §6 has to avoid. So the shape step taken is arity 3 → **arity 4**.
+
+The arity-4 family on `7×6` is small and was therefore enumerated **completely**, not sampled:
+`--stage=d --w=7 --h=6 --cx=3 --id=19 --seal=4-4 --drop=8 --geo=17 --geos=1 --swcap=30000` judged
+all 17 160 switch 4-tuples of its single clean geometry and measured
+
+```
+measured par census of the judged space: 12:10230 14:6450 16:446 18:34
+census: 26 accept(s) of 17160 goal-gated candidate(s)
+rung pin: par === 18 on 26 of 26 accept(s); over-rung accepts = 0
+```
+
+— i.e. the family's reachable `par` is `{12, 14, 16, 18}` and **18 is its ceiling**, with 26 boards
+clearing every gate at exactly the rung value. The rung pin (`par === l15Par + 2·(id − 15)`
+exactly, not merely `≥`) is printed by the generator and asserted in the suite, so an accept that
+is longer than its rung is *named and dropped* rather than silently shipped as the rung.
+
+### L20 is **not authored** — the measured exhaustion of the goal-gated full-seal device
+
+No par-20 rung was written, and nothing was fabricated to reach one. What the census
+*measured* is below; the honest reading is that the device L16–L19 are built from cannot reach
+`par 20` without repeating a shape the ladder has already taught, so the block waits for a
+mechanism (`R-003c` registration is unaffected: it registers whatever rungs exist).
+
+**The device, stated as what it is.** Each of L16–L19 is a **full seal**: every neighbour of the
+goal is a door, each door is targeted by exactly one switch, and the all-OFF world is
+unsatisfiable. In that device the *shortest* plan opens exactly **one** door, because each seal
+tile is directly adjacent to the free far region — so
+
+    par = min over doors i of ( d(start → s_i) + 1 + d(s_i → goal) )
+
+and the rung's escalation can only come from where the cheapest switch sits. Measured, not
+argued: on `l019.json` and `l018.json` every **single-door** board (that door plus only its own
+switch, every other door deleted) is solvable at `shortest = 12` — the bare route — while the
+all-OFF world is unsatisfiable. **One press always suffices.**
+
+**Par ceilings, enumerated (not sampled) on `7×6` with the sealed-column grammar.**
+
+| grid / cx | seal arity | geometry | tuples judged | measured `par` census | ceiling |
+|---|---|---|---|---|---|
+| 7×6 / 3 | 2 | `2,5↔4,0`/A goal `6,5` (bare 14) | 210 (complete) | `14:201 16:9` | **16** |
+| 7×6 / 3 | 2 | `2,5↔6,0`/A goal `4,5` (bare 14) | 210 (complete) | `14:201 16:9` | **16** |
+| 7×6 / 3 | 3 | `2,5↔4,0`/A goal `6,3` (bare 12) | 2 184 (complete) | `12:1584 14:452 16:139 18:9` | **18** |
+| 7×6 / 3 | 3 | `2,5↔4,4`/A goal `5,0` (bare 12) | 2 184 (complete) | `12:1224 14:910 16:50` | **16** |
+| 7×6 / 3 | 4 | `2,5↔4,0`/A goal `5,4` (bare 12) — **L19's board** | 17 160 (complete) | `12:10230 14:6450 16:446 18:34` | **18** |
+
+So on `7×6` the whole device has a measured ceiling of **18** — which is exactly L19. `par 20` is
+not reachable there at any arity, and the rung-20 window (`bare ∈ {20,18,16,14,12}`) admits only
+bare 12 and bare 14 on this grid, so those rows are the whole search space the window can reach.
+
+**And `7×7` is not a shape step.** The taller grid does reach `par 22` (arity 4, cx 3, geometry
+`2,5↔6,0`/A goal `5,4`, 43 680 tuples complete: `12:21840 14:18018 16:2457 18:1197 20:108 22:60`),
+but its seal is **byte-identical in shape to L19's** — goal `(5,4)`, doors `(5,3) (4,4) (6,4) (5,5)`
+— at the **same bare par 12**. The extra 2 moves are press-detour length on the seal the ladder
+already taught at L19: a re-ran longer walk, which §6 forbids as a rung's escalation.
+
+**What par 20 needs (recorded for the next lane, not assumed).** A device in which **two presses
+are mandatory**, i.e. one where no single door admits the player to the goal. The two candidate
+constructions both need a *new* lattice stage, because neither is expressible as "the doors are
+the goal's neighbours":
+
+1. **Gauntlet / two doors in series.** Every approach to the goal's ring is itself behind a
+   door, so entering needs a seal door *and* a corridor door. Needs ≥ 6 doors on a 7×6 arity-3
+   ring; must be checked against `coverage` (42/42) because *walls* cannot be used to remove an
+   approach — a far-region phase wall makes its tile unstandable and the coverage gate fails,
+   which is why every blocker in this device has to be an openable door.
+2. **Sealed landing (two lattices).** The portal landing sits in its own pocket whose exit is a
+   door, so the player must land, press, leave, and press again — an *ordered* two-step chain
+   (`docs/level-design.md` §5's "2-step lookahead", which L16–L19 have still not delivered).
+
+Both were identified from these measurements; neither was built, and no rung claims them.
+
+### Named findings, recorded not smoothed
+
+- **F-L16-1 (inert second latch).** In `l016.json` the switch `s1` sits on `(5,0)`, which *is*
+  the goal tile, and `allOffShortestSolution = null` proves the goal tile is unreachable while
+  all switches are off — so `d1` (`(6,0)`) can only ever be opened from a state in which the
+  level is already won. `s1`/`d1` is therefore **decorative**: it fires
+  (`every-switch-fires = true`) but it can never change a route, and the shipped policy audit
+  reports `violations = 0`. Measured from two program read-outs (the `null` all-OFF walk and
+  the tile identity in the file), not from inspection. The gate chain's `latch-route` reader
+  needs only *some* switch to be pressed-then-crossed, so it does not name this case — the
+  finding is recorded here for the reviewer and for R-003c rather than repaired silently in a
+  committed artifact. `l017.json` does not have it (both its switches sit off the goal).
+- **F-L16-2 (`B` excursion).** `l016.json` measures `B = 1.7000`, above the shipped band top
+  `1.6875`. §6.1.1's self-correcting guard says an out-of-band `B` must be **named and the ramp
+  re-checked on `D_exec` directly**, which it is: `D_exec = 17.100000 > 14.969697`. The
+  excursion is named, not widened — `l017.json` was thereafter selected on `B` in-band
+  (`1.6757`) and `D_exec` above its predecessor, to avoid compounding it.
+- **F-L16-3 (wrong-name expectations).** The first pass of the negative-control table named the
+  clause each mutation *should* trip; three of six measurements disagreed. The expectations were
+  corrected **to the measured names**, and `expect` is now a *list* of clauses any of which may
+  legitimately name the refusal (a mutation aimed at a late gate can be caught by a stronger,
+  earlier reader). A mutation that is accepted still fails the battery, so widening the list
+  cannot make it vacuous.
+
+### Where L16–L20 came from (reproducible)
+
+```
+node_modules/.bin/tsx scripts/author-l16-candidates.ts --stage=a --cx=4          # geometry census
+node_modules/.bin/tsx scripts/author-l16-candidates.ts --stage=d --cx=3 --id=18 --geos=45 --write
+node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l018.json --rung=18
+node_modules/.bin/vitest run tests/solver/l16-l20-candidates.test.ts
+```
+
+L19 added `--stage=f` (the family census) and the grid/arity/window arguments:
+
+```
+node_modules/.bin/tsx scripts/author-l16-candidates.ts --stage=f --w=7 --h=6 --id=19 --cxs=2,3,4 --seal=2-4
+node_modules/.bin/tsx scripts/author-l16-candidates.ts --stage=d --w=7 --h=6 --cx=3 --id=19 \
+    --seal=4-4 --drop=8 --geo=17 --geos=1 --swcap=30000 --write
+node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l019.json --rung=19
+```
+
+`--w`/`--h` default to the shipped `7×6`, `--seal` to `2-3`, `--drop` to `4` and `--geo` to `0`, so
+every L16–L18 command line above still reproduces byte-for-byte; `--geo`/`--geos` publish which
+slice of the geometry list a run consumed, because a census that hides the rows it read is not a
+census. `--drop` is the enumeration bound on `par − bare` (the press detour): the inherited value
+encoded "each press costs 2 moves", which L17/L18 measured at 4 for a single press, so it is an
+argument with the census printing what each setting yields rather than a law assumed to hold.
+
+Stage D's lattice is a **full seal** enumeration: the doors are *every* neighbour of the goal
+(a corner goal forces two, a goal against one edge forces three, an interior goal four) and only
+the switch n-tuples are enumerated — capped per geometry (`--swcap`, default 1500, printed)
+because the n-tuple count grows factorially. The cap is sampling, not a hidden filter: every
+landed candidate was proved from its bytes afterwards, and a mutation battery of six controls
+fails loudly if any of the obligations went slack. L19's own run set the cap above the family's
+whole 4-tuple space, so its census is exhaustive rather than sampled.
+
+`scripts/author-l16-candidates.ts` is rung-parameterised (`--id`, default 16) and the geometry
+lattice carries a §6.1.4 clone guard: a spawn/goal/portal triple already present in the shipped
+set or among the landed candidates is skipped outright, so a new rung can never be the previous
+board with more moves. The script's *name* is historical — it authors whichever rung `--id` asks
+for, which is why the L17 commit did not rename it (the L16 commit body cites the path).
+
 ## 3. The parity structure, and why M0-only content is a *static* maze
 
 Both facts used above are short proofs, not opinions.

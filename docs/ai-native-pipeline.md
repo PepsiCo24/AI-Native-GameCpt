@@ -713,6 +713,108 @@ the block must *read* as on screen before it may be registered — belongs to `d
 `docs/decisions/design-0003-l1215-block-law.md`; the dataset's own per-level derivations are
 `src/levels/README.md` §2d.
 
+### 8.12 LV-010 — the L16+ ladder opens: an **unregistered candidate shelf**, and three proven rungs (2026-10-16)
+
+**The shelf.** Candidates for L16+ live in `src/levels/candidates/lNNN.json` — a subdirectory of
+`src/levels/`, deliberately outside the dataset. Measured reason, not preference: three readers
+own the shipped-set census and all three are non-recursive — `tests/solver/difficulty.test.ts`
+derives `SHIPPED_IDS` from `readdirSync(src/levels)` and asserts `Object.keys(PINS).sort() ===
+SHIPPED_IDS`; `tests/solver/metrics-sidecar.test.ts` asserts `REPORT.levels.length === 15` plus
+file-list equality against a regenerated sidecar; `src/game/levels/level-registry.ts` uses
+**explicit imports**, not `import.meta.glob`. A candidate in the root therefore breaks two suites
+*and* auto-registers a level the game is not ready to show. Verified in both directions: with
+three candidates on disk, `npm run levels` is still `15/15 ok · RESULT: PASS` and the sidecar is
+byte-identical (nothing regenerated). **Registration, `EXPECTED_LEVEL_COUNT`, sidecar
+regeneration and the L16–L25 block-law encoding are R-003c's work.**
+
+**STEP 0 first, as in LV-009-B.** `a19a347` lands `scripts/attest-lv010-cut.ts` + its committed
+transcript: on an isolated, sha256-identical byte-copy of the 15 shipped files, `LAW-MATCH` —
+15/15 copies verified, cut floor `D_exec max = 14.969697` (L15), `B` band `[1.2500, 1.6875]`,
+`T ≡ R ≡ 0` on 15/15, ordered == unordered refusal readers 4/4, mechanic vocabulary closed
+(walls / doors / switches / latch / portals). No candidate byte was authored before it.
+
+**The law, then the data.** The rung is derived: `par ≥ l15Par + 2·(id − 15)` (§6.1.1 P2's
+non-seam step). The **gate is a lower bound and the exact rung is chosen in selection** — stated
+deliberately: *a gate at equality would reject a legal board for being longer*.
+
+**Two tools, one per direction.** `scripts/author-l16-candidates.ts` **proposes**
+(`--stage=a|b|c|d|f|map|verify`, rung-parameterised by `--id`, and — since LV-010f — by grid
+(`--w`/`--h`), seal arity (`--seal`) and enumeration window (`--drop`); stage D enumerates a
+**full seal** — the doors are *every* neighbour of the goal, so the door count is the goal's own
+geometry, 2 against a corner, 3 against one edge and 4 for an interior goal, and only the switch
+n-tuples are chosen, sampled with a printed cap; the lattice carries a §6.1.4 clone guard over the
+`(player|goal|portal-pair)` triple; stage **f** is the *family* census — what each
+`(cx, arity)` family can carry, measured before any lattice runs, so a shape step is picked from
+numbers and an exhausted family is *reported*). `scripts/prove-candidate.ts <file> --rung=NN`
+**proves** — it re-reads the landed bytes, re-measures the CUT and `par(L15)` from the 15 shipped
+files on *every* run, runs the nine-gate chain, and then a six-control **mutation battery**.
+
+| rung | `par` | `D_exec` | `B` | region | all-OFF world | par routes press-then-cross | refusals | coverage |
+|---|---|---|---|---|---|---|---|---|
+| L16 `l016.json` | 12 | 17.100000 | 1.7000 | clean | **UNSATISFIABLE** | 20/20 | 8 | 42/42 |
+| L17 `l017.json` | 14 | 19.027027 | 1.6757 | clean | **UNSATISFIABLE** | 60/60 | 8 | 42/42 |
+| L18 `l018.json` | 16 | 20.907923 | 1.6360 | clean | **UNSATISFIABLE** | 189/189 | 9 | 42/42 |
+| L19 `l019.json` | 18 | 22.885157 | 1.6284 | clean | **UNSATISFIABLE** | 231/231 | 10 | 42/42 |
+
+"clean" = `deadStates 0` **and** `noUnrecoverableOk` **and** `T ≡ R ≡ 0`, and `D_exec = par + 3·B`
+to 9 places (the identity that makes the escalation check mean what it says). Each rung clears
+the previous rung's `D_exec` as well as the frozen `14.969697` cut. The device is the
+**goal-gated latch**: because every approach to the goal is a door, the all-switches-OFF world is
+**unsatisfiable** — existence, strictly stronger than the `advantage ≥ 1` reading. The ordered
+plan shape is reused (`docs/level-design.md` §6.1.4: the reusable unit is the plan shape, never
+the board); the escalation from L17 to L18 is a change of **shape** (door count 2 → 3), and from
+L18 to L19 another one (**3 → 4**, the goal moved off the edge into the interior), not a longer
+walk.
+
+**The shape step is chosen from a census, not from a hunch (LV-010f).** Before the L19 lattice
+ran, `--stage=f --w=7 --h=6 --id=19 --cxs=2,3,4 --seal=2-4` measured 14 310 bare boards across the
+sealed-column families. Two numbers settled the design: the bare route on `7×6` reaches `par 14`
+**and no further**, and only at seal arity 2 (corner goal) — arity 3 caps at 13, arity 4 at 12 —
+so a par-18 rung cannot come from the bare route at all; and the arity-2 row is L16/L17's shape
+already, so a par-18 board built there would be the same seal with a longer walk. The arity-3 → 4
+step was then taken and its family enumerated **completely** (`--swcap=30000` over the whole
+17 160-tuple space of its single clean geometry), measuring
+`par census 12:10230 14:6450 16:446 18:34` — 18 is the family's ceiling and 26 boards clear every
+gate at exactly the rung value. The generator prints a **rung pin** (`par === l15Par + 2·(id − 15)`
+exactly, not merely `≥`): an accept longer than its rung is named and dropped, never shipped as
+the rung.
+
+**Expectations corrected to measurement, never tuned to pass (F-L16-3).** The first
+negative-control table named the clause each mutation *should* trip; three of six measurements
+disagreed, and the expectations were corrected **to the measured names** — `expect` is now a
+*list* of clauses any of which may legitimately name the refusal, because a mutation aimed at a
+late gate can be caught by a stronger earlier reader ("latch removed" is refused as
+`unsolvable`, not `latch-grade`). Widening the list cannot make the battery vacuous: **a mutation
+that is ACCEPTED still fails it**. 6/6 caught on each rung.
+
+**A durable pin, because a terminal is not a regression gate.** `tests/solver/l16-l20-candidates.test.ts`
+walks the directory itself, re-derives the cut (14.969697), `par(L15)` (10) and the `B` band
+(`[1.25, 1.6875]`) from the *shipped* set on every run, and carries four negative controls (mis-stamped
+`par`; latch removed — **still solvable**, which is exactly why the latch obligation may not be
+replaced by a solvability check, the audit catches it by the name `door-without-switch`; sealed
+goal; phase wall on a door tile). L18 was covered the moment it landed, with no test edit; L19
+added three **block-level** obligations that pin the ladder rather than a board — `D_exec` rises
+strictly rung to rung, each rung sits **exactly** on `l15Par + 2·(id − 15)`, and the `B`-band
+excursion register (`l016`'s 1.7000, F-L16-2) stays the *only* named one. `vitest run` at L19 =
+**32 files · 670 passed · 3 skipped** (the four candidate blocks are 8 assertions each).
+
+**Named, not smoothed.** *F-L16-1 (inert second latch):* in `l016.json` the switch `s1` sits on
+`(5,0)`, which **is** the goal tile, and `allOffShortestSolution = null` proves that tile is
+unreachable while all switches are off — so `d1` can only ever be opened from an already-won
+state. `s1`/`d1` fires (`every-switch-fires = true`) but can never change a route, the policy
+audit reports `violations = 0`, and the `latch-route` reader needs only *some* switch to be
+pressed-then-crossed, so the gate chain does not name it. Recorded for review and for R-003c, not
+repaired silently inside a committed artifact. *F-L16-2:* `l016.json` measures `B = 1.7000`,
+above the band top — §6.1.1's self-correcting guard says an out-of-band `B` must be **named and
+the ramp re-checked on `D_exec`**, which it is (`17.100000 > 14.969697`), and `l017`/`l018` were
+thereafter selected in-band (1.6757, 1.6360) so the excursion is not compounded. The excursion is
+named, never widened.
+
+**Reproduce:** `node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l019.json --rung=19`
+(reset-set battery) · `node_modules/.bin/tsx scripts/solve-levels.ts src/levels/candidates --audit`
+(`PASS` on all four, `parMatch=true`) · `node_modules/.bin/tsx scripts/attest-lv010-cut.ts`
+(`LAW-MATCH` — the candidates cannot move the cut because they are not in the root).
+
 ## 9. Change log
 
 | Date | Version | Change | Author |
@@ -730,3 +832,6 @@ the block must *read* as on screen before it may be registered — belongs to `d
 | 2026-10-16 | V1.0 | **LV-009-B — the L12–L15 block integrated: the law first, the program second, the data third.** New **§8.10** records the integration end-to-end: the **STEP 0** attestation commit (`e8a456d`, `scripts/attest-lv009-block.ts` + committed transcript) that re-derived *every* constant of **ADR-design-0003** from the four candidates as an **isolated, sha256-verified dataset** **before any dataset byte moved** (`LAW-MATCH`, exit 0, no `STOP_AND_ROUTE`: par 4/6/8/10 · `D_exec` 8.230769/10.898734/12.957895/14.969697 · `T ≡ R ≡ 0` · 0 dead states · coverage 100 % · portal-free 7 / UNSATISFIABLE · all-OFF advantage **+2** on 4/4 · 19/16/20/15 dual-phase tiles · 3/5/5/6 refusal tiles, ordered == unordered 4/4); then the **law encoded before the data** (six `BlockGateId`s, six `gate-block-*` codes, the `block-l1215` obligation rows, `allOffShortestSolution()`, `blockL1215Gates()`, the dip ceiling re-read from the live `l011.json` at **8.573171**, and the debut's `PORTAL_DEBUT_EXEC_BUDGET` deliberately **not** re-purposed); then a **byte-copy** of the four candidate files, never an edit; then **one measured negative control per new code** — four surgical, two deliberately coupled with the coupling named (the latch control couples with gate (ii) by **theorem**: gate (ii) PASS ⇒ no all-OFF route is as short as par, so G1 can never fail alone, asserted as an implication over every board; the tail control is the interior member wearing the last member's id because a 48-slot / 1128-pair wall search measured that no sealing pulls L15's execution axis under 13.64). Acceptance on this tree: validator **15/15 ok · 0 errors · 28 warnings** · solver **15/15 PASS** (1 standing escalation) · sidecar regenerated to 15 records · `tsc` 0 · vitest **30 files · 617 passed · 3 skipped** · build ok. Recorded as **not** this role's to do: the **registry unlock** (`src/game/levels/level-registry.ts` still imports `l001`–`l011`) and the **UA capture-entry round** of ADR-design-0003 §8 item 6 — both handed over by name, so the remaining RED rows name the *registry*, not the data. New **§8.11** points at the sibling records instead of restating them | Level AI + Solver (LV-009-B) |
 | 2026-10-16 | V1.1 | **LV-009-B, the e2e half — the red rows stop being inferred.** §8.10 gains **item 6**: one managed full run (`PS_E2E_PORT=5219 … --retries=0`) at **107 tests / 8 files → 20 failed · 87 passed (6.0 m)**, with **every** red row named and attributed — 19 of 20 from the registry gap (quoted at the mechanism: `startIndexForLevel`'s *"unknown ⇒ index 0 (L1)"*, so `?level=12` plays L1: 4 HUD labels, L11's own dialog, the L1→L15 unlock chain, the end-dialog row, 5 latch-door, 7 refusal) and **1** from a *dataset-derived* pin that the block law legitimately invalidates (`portal.spec.ts:82`, `[11]` → `[11,12,13,14,15]`, QA's pen). Then the **transient registry probe** — clearly labelled, uncommitted, reverted (`git status` clean, bytes back to `HEAD`) — which lifts the four UI-walk specs to **74 passed · 2 failed (3.6 m)** and thereby proves the four boards are **winnable through the real UI**: the L1→L15 unlock chain included. The surviving L12 latch row is triaged by a new committed audit tool, **`scripts/latch-pair-audit.ts`** (two independent arms: the spec's own fixture bookkeeping and `isLegalMove` alone over the reachable set): L12 ships **2 / 12** co-located discriminating pairs while L6–L11 and L13–L15 read HOLDS, so the row is **fixture selection** in `cheapestDoorFixtures()`' independent cheapest-of-each-kind pick (the tie that lands on `(5,1)A down` instead of the pairing `(4,2)A right`), not a board gap — the spec's docstring describes a search the helper does not perform. No data byte, no solver number and no test changed; handover is three named items (registry unlock, UA capture-entry round, two QA pins). Header version resynced to the changelog | Level AI + Solver (LV-009-B) |
 | 2026-10-16 | V1.2 | **LEVEL-DOCS-1 — §8.10 item 6 CLOSED: the handover landed and the round is discharged.** Registry unlock `3cd643e` (R-003b, merged `96cd43c`) measured **105/107** on its own tree, i.e. **18 of the 20 named reds green** (87 + 18 = 105, same 107-row inventory; the row that did not flip is the **browser-free** L12 pair row `latch-door.spec.ts:102`, which the registry could never have moved and which item 6's fix-the-registry probe had already isolated for fixture selection) with the 2 survivors *exactly* the 2 rows item 6 had foreclosed as not-this-lane (`latch-door.spec.ts:102` L12 fixture selection, `portal.spec.ts:82` dataset-derived list) → QA-006 (`0f08c95`, merged `db9536d`) moved 10 unit + 2 e2e rows derivation-first → **FIRST FULL GREEN under the zero-retry law: local 107/107 in 6.8 m** (tsc 0 · levels 15/15 · vitest 632/3) **and cloud 107/107 in 16.0 m on develop tip `ff0a8f8`, run `38843718456`**, zero retry in both; chain `c34e0d1` ← `96cd43c` ← `db9536d` ← `ff0a8f8` verified pairwise (each a two-parent merge). **ADR-design-0003 §8 item 6 EXECUTED AND JUDGED 5/5 PASS** (UA-0011: 33 PNG + 4 logs in-repo at `docs/evidence/entry4-block/`, verdict `docs/ui-ux.md` V0.9.2 §3.3b Entry 4, no hand-typed move, `tests/**` untouched). **L12–L15 LIVE on Pages** via train 2 `5b058ff` (deep-link `L 12`…`L 15` banners, console 0 errors, bundle `index-CCs6qr4w.js`); **main CI round recorded by the Orchestrator in `docs/project-status.md` item 76, deliberately not claimed here.** Falsification kept on the books: R-003b's dispatch criterion #2 ("unit pins go green derived") **falsified by measurement** — 10 hand-typed pins, agent stopped at the `tests/**` boundary, routed to QA-006; rule bought = predict derivation only where the file actually derives | Level AI + Solver (LEVEL-DOCS-1) |
+| 2026-10-16 | V1.3 | **LV-010 — the L16+ ladder opens, and three rungs are proven.** New **§8.12** records the **unregistered candidate shelf** (`src/levels/candidates/`, with the three non-recursive census readers that make a root placement break two suites and auto-register a level), the **STEP 0** re-attestation (`a19a347`, `scripts/attest-lv010-cut.ts` + transcript, `LAW-MATCH`: cut floor `14.969697`, `B` band `[1.2500, 1.6875]`, `T ≡ R ≡ 0` 15/15, vocabulary closed), the derived rung `par ≥ l15Par + 2·(id − 15)` with **the rung chosen in selection and only a lower bound gated**, the two tools (`scripts/author-l16-candidates.ts` propose / `scripts/prove-candidate.ts` prove, the latter re-measuring the CUT from the shipped 15 on every run and carrying a six-control mutation battery), and the measured ladder **L16 `par 12` / `D_exec 17.100000` · L17 `14` / `19.027027` · L18 `16` / `20.907923`**, each §4-clean and each with an **UNSATISFIABLE** all-OFF world (the goal-gated latch = every approach to the goal is a door; L18's step is a change of *shape* — a 3-door full seal — not a longer walk). F-L16-3 recorded: the first control table's expectations disagreed with 3 of 6 measurements and were corrected **to the measured names** (`expect` is now a clause *list*; a mutation that is ACCEPTED still fails the battery). New durable pin `tests/solver/l16-l20-candidates.test.ts` (walks the directory, re-derives cut/rung/band from the shipped set, four negative controls) → `vitest` **32 files · 662 passed · 3 skipped**. F-L16-1 (L16's inert second latch, measured via the `null` all-OFF walk + the tile identity) and F-L16-2 (the named, not widened `B` excursion to 1.7000) are recorded for review; registration/`EXPECTED_LEVEL_COUNT`/sidecar/block-law stay **R-003c** | Level AI + Solver (LV-010) |
+| 2026-10-16 | V1.4 | **LV-010f — L19 is proven: the seal closes its fourth side.** The block gains a fourth rung, **L19 `l019.json` · `par 18` · `D_exec 22.885157` · `B` 1.6284 · 231/231 press-then-cross · 10 refusals · 42/42**, all nine gates ACCEPT on the landed bytes and 6/6 mutation controls caught by their named gate. The **shape step is a census result, not a choice**: `--stage=f` (new) measured 14 310 bare boards across the sealed-column families at `7×6` and showed the bare route reaches `par 14` and no further — and only at seal arity 2, which is L16/L17's shape already — while arity 3 caps at 13 and arity 4 at 12; so the step taken is arity **3 → 4**: the goal moves off the edge into the **interior** (`(5,4)`, four neighbours, all four doors) and the ladder now walks the full-seal sequence 2 → 2 → 3 → 4. The arity-4 family was enumerated **completely** (17 160 tuples, `--swcap` above the whole space) giving `par census 12:10230 14:6450 16:446 18:34` — 18 is the family's ceiling and 26 boards clear every gate at exactly the rung value. The generator is now **rung- and family-generic** (`--w`/`--h`/`--seal`/`--drop`/`--geo`, defaults reproducing every L16–L18 command byte-for-byte) and prints a **rung pin**: an accept longer than `l15Par + 2·(id − 15)` is named and dropped, never shipped as the rung. The block test gains three **ladder-level** obligations (strict `D_exec` rise, exact rung `par`, the named `B`-excursion register) → `vitest` **32 files · 670 passed · 3 skipped**. Registration/`EXPECTED_LEVEL_COUNT`/sidecar/block-law stay **R-003c** | Level AI + Solver (LV-010f) |
+| 2026-10-16 | V1.5 | **LV-010f — L20 is NOT authored, and the block's stop is a measurement.** After L19 the par-20 rung was searched for and **not** found: the census says the goal-gated full-seal device L16–L19 are built from has a measured ceiling of exactly **18 on `7×6`** at every arity. Enumerated, not sampled: arity 2 (both bare-14 geometries, 210 tuples each) `14:201 16:9`; arity 3 (2 184 tuples) `12:1584 14:452 16:139 18:9` and `12:1224 14:910 16:50`; arity 4 — L19's own board — (17 160 tuples) `12:10230 14:6450 16:446 18:34`. `7×7` does reach `par 22` (43 680 tuples: `12:21840 14:18018 16:2457 18:1197 20:108 22:60`) but with a seal **byte-identical in shape to L19's** at the **same bare par 12**, so the extra moves are press-detour length on an already-taught shape — a re-ran longer walk, refused as a rung's escalation. **Why it is structural, measured:** with a full seal the shortest plan opens exactly ONE door, because every seal tile is directly adjacent to the free far region — on `l019.json` and `l018.json` every single-door board (that door plus only its own switch, all others deleted) is solvable at `shortest = 12` while all-OFF is unsatisfiable. So `par = min_i (d(start→s_i) + 1 + d(s_i→goal))` and the only escalation available is where the cheapest switch sits. Two constructions that would force a *second* press were identified and recorded for the next lane — a **gauntlet** (every approach to the goal's ring itself behind a door; note that walls cannot be used to remove an approach, because a far-region phase wall makes its tile unstandable and the 42/42 coverage gate then fails, so every blocker must be an openable door) and a **sealed landing** (the portal lands in a pocket whose exit is a door → an ordered two-step chain, `docs/level-design.md` §5's still-undelivered "2-step lookahead"). **Neither was built and no rung claims them**; the block ships as L16–L19 and waits for a mechanism. Barrel unchanged: no gate widened, no band moved, no shipped row touched | Level AI + Solver (LV-010f) |
