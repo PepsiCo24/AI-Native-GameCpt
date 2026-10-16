@@ -3,9 +3,13 @@
  * `docs/level-design.md` §1, `docs/architecture.md` §6.2 step 3).
  *
  * L11 is the dataset's M2 debut; ADR-design-0003 §8's L12–L15 block makes the
- * portal census five — L12 is the **shortcut** (a portal-free walk still solves it)
- * while L13–L15 are **channel-mandatory** (walk-only UNSAT, `docs/ai-native-pipeline.md`
- * §8.10). The phase-gate claims below are pinned on L11's debut board: one portal
+ * portal column five rows (L12 is the **shortcut** — a portal-free walk still solves it
+ * — while L13–L15 are **channel-mandatory**: walk-only UNSAT, `docs/ai-native-pipeline.md`
+ * §8.10), and R-003c registered L16–L19 carrying the column to the dataset tail, so
+ * the census is now nine (L11–L19). QA-011 replaced the pre-registration
+ * `[11…15]` literal with the *rule* the dataset obeys ("no portal-free level from
+ * L11 to the tail") because the literal could not see a portal-free rung at L16+.
+ * The phase-gate claims below are pinned on L11's debut board: one portal
  * pair on tiles of opposite `(x + y)` parity (the validator's own requirement — a
  * same-parity pair is mechanically inert and is rejected). Four claims follow from
  * the rules, and this file pins all four for the *shipped* board:
@@ -23,8 +27,8 @@
  * is legal, and takes the landing from `applyMove` — the single movement truth
  * source both the game and the solver call. So a level edit that moves the pair,
  * flips `activePhase` or removes the crossing fails this run instead of leaving a
- * stale route behind. The only literals in this file are the level id, the
- * portal-level inventory pin, and the HUD's own token lookups.
+ * stale route behind. The only literals in this file are the level id (the debut),
+ * and the HUD's own token lookups.
  *
  * ── The discriminating pair, and why the latch is not the answer ─────────────
  * `cheapestPortalFixtures().pair` is the same press — same start tile, same
@@ -82,13 +86,18 @@ async function walkRoute(page: Page, route: readonly Direction[]): Promise<void>
 
 test.describe("portal crossing is phase-gated (M2 — L11)", () => {
   test("the dataset's portal levels are exactly the levels that ship portals", () => {
-    // Deliberately hand-typed (QA-005c OQ2): the dataset's portal inventory is
-    // DERIVED (`levelsWithPortals`), and this literal is the anti-silent-re-baseline
-    // pin that forces a human re-type when a board gains or loses a pair. Re-typed
-    // from ADR-design-0003 §8 item 6 — L12 is the portal **shortcut**, L13–L15 are
-    // **channel-mandatory** (walk-only UNSAT) — so five boards ship a portal from
-    // L11's debut on.
-    expect(PORTAL_LEVELS.map((ref) => ref.id)).toEqual([11, 12, 13, 14, 15]);
+    // The portal inventory is DERIVED (`levelsWithPortals`, which filters on the
+    // shipped `portals[]`), and the assertion below states the *rule* the dataset
+    // obeys rather than re-typing the column: from L11's debut on there is no
+    // portal-free level, all the way to the dataset tail. QA-011 retired the typed
+    // `[11…15]` tail because it could not see a portal-free rung at L16+; the rule
+    // is span-anchored, so a new portal-free level anywhere after the debut turns
+    // this RED (and a level that gains a pair before L11 turns the `earlierThan`
+    // assertion in `tests/solver/l11-portal-gates.test.ts` RED).
+    const debut = 11;
+    expect(PORTAL_LEVELS.map((ref) => ref.id)).toEqual(
+      REFS.map((ref) => ref.id).filter((id) => id >= debut),
+    );
     for (const ref of PORTAL_LEVELS) {
       expect(ref.level.portals.length, `L${String(ref.id)} ships a portal pair`).toBeGreaterThan(0);
       for (const portal of ref.level.portals) {

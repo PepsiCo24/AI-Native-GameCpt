@@ -19,7 +19,9 @@
  *      walk therefore emit the *same route sequence, in the same order* (pruning is
  *      a pure filter: it drops prefixes, never reorders the surviving children and
  *      never drops a prefix that any route passes through). The equivalence is
- *      asserted on all ten shipped levels and on three synthetic boards — M0 open,
+ *      asserted on every shipped level the production cap admits — L1–L16 at QA-011's
+ *      19-level dataset, with the over-cap rungs asserting the cap refusal itself
+ *      (see the decision row in §1) — and on three synthetic boards — M0 open,
  *      M1+M3 latch, M2 portal — because "portal-safe" is a claim about real edges,
  *      not about a Manhattan/parity bound.
  *   2. **The budget is the walk's own** (`§3`). `maxRouteVisits` (default
@@ -143,41 +145,128 @@ function raised(level: Level, par: number, options: SolverOptions): RouteEnumera
   );
 }
 
+/**
+ * The exhaustive walk **when the production cap admits it**, or `null` when the cap
+ * refuses it (QA-011's decision row — see `§1`'s block doc).
+ *
+ * Only the enumeration's own overrun is treated as "the cap refused it": any other
+ * error is a real failure and is re-thrown, so the over-cap branch can never swallow
+ * a broken walk into a passing assertion.
+ */
+function exhaustiveOrNull(level: Level, par: number): Walk | null {
+  try {
+    return walk(level, par, { pruneParRoutes: false });
+  } catch (error) {
+    if (error instanceof RouteEnumerationError) return null;
+    throw error;
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. The pruned and the exhaustive walk agree — on the shipped levels
+// 1. The pruned and the exhaustive walk agree — on the shipped levels that the
+//    production cap actually admits (QA-011's decision row)
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ── QA-011 · the decision row: how the exhaustive leg is bounded ──────────────
+ *
+ * R-003c registered L16–L19, and the registration grew the walked ladder past the
+ * fifteen rungs this file had always been able to walk exhaustively: **the exhaustive
+ * leg (`pruneParRoutes: false`) is bounded by the production cap, and the registered
+ * block's upper rungs are past it.**
+ *
+ * Measured on these shipped bytes (the same numbers the registration lane took):
+ *
+ * | rung | exhaustive demand (work units) | under `PAR_ROUTE_VISIT_CAP` (2,000,000)? | wall clock here |
+ * |---|---|---|---|
+ * | L15 | 76,132 visits (fits) | yes | 17 ms |
+ * | L16 | **1,363,684** visits (fits) | yes | 338 ms |
+ * | L17 | 17.8 M | **no** | over cap in 507 ms |
+ * | L18 | 98.7 M | **no** | over cap in 571 ms; 20 M units = 5,981 ms → **3.34 M units/s** |
+ * | L19 | > 5 × 10⁸ | **no** | ≥ 150 s by the same rate, unbounded above |
+ *
+ * **Decision: Option B — the exhaustive leg stays bounded by the production cap, and
+ * the bound is DERIVED AT RUN TIME rather than typed as an id list.** Each row runs the
+ * pruned walk unconditionally; it then *attempts* the exhaustive walk and, when the
+ * cap refuses it (a `RouteEnumerationError` and nothing else), asserts the refusal
+ * itself — `cap === PAR_ROUTE_VISIT_CAP`, `visits === cap + 1`, `par`, `levelId` — which
+ * is the n-11 complaint stated on a shipped board. Nothing is hardcoded to "L15": if a
+ * future rung fits, it gets the equality assertion automatically.
+ *
+ * Why not Option A (a per-rung raised cap, derived from the measurement)? Because the
+ * arithmetic is a bad trade. Raising the cap enough for L17/L18/L19 costs ~190 s of
+ * extra wall clock on this machine alone (5.3 s + 29.5 s + ≥150 s at the measured
+ * 3.34 M units/s) and about ten times that on the 2-core software-GL CI runner — for a
+ * re-proof of an equivalence the *pruned* walk already carries on every rung, and for a
+ * cost that grows with the ladder while L19's demand is not even bounded. The prune is
+ * **load-bearing** (n-11): the registered rungs enumerate in 189 / 529 / 1322 / 2162
+ * visits against pars 12 / 14 / 16 / 18, i.e. the shipped walk answers the question the
+ * exhaustive one cannot.
+ *
+ * Coverage is not deleted either way: L1–L16 keep the exact pruned ≡ exhaustive
+ * equality (every assertion below is unchanged for them), the three synthetic boards of
+ * §2 keep theirs unconditionally, and L17–L19 gain an assertion they did not have.
+ */
 
 describe("LV-007B · n-11 — the lookahead prune is a pure filter (shipped levels)", () => {
   it.each(SHIPPED_CASES)(
-    "l%s — pruned and exhaustive emit the same routes, in the same order",
+    "l%s — pruned ≡ exhaustive where the cap admits it, and the cap refusal is asserted where it does not",
     (_label, id) => {
       const level = shippedBoard(id);
       const par = solve(level).shortestSolution ?? level.par;
-      const exhaustive = walk(level, par, { pruneParRoutes: false });
       const pruned = walk(level, par);
 
-      // Equality, not "same count": ordered comparison also proves the surviving
-      // children kept their `DIRECTIONS` order, i.e. the prune filters prefixes
-      // instead of re-walking the tree in a different shape.
-      expect(pruned.signatures).toEqual(exhaustive.signatures);
+      // The pruned walk's own invariants: no duplicate signature, a non-empty route
+      // set, and the walk's own budget key (never the state-exploration one).
       expect(pruned.stats).toMatchObject({
         par,
         pruning: true,
         routes: pruned.signatures.length,
       });
+      expect(pruned.stats.visitBudget).toBe(PAR_ROUTE_VISIT_CAP);
+      expect(new Set(pruned.signatures).size).toBe(pruned.signatures.length);
+      expect(pruned.signatures.length).toBeGreaterThan(0);
+      for (const signature of pruned.signatures) {
+        expect(signature.split("-")).toHaveLength(par);
+      }
+
+      // The prune is *not* vacuous on any shipped level: something was dropped, and
+      // the walk got cheaper because of it.
+      expect(pruned.stats.prunedChildren).toBeGreaterThan(0);
+      expect(pruned.stats.lookaheadVisits).toBeGreaterThan(0);
+
+      const exhaustive = exhaustiveOrNull(level, par);
+      if (exhaustive === null) {
+        // Over-cap rung — the derived half of the QA-011 decision (see the block doc
+        // above). `raised` re-derives the refusal and requires the *typed* error.
+        const error = raised(level, par, { pruneParRoutes: false });
+        expect(error.cap).toBe(PAR_ROUTE_VISIT_CAP);
+        expect(error.visits).toBe(PAR_ROUTE_VISIT_CAP + 1);
+        expect(error.par).toBe(par);
+        expect(error.levelId).toBe(id);
+        expect(error.message).toContain("maxRouteVisits");
+        return;
+      }
+
+      // Equality, not "same count": ordered comparison also proves the surviving
+      // children kept their `DIRECTIONS` order, i.e. the prune filters prefixes
+      // instead of re-walking the tree in a different shape.
+      expect(pruned.signatures).toEqual(exhaustive.signatures);
       expect(exhaustive.stats).toMatchObject({
         pruning: false,
         routes: pruned.signatures.length,
         lookaheadVisits: 0, // the exhaustive walk must not have probed at all
       });
-      expect(pruned.stats.visitBudget).toBe(PAR_ROUTE_VISIT_CAP);
-
-      // The prune is *not* vacuous on any shipped level: something was dropped, and
-      // the walk got cheaper because of it.
-      expect(pruned.stats.prunedChildren).toBeGreaterThan(0);
       expect(pruned.stats.visits).toBeLessThan(exhaustive.stats.visits);
-      expect(pruned.stats.lookaheadVisits).toBeGreaterThan(0);
     },
+    // Wall-clock guard, never an assertion (the e2e budget's rule applied to the one
+    // solver row that walks to the cap on purpose): the over-cap rungs run the
+    // exhaustive walk until `PAR_ROUTE_VISIT_CAP` refuses it, measured at 507 ms (l017),
+    // 571 ms (l018) and ~1.4 s (l019) on an idle machine — and one full-suite run on
+    // 2026-10-16 was observed stalled ~40× end to end (vitest import time 2.6 s → 112 s),
+    // which puts those rows past Vitest's 5 s default. 30 s is 20× the worst measured
+    // row, so it cannot fire on a legitimately slow machine but still fails a hang.
+    30_000,
   );
 
   it("the visitor is handed every route exactly once (no duplicate signatures)", () => {
@@ -536,6 +625,19 @@ const PINS: Readonly<Record<number, ShippedPin>> = {
   13: { shortest: 6, reachable: 79, positions: 24, maxDepth: 11, dualPhaseTiles: 16, refusedThenEnteredTiles: 5, refusedThenEnteredTileList: ["4,0", "4,1", "4,2", "4,3", "5,1"], deadStates: 0, unrecoverableStates: 0, parRoutes: 3, embedRoutes: 3, embedForced: true, allOffGoalReachable: true, allOffReachableStates: 39, cost: { visits: 18, lookaheadVisits: 167, prunedChildren: 30 } },
   14: { shortest: 8, reachable: 95, positions: 28, maxDepth: 14, dualPhaseTiles: 20, refusedThenEnteredTiles: 5, refusedThenEnteredTileList: ["5,0", "5,1", "5,2", "5,3", "6,2"], deadStates: 0, unrecoverableStates: 0, parRoutes: 10, embedRoutes: 10, embedForced: true, allOffGoalReachable: true, allOffReachableStates: 47, cost: { visits: 64, lookaheadVisits: 342, prunedChildren: 104 } },
   15: { shortest: 10, reachable: 99, positions: 35, maxDepth: 15, dualPhaseTiles: 15, refusedThenEnteredTiles: 6, refusedThenEnteredTileList: ["3,0", "3,1", "3,2", "3,3", "3,4", "5,3"], deadStates: 0, unrecoverableStates: 0, parRoutes: 15, embedRoutes: 15, embedForced: true, allOffGoalReachable: true, allOffReachableStates: 49, cost: { visits: 115, lookaheadVisits: 570, prunedChildren: 237 } },
+  // R-003c — the L16–L19 block, registered at the dataset root (`208c5eb` + the
+  // registry rows at `a75b420`). Four goal-gated seals: `allOffGoalReachable: false`
+  // on 4/4 (the latch carries *existence*, not an advantage — the all-OFF subgraph is
+  // 64/259, 63/259, 56/467, 54/923 states and contains no goal), `dualPhaseTiles` 24 /
+  // 24 / 18 / 18 (the pair's reach on the wider 7 × 6 device), and the walk cost stays
+  // bounded by the n-11 prune exactly as the L12–L15 block's did: `visits` is
+  // 189 / 529 / 1322 / 2162 against `par` 12 / 14 / 16 / 18 — i.e. the prune keeps the
+  // **registered** rungs enumerable (`parRoutes` 20 / 60 / 189 / 231), which is the
+  // claim the decision row at `§1` measures from the other side.
+  16: { shortest: 12, reachable: 260, positions: 42, maxDepth: 24, dualPhaseTiles: 24, refusedThenEnteredTiles: 8, refusedThenEnteredTileList: ["4,0", "4,1", "4,2", "4,3", "4,4", "4,5", "5,1", "6,0"], deadStates: 0, unrecoverableStates: 0, parRoutes: 20, embedRoutes: 20, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 64, cost: { visits: 189, lookaheadVisits: 914, prunedChildren: 325 } },
+  17: { shortest: 14, reachable: 259, positions: 42, maxDepth: 20, dualPhaseTiles: 24, refusedThenEnteredTiles: 8, refusedThenEnteredTileList: ["4,0", "4,1", "4,2", "4,3", "4,4", "4,5", "5,5", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 60, embedRoutes: 60, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 63, cost: { visits: 529, lookaheadVisits: 2424, prunedChildren: 885 } },
+  18: { shortest: 16, reachable: 467, positions: 42, maxDepth: 28, dualPhaseTiles: 18, refusedThenEnteredTiles: 9, refusedThenEnteredTileList: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "5,1", "6,0", "6,2"], deadStates: 0, unrecoverableStates: 0, parRoutes: 189, embedRoutes: 189, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 56, cost: { visits: 1322, lookaheadVisits: 4835, prunedChildren: 2509 } },
+  19: { shortest: 18, reachable: 923, positions: 42, maxDepth: 35, dualPhaseTiles: 18, refusedThenEnteredTiles: 10, refusedThenEnteredTileList: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "4,4", "5,3", "5,5", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 231, embedRoutes: 231, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 54, cost: { visits: 2162, lookaheadVisits: 7386, prunedChildren: 3811 } },
 };
 
 /** Everything the CLI prints for a level, projected off the audit — one object, one diff. */
@@ -608,20 +710,32 @@ describe("LV-007B · n-11 — the shipped L1–L10 numbers are unchanged (LV-008
     // (only L1–L10 are portal-free). The "0 dead / 0 unrecoverable" lines are the ones
     // that must stay *whole*: every shipped board obeys §4.
     const table = SHIPPED_IDS.map((id) => PINS[id] as ShippedPin);
-    expect(table.filter((pin) => pin.dualPhaseTiles === 0)).toHaveLength(10);
-    expect(table.filter((pin) => pin.refusedThenEnteredTiles > 0)).toHaveLength(10);
-    expect(table.filter((pin) => pin.deadStates === 0)).toHaveLength(15);
-    expect(table.filter((pin) => pin.unrecoverableStates === 0)).toHaveLength(15);
-    expect(table.filter((pin) => pin.allOffGoalReachable !== null)).toHaveLength(10);
+    // Derived *columns*, not counts (QA-011): each line below is a rule over the
+    // discovered ids, so a registered level that breaks the column fails by name. The
+    // three lines that move with R-003c's block are the ones that count *content*
+    // (portal-free: exactly L1–L10; latch-bearing: every level from the M3 debut on),
+    // while the two §4 lines still read every shipped board.
+    expect(table.filter((pin) => pin.dualPhaseTiles === 0).length).toBe(
+      SHIPPED_IDS.filter((id) => id < 11).length,
+    );
+    expect(table.filter((pin) => pin.refusedThenEnteredTiles > 0).length).toBe(
+      SHIPPED_IDS.filter((id) => id >= 6).length,
+    );
+    expect(table.filter((pin) => pin.deadStates === 0)).toHaveLength(SHIPPED_IDS.length);
+    expect(table.filter((pin) => pin.unrecoverableStates === 0)).toHaveLength(SHIPPED_IDS.length);
+    expect(table.filter((pin) => pin.allOffGoalReachable !== null).length).toBe(
+      SHIPPED_IDS.filter((id) => id >= 6).length,
+    );
     // …and the levels that carry the parity-breaking displacement are the M2 debut and
-    // the block behind it, so the aggregate line names the whole column rather than
-    // counting it. L11 still leads it (21/21 tiles), and the block's four members are
-    // measured against their own areas (19/21, 16/24, 20/28, 15/35).
+    // the blocks behind it, so the aggregate line names the whole column rather than
+    // counting it. L11 still leads it (21/21 tiles), the L12–L15 block follows
+    // (19/21, 16/24, 20/28, 15/35) and R-003c's registered block closes it
+    // (24/42, 24/42, 18/42, 18/42 — the 7 × 6 device).
     expect(
       table
         .filter((pin) => pin.dualPhaseTiles > 0)
         .map((pin) => pin.dualPhaseTiles),
-    ).toEqual([21, 19, 16, 20, 15]);
+    ).toEqual([21, 19, 16, 20, 15, 24, 24, 18, 18]);
     // The escalation count of the CLI run is one, and it is gate (iv)'s — unchanged
     // by n-11 but printed next to the same lines, so it is pinned with them.
     const escalations = SHIPPED_IDS.flatMap((id) =>

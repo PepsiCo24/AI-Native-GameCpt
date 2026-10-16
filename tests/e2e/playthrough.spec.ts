@@ -86,6 +86,18 @@ test.describe("par route → win → HUD contract", () => {
       // (`38862977845`) and 24.5–26.2 s in green round `38869874603` — 80–88 % of
       // the 30 s default. Same class and same ~3× rule as `:135`/QA-005g; wall
       // clock only, every assertion below is unchanged.
+      //
+      // QA-011 at 19 rows: the tail is now the heaviest class. Local art-era
+      // (this worktree, `--retries=0`, frozen bytes, two green rounds): L16
+      // 6.7/7.1 s / L17 7.6 s / L18 8.6 s / L19 9.3/10.1 s against L15 5.6 s /
+      // L9 5.1 s / L1 3.1 s — the growth is the longer par route (12/14/16/18 vs
+      // ≤ 10), measured across the tail, not extrapolated. Projected onto CI:
+      // ~30 s with the suite-level factor of these rounds' own wall clock (10.0/
+      // 11.8 m local vs the art-era cloud round's 31.6 m = 2.7–3.2×) and ~74 s
+      // with the row-class factor the chain's own history records (8×) — inside
+      // the budget either way, so **L19 is a named WATCH ROW** (project-status
+      // item 84 doctrine: named, not silently widened) and the budget is left at
+      // the QA-005j derivation.
       test.setTimeout(90_000);
 
       await installPixelReadback(page);
@@ -144,18 +156,35 @@ test.describe("par route → win → HUD contract", () => {
   test(`the unlock chain runs L1 → L${String(EXPECTED_LEVEL_COUNT)} through the win dialog's own Next button`, async ({
     page,
   }) => {
-    // CI-envelope sizing (QA-005c, re-derived for the art era by QA-005i): one
-    // test drives the whole ladder — 15 par routes, 15 HUD reads and 14 `Next`
-    // clicks. On the 2-core software-GL CI runner that exceeded the default 30 s
-    // wall clock (measured 30.9 s, project-status item 66) while it runs in
-    // ~12 s locally, so QA-005c gave it 120 s. Shipping art then re-priced every
-    // UI row: this row measured 96 s pre-art (run 38849186852) and 126 s with the
-    // art bundle live (run 38857692208, `2 failed / 105 passed`) — it crossed its
-    // own 120 s budget, and the roster-wide envelope is +50–65 % (slow-row sum
-    // 14.8 m → 22.2 m), so the budget is re-derived at ~3× the worst art-era
-    // observation, the same rule QA-005g used for `latch-door.spec.ts:134`
-    // (30.9 s → 90 s). The budget is wall clock, never an assertion: every claim
-    // below is unchanged.
+    // CI-envelope sizing (QA-005c, re-derived for the art era by QA-005i; carry
+    // re-derived for the 19-row ladder by QA-011): one test drives the whole
+    // ladder — 19 par routes, 19 HUD reads and 18 `Next` clicks. On the 2-core
+    // software-GL CI runner that exceeded the default 30 s wall clock (measured
+    // 30.9 s at 15 rows, project-status item 66) while it runs in ~12 s locally,
+    // so QA-005c gave it 120 s. Shipping art then re-priced every UI row: this
+    // row measured 96 s pre-art (run 38849186852) and 126 s with the art bundle
+    // live at 15 rows (run 38857692208, `2 failed / 105 passed`) — it crossed
+    // its own 120 s budget, and the roster-wide envelope is +50–65 % (slow-row
+    // sum 14.8 m → 22.2 m), so QA-005i re-derived the budget at ~3× the worst
+    // observation (126 s → 360 s), the same rule QA-005g used for
+    // `latch-door.spec.ts:134` (30.9 s → 90 s).
+    //
+    // QA-011 re-measurement at 19 rows (local, `PS_E2E_PORT=5234`,
+    // `--retries=0`, frozen bytes, art-era, **two** green rounds): the chain takes
+    // **51.4 s / 56.3 s** (route moves 90 → 150, i.e. +67 %; 19 opens, 19 HUD reads,
+    // 18 `Next` clicks; the same rounds' 4-row tail is L16 6.7/7.1, L17 7.6, L18 8.6,
+    // L19 9.3/10.1 s, i.e. the growth is the longer route, and the whole round is
+    // 10.0 m → 11.8 m). Projected onto CI: ~165–180 s with the suite-level factor
+    // these rounds carry (10.0/11.8 m local vs the art-era cloud round's 31.6 m ≈
+    // 2.7–3.2×) and ~410–450 s with the row-class factor the row's own history
+    // records (12 s local → 96 s CI pre-art = 8×) — so the 360 s budget sits
+    // **inside that band**, not comfortably under it.
+    // WATCH ROW, named and not silently widened (project-status item 84's
+    // doctrine): QA-011 keeps 360 s and files the row for the next cloud round,
+    // which is the observation the derived envelope must be taken from
+    // (`budget when crossed`, and this row has not crossed at 19 rows yet).
+    // The budget is wall clock, never an assertion: every claim below is
+    // unchanged.
     test.setTimeout(360_000);
 
     await openLevel(page, levelUrl(1));

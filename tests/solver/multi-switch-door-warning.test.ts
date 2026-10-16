@@ -45,6 +45,7 @@ import type { Level, LevelWarningCode, ValidationResult } from "@/core/level";
 import { LEVEL_WARNING_CODES, LevelSchema, validateLevel, warningCodeOf } from "@/core/level";
 import { solve } from "@/core/solver/bfs";
 
+import { EXPECTED_LEVEL_COUNT } from "../e2e/helpers/levels";
 import { door, makeLevel, switchDef } from "../helpers/fixtures";
 
 const LEVELS_DIR = fileURLToPath(new URL("../../src/levels/", import.meta.url));
@@ -307,7 +308,8 @@ describe("validator warning codes — inventory, shape, coverage", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Head state — the shipped L1–L15 dataset is one-switch-per-door throughout
+// Head state — no shipped board carries multi-switch-door
+// (the one-switch-per-door law, L1 … the dataset's last registered level)
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("head state — no shipped board carries multi-switch-door", () => {
@@ -315,11 +317,14 @@ describe("head state — no shipped board carries multi-switch-door", () => {
     .filter((name) => /^l\d+\.json$/.test(name))
     .sort();
 
-  it("reads the shipped dataset (15 boards)", () => {
-    expect(shipped).toHaveLength(15);
+  it(`reads the shipped dataset (${String(shipped.length)} boards, the pinned count)`, () => {
+    // QA-011: the count is the shared dataset pin, so the census cannot go vacuous
+    // (an empty `src/levels/` used to pass this row when it read 15 and the dataset
+    // shrank). The typed `15` was a second hand-typed count beside the pin.
+    expect(shipped).toHaveLength(EXPECTED_LEVEL_COUNT);
   });
 
-  it("0/15 shipped boards warn, and errors stay 0 on all 15", () => {
+  it("0/N shipped boards warn, and errors stay 0 on all N", () => {
     const flagged: string[] = [];
     for (const name of shipped) {
       const raw: unknown = JSON.parse(readFileSync(`${LEVELS_DIR}${name}`, "utf8"));

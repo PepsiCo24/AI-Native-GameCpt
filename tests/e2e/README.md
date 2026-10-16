@@ -1077,23 +1077,46 @@ three reads above are its whole content, so it rebuilds from this paragraph alon
 
 ---
 
-## 2. Inventory — 107 cases in 8 files (measured)
+## 2. Inventory — 127 cases in 8 files (measured)
 
 **Dated note (2026-10-16, QA-005h).** The per-ticket blocks in §1 are **historical
 snapshots**: the `88/0` rounds, the `88 tests in 8 files` `--list` lines and the per-file
 case counts in §1.3–§1.8 were true when those blocks were written and are deliberately
 left as they stand. **This section is the only present-tense inventory in this file.**
-Its header total is the tail line of `npx playwright test --list`
-(`Total: 107 tests in 8 files`) and every number in the `cases` column is that tool's own
-per-file count, read off its output rather than tallied by hand —
-`19 + 29 + 22 + 6 + 8 + 4 + 7 + 12 = 107`, with 95 desktop rows and 12 mobile rows.
+
+**Update (2026-10-16, QA-011 — the 19-row migration).** R-003c registered L16–L19 and
+the three specs that pin the *ladder* grew with it, so the present-tense inventory is
+now `127 tests in 8 files` (115 desktop + 12 mobile), the tail line of
+`npx playwright test --list`: `23 + 30 + 37 + 6 + 8 + 4 + 7 + 12 = 127`. The rows below
+are that tool's own per-file counts, read off its output. The whole suite ran green
+under **zero retries** on the frozen bytes of this branch (`PS_E2E_PORT=5234 npx
+playwright test --retries=0`) — **127 passed / 0 failed / 0 flaky** in two rounds:
+**597.4 s = 10.0 m** and **705.3 s = 11.8 m** (round-to-round variance ×1.18 on this
+machine, project-status item 84's class) — the migration's own proof, and the number
+the next cloud round must reproduce. Slow-row sums, in the QA-005g shape, for the two
+rounds: refusal 207.6 → 282.3 s, playthrough 150.9 → 163.4 s, latch-door 121.8 →
+124.2 s, mobile 35.7 → 43.8 s, transient 33.9 → 39.5 s, controls 26.0 → 26.3 s, portal
+13.5 → 17.1 s, input-replay 5.3 → 5.8 s (Σ 594.7 → 702.3 s).
+
+**The two derived budgets were re-derived, not raised.** Both rows the ladder grows are
+now **named WATCH ROWS** with their measurements in their own comments, because
+`budget when crossed` is the standing law and neither has crossed at 19 rows: the
+unlock chain (`playthrough.spec.ts:144`) measured **51.4 s and 56.3 s** across the two
+green rounds against its 360 s budget (16 % used; projection band 165–450 s — *inside*
+the budget, so it is filed, not widened), and the per-level rows measured
+6.7 → 7.1 s (L16), 7.6 s (L17), 8.6 s (L18) and 9.3 → 10.1 s (L19) against their 90 s
+budget. `refusal.spec.ts` gets the sharpest flag: its per-level walk is now the suite's
+slowest class (L19 **20.1 → 28.4 s** local, i.e. up to 32 % of the budget on a fast
+machine), and the row-class factor its own history suggests would put it near
+~120–170 s — **above** the 90 s it carries — so L17–L19 are named for the next cloud
+round. No budget was silently widened and no default was touched.
 
 | file | cases | project | what it pins |
 |---|---:|---|---|
-| `playthrough.spec.ts` | 19 | desktop | L1–L15 par route → win dialog; the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the L1→L15 unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L15` |
-| `refusal.spec.ts` | 29 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one |
-| `latch-door.spec.ts` | 22 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all ten latch levels (L6–L15, the dataset's derived contiguous tail), in-core and through the UI |
-| `portal.spec.ts` | 6 | desktop | M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
+| `playthrough.spec.ts` | 23 | desktop | L1–L19 par route → win dialog (one row per shipped level, from the dataset); the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the **L1→L19** unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L19` and never a stale `L1–L5` |
+| `refusal.spec.ts` | 37 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one (now including L16–L19) |
+| `latch-door.spec.ts` | 30 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all **fourteen** latch levels (L6–L19, the dataset's derived contiguous tail — the rule, not a typed list), in-core and through the UI |
+| `portal.spec.ts` | 6 | desktop | the **portal column is every level from L11's debut to the tail** (the rule; QA-011 retired the typed `[11…15]` literal); M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
 | `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
 | `transient.spec.ts` | 7 | desktop | the resampling channel is live; **P1** the 90 ms refusal arc with a **post-hoc** arbiter (QA-005e) whose trigger step comes from the observer's **execution order** (QA-005f: `frameIndex` + `ranAt`, never stamp arithmetic) — the full pixel claim whenever a beat is observed, or a named `RESOLVE-LIMIT` when the recording's own log proves no step could run inside the arc's window, or a loud `BEAT-REQUIRED-ABSENT` when one did and the beat is missing; **P1b** that limit fabricated with a 140 ms/frame stretcher (where the prediction is exact by construction); **P2** the press beat's occlusion proof (timing inequality + pixel-measured geometry) and the bounded arrival transient |
@@ -1107,11 +1130,13 @@ directions, door states, latch fixtures and portal crossings come from `solve()`
 pixel count is typed into a spec; a level edit that removes a behaviour fails the run
 instead of leaving a stale fixture behind. The **dataset inventories** are derived
 too (`datasetIds` / `doorLevelIds` / `discoveredFileIds` / `inventoryViolation`), with
-exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3). A second, narrower
-hand-typed literal exists outside that helper set and is deliberate: `portal.spec.ts:91`
-re-baselines the *portal* inventory (`[11, 12, 13, 14, 15]`) against the derived
-`levelsWithPortals()` — the latches instead assert the structural rule (the door levels
-are the dataset's contiguous tail), so an unlock re-types nothing there.
+exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3). **QA-011 retired the
+last hand-typed literal beside it**: `portal.spec.ts:91` used to re-baseline the
+*portal* inventory as `[11, 12, 13, 14, 15]`; it now asserts the *rule* the dataset
+obeys (`levelsWithPortals()` equals every level id from L11 on), which is what the
+frozen literal could not see — a portal-free rung at L16+ — and the latches assert the
+same shape of rule (the door levels are the dataset's contiguous tail). So the honest
+statement is: **one typed count, zero typed inventories.**
 
 ---
 
