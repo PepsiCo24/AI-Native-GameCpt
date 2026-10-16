@@ -29,8 +29,8 @@
  *    typed control here (`Record<LevelWarningCode, …>` ⇒ a new code without a
  *    control is a **compile error**, the `policy-negative-controls.test.ts`
  *    discipline), and no shipped board's warning head may name a code outside it.
- * 5. **Head state** — 0/11 shipped boards carry the flag (`errors = 0` unchanged):
- *    the L6–L11 dataset is one-switch-per-door throughout, measured, not assumed.
+ * 5. **Head state** — 0/15 shipped boards carry the flag (`errors = 0` unchanged):
+ *    the L6–L15 dataset is one-switch-per-door throughout, measured, not assumed.
  *
  * These are hypothetical boards handed straight to `validateLevel` / `solve`; the
  * only shipped input is `src/levels/*.json` read-only (ADR-0004: reject, never
@@ -307,7 +307,7 @@ describe("validator warning codes — inventory, shape, coverage", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Head state — the shipped L1–L11 dataset is one-switch-per-door throughout
+// Head state — the shipped L1–L15 dataset is one-switch-per-door throughout
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("head state — no shipped board carries multi-switch-door", () => {
@@ -315,11 +315,11 @@ describe("head state — no shipped board carries multi-switch-door", () => {
     .filter((name) => /^l\d+\.json$/.test(name))
     .sort();
 
-  it("reads the shipped dataset (11 boards)", () => {
-    expect(shipped).toHaveLength(11);
+  it("reads the shipped dataset (15 boards)", () => {
+    expect(shipped).toHaveLength(15);
   });
 
-  it("0/11 shipped boards warn, and errors stay 0 on all 11", () => {
+  it("0/15 shipped boards warn, and errors stay 0 on all 15", () => {
     const flagged: string[] = [];
     for (const name of shipped) {
       const raw: unknown = JSON.parse(readFileSync(`${LEVELS_DIR}${name}`, "utf8"));

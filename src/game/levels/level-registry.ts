@@ -1,5 +1,5 @@
 /**
- * Level registry — loads the authored L1–L11 files and **validates every one**
+ * Level registry — loads the authored L1–L15 files and **validates every one**
  * before it can reach the board.
  *
  * `docs/architecture.md` §7 / ADR-0004: schema → rule validation → (solver, at CI
@@ -16,7 +16,12 @@
  * Solver), so nothing here writes, mutates or normalizes them. L11 (R-003) is the
  * same shape of edit: the portal painter seam shipped in R-002, so the unlock is
  * this entry and nothing else — the board itself (`l011.json`) is Level AI's
- * frozen, solver-proven artefact and is not touched here.
+ * frozen, solver-proven artefact and is not touched here. L12–L15 (R-003b) execute
+ * that precedent four more times: ADR-design-0003's block is in the dataset and
+ * solver-proven (`docs/ai-native-pipeline.md` §8.10), so the unlock is again data —
+ * four entries, no scene logic. The UA capture-entry round the ADR §8 item 6 asks
+ * for stays tracked separately (LV-009-B handoff #2, `docs/ui-ux.md`), and the
+ * files remain read-only inputs here.
  */
 
 import type { Level } from "@/core/level";
@@ -32,6 +37,10 @@ import l008 from "@/levels/l008.json";
 import l009 from "@/levels/l009.json";
 import l010 from "@/levels/l010.json";
 import l011 from "@/levels/l011.json";
+import l012 from "@/levels/l012.json";
+import l013 from "@/levels/l013.json";
+import l014 from "@/levels/l014.json";
+import l015 from "@/levels/l015.json";
 
 interface LevelSource {
   readonly file: string;
@@ -58,6 +67,16 @@ export const LEVEL_SOURCES: readonly LevelSource[] = [
   // §1 / ADR-0009): accepted by the program solver and the rule validator, par 4.
   // It joins the slice as data — no new scene logic, no new renderer class.
   { file: "l011.json", raw: l011 },
+  // L12–L15 is ADR-design-0003's block (LV-009-B): logged doors × mandatory
+  // portals, par 4/6/8/10, `par == shortestSolution` on 15/15 and 0 dead states on
+  // the whole dataset (`docs/ai-native-pipeline.md` §8.10). Registered as the same
+  // shape of input as L1–L11 — four entries, no new scene logic: the portal painter
+  // shipped in R-002 and the door/switch painters before it, so `?level=12..15` and
+  // the L1→L15 chain resolve off this list rather than off a literal.
+  { file: "l012.json", raw: l012 },
+  { file: "l013.json", raw: l013 },
+  { file: "l014.json", raw: l014 },
+  { file: "l015.json", raw: l015 },
 ];
 
 export interface LoadReport {
@@ -126,7 +145,7 @@ export function startIndexForLevel(levels: readonly Level[], requested: number |
 }
 
 /**
- * `L1–L11` — the **shipped ladder's own range**, derived from the playable list.
+ * `L1–L15` — the **shipped ladder's own range**, derived from the playable list.
  *
  * The end panel's copy must name the ladder the player actually cleared, so it is
  * computed from the registry rather than written down: QA-005 pinned the stale

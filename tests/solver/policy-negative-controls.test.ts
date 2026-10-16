@@ -423,6 +423,124 @@ const PORTAL_DEBUT_FORCED_GRADE: Level = {
 const PORTAL_BUDGET_BOUNDARY_AS_DEBUT: Level = { ...shippedBoard(10), id: 11 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 1c. LV-009-B — the L12–L15 block's six gates: one control each, off the
+//     shipped l012/l013/l014 boards. The block's law (ADR-design-0003) is a
+//     *ramp*, so its controls are members of that ramp perturbed by one field at
+//     a time — never synthetic boards, because a synthetic board would only show
+//     that *some* board trips the check.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * **B1** — `gate-block-par-ramp`: the shipped `l012` board with `par: 6`. Nothing
+ * on the board moves — the solver still finds the P1 floor of 4 in 4 moves, the
+ * coverage is still 21/21, the latch still grades par and the channel is still a
+ * shortcut — so the *authored* number is the one and only thing wrong. That is the
+ * point: the gate reads the authored **and** the measured par, so a candidate cannot
+ * drift onto another member's rung by writing a bigger number in the file.
+ */
+const BLOCK_PAR_RAMP_OVER_RAMP: Level = { ...shippedBoard(12), par: 6 };
+
+/**
+ * **B2** — `gate-block-coverage`: the shipped `l012` board with the corner `(0,0)`
+ * sealed in **both** phases. The solver still reaches the goal in 4 moves on the
+ * unchanged route, every latch/channel gate still passes, and the board is still
+ * schema- and rule-legal (the validator warns twice — a warning is not a gate) —
+ * but `distinctPositions` falls to 20 of the 21 tiles the law counts. Surgical by
+ * construction, and the reason the clause is not implied by solvability: a board can
+ * be *solvable* and still leave a tile of its own grid outside the law's accounting.
+ *
+ * (Walling a cell in one phase only does **not** move this number — the tile is still
+ * reachable in the other phase — which is why the control needs both phases; measured
+ * on the shipped board, and the reason a single-phase mutation was not shipped as a
+ * control.)
+ */
+const BLOCK_COVERAGE_ONE_SEALED_CELL: Level = {
+  ...shippedBoard(12),
+  phaseAWalls: [...shippedBoard(12).phaseAWalls, [0, 0]] as [number, number][],
+  phaseBWalls: [...shippedBoard(12).phaseBWalls, [0, 0]] as [number, number][],
+};
+
+/**
+ * **B3** — `gate-block-latch-par-grade`: the shipped `l012` board with the latch
+ * **removed** (`doors: []`, `switches: []`). G1 is a *construction* obligation, so
+ * a board with no latch at all fails it by name; the par route then also stops
+ * pressing a switch and crossing a door.
+ *
+ * The second code is **not** an unrelated complaint, it is a theorem of the law —
+ * stated here rather than hidden: if every par route presses the switch *and* crosses
+ * the door it targets (gate (ii)), then no all-OFF route can be as short as par, so
+ * `allOffShortest − par ≥ 1` and G1 passes. G1 can therefore only fail when gate (ii)
+ * fails with it (or when there is no latch). A *surgical* G1-only control is
+ * unconstructible, and the measured search for one is on the record: relabelling
+ * `l012`'s latch language and moving the door were both measured to keep G1 at PASS
+ * with advantage 2, exactly as the theorem requires.
+ */
+const BLOCK_LATCH_REMOVED: Level = {
+  ...shippedBoard(12),
+  doors: [],
+  switches: [],
+};
+
+/**
+ * **B4** — `gate-block-portal-load`, the **`mandatory`** clause: `l013` with the wall
+ * `(4, 3)` moved from phase A to phase B. The sealed line stops being sealed in a
+ * phase-consistent way, so the walking world solves again — while the portal world's
+ * par stays exactly 6, the coverage stays 24/24 and the latch/history gates stay PASS.
+ * The one and only complaint is the load grade, which is the clause this control
+ * exists for: from L13 up the channel must be the **only** door, and "the walk still
+ * finishes" is a rejection even when the par is untouched.
+ *
+ * Measured surgical: exactly one gate non-PASS. The validator warns three times (the
+ * portal-bearing parity argument is explicitly "NOT PROVEN") and returns `ok: true`,
+ * so the rejection has to live in the policy layer.
+ */
+const BLOCK_MANDATORY_GRADE_WITH_OPEN_WALK: Level = {
+  ...shippedBoard(13),
+  phaseAWalls: [[4, 1]],
+  phaseBWalls: [
+    [4, 0],
+    [4, 2],
+    [4, 3],
+  ],
+};
+
+/**
+ * **B5** — `gate-block-dip-ceiling`, and deliberately **not** surgical-by-deletion:
+ * the shipped `l012` board made one row taller (`height: 5`). Every tile of the new
+ * 35-cell grid is still reachable (35/35), par is still the P1 floor 4, the latch
+ * still grades par by 2 and the channel is still a shortcut — the *only* thing that
+ * moved is the execution axis, `D_exec = 8.723881 > 8.573171` (the shipped L11's
+ * measured value). That is exactly §4's reading of the dip: it is carried by
+ * effective branching, not by a shorter route, so a first member that merely grows
+ * breaks the ceiling without any par change. Measured: one code, one gate.
+ *
+ * (A wall-deletion variant was measured too and is recorded rather than shipped: with
+ * both of the board's walls removed `D_exec` only reaches 8.500000 — still below the
+ * ceiling — so "looser" is a weaker lever than "bigger" on this board.)
+ */
+const BLOCK_DIP_CEILING_ENLARGED: Level = { ...shippedBoard(12), height: 5 };
+
+/**
+ * **B6** — `gate-block-tail-exec-budget`, and **not** surgical: the block's
+ * *interior* member (`l014`, `D_exec = 12.957895`) wearing the last member's id. The
+ * frozen §6 block-end clause is a comparison against the published 13.64, so the
+ * honest counter-example is a member whose execution axis is that of the block's
+ * middle: it fails the tail budget by name, and the par ramp fails with it (8 ≠ 10),
+ * because the block's members are not interchangeable rungs.
+ *
+ * A one- and two-wall search for a surgical variant is on the record: **every**
+ * single-phase and two-phase wall addition to `l015` was measured (48 slots, 1128
+ * pairs) and *no* board reached the ceiling from above — the last member's execution
+ * axis cannot be pulled under 13.64 by sealing tiles, only by being a different (and
+ * therefore law-breaking) rung. Recorded instead of hidden, in the same spirit as the
+ * portal debut's boundary control.
+ */
+const BLOCK_TAIL_INTERIOR_MEMBER_AS_LAST: Level = {
+  ...shippedBoard(14),
+  id: 15,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 1. Coverage — typed by the inventory, measured by the analyzer
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -470,6 +588,13 @@ const NEGATIVE_CONTROLS: Readonly<Record<PolicyViolationCode, readonly Level[]>>
     "gate-portal-par-cap": [PORTAL_DEBUT_OVER_PAR_CAP],
     "gate-portal-teaching-grade-below-offered": [PORTAL_DEBUT_FORCED_GRADE],
     "gate-portal-seam-law-execution-axis": [PORTAL_BUDGET_BOUNDARY_AS_DEBUT],
+    // ── LV-009-B — the L12–L15 block's gates (ADR-design-0003) ───────────────
+    "gate-block-par-ramp": [BLOCK_PAR_RAMP_OVER_RAMP],
+    "gate-block-coverage": [BLOCK_COVERAGE_ONE_SEALED_CELL],
+    "gate-block-latch-par-grade": [BLOCK_LATCH_REMOVED],
+    "gate-block-portal-load": [BLOCK_MANDATORY_GRADE_WITH_OPEN_WALK],
+    "gate-block-dip-ceiling": [BLOCK_DIP_CEILING_ENLARGED],
+    "gate-block-tail-exec-budget": [BLOCK_TAIL_INTERIOR_MEMBER_AS_LAST],
   };
 
 describe("LV-007A · m-2 — every policy code has a negative control that fails when the check is disabled", () => {
@@ -780,6 +905,188 @@ describe("LV-008 — the portal debut's gates have teeth, and the shipped l011 k
       "portal-teaching-grade-below-offered",
     ]);
     expect(PORTAL_BUDGET_BOUNDARY_AS_DEBUT.portals).toEqual([]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2d. LV-009-B — the L12–L15 block's gates stated in their own words (the four
+//     shipped boards are accepted, each control fails by name, and the one
+//     coupling that is a theorem is admitted as one)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("LV-009-B — the L12–L15 block's gates have teeth, and the four shipped members keep them all", () => {
+  const BLOCK_IDS = [12, 13, 14, 15] as const;
+
+  it("the four shipped members are accepted: every gate PASS, no violation", () => {
+    for (const id of BLOCK_IDS) {
+      const audit = auditLevel(shippedBoard(id));
+      expect(audit.lesson?.obligation, `l${id}`).toBe("block-l1215");
+      expect(
+        audit.gates.filter((gate) => gate.status !== "PASS").map((gate) => `${gate.id}:${gate.status}`),
+        `l${id}`,
+      ).toEqual([]);
+      expect(audit.violations, `l${id}`).toEqual([]);
+      // The block's shape, member by member: the par ladder, full coverage, and the
+      // latch grading par by exactly 2 moves in the restricted all-OFF world.
+      expect(audit.result.shortestSolution, `l${id}`).toBe([4, 6, 8, 10][id - 12]);
+      expect(audit.result.distinctPositions, `l${id}`).toBe(
+        shippedBoard(id).width * shippedBoard(id).height,
+      );
+    }
+  });
+
+  it("B1 — the par ramp reads the AUTHORED and the MEASURED par: 6 vs 4 alone is a rejection", () => {
+    const audit = auditLevel(BLOCK_PAR_RAMP_OVER_RAMP);
+    const ramp = audit.gates.find((gate) => gate.id === "block-par-ramp");
+    expect(ramp?.status).toBe("FAIL");
+    expect(ramp?.detail).toContain("par=6 (solver shortest=4); this member expects 4");
+    expect(ramp?.detail).toContain("floor 4 + step 2 reaching exactly the ceiling 10");
+    // Surgical: the board is otherwise the shipped, gate-clean L12, so the authored
+    // number is the only complaint and the code names it exactly.
+    expect(audit.violations.map((v) => v.code)).toEqual(["gate-block-par-ramp"]);
+  });
+
+  it("B2 — coverage is a clause of its own: a solvable board can still leave a tile out", () => {
+    const audit = auditLevel(BLOCK_COVERAGE_ONE_SEALED_CELL);
+    const coverage = audit.gates.find((gate) => gate.id === "block-coverage");
+    expect(coverage?.status).toBe("FAIL");
+    expect(coverage?.detail).toContain("distinctPositions=20 of 21 (7 × 3)");
+    expect(audit.result.shortestSolution).toBe(4); // still solvable, still par
+    expect(audit.violations.map((v) => v.code)).toEqual(["gate-block-coverage"]);
+    // The board is legal geometry: the validator *warns* (twice) and returns ok.
+    expect(validateLevel(BLOCK_COVERAGE_ONE_SEALED_CELL).ok).toBe(true);
+    expect(validateLevel(BLOCK_COVERAGE_ONE_SEALED_CELL).warnings.length).toBe(2);
+  });
+
+  it("B3 — G1 fails by construction when the latch is gone, and the coupling with gate (ii) is a theorem", () => {
+    const audit = auditLevel(BLOCK_LATCH_REMOVED);
+    const grade = audit.gates.find((gate) => gate.id === "block-latch-par-grade");
+    expect(grade?.status).toBe("FAIL");
+    expect(grade?.detail).toContain("switch(es)=0 door(s)=0");
+    expect(grade?.detail).toContain("allOffShortest=null par=4 ⇒ allOffShortest − par = n/a");
+    expect(audit.violations.map((v) => v.code)).toEqual([
+      "gate-block-latch-par-grade",
+      "gate-shortest-solution-presses-switch-and-crosses-door",
+    ]);
+
+    // The coupling, as the law's own implication: "every par route presses the switch
+    // and crosses its door" ⇒ no all-OFF route is as short as par ⇒ G1 passes. So G1
+    // can never be the *only* failing gate on a latched board, and a G1-only control
+    // is unconstructible. This is checked over every board in the file (shipped +
+    // controls), not asserted in prose.
+    const boards: readonly Level[] = [
+      ...SHIPPED_IDS.map((id) => shippedBoard(id)),
+      ...Object.values(NEGATIVE_CONTROLS).flat(),
+    ];
+    const counterexamples: string[] = [];
+    for (const board of boards) {
+      const gates = auditLevel(board).gates;
+      const crossing = gates.find(
+        (gate) => gate.id === "shortest-solution-presses-switch-and-crosses-door",
+      );
+      const latch = gates.find((gate) => gate.id === "block-latch-par-grade");
+      if (latch === undefined || crossing?.status !== "PASS") continue;
+      if (latch.status !== "PASS")
+        counterexamples.push(
+          `board id=${board.id}: gate (ii) PASS but ${latch.id}=${latch.status} (${latch.detail})`,
+        );
+    }
+    expect(counterexamples).toEqual([]);
+    // …and the implication is not vacuous: a board on which both gates fail exists.
+    expect(
+      auditLevel(BLOCK_LATCH_REMOVED).gates.find(
+        (gate) => gate.id === "shortest-solution-presses-switch-and-crosses-door",
+      )?.status,
+    ).toBe("FAIL");
+  });
+
+  it("B4 — the `mandatory` load grade rejects a walking world that still finishes", () => {
+    const audit = auditLevel(BLOCK_MANDATORY_GRADE_WITH_OPEN_WALK);
+    const load = audit.gates.find((gate) => gate.id === "block-portal-load");
+    expect(load?.status).toBe("FAIL");
+    expect(load?.detail).toContain("law for this member: mandatory");
+    expect(load?.detail).toContain("solvable=true");
+    // Surgical: par is still exactly the member's 6 and the coverage is still 24/24,
+    // so the *load kind* is the only thing the gate can be reading.
+    expect(audit.result.shortestSolution).toBe(6);
+    expect(audit.result.distinctPositions).toBe(24);
+    expect(audit.violations.map((v) => v.code)).toEqual(["gate-block-portal-load"]);
+    expect(validateLevel(BLOCK_MANDATORY_GRADE_WITH_OPEN_WALK).ok).toBe(true);
+    // …and the shipped l013 — the same board with the sealed line sealed again — is
+    // the discrimination leg: measured walk-only UNSATISFIABLE, gate PASS.
+    expect(
+      auditLevel(shippedBoard(13))
+        .gates.find((gate) => gate.id === "block-portal-load")
+        ?.detail,
+    ).toContain("solvable=false");
+  });
+
+  it("B5 — the dip ceiling is an EXECUTION clause: par unchanged, board grown, ceiling broken", () => {
+    const audit = auditLevel(BLOCK_DIP_CEILING_ENLARGED);
+    const dip = audit.gates.find((gate) => gate.id === "block-dip-ceiling");
+    expect(dip?.status).toBe("FAIL");
+    expect(dip?.detail).toContain("Dexec=8.723881 < 8.573171");
+    // Everything except the ceiling is the shipped L12's own state: the P1 floor par,
+    // full coverage of the *new* grid, and the latch still grading par by 2.
+    expect(audit.result.shortestSolution).toBe(4);
+    expect(audit.result.distinctPositions).toBe(35);
+    expect(audit.violations.map((v) => v.code)).toEqual(["gate-block-dip-ceiling"]);
+    expect(validateLevel(BLOCK_DIP_CEILING_ENLARGED).ok).toBe(true);
+    // The clause is a strict inequality against a shipped measurement, so the shipped
+    // member is on the other side of it by 0.34 (the shipped L11 re-read here).
+    expect(
+      auditLevel(shippedBoard(12)).gates.find(
+        (gate) => gate.id === "block-dip-ceiling",
+      )?.detail,
+    ).toContain("Dexec=8.230769 < 8.573171");
+  });
+
+  it("B6 — the tail budget rejects an interior rung wearing the last member's id", () => {
+    const audit = auditLevel(BLOCK_TAIL_INTERIOR_MEMBER_AS_LAST);
+    const tail = audit.gates.find((gate) => gate.id === "block-tail-exec-budget");
+    expect(tail?.status).toBe("FAIL");
+    expect(tail?.detail).toContain("Dexec=12.957895 > 13.64");
+    expect(BLOCK_TAIL_INTERIOR_MEMBER_AS_LAST.id).toBe(15);
+    expect(audit.violations.map((v) => v.code)).toEqual([
+      "gate-block-par-ramp",
+      "gate-block-tail-exec-budget",
+    ]);
+    // The coupling is admitted rather than hidden: the block's members are a *ramp*,
+    // so a board at the interior member's rung also misses the last member's par. The
+    // control pins the clause; it does not claim isolation.
+    expect(
+      audit.gates.find((gate) => gate.id === "block-par-ramp")?.status,
+    ).toBe("FAIL");
+  });
+
+  it("the two single-member clauses do not fire on the other members", () => {
+    // `dip-ceiling` belongs to the first member and `tail-exec-budget` to the last:
+    // a member that is neither must not carry either gate, so a future edit cannot
+    // quietly re-scope them to the whole block.
+    expect(
+      auditLevel(shippedBoard(12)).gates.map((gate) => gate.id),
+    ).toContain("block-dip-ceiling");
+    expect(
+      auditLevel(shippedBoard(12)).gates.map((gate) => gate.id),
+    ).not.toContain("block-tail-exec-budget");
+    for (const id of [13, 14] as const) {
+      const ids = auditLevel(shippedBoard(id)).gates.map((gate) => gate.id);
+      expect(ids, `l${id}`).not.toContain("block-dip-ceiling");
+      expect(ids, `l${id}`).not.toContain("block-tail-exec-budget");
+    }
+    expect(
+      auditLevel(shippedBoard(15)).gates.map((gate) => gate.id),
+    ).toContain("block-tail-exec-budget");
+    expect(
+      auditLevel(shippedBoard(15)).gates.map((gate) => gate.id),
+    ).not.toContain("block-dip-ceiling");
+  });
+
+  it("never judges a level that does not declare the block lesson (l011 keeps its own gates)", () => {
+    const l11 = auditLevel(shippedBoard(11));
+    expect(l11.lesson?.obligation).toBe("portal-aha-2");
+    expect(l11.gates.map((gate) => gate.id)).not.toContain("block-par-ramp");
+    expect(l11.violations).toEqual([]);
   });
 });
 

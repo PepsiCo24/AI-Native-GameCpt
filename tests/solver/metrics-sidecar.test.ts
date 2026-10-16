@@ -206,10 +206,10 @@ describe("LV-007E · R3 §1 — the records: the accepted set, complete and self
       .filter((name) => name.endsWith(".json"))
       .sort();
     expect(REPORT.levels.length).toBe(files.length);
-    expect(REPORT.levels.length).toBe(11); // non-vacuity: an empty report must fail
+    expect(REPORT.levels.length).toBe(15); // non-vacuity: an empty report must fail
     expect(REPORT.levels.map((record) => record.file)).toEqual(files);
     expect(REPORT.levels.map((record) => record.id)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
     ]);
   });
 
@@ -380,8 +380,8 @@ describe("LV-007E · R3 — `docs/level-difficulty.md` §5.2 is a declared mirro
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builder bug cannot agree with itself)", () => {
-  it("the pin table was really parsed (11 rows, no silent empty match)", () => {
-    expect(HAND_PINS.size).toBe(11);
+  it("the pin table was really parsed (15 rows, no silent empty match)", () => {
+    expect(HAND_PINS.size).toBe(15);
     expect([...HAND_PINS.keys()].sort((a, b) => a - b)).toEqual(
       REPORT.levels.map((record) => record.id),
     );
@@ -415,8 +415,16 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
       "12.14",
       "13.64",
       "8.57",
+      // LV-009-B — the L12–L15 block, in dataset order (the dip's second beat and the
+      // block-end row that clears the frozen 13.64 floor).
+      "8.23",
+      "10.90",
+      "12.96",
+      "14.97",
     ]);
     expect(HAND_PINS.get(11)?.dexec.toFixed(2)).toBe("8.57");
+    expect(HAND_PINS.get(12)?.dexec.toFixed(2)).toBe("8.23");
+    expect(HAND_PINS.get(15)?.dexec.toFixed(2)).toBe("14.97");
   });
 });
 

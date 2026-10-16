@@ -1,9 +1,9 @@
-# `src/levels/` — level data set (M0 ladder L1–L5 + M1+M3 unit L6–L10 + M2 debut L11)
+# `src/levels/` — level data set (M0 ladder L1–L5 + M1+M3 unit L6–L10 + M2 debut L11 + M2 block L12–L15)
 
 > Owner: **Level AI + Solver** (AGENTS.md §4). Design intent: **Game Designer** (`docs/level-design.md` §1–§3).
-> Status: **schema-validated AND solver-proven** — `scripts/solve-levels.ts` reports `11/11 PASS`, `par` == the solver's `shortestSolution` on 11/11, 0 dead states, 0 unrecoverable states, and the level policy (`@/core/solver/policy`) reports 0 violations on 11/11.
+> Status: **schema-validated AND solver-proven** — `scripts/solve-levels.ts` reports `15/15 PASS`, `par` == the solver's `shortestSolution` on 15/15, 0 dead states, 0 unrecoverable states, and the level policy (`@/core/solver/policy`) reports 0 violations on 15/15.
 > Metrics: the `docs/level-difficulty.md` §2 model is now **measured** for this block (`B` effective, `T`, `R`, `D` — §5.2 there, definitions in §2a); the route walk and the ordered latch companion are printed by the solver CLI (§0b).
-> Board cap: **≤ 7 × 7** (`docs/ui-ux.md` R-L2). L1–L5 are **M0 only**; L6–L10 add **M1 doors + M3 switches**; **L11 adds M2 portals** (`dualPhaseTiles > 0` for the first time — the only board in the set whose position→phase link is broken).
+> Board cap: **≤ 7 × 7** (`docs/ui-ux.md` R-L2). L1–L5 are **M0 only**; L6–L10 add **M1 doors + M3 switches**; **L11 adds M2 portals** (`dualPhaseTiles > 0` for the first time — the only board in the set whose position→phase link is broken); **L12–L15 are the M2 block** (`docs/decisions/design-0003-l1215-block-law.md`): par ramps 4/6/8/10 and the walking world is deleted from L13 up.
 > The `par` values below started as manual hypotheses (§2) and are now **solver-verified**; the hand derivations are kept because they explain *why* each number is the floor.
 
 ## 0. What is in here
@@ -21,6 +21,10 @@
 | `l009.json` | 9 | 5 × 5 | `(2,1)`, `(2,3)`, `(3,0)` / `(2,0)`, `(2,4)` | `d1` red `(2,2)`, `d2` blue `(4,1)` / `s1` `(0,1)` A → `d1`, `s2` `(3,1)` B → `d2` | 8 | two doors + two switches: `s2` sits **behind** `d1` (ordered plan) |
 | `l010.json` | 10 | 6 × 4 | `(1,2)` / `(5,0)`, `(5,2)` | `d1` red `(4,1)` / `s1` `(2,3)` B → `d1` | 9 | gate check: permanent M0 geometry + phantom walk + latch, planned together |
 | `l011.json` | 11 | 7 × 3 | — / — | `d1` blue `(5,0)` / `s1` `(1,1)` A → `d1` · `p1` `(2,1) ⇄ (4,0)` **activePhase B** | 4 | **M2 debut**: the portal — a channel only alive in one phase; it is on the only par route, and the walking world needs 7 (below OFFERED) |
+| `l012.json` | 12 | 7 × 3 | `(1,0)`, `(2,1)` / — | `d1` blue `(5,2)` / `s1` `(4,2)` B → `d1` · `p1` `(0,2) ⇄ (3,2)` **activePhase A** | 4 | **the dip's second beat**: the walking world still solves (7) so the channel is a *shortcut*, and the latch grades par by 2 |
+| `l013.json` | 13 | 6 × 4 | `(4,1)`, `(4,3)` / `(4,0)`, `(4,2)` | `d1` blue `(5,1)` / `s1` `(5,2)` B → `d1` · `p1` `(0,1) ⇄ (5,3)` **activePhase A** | 6 | the sealed line: walk-only is **UNSATISFIABLE** — the channel is the only door |
+| `l014.json` | 14 | 7 × 4 | `(5,0)`, `(5,2)` / `(5,1)`, `(5,3)` | `d1` blue `(6,2)` / `s1` `(6,1)` B → `d1` · `p1` `(0,1) ⇄ (6,0)` **activePhase A** | 8 | the same law on a longer board: mandatory channel + mandatory latch |
+| `l015.json` | 15 | 7 × 5 | `(3,0)`, `(3,2)`, `(3,4)` / `(3,1)`, `(3,3)` | `d1` blue `(5,3)` / `s1` `(5,1)` A → `d1` · `p1` `(0,0) ⇄ (5,0)` **activePhase B** | 10 | **block end**: full coverage (35/35), `D_exec = 14.97 > 13.64` (the frozen §6 clause) |
 
 ### 0b. Measured solver facts (2026-10-15, LV-006 · obligations re-pinned by LV-007A)
 
@@ -34,19 +38,23 @@
 | 9 | 8 | 58 | 2 `[2,2] [4,1]` | 0 | 2 / 2 | yes (**obligation**) | — |
 | 10 | 9 | 42 | 1 `[4,1]` | 0 | 36 / 36 | yes (**obligation**) | — |
 | 11 | 4 | 82 | 1 `[5,0]` | **21** | 1 / 1 | **no** (`"exempt"` row: the walking world solves in 7, so the portal is the shortcut and the latch is on the route — but not demanded) | portal suite, 8/8 PASS (§2c) |
+| 12 | 4 | 78 | 3 `[1,0] [2,1] [5,2]` | **19** | 1 / 1 | **no** (`"exempt"` block row: G1 grades par, +2 in the all-OFF world — the latch buys speed, the channel carries existence) | block suite, 4/4 PASS (§2d) |
+| 13 | 6 | 79 | 5 `[4,0] [4,1] [4,2] [4,3] [5,1]` | **16** | 3 / 3 | **no** (`"exempt"`; G1 = +2) | block suite, 4/4 PASS (§2d) |
+| 14 | 8 | 95 | 5 `[5,0] [5,1] [5,2] [5,3] [6,2]` | **20** | 10 / 10 | **no** (`"exempt"`; G1 = +2) | block suite, 4/4 PASS (§2d) |
+| 15 | 10 | 99 | 6 `[3,0] [3,1] [3,2] [3,3] [3,4] [5,3]` | **15** | 15 / 15 | **no** (`"exempt"`; G1 = +2) | block suite, 4/4 PASS (§2d) |
 
-- **The `switch required` column is an obligation, not a note** (LV-007A, OQ4 ruling): `@/core/solver/policy` reads it from the lesson row (`DOCUMENTED_LESSONS[].switchRequired`) and rejects a level documented as a load-bearing latch whose goal is still reachable with every switch OFF — code `lesson-switch-required`. **L6 and L11 are the only levels exempt** (an explicit `"exempt"` row backed by the §6 dip / §2c below, with the measured `allOffGoalReachable = true` on both), and the check never reads a level id, so relabelling L6's board as L7 is rejected while the shipped `l006.json` stays clean.
+- **The `switch required` column is an obligation, not a note** (LV-007A, OQ4 ruling): `@/core/solver/policy` reads it from the lesson row (`DOCUMENTED_LESSONS[].switchRequired`) and rejects a level documented as a load-bearing latch whose goal is still reachable with every switch OFF — code `lesson-switch-required`. **L6 and L11–L15 are the only levels exempt** (explicit `"exempt"` rows backed by the §6 dip / §2c / §2d below, with the measured `allOffGoalReachable = true` on all of them), and the check never reads a level id, so relabelling L6's board as L7 is rejected while the shipped `l006.json` stays clean. For the block the exemption is *named in the law* (ADR-design-0003 §5): its substitute teeth are G1 (`all-OFF` is exactly 2 moves slower, 4/4 measured), G2 (every par route presses the switch and crosses the door it drives) and G3 (the refusal is orderable) — par-grade teeth, never existence.
 
-- **L11 satisfies the one gate that was unsatisfiable before it.** `dualPhaseTiles = 21` — every one of the board's 21 tiles is enterable in both phases, because the opposite-colour pair `(2,1) ⇄ (4,0)` makes a teleport the only displacement source that does not consume a move (`refusedThenEnteredTiles = 1` too: the door tile `(5,0)` answers differently because of history). The `dual-phase-tiles` gate, reported as `UNSATISFIABLE` on `l008` since LV-007A, is now **PASS** with a measured proof — and it is the *only* level for which that gate could be satisfied, so the L11 scheduling of M2 is no longer a plan but a measurement (§2c, ADR-0009).
+- **L11 satisfies the one gate that was unsatisfiable before it.** `dualPhaseTiles = 21` — every one of the board's 21 tiles is enterable in both phases, because the opposite-colour pair `(2,1) ⇄ (4,0)` makes a teleport the only displacement source that does not consume a move (`refusedThenEnteredTiles = 1` too: the door tile `(5,0)` answers differently because of history). The `dual-phase-tiles` gate, reported as `UNSATISFIABLE` on `l008` since LV-007A, is now **PASS** with a measured proof — and it is the *first* level for which that gate could be satisfied (LV-009-B's block continues the column at 19/16/20/15 tiles), so the L11 scheduling of M2 is no longer a plan but a measurement (§2c, §2d, ADR-0009).
 
 - **Four more lines per level since LV-007B/007C** (§0b's table intentionally stays the LV-006 facts; these are the new program outputs):
   - `routeWalk=<dfs> + <lookahead> work units (budget=…) prunedChildren=…` — the cost of enumerating *every* shortest route, on the walk's **own** budget key (`maxRouteVisits`, default 2 000 000). Before LV-007B item 1 the walk read the *exploration* cap (`maxStates`), so raising the state limit silently changed route enumeration; an overrun now raises instead of silently truncating the route set. See `docs/ai-native-pipeline.md` §8.7.
   - `refusedBeforeEnteredTiles=… tiles=[…]` — the **ordered** companion of the `refusedThenEnteredTiles` column above (same tile refused strictly before it is accepted, on one real path). It is the reader of **gate (iii)** since **LV-007C** (the code half of GD-008's re-wording of `docs/level-design.md` §3 (iii): the Aha's own sentence is ordered — "refused *first*, entered *later*"), where a trapped refusal — `refusedThenEnteredTiles > 0` but `refusedBeforeEnteredTiles = 0`, a beat no player can witness — is now rejected by name (`gate-refused-then-entered`, control: `tests/solver/policy-negative-controls.test.ts`). The `lesson-latch-dynamism` check and the pre-L11 acceptance law still read the *unordered* canonical metric (ADR-architecture-0002 decision 4 / Appendix A3; `docs/ai-native-pipeline.md` §8.5) — the two legs of the split are deliberately **not** re-stitched. On L6–L10 both forms report the same tile lists, so the switch moves no verdict on this set.
   - `difficulty D=… = 1·L + 3·B + 4·T + 2·R + 5·M` + `difficultyDiagnostics …` + `difficultyExec Dexec=… = D − 5·M = 1·L + 3·B + 4·T + 2·R` — the `docs/level-difficulty.md` §2 model with its **provisional** weights (printed next to the number on purpose) and its **execution axis** (§2b, ADR-design-0001 — the axis `docs/level-design.md` §6's dip law lives on), printed in both forms so the identity is checked by the reader. Inside `docs/level-design.md` §4 the `4·T` and `2·R` terms are provably 0 on every shipped level, so `Dexec = L + 3·B` there.
 
-- **Validation is proven** for all eleven: `node scripts/validate-levels.ts` → `11/11 level files ok`, exit code 0 (negative self-tests 10/10 rejected by name).
-- **Solvability, `par` and the level policy are proven** for all eleven: `node_modules/.bin/tsx scripts/solve-levels.ts` → `11/11 PASS`, `RESULT: PASS` (plus one ESCALATION — `l008`'s `dual-phase-tiles`, §4/§2c).
-- The hand derivations in §2 (L1–L5, written before the solver existed), §2b (L6–L10) and §2c (L11) are kept as the *reason* each `par` is the floor. Where a hand derivation and the solver disagreed, the level file was re-authored — never the number.
+- **Validation is proven** for all fifteen: `node scripts/validate-levels.ts` → `15/15 level files ok`, exit code 0 (negative self-tests 10/10 rejected by name).
+- **Solvability, `par` and the level policy are proven** for all fifteen: `node_modules/.bin/tsx scripts/solve-levels.ts` → `15/15 PASS`, `RESULT: PASS` (plus one ESCALATION — `l008`'s `dual-phase-tiles`, §4/§2c).
+- The hand derivations in §2 (L1–L5, written before the solver existed), §2b (L6–L10), §2c (L11) and §2d (L12–L15) are kept as the *reason* each `par` is the floor. Where a hand derivation and the solver disagreed, the level file was re-authored — never the number.
 - Supplementary, *informal* evidence (kept deliberately **out of the repo**): the original throwaway BFS that first agreed with all five L1–L5 `par` values (4 / 5 / 6 / 6 / 6). It has been superseded by `scripts/solve-levels.ts`, which is the deliverable and the evidence.
 
 ## 1. Running the gate
@@ -287,6 +295,65 @@ Also the accepted output of a committed, seeded generator: `scripts/author-l11-c
 - **1/54 accepted, and it is the shipped file** (`shipped=MATCH`): the design space of this debut is genuinely narrow (49 rejects fail gate (ii) — the channel must sit *exactly* on the only route while the door must still be closed in its entry phase — and 4 fail the `par ≤ 4` cap). That is the finding, not a failure of the sweep: the shipped board was *found and filtered to*, not fitted to a target.
 - Both negative probes are rejected **by name**: a **same-colour** pair (`(6,2) ⇄ (0,2)`, both `(x + y)` even → inert M2, hard-**error** in `validateLevel`, not a warning) and a **bypassable** portal (the channel re-declared in the phase the par route never stands in → `gate-portal-crossing-on-every-par-route`). Full record: `docs/ai-native-pipeline.md` §8.8.
 
+## 2d. L12–L15 — the M2 block, solver-verified (ADR-design-0003)
+
+The block's law is `docs/decisions/design-0003-l1215-block-law.md`; the four boards are
+the four candidates the LV-009-A dossier carried, **byte-copied** into the dataset after
+STEP 0 re-derived every constant of that ADR from the candidates *as an isolated dataset*
+(`scripts/attest-lv009-block.ts`, transcript committed at `e8a456d`). Each board's `par`
+below is the program solver's `shortestSolution`, and the whole ramp is one legal
+sentence: **4 / 6 / 8 / 10 = the P1 floor + the 2-move step, ending exactly on the
+ceiling** (`BLOCK_L1215_PAR_FLOOR/STEP_MIN/CEILING` in `@/core/solver/policy`).
+
+- **L12 — `l012.json` · 7 × 3 · `par` 4 · the dip's second beat.** The channel
+  `(0,2) ⇄ (3,2)` sits **one step from the player's tile**: the opening move enters an
+  active end (phase A) and *arrives on the far side* of the board in phase B, which is
+  exactly where the latch `s1 (4,2)` is current — so the route reads **teleport → press →
+  cross the door → goal** in 4 moves, with the door `d1 (5,2)` open only on that order.
+  The walking world still finishes in **7** (Manhattan 7, no wall in the way), so the
+  channel is a *shortcut*, and the board keeps the L11 grade ("below OFFERED") while
+  dropping `D_exec` to **8.23 < 8.573171** (L11's measured value) — the two-beat dip §§4/6.1.2
+  of the ADR, carried by effective branching (1.5244 → 1.4103) with par flat at the floor.
+- **L13 — `l013.json` · 6 × 4 · `par` 6 · the sealed line.** Column `x = 4` alternates its
+  wall phase per row (`(4,1)/(4,3)` in A, `(4,0)/(4,2)` in B), so the walking world cannot
+  cross it while keeping the phase the door and the switch need: **walk-only is
+  UNSATISFIABLE** (measured, and the reason the ADR's `BLOCK_L1215_PORTAL_LOAD` grades
+  this board `"mandatory"`). The route must reach the channel end `(0,1)` on the parity
+  that makes it active, teleport to `(5,3)`, press `s1 (5,2)` in phase B and cross
+  `d1 (5,1)` — 6 moves, with the extra two over L12 being the detour to the far end.
+- **L14 — `l014.json` · 7 × 4 · `par` 8 · the same law on a longer board.** The line
+  `x = 5` is sealed in the same alternating way and the channel `(0,1) ⇄ (6,0)` is the
+  only crossing; the latch `s1 (6,1)` sits between the channel's arrival end and the door
+  `d1 (6,2)`, so the order is forced by geometry again. The board is what makes the ramp
+  *arithmetic* rather than *longer*: `B` 1.6329 → 1.6526 with the same mechanic set.
+- **L15 — `l015.json` · 7 × 5 · `par` 10 · the block end.** **Every tile of the 7 × 5 grid
+  is visited** (coverage 35/35 — §6.1.1's `l015TemplateFamily` note, and the reason the
+  board size was chosen *from* the route rather than padded to it), the line `x = 3` is
+  sealed across all five rows, and the frozen §6 clause is met with room to spare:
+  **`D_exec = 14.969697 > 13.64`** (and above L10's measured 13.642857 itself).
+
+**What the block does *not* claim.** Gate (i) `no-solution-with-switches-off` is
+deliberately **absent** from these four boards' suite (ADR §5): in the all-OFF world the
+goal is still reachable on **4/4** (that is the documented G1 grade — the latch prices the
+route, the sealed channel carries existence). The substitute teeth are par-grade and
+measured: **G1** `allOffShortest − par = 2` on 4/4 (a *restricted* all-OFF walk, so the
+number is a distance in the world it is read from), **G2** every par route presses the
+switch *and* crosses the door it drives, and **G3** the refusal is *orderable*
+(`refusedBeforeEntered == refusedThenEntered`, 3/5/5/6 tiles). G1 cannot fail alone —
+if gate (ii) passes, no all-OFF route can be as short as par, which is why the G1 negative
+control in `tests/solver/policy-negative-controls.test.ts` §2d fails with gate (ii) and
+the coupling is asserted there as an implication over every board in the suite.
+
+**Where L12–L15 came from.** The LV-009-A search (Kimi K3 for design reasoning, the
+program Solver for every verdict) proposed candidate families; every accepted member was
+filtered by the ADR's own constants — par floor/step/ceiling, coverage, latch grade,
+portal load, the dip ceiling and the tail budget — during the *search*, not after it
+(`docs/ai-native-pipeline.md` §8.10 records the pipeline and the rejection ledger). The
+STEP 0 transcript is the load-bearing evidence: it re-derived `par`, `D_exec`, `T`, `R`,
+dead states, coverage, the all-OFF advantage, the portal-free verdict, `dualPhaseTiles`
+and the ordered/unordered refusal counts **from the candidate files alone**, and every
+number matched the ADR before a single dataset byte moved.
+
 ## 3. The parity structure, and why M0-only content is a *static* maze
 
 Both facts used above are short proofs, not opinions.
@@ -351,7 +418,10 @@ Exported by `src/core/level/index.ts`: `Coord`, `DoorDef`, `SwitchDef`, `PortalD
 - **GAME-001 / UI-ART-001 — L6–L10 must not enter the playable registry yet.** Per the LV-006 task contract the five new files stay out of `src/game/levels/level-registry.ts` until the Game Designer sequences them (L6–L10 were authored to `docs/level-design.md` V0.4 §2/§6; the §2b derivations above are the parts the solver proved). The renderer today implements no `door` or `switch` object (`src/game/renderer/objects/registry.ts`), so the block is not playable as authored — registering it now would ship a board whose latch is invisible.
 - **Game Designer / Orchestrator:** §4 — the two blocked intents (L9's timing lesson, L8's gate (iv)) need a design decision, not an agent workaround: either re-word the ladder for the pre-L11 phase, or re-schedule M2/M3 (ADR-0009 puts portals at L11).
 - **Level AI + Solver — where the metric work stands (LV-007C):** LV-004 embed plumbing; LV-007B's `B` effective / `T` / `R` / `D` (`docs/level-difficulty.md` §5.2); then LV-007C — item 1: the ordered companion **is** gated now, by Aha gate (iii) alone (`refusedBeforeEnteredTiles`; the `lesson-latch-dynamism` check and the pre-L11 acceptance law stay **unordered** by ruling, ADR-architecture-0002 A3 — the two legs are not re-stitched, §8.5 of the pipeline doc); item 2: `D_exec = D − w5·M` printed per level (`difficultyExec`); item 3: `docs/level-difficulty.md` **§3 re-keyed** to the V0.6 execution-axis law — the L5→L6 question is **closed** by ADR-design-0001, not open: the seam is measured **−1.47 on `D_exec`** against **+8.53 on `D`**, and `docs/level-design.md` §6 V0.6 no longer asks for a −2…−3 `D` drop. The one follow-up left is not mine to decide: the **weights** are still the provisional V0.1 hypothesis and need playtest regression (`docs/level-difficulty.md` §2/§4).
-- **Then:** the LLM candidate pipeline (`docs/ai-native-pipeline.md` §8) can consume `validateLevel` + `@/core/solver/policy` unchanged for the next block (L12–L20, portals) — schema → rules → BFS → metrics → policy → accept/reject, with rejection (never repair) at every gate.
+- **Level AI + Solver — where the metric work stands (LV-009-B, this handoff):** the L12–L15 block is **in the dataset and proven** (§2d above): `15/15 ok · 0 errors · 28 warnings` on the validator gate, `15/15 PASS` on the solver gate, `par == shortestSolution` 15/15, 0 dead / 0 unrecoverable on the whole set, and the four block rows carry a lesson row and a named gate family (`BLOCK_L1215_*` constants + `blockL1215Gates` in `@/core/solver/policy`, one negative control per gate in `tests/solver/policy-negative-controls.test.ts` §2d). `D_exec` for the block: **8.230769 / 10.898734 / 12.957895 / 14.969697** — the first member below L11's measured 8.573171 (the dip's second beat), the last above the frozen 13.64 block-end floor by 1.329697. The dataset count pin moved 11 → 15 in `tests/e2e/helpers/levels.ts` (the one authorized cross-lane byte).
+- **R-003 / UI-ART / GAME-001 — the registry is the one thing left between L12–L15 and play (LV-009-B).** `src/game/levels/level-registry.ts` still imports `l001`–`l011` only, so `?level=12..15` does not resolve to the block; ADR-design-0003 §8 item 6 additionally requires the **UA capture-entry round** (the doors × portals painter seam, the sealed line reading as a wall column, the portal ends reading as a pair) before the four boards are registered as playable. Not this role's edit: named handoff, recorded as `OPEN_QUESTIONS` in the task's return contract.
+- **QA — two e2e rows the block moves, both outside this lane (LV-009-B, measured).** (1) `tests/e2e/portal.spec.ts:82` pins the literal `[PORTAL_LEVEL_ID]` against a **dataset-derived** list that is now `[11,12,13,14,15]` — stale by design, since ADR-design-0003 makes portals mandatory on L13–L15 and a shortcut on L12; the pin needs QA's pen, not a data change. (2) `tests/e2e/latch-door.spec.ts:102` is RED on L12 alone ("both fixtures stand on the same tile": expected `(5,1)`, received `(4,2)`) and it is **fixture selection, not a board gap** — `scripts/latch-pair-audit.ts` measures L12 shipping **2** co-located discriminating pairs under the spec's own fixture bookkeeping and **12** under `isLegalMove` alone over its 78 reachable states, while L6–L11 and L13–L15 all read HOLDS. `cheapestDoorFixtures()` picks the cheapest occupancy and the cheapest refusal *independently*; on L12 both are depth 4, and node order lands the refusal at `(5,1)A down` instead of the state that pairs with the depth-3 occupancy at `(4,2)A right`. The spec's docstring ("two reachable states on the same tile in the same phase whose only difference is whether the switch was pressed") describes a search the helper does not implement; no level file is implicated. Measured context: one managed full e2e run reads **107 tests / 8 files → 20 failed · 87 passed**, 19 of the 20 naming the registry gap, and a temporary, uncommitted, reverted registry probe lifts the four UI-walk specs to **74 passed · 2 failed** — so the four boards are winnable through the real UI, L1 → L15 unlock chain included (`docs/ai-native-pipeline.md` §8.10 item 6).
+- **Then:** the LLM candidate pipeline (`docs/ai-native-pipeline.md` §8) can consume `validateLevel` + `@/core/solver/policy` unchanged for the next block — schema → rules → BFS → metrics → policy → accept/reject, with rejection (never repair) at every gate.
 - **Level AI + Solver — where the metric work stands (LV-008, this handoff):** L11 is authored, proven and shipped in the dataset, and the **last pre-registered law is now measured, not pending** — `D_exec(L11) = 8.573171 < 13.64` ⇔ `D(L11) = 28.573171 < 33.64`, `par = 4`, exactly one opposite-colour pair, no bypass on any par route, below OFFERED (`docs/level-difficulty.md` §3.3/§3.4, §2c above, `tests/solver/l11-portal-gates.test.ts`). The ordered/unordered **block ruling** of ADR-architecture-0002 A3 lands here too: both readers report `[5,0]`, so gate (iii) is carried by the ordered form and no L1–L10 verdict moves.
 - **R-003 / UI-ART / GAME-001 — the registry is still frozen, and that is now the *only* thing between L11 and play.** `src/game/levels/level-registry.ts` hardcodes `l001`–`l010` and `tests/unit/renderer-level-unlock.test.ts` asserts exactly that set, so **L11 must not be registered by this role** (AGENTS.md §4). Two conditions gate the unlock, and the first is satisfied by this task: (a) the board is proven playable-by-the-rules (done — and the portal is the *only* object L11 needs that L6–L10 do not), and (b) the §3.3b portal visual evidence (`docs/ui-ux.md` Entry 3, bound to R-003) — a board whose channel is invisible teaches nothing, so registering L11 before the portal painter ships would ship a lie. **Registry-unlock reminder for R-003: the L11 file is ready; the painter and the registry edit are not mine to make.**
 - **Game Designer / Playtest Analyst — the open design question this task sharpens:** L11's seam is −5.07 on `D_exec` and only −0.07 on `D`, so a reader using `D` alone will report "no dip at the M2 debut" while the execution axis reports a large one. The weights are still the provisional V0.1 hypothesis (`docs/level-difficulty.md` §2/§4); if the ladder's curve rule is to be read on `D`, the `w5·M` term needs the playtest regression that §4 already asks for — this task deliberately did not re-tune it.

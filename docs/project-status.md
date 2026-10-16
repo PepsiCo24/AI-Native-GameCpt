@@ -1278,7 +1278,82 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    then DG-004c flips the five future-scoped hosting sentences + the 88-case inventory +
    this roster's final chapter. LV-009-B (L12-L15 integration, law published and
    countersigned) is the NEXT train after the milestone. User lanes unchanged: req-08/11
-   revision art, the frozen `df353a0` cohort, P9 video. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
+   revision art, the frozen `df353a0` cohort, P9 video.
+
+74. **MILESTONE M1 SHIPPED: the live game is ELEVEN levels on GitHub Pages, and the
+   serving is proven to be the proven tree.** `develop@4bbfdf2` -> `main@3da1240`
+   (`release(m1)`), Pages deploy run 38808879618 `success`, and main's own CI round
+   38808880095 came back **88/0 in 15.9 m with zero retry consumption** - the FIFTH
+   consecutive clean cloud round on the survivor lineage (PR #1, `fb751de`, PR #3,
+   develop tip, main), which is exactly the exit clause the v1 retry policy wrote
+   for itself. Live verification, honest ledger (all RAF-independent, per QA-005f's
+   own doctrine applied to this office's mouth): **(a) serving identity** - live
+   bundle is `index-CKz_I2T-.js`, byte-identical NAME with `npm run build` run on
+   this tree (content-hash filenames: identity, not similarity, and harder evidence
+   than a screenshot); **(b) the 11-level ladder renders** - accessibility tree of
+   `?level=11` shows `L 11 / moves 0 / 白昼 / Light / Undo(disabled) / Restart`, where the
+   previous live build physically could not show that banner; **(c) console 0 errors
+   / 0 uncaught** (the lone warning is l003's known validator design note, on the
+   ledger since authoring); **(d) network 7 requests / 0 failed**. What this office
+   deliberately did NOT claim: a trusted-key interaction walk on the live URL - the
+   review tab reports `document.hidden: true`, Phaser's rAF never fires, and **a
+   runner that cannot present frames does not get pixel evidence demanded of it, nor
+   fabricated**. Interaction proof on the identical tree is CI's unlock-chain
+   (L1->L11 through real win dialogs, 88/0 x5); the human-eye browser walk rides the
+   P9 video lane (user). One incident recorded not erased: during verification this
+   office blind-POSTed the Pages deployments API with an empty body - HTTP 404, zero
+   effect (re-verified: correct bundle still serving); the standing rule this
+   teaches: verify with GETs, never POST at a serving pipeline you did not stage.
+   (1) **INFRA-001 is in flight as PR #4**: cloud e2e drops `--retries=1` for bare
+   `npx playwright test` - checked first that `playwright.config.ts:70` pins
+   `retries: 0` hard, so flag-removal IS behavior-removal; pre-registered self-gate:
+   red round = one-line revert of ci.yml, never a weakened assertion. (2) **DG-004c
+   dispatched**: README's five future-scoped hosting sentences flip to the shipped
+   present, the 88-case inventory + 7->4->3->2->1->0 roster chronicle finalizes,
+   ITER-0017 syncs the milestone. Named follow-up for the QA lane (their file, not
+   this office's pen): the `tests/e2e/README.md` cloud-policy paragraph still speaks
+   of `--retries=1` - one line to flip in QA voice once PR #4 lands. (3) **LV-009-B
+   integration is the next train and is already running** (STEP-0 law re-attestation
+   before any dataset byte moves). User lanes unchanged: req-08/11 revision art,
+   the frozen `df353a0` cohort, P9 video.
+
+75. **The erratum batch, landed under the new law: seven clouds green, the retry flag
+   retired by its own measurement, and the docs finally speak the shipped present.**
+   (1) **AR-0007** (Architect, flash lane): the two sidecar pointers in
+   `docs/architecture.md` flipped from "specified, not yet implemented" to landed with
+   disk-cited SHAs (`88ea653` merge / `98c3acf` pin — both verified on disk before the
+   words were trusted); the open theme pins (static scan, token parity) were
+   **re-confirmed genuinely absent** and left untouched — an erratum that invents
+   closures is worse than no erratum. Note the double lesson: the premium-model dispatch
+   died at 402 BEFORE writing a byte (zero salvage footprint - a different death-type
+   from GD-011s post-write), and the flash re-dispatch landed; then **the merge-gate
+   caught the erratum's own one-day date drift** ("landed 2026-10-16" vs git's
+   2026-10-15 22:12) and bounced a one-word fix to the author - single-writer rule
+   intact through the correction. Merged `7001f9f`. (2) **INFRA-001 / PR #4**: cloud e2e
+   now runs bare `npx playwright test` - self-gate MET on its own round (**88/0, 12.0 m,
+   retry-consumption audit = 0**, natural arm again drew full-pixel-teeth
+   `bracketingGapMs=66.7 -> assert-shape` and passed on cloud); the v1 policy retired at
+   SEVEN consecutive green cloud rounds (PR #1, `fb751de`, PR #3, `4bbfdf2`, main
+   `3da1240`, docs round `3626174`, the PRs own) - and per the ticket wording,
+   **it was the measurement that retired the flag, not the tally**. Cloud and local are
+   now one discipline: a transient is a named red ticket, never a silent FLAKY pardon.
+   Merged `8ef18de`. (3) **DG-004c** (docs-github): README/ITER-0017/both submission
+   files flipped to the shipped present with the item-74 verification ledger, the
+   interaction-honesty clause kept whole, the 2026-10-15 develop-tip paragraph preserved
+   as a dated pre-milestone capsule, retries written as pending-on-PR-4 (truthful at
+   dispatch time - now landed), L12-L15 out-of-tree future tense ONLY, zero-cohort
+   Stage-2 sentence untouched; disk forensics: 4 files, +43/−26, 100% owned, the single
+   overclaim-sweep hit ruled a regex FALSE POSITIVE after full-line reading. Merged at
+   this tip. (4) Named ledger obligations: the QA lane still owes the one-line
+   cloud-policy flip in `tests/e2e/README.md` (their voice, post-INFRA-001 - folded into
+   the next QA ticket, not this pen); the §9.1 theme pins remain the two open §12
+   enforcement gaps with QA tickets named in `architecture.md`. (5) In flight: LV-009-B
+   (L12-L15 integration, STEP-0 law-first), the `8ef18de` tip round = FIRST bare-
+   playwright run on develop under policy v2 (cloud sample #8, then #9 on this tip).
+   `main` stays `3da1240` — docs do not gate the live build; the next main train is the
+   L12-L15 one, gated on LV-009-Bs READY_FOR_MERGE + green rounds under the no-pardon
+   law. User lanes unchanged: req-08/11 revision art, the frozen `df353a0` cohort,
+   P9 video. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
