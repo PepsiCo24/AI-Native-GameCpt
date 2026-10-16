@@ -111,6 +111,8 @@ import type { FlipTimings, ThemeTokens } from "@/game/theme/tokens";
  * ──────────────────────────────────────────────────────────────────────────── */
 const SPIRIT_A_KEY = slotKey("echo_spirit_a");
 const SPIRIT_B_KEY = slotKey("echo_spirit_b");
+const BG_A_KEY = slotKey("bg_phase_a");
+const BG_B_KEY = slotKey("bg_phase_b");
 
 /**
  * The drawn weight of **Phase B** in a pair of stacked sprites: `0` = pure A,
@@ -217,6 +219,16 @@ export class BoardView {
 
   private readonly pageGfx: Phaser.GameObjects.Graphics;
   private readonly plateGfx: Phaser.GameObjects.Graphics;
+  /**
+   * L1 `backgroundImage` (§5.2, depth 5): the delivered A-04/A-05 plates, cover-fit
+   * to the play area and alpha cross-dissolved on §6.2's `background` row. `null`
+   * per phase when that file did not mount — the page ground underneath is the
+   * documented fallback, never a blank or a black frame.
+   */
+  private readonly backgroundArt: {
+    readonly A: Phaser.GameObjects.Image | null;
+    readonly B: Phaser.GameObjects.Image | null;
+  };
   /** §3.1d slot `wall` — the one stateful L4 class, so it owns its container (R-E6/R-E8). */
   private readonly wallGfx: Phaser.GameObjects.Graphics;
   /** Every L4 container that exists today, with the §3.1d slot it was created for. */
@@ -277,6 +289,16 @@ export class BoardView {
 
     const s = this.scene;
     this.pageGfx = s.add.graphics().setDepth(DEPTH.pageGround);
+
+    // L1 — the delivered background plates, created once at their own depth and
+    // never re-created by a flip (R-E6's pattern one layer down): a phase change
+    // is an *alpha* on the two existing objects, not a new sprite.
+    const backgroundArt = {
+      A: this.createArtImage(BG_A_KEY, DEPTH.backgroundImage),
+      B: this.createArtImage(BG_B_KEY, DEPTH.backgroundImage),
+    };
+    this.backgroundArt = backgroundArt;
+
     this.plateGfx = s.add.graphics().setDepth(DEPTH.boardPlate);
 
     // L4 — one container per registry painter, each at the depth of the §3.1d
@@ -335,8 +357,10 @@ export class BoardView {
     // objects must be the spec's layer stack, checked against the one table in
     // `renderer/layers.ts` (L2/L3 share the plate's container on purpose). The
     // per-slot order *inside* L4 stays `assertLayerOrder`'s job above, which is
-    // where the §3.1d arithmetic lives. `backgroundImage` is absent because no art
-    // exists yet — the guard checks what was created, never what is merely reserved.
+    // where the §3.1d arithmetic lives. The guard checks what was **created**,
+    // never what is merely reserved — so `backgroundImage` is reported only when a
+    // delivered plate actually mounted (with no art there is no object at depth 5,
+    // and claiming one would make that row of the guard unfalsifiable).
     //
     // `objects` reports the depth of the **real bottom L4 container**, not the
     // constant `L4_DEPTH_BASE`: the base is a group marker and no object is ever
@@ -344,6 +368,9 @@ export class BoardView {
     // unfalsifiable (`assertLayerStack` checks `LAYER_GROUP_BASE` rows as a range).
     const observed: readonly ObservedLayer[] = [
       { name: "pageGround", depth: this.pageGfx.depth },
+      ...(this.backgroundArt.A === null && this.backgroundArt.B === null
+        ? []
+        : [{ name: "backgroundImage" as const, depth: DEPTH.backgroundImage }]),
       { name: "boardPlate", depth: this.plateGfx.depth },
       { name: "cellPlate", depth: this.plateGfx.depth },
       {
@@ -378,6 +405,8 @@ export class BoardView {
     // The actor is one container and `Container.destroy` releases its children
     // (the ring graphics and the spirit images), so they are not listed twice.
     this.actorRoot.destroy();
+    this.backgroundArt.A?.destroy();
+    this.backgroundArt.B?.destroy();
   }
 
   /**
@@ -651,14 +680,16 @@ export class BoardView {
   private paintGround(time: number): void {
     const { tokens: t } = this.tokenMix(time);
 
-    // L0 pageGround + L1 backgroundImage placeholder (A-04/A-05 not delivered).
-    // DEV PLACEHOLDER — A-04 bg_phase_a / A-05 bg_phase_b: integration adds an
-    // Image at DEPTH.backgroundImage and this rect becomes the letterbox. §6.2's
-    // `background` row (100–220) is this dissolve; with no art it is the page
-    // colour, which the `tokens` row already carries — one less moving part.
+    // L0 pageGround — kept as the **base layer under the art**, not replaced by it.
+    // The delivered plates are drawn above this rect, so (a) a mid-dissolve frame
+    // composites over a real colour rather than over nothing, and (b) a plate that
+    // did not mount degrades to exactly the pre-integration ground.
+    // DEV PLACEHOLDER — A-04 bg_phase_a / A-05 bg_phase_b: this flat `ground.page`
+    // fill, which is what either plate's slot falls back to.
     this.pageGfx.clear();
     this.pageGfx.fillStyle(toInt(t.ground.page), 1);
     this.pageGfx.fillRect(0, 0, this.scene.scale.width, this.scene.scale.height);
+    this.paintBackground(time);
 
     // L2 board plate — R-L4 opaque enough that background art never leaks in.
     const plate = this.layout.plate;
@@ -681,6 +712,57 @@ export class BoardView {
         this.plateGfx.fillRoundedRect(surface.x, surface.y, surface.w, surface.h, this.layout.radius);
       }
     }
+  }
+
+  /**
+   * L1 `backgroundImage` — §6.2's `background` row (100–220 ms Variant S / 150–250
+   * Variant CL / instant under reduced motion), read from the **same** flip the
+   * board is running. One scalar per frame and no tween queue, so a move arriving
+   * mid-dissolve snaps the pair to its target exactly like every other layer
+   * (§6.4) — and a settled board takes the `flip === null` branch, i.e. exactly
+   * `w = 1` or `0`, never a stale mid-dissolve alpha.
+   *
+   * Cover-fit is recomputed here, not cached: this runs only when the ground is
+   * dirty (resize, level change, flip), and `layout` is what R-L7 recomputes.
+   */
+  private paintBackground(time: number): void {
+    const { A, B } = this.backgroundArt;
+    if (A === null && B === null) return;
+
+    const flip = this.flip;
+    const raw =
+      flip === null
+        ? 1
+        : progress(
+            time,
+            flip.startAt + flip.timings.background.start,
+            flip.timings.background.dur,
+          );
+    const w = phaseWeight(
+      flip?.fromPhase ?? this.shown.phase,
+      this.shown.phase,
+      easeOutQuad(raw),
+    );
+
+    const width = this.scene.scale.width;
+    const height = this.scene.scale.height;
+    for (const image of [A, B]) {
+      if (image === null) continue;
+      // §11 — cover-fit to the play area: scale the 1920×1080 plate up until it
+      // covers the box on its short axis, then centre it. Letterboxing instead
+      // would show the page ground at the edges, which is a *fallback*, not a
+      // framing.
+      const cover = Math.max(width / image.frame.realWidth, height / image.frame.realHeight);
+      image.setDisplaySize(image.frame.realWidth * cover, image.frame.realHeight * cover);
+      image.setPosition(width / 2, height / 2);
+    }
+
+    // Each plate owns its own phase, so a *pair* dissolves and a *single* plate
+    // simply appears/disappears for its phase (the other slot's page ground is its
+    // honest fallback). `phaseWeight`'s stacking rule: A opaque under, B faded in.
+    const paired = A !== null && B !== null;
+    if (A !== null) A.setAlpha(paired ? 1 : 1 - w);
+    if (B !== null) B.setAlpha(w);
   }
 
   /**
