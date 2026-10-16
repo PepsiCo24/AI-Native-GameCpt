@@ -1,6 +1,6 @@
 # Project Status — Phase Shift: Echo Grid
 
-> Owner: **Orchestrator (Agent 0)** · Updated: **2026-10-15** (ART-INTAKE close-out, item 25)
+> Owner: **Orchestrator (Agent 0)** · Updated: **2026-10-16** (QA-005e closure audit + QA-005g latch budget + CI-artifact fix, items 76–77)
 > Read this first when resuming a session; it is the recovery entry point.
 
 ---
@@ -80,6 +80,11 @@ error? It is provably inert for parity but is a legitimate shortcut. Owner: Game
 ---
 
 ## Current milestone
+
+> ⚠ **This summary block predates M1 (it was last written at the five-level feel pass).** The live
+> state today: **15 levels on `main` (`5b058ff`, Pages deploy green), `develop` tip `091c483`,
+> unit 632/3 · levels 15/15 · e2e 107/107 under the zero-retry law** — see items 73–77 below for
+> the shipped sleight of hand. Do not read the Stage-2 paragraphs beneath as current.
 
 **Stage 0 / Stage 1 — COMPLETE. GATE C = Option B (ADR-0008). GATE D = D3 (ADR-0009).**
 **Stage 2 — PLAYABLE AND FEEL-PASSED (L1–L5 shipped).** `develop` = integration round **`0a88d0c`**
@@ -242,6 +247,9 @@ and a path must be quiescent before dispatch.**
 
 ## Relevant commits / branches
 
+- **Current tips (2026-10-16):** `main` = **`5b058ff`** (L12–L15 published; deploy green) · `develop` =
+  **`091c483`** (merge QA-005g `cd3af77`; CI-artifact fix `9c1bb70`; LEVEL-DOCS-1 closure `1eda401`+`3cd3c03`) —
+  the older list below is retained for provenance, not as the live state.
 - Branch model: `main` (stable) ← `develop` (integration) ← `agent/<role>/<task>`. Only the Orchestrator merges/pushes.
 - `develop` (pushed, newest first): **`HEAD`** docs(status) integration round · **`0a88d0c`** docs(assets) art-validation
   record · **`aa520ae`** merge LV-006 · **`efa6be6`** merge PA-005 · **`993bc4c`** merge UA-0006 V0.7 · **`41d5a4b`** docs(status) playable + feel-passed (LV-005/UA-0005/PA-004 landed, suite 12 files / 137 passed / 3 skipped, solver 5/5, CI green) · **`9c4b5a1`** merge R-001b + PA-004 · `db730bc` feat(game) flip cross-fade /
@@ -1355,6 +1363,50 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    law. User lanes unchanged: req-08/11 revision art, the frozen `df353a0` cohort,
    P9 video. Live: R-004b(resume) + UA-0009 + RV-007 = 3/3. Next main milestone = R-003 + R-004b + DG-004 landed (DG-004 is a
     PRE-MILESTONE gate: public README may not cite out-of-repo evidence).
+
+76. **MAIN CI ROUND for train 2 — recorded here because the LEVEL-DOCS-1 note deliberately left it to this office.**
+   `main` = **`5b058ff`** ("release(m1-train2): L12-L15 block published - 15-level ladder live"): CI run
+   **`38845234170`** success (13m54s) and Deploy to GitHub Pages run **`38845234113`** success (35s). That
+   discharges the deferral written into `docs/ai-native-pipeline.md` (LEVEL-DOCS-1 row, V1.2). Same-minute
+   context that matters for item 77: this release build ran **concurrently** with the develop push
+   `bed2cb9` — the contention the next item is about.
+
+77. **The reported CI failure was actually two different reds (one already dead, one live); both are now closed, plus the failure-artifact gap that made every red undiagnosable.**
+   (a) **The red the user reported — QA-005e, PR #2 head `9eaf7fb`, run `38795670240` — is CLOSED AS SUPERSEDED, not patched.**
+   PR #2 merged 2026-10-15T19:39. Its red was the P1 natural-arm oscillation, diagnosed as hypothesis (c)
+   (nominal rAF stamps vs the step's real `ranAt` — the runner read a true 100 ms window as 83.4 ms), and fixed
+   by **QA-005f** (PR #3 run `38804134439` success), merged `3ddc2d6`. Re-verified this session:
+   `BEAT-REQUIRED-ABSENT` occurs **0 times** in both newest rounds, and the P1 natural-grid rows are ✓
+   (6.6 s in `38843718456`; 12.4 s in `38845237536`). Nothing to patch; do not re-open.
+   (b) **The live red, found by the same audit**: run **`38845237536`** (push `bed2cb9`, e2e job `116794357318`,
+   22m14s) — `latch-door.spec.ts:134` **L15 "Test timeout of 30000ms exceeded" at a 30.9 s row** (106 passed /
+   1 failed). The same suite was green 18 minutes earlier (run **`38843718456`**, L15 21.2 s); rows grow
+   monotonically with route length — quiet round 14.0/17.5/19.9/21.2 s (L12–L15) vs contended round
+   20.3/22.6/25.3/**30.9 s**; the red commit is docs-only and overlapped the `5b058ff` release build.
+   **Class = wall clock**, not an assertion, not a game defect. Fix = **QA-005g** (`cd3af77`, branch kept for
+   provenance, merged **`091c483`**): `test.setTimeout(90_000)` as the first statement of the per-level UI walk
+   inside the *derived* `DOOR_LEVELS` loop (one budget covers L6–L15 alike), documented with both measured
+   rounds and the work size (L15 = refusal route 10 + occupancy route 9 = **19 trusted presses**, two level
+   opens), under the standing ruling `refusal.spec.ts:56` "Wall clock, never an assertion"; one row added to
+   `tests/e2e/README.md` §1.3. **Verified by me on disk before merge**: 2 QA-owned files, +21/−0, **0 changed
+   `expect(` lines**, no retries, global 30 s default untouched. Orchestrator merge-gate battery on the merged
+   tip: typecheck 0 · vitest **31 files / 632 passed / 3 skipped** · levels **15/15 PASS** · build ✓ · full
+   local e2e **107 passed (9.3m), zero retries**. Cloud round for the pushed tip: run **`38849186852`** —
+   [RESULT] (this push also carried the two LEVEL-DOCS-1 closure commits `3cd3c03`+`1eda401` that were still
+   local).
+   (c) **Infra: every red so far shipped zero artifacts.** The workflow uploaded `playwright-report/`, which
+   never exists under the list-only reporter — annotation "No files were found with the provided path"
+   on both `38795670240` and `38845237536` — while the traces we pay for (`trace: retain-on-failure`) land in
+   `test-results/` and were uploaded by nobody. Fixed by me in **`9c1bb70`**: failure-only upload of
+   `test-results/` (trace.zip + error-context.md) alongside the legacy path, 7-day retention. A red must be
+   diagnosable from its own artifacts.
+   (d) **Named follow-ups, deliberately not silently widened**: **QA-005h** = `tests/e2e/README.md` §2's
+   inventory is stale ("88 cases", `latch-door.spec.ts | 14`) against the live **107 tests in 8 files** (22
+   rows in that file) — QA-owned, needs the derived-count treatment QA-005c applied elsewhere; **watch rows**
+   `portal.spec.ts:265` (cloud 21.6 s = 72 % of the default, no budget) and `latch-door.spec.ts:197` L8 walk
+   (19.3 s red / 14.6 s green) — budget them only when they actually cross, per the measurement-first law;
+   the known prettier non-cleanliness of `latch-door.spec.ts` / `refusal.spec.ts` at HEAD stays with the
+   standing `chore(format)` sweep (item 11).
 
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
