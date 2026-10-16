@@ -26,13 +26,14 @@
  * sidestepping a bundler-only import shape — and `tests/e2e/helpers/levels.ts`
  * is a **test** file, so this is not a second production path.
  *
- * The file list is discovered from the directory; the hand-pinned registry count
- * is {@link EXPECTED_LEVEL_COUNT} ("the registry ships 11 levels" — R-002 tree
- * plus R-003's L11 unlock at `f484e23`), which `playthrough.spec.ts` compares the
- * discovered set against. **Every other inventory is derived** (QA-005c OQ2):
- * {@link datasetIds}, {@link doorLevelIds}, {@link discoveredFileIds} and
- * {@link inventoryViolation} — so an unlock costs one pin, not three, while a
- * dataset change still raises the alarm. See `tests/e2e/README.md` §1.
+ * The file list is discovered from the directory; the hand-pinned count is
+ * {@link EXPECTED_LEVEL_COUNT} (the dataset's **15**-level ladder — R-002 tree →
+ * R-003's L11 unlock at `f484e23` → LV-009-B's L12–L15 block, ADR-design-0003 §8),
+ * which `playthrough.spec.ts` compares the discovered set against. **Every other
+ * inventory is derived** (QA-005c OQ2): {@link datasetIds}, {@link doorLevelIds},
+ * {@link discoveredFileIds} and {@link inventoryViolation} — so an unlock costs one
+ * pin, not three, while a dataset change still raises the alarm.
+ * See `tests/e2e/README.md` §1.
  */
 
 import { readFileSync, readdirSync } from "node:fs";
@@ -66,10 +67,11 @@ import { sameVec } from "@/core/state/types";
  *
  * ⚠ The pin names the **dataset**, and the dataset is what it is checked against.
  * The *playable* registry (`src/game/levels/level-registry.ts`) is a second,
- * independent list that still ships 11 levels as of this commit, so the specs that
- * walk levels through the UI (playthrough rows for L12–L15, the L1→L15 unlock
- * chain) stay RED until the Gameplay Engineer's registry unlock (R-003) lands —
- * see this task's `OPEN_QUESTIONS`, named handoff, not a quiet pin.
+ * independent list; R-003b registered L12–L15 (`3cd643e`) so it now ships the same
+ * fifteen, and the UI-walk specs (playthrough rows for L12–L15, the L1→L15 unlock
+ * chain, `?level=12..15`) resolve off it and run green. The dataset pin stays
+ * independent on purpose: it is the alarm that fires when the files move, whether
+ * or not the registry follows.
  */
 export const EXPECTED_LEVEL_COUNT = 15;
 
@@ -414,15 +416,48 @@ export function doorFixtures(ref: LevelRef): readonly DoorFixture[] {
   return found;
 }
 
-/** The cheapest fixtures of each kind for a level — what the UI walk drives. */
+/**
+ * The cheapest fixtures of each kind for a level — what the UI walk drives.
+ *
+ * **The refusal is welded to the chosen occupancy** (QA-006). The spec's second
+ * row asserts a *discriminating pair*: the state one move before the occupancy and
+ * the state the refusal was found in are the same tile in the same phase, arriving
+ * in the same direction, differing only in the latch (`latch-door.spec.ts:102`).
+ * Picking the cheapest of each kind **independently** is unsound on a board where
+ * the two cheapest fixtures do not co-locate: on L12 both sit at depth 4 and BFS
+ * node order picked `(5,1)A down` for the refusal, a different state than the
+ * occupancy's pre-arrival `(4,2)A right`, so the row went red although the pair
+ * exists. `scripts/latch-pair-audit.ts` measures it: L12 has **2** co-located
+ * pairs under this helper's own bookkeeping and **12** under `isLegalMove` alone,
+ * while L6–L11 and L13–L15 co-locate even under the independent pick.
+ *
+ * So the occupancy is chosen cheapest first, and the refusal is the cheapest
+ * fixture that stands on the same tile in the same phase, uses the same direction,
+ * and reads the refusal's door **open** in the occupancy's pre-arrival state — the
+ * latch difference the spec's equality asserts. Same claim, correct pairing; no
+ * assertion is weakened.
+ */
 export function cheapestDoorFixtures(ref: LevelRef): {
   readonly occupancy: DoorFixture | null;
   readonly refusedEntry: DoorFixture | null;
 } {
   const all = doorFixtures(ref);
-  const first = (kind: DoorFixture["kind"]): DoorFixture | null =>
-    all.find((fixture) => fixture.kind === kind) ?? null;
-  return { occupancy: first("closed-door-occupancy"), refusedEntry: first("closed-door-entry-refused") };
+  const occupancy = all.find((fixture) => fixture.kind === "closed-door-occupancy") ?? null;
+  if (occupancy === null) return { occupancy: null, refusedEntry: null };
+
+  const arrival = occupancy.route[occupancy.route.length - 1] ?? null;
+  const latched = resolveRoute(ref.level, occupancy.route.slice(0, -1));
+  const refusedEntry =
+    all.find(
+      (fixture) =>
+        fixture.kind === "closed-door-entry-refused" &&
+        fixture.direction === arrival &&
+        sameVec(fixture.player, latched.player) &&
+        fixture.phase === latched.phase &&
+        latched.doorsOpen[fixture.doorId] === true,
+    ) ?? null;
+
+  return { occupancy, refusedEntry };
 }
 
 /** Levels that ship at least one door — the dataset's latch levels (L6–L11). */

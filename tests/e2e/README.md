@@ -958,7 +958,7 @@ Recommended addition — **one job, not a gate on the unit job**:
         with: { node-version: "24", cache: npm }
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test --retries=1   # its own vite on :5198, both projects
+      - run: npx playwright test   # its own vite on :5198, both projects; zero retries (v2 law)
 ```
 
 Rationale, in the repo's own priority order:
@@ -972,17 +972,20 @@ Rationale, in the repo's own priority order:
 * **`--with-deps`** because the runner has no browser; `--strictPort` on :5198 makes
   a port clash loud rather than a silent reuse — and `reuseExistingServer: false`
   (QA-005c, §1.3) makes it loud on the runner too.
-* **`retries` — the recommendation was overruled, and this is the record.** QA-005
+* **`retries` — retired; cloud and local are one zero-retry law (v2).** QA-005
   recommended *no* retries, because a retry hides exactly the timing-dependent class
   of bug this suite exists to expose, and because the two `test.fail()` pins were
-  deterministic (they are gone now — both defects landed, §3). The standing ruling
-  (project-status items 57/63, the "FLAKY-named rule") is instead: CI runs
-  `--retries=1`, but a flake that survives its retry is treated as a **named
-  failure**, not noise — it must be reduced to a named site, root-caused, fixed and
-  regression-pinned before the milestone. That is exactly how the QA-005c flake was
-  handled: `refusal.spec.ts:48` and `latch-door.spec.ts:122` were named, reproduced
-  frame-by-frame, fixed in `expectActorAt`, and re-pinned by the suite itself. A
-  retry is therefore tolerated as a *signal*, never as a way to make a run green.
+  deterministic (they are gone now — both defects landed, §3). The **v1 ruling**
+  (project-status items 57/63, the "FLAKY-named rule") ran CI with `--retries=1`,
+  and treated a flake that survived its retry as a **named** failure, not noise —
+  that is how the QA-005c flake was handled (`refusal.spec.ts:48` and
+  `latch-door.spec.ts:122` named, reproduced frame-by-frame, fixed in
+  `expectActorAt`, re-pinned by the suite itself). **That flag is retired**
+  (2026-10-16, INFRA-001 — merged `8ef18de`): the config already carried hard
+  `retries: 0`, and after **seven consecutive green cloud rounds** the measurement
+  — not the tally — closed the v1 exit clause, so the CI job now runs bare
+  `npx playwright test` and cloud == local. A transient is a named red ticket,
+  never a silent FLAKY pardon.
 * **No artifacts needed** — `trace: "retain-on-failure"` is already set, so a failing
   run keeps a trace without a separate upload step; add `actions/upload-artifact` only
   if trace debugging becomes routine.
