@@ -35,19 +35,31 @@
  *
  * Binding rules implemented here:
  * - **R-C9 auto contrast ring** — drawn only when `actor.ringVisible`, a value
- *   computed **once at boot** from the token map (never per frame, never a
- *   per-phase branch). Phase A: ON (the placeholder body is 1.30:1 on an ivory
- *   cell; the delivered form measures 1.48–1.56:1 — still under 3, so the
- *   decision is unchanged and still justified). Phase B: OFF (the placeholder was
- *   12.52:1). `ActorLook.ringAlpha` turns that decision into a **fadeable number**
- *   so the flip can cross-fade the ring instead of popping it (§6.2's
- *   `ground.*` / `obj.*` token fade; a boolean has no midpoint, an alpha does).
+ *   decided **once at boot** per phase (never per frame, never a per-phase branch).
+ *   Its *input* is the colour the body is drawn with: the token while the vector
+ *   placeholder draws, the measured centre pixel of the delivered sprite when that
+ *   is what is on the board (`theme/tokens.ts` `applyDrawnActorBody`, R-005b /
+ *   QA-007-F1). Phase A: ON in both states (placeholder body 1.30:1 on an ivory
+ *   cell; the delivered form measures **1.53:1** — still under 3). Phase B: OFF
+ *   while the placeholder draws (12.52:1), **ON** once the delivered sprite draws —
+ *   its own centre measures **2.34:1**, under the 3:1 band, so R-C9 demands the
+ *   ring and the board now draws it. `ActorLook.ringAlpha` turns that decision into
+ *   a **fadeable number** so the flip can cross-fade the ring instead of popping it
+ *   (§6.2's `ground.*` / `obj.*` token fade; a boolean has no midpoint, an alpha
+ *   does). Measured on this tree, 1.0×128 px cells: 15/24 ring-path samples read
+ *   the ring token in art Phase B, 0/24 in the degrade Phase B, 14/24 (art) and
+ *   17/24 (degrade) in Phase A.
  * - **R-C13.1 / R-C13.3** — while the player stands inside a solidified wall the
  *   actor draws above the wall graphic (layer L5 > L4, see `board-view.ts`
  *   `DEPTH`) and keeps a visible contrast channel: in Phase A the ring is
  *   mandatory (body vs `obj.wallOccupied` is only 1.86:1, the ring is 4.86:1);
- *   Phase B needs no ring (body 4.62:1). No wall treatment may draw over any
- *   part of the player.
+ *   with the placeholder body Phase B needs no ring (body 4.62:1). **With the
+ *   delivered sprite, Phase B's embedded case is an open finding** (QA-007-F3):
+ *   the sprite body is 1.16:1 and B's ring token only 1.34:1 against B's
+ *   `wallOccupied` — the ring that R-C9 turns on is not a readable channel there.
+ *   No number is changed here by this lane: R-C13.1's art-era thresholds are a spec
+ *   question (token row + contrast check both phases, `ui-ux.md` §11 procedure).
+ *   No wall treatment may draw over any part of the player.
  * - **R-C13.4 one-shot phase ring** — at flip resolution, when the player's tile
  *   just became solid, a single `fx.phaseRing` ring pulses, 2 px stroke, 180 ms,
  *   scale 0.7 → 1.0 of the cell. **Every number comes from the `ring` row of

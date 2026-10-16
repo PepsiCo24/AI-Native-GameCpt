@@ -105,6 +105,11 @@ export class LevelScene extends Phaser.Scene {
   create(): void {
     // The loader has resolved by now: publish what actually arrived so the HUD's
     // R-P3 labels can be honest *before* the first frame (R-P2's degrade case).
+    // Publishing the mount is also where R-C9 is re-decided from the body that is
+    // actually drawn (`theme/art.ts` → `theme/tokens.ts`, QA-007-F1): one call, so
+    // a mount can never be published with the ring decision left at the placeholder
+    // answer. With art mounted and A-07 retired the returned list is empty, which is
+    // what hides the R-P3 labels.
     this.ctx.onArtStatus(publishArtMount(this.textures));
     this.buildView(this.ctx.session.state);
 

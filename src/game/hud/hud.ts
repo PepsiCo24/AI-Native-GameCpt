@@ -234,10 +234,11 @@ export class Hud {
    * R-P2/R-P3 honesty — publish which slots are **being drawn as placeholders**.
    *
    * The input is a measurement, not a status: `theme/art.ts` derives it from what
-   * the loader actually mounted (declared-unresolved ∪ failed-to-mount), so after
-   * integration the badge names `A-07 ui_kit` alone, and a delivered file that
-   * fails to load puts its own Asset ID back on the list — the degraded boot still
-   * says "placeholder art", which is the whole point of R-P3.
+   * the loader actually mounted (declared-unresolved ∪ failed-to-mount), so with
+   * every canvas slot integrated and A-07 retired (UA-0013) the list is **empty in
+   * the art-mounted state** — both labels hide — while a delivered file that fails
+   * to load puts its own Asset ID back on the list: the degraded boot still says
+   * "placeholder art", which is the whole point of R-P3.
    *
    * In a production build both labels are absent and this is a no-op.
    */
