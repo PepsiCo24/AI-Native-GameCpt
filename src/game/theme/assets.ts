@@ -14,6 +14,12 @@
  * `PLACEHOLDER_SLOTS` additionally records the manifest export name, which is the
  * texture key the delivered image is registered under.
  *
+ * It is also the **one** place a phase is paired with the file that draws its
+ * actor ({@link actorSlotFor}): that pairing is manifest data, and since R-C9's
+ * ring decision is measured from the colour of whichever body is drawn
+ * (`theme/tokens.ts` `applyDrawnActorBody`), the pairing is a *rule input* rather
+ * than a cosmetic lookup.
+ *
  * ── One slot left this table (A-07 `ui_kit`, 2026-10-16) ─────────────────────
  * "A slot in this table" means "a drawn thing that stands in for art". A-07 was
  * ruled **CSS-by-design FINAL** (UA-0013, `docs/ui-ux.md` V0.9.4 §9.1 + §11; the
@@ -45,6 +51,8 @@
  * was held `false` only while a slot was still open (the documented §11 sequence
  * is "re-run §3.3 QA, then flip"); that condition is now met and it is `true`.
  */
+
+import type { Phase } from "@/core/state/phase";
 
 /** One drawn placeholder and the manifest row it stands in for. */
 export interface PlaceholderSlot {
@@ -120,6 +128,34 @@ export const PLACEHOLDER_SLOTS: readonly PlaceholderSlot[] = [
 export const PLACEHOLDER_TO_ASSET: Readonly<Record<string, string>> = Object.fromEntries(
   PLACEHOLDER_SLOTS.map((slot) => [slot.placeholder, slot.assetId]),
 );
+
+/**
+ * The Asset ID of the actor's delivered form — the one slot whose colour is also
+ * a *rule input* (R-C9 reads the drawn body; see `theme/tokens.ts`
+ * `applyDrawnActorBody` and `theme/art.ts` `publishArtMount`).
+ */
+const ACTOR_ASSET_ID = "A-03";
+
+/**
+ * The manifest row that draws the actor in `phase`.
+ *
+ * A-03 is **one** Asset ID with **two** forms, so the phase picks a *row*, not an
+ * ID: the pair is found by the row's own manifest name suffix (`echo_spirit_a` /
+ * `echo_spirit_b`) and never by a second table. This is deliberately the same
+ * pairing QA-007's in-page probe derives from the same fields
+ * (`tests/e2e/helpers/game.ts` `decodeSpiritCentre`), so the production
+ * measurement and the probe cannot disagree about *which file* they are reading —
+ * neither retypes a texture key, so a manifest rename moves both.
+ *
+ * `undefined` rather than a throw when the row is absent: a manifest without an
+ * actor slot must degrade to the token derivation, not break boot.
+ */
+export function actorSlotFor(phase: Phase): PlaceholderSlot | undefined {
+  const suffix = `_${phase.toLowerCase()}`;
+  return PLACEHOLDER_SLOTS.find(
+    (slot) => slot.assetId === ACTOR_ASSET_ID && slot.assetName.endsWith(suffix),
+  );
+}
 
 /** Future texture key for a placeholder (what integration swaps in). */
 export function assetNameOf(placeholder: string): string | undefined {

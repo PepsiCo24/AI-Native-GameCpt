@@ -27,6 +27,18 @@
  * rather than a bare `.png` import so the intent is "a URL, never inlined as a
  * data URI" even if `assetsInlineLimit` is ever raised.
  *
+ * ── The second job this module took on: R-C9's true input ────────────────────
+ * The delivered files are not tokens, so one question stopped being answerable
+ * from the token map: **how much contrast does the drawn body actually have
+ * against the cell it stands on?** R-C9's auto-contrast ring (the identity ring on
+ * the 0.82 × cell path) is that measurement's consequence, and with a sprite on
+ * the board the measurement's subject is the sprite. So `publishArtMount` also
+ * measures — once, at boot, from the texture the loader already received — and
+ * hands the colour to `theme/tokens.ts`'s `applyDrawnActorBody`, which re-decides
+ * R-C9 for that phase. The renderer keeps reading a plain boolean
+ * (`tokens.actor.ringVisible`); no painter decodes a pixel. See
+ * {@link measuredCentreColour} and the QA-007-F1 note in `theme/tokens.ts`.
+ *
  * ── Degradation is a branch, not an exception ────────────────────────────────
  * Nothing here throws when art is missing. A blocked request, a 404 or an
  * offline boot leaves the texture unmounted; {@link publishArtMount} then reports
@@ -40,8 +52,10 @@
 
 import type Phaser from "phaser";
 
-import { assetNameOf, integratedSlots, unresolvedSlots } from "@/game/theme/assets";
+import { actorSlotFor, assetNameOf, integratedSlots, unresolvedSlots } from "@/game/theme/assets";
 import type { PlaceholderSlot } from "@/game/theme/assets";
+import { applyDrawnActorBody } from "@/game/theme/tokens";
+import type { Hex, Phase } from "@/game/theme/tokens";
 
 import bgPhaseAUrl from "../../../assets/art/background/bg_phase_a_1920x1080.png?url";
 import bgPhaseBUrl from "../../../assets/art/background/bg_phase_b_1920x1080.png?url";
@@ -131,6 +145,122 @@ export function queueDeliveredArt(scene: Phaser.Scene): void {
  */
 let mounted: ReadonlySet<string> = new Set<string>();
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * R-C9's true input: the colour of the body that was drawn
+ *
+ * The delivered files are not tokens, so no token lookup can answer R-C9 (the
+ * auto-contrast ring, `docs/ui-ux.md` R-C9) once a sprite is what the player sees:
+ * the ring's visibility is a contrast measurement of the **drawn body** against
+ * the ground cell. `theme/tokens.ts` derives it from its placeholder token;
+ * `applyDrawnActorBody` re-decides it from the measurement below, and this module
+ * is where the measurement lives because this module is the one that knows *what
+ * mounted*.
+ *
+ * **One decode, in one place.** The centre pixel is read from the texture this
+ * Phaser scene already loaded (`Texture.getSourceImage()` — the same bytes the
+ * loader received, never a second fetch and never a re-decode per frame), and it is
+ * read exactly the way QA-007's in-page pixel probe reads it: `getImageData` on the
+ * file's own centre, i.e. the one pixel `paintActor` puts on the actor's cell
+ * centre. Nothing in `src/game/renderer/**` decodes pixels, and no hex literal
+ * enters the source: the number comes from the file that shipped.
+ *
+ * The value is a raw RGB sample, not an alpha composite: the delivered spirit pair
+ * composites at alpha ≈ 253/255, so the difference against the ground is under 1 %
+ * — well inside the 3:1 band's granularity, and identical to what the probe reads.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** The phases whose actor body is a delivered slot — the measurement's scope. */
+const ACTOR_PHASES: readonly Phase[] = ["A", "B"];
+
+/** texture key → the measured centre colour of the mounted file. */
+let measuredCentres: ReadonlyMap<string, Hex> = new Map<string, Hex>();
+
+/**
+ * The measured centre pixel of a mounted texture, or `null` when that file is not
+ * mounted or its pixels could not be read (a headless double with no canvas, a
+ * tainted canvas, a 404). `null` always means "fall back to the token derivation".
+ */
+export function measuredCentreColour(textureKey: string): Hex | null {
+  return measuredCentres.get(textureKey) ?? null;
+}
+
+/** `#rrggbb` from three byte samples — the token format, so one rule function fits both inputs. */
+function hexOf(r: number, g: number, b: number): Hex {
+  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
+ * Read one mounted texture's centre pixel, or `null` when it cannot be read.
+ *
+ * Deliberately silent: a texture whose pixels are unavailable is not an error, it
+ * is the *absent measurement* that leaves R-C9 on its token derivation (this
+ * module's standing degrade rule — nothing here throws, because art decides what
+ * the board is drawn with, never whether the board is drawn).
+ */
+function decodeCentreColour(textures: Phaser.Textures.TextureManager, key: string): Hex | null {
+  // Unit-test doubles (and any non-Phaser host) expose `exists` only. No pixel
+  // source ⇒ no measurement ⇒ placeholder path, byte-for-byte.
+  const manager = textures as Partial<Phaser.Textures.TextureManager>;
+  if (typeof manager.get !== "function") return null;
+  if (typeof document === "undefined") return null;
+
+  try {
+    const source = manager.get(key).getSourceImage() as unknown;
+    if (source === null || typeof source !== "object") return null;
+    const box = source as { readonly width?: unknown; readonly height?: unknown };
+    const width = typeof box.width === "number" ? box.width : 0;
+    const height = typeof box.height === "number" ? box.height : 0;
+    if (width < 1 || height < 1) return null;
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (ctx === null) return null;
+    // The centre pixel only: one 1×1 draw of the source's centre, so the sample is
+    // exactly the pixel `paintActor` lands on the cell centre (no full-size copy).
+    ctx.drawImage(
+      source as CanvasImageSource,
+      Math.floor(width / 2),
+      Math.floor(height / 2),
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+    );
+    const data = ctx.getImageData(0, 0, 1, 1).data;
+    return hexOf(data[0] ?? 0, data[1] ?? 0, data[2] ?? 0);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Re-decide R-C9 for both phases from what this boot measured — the join between
+ * "what mounted" (here) and "what R-C9 says about the drawn body"
+ * (`theme/tokens.ts`).
+ *
+ * A phase whose slot is missing, unmounted or unreadable is passed `null`, which
+ * *removes* any override: the token derivation, i.e. exactly the pre-integration
+ * board. So a partial delivery degrades per phase, not per board.
+ */
+function rederiveActorRing(textures: Phaser.Textures.TextureManager): void {
+  const centres = new Map<string, Hex>();
+  for (const key of mounted) {
+    const centre = decodeCentreColour(textures, key);
+    if (centre !== null) centres.set(key, centre);
+  }
+  measuredCentres = centres;
+
+  for (const phase of ACTOR_PHASES) {
+    const slot = actorSlotFor(phase);
+    applyDrawnActorBody(
+      phase,
+      slot === undefined ? null : (centres.get(slot.assetName) ?? null),
+    );
+  }
+}
+
 /**
  * Read the loader's outcome out of the texture manager and publish it.
  *
@@ -138,11 +268,17 @@ let mounted: ReadonlySet<string> = new Set<string>();
  * so a texture that is absent here is absent for good (Phaser creates a texture
  * only for a file that arrived). Returns the slots the HUD must still label as
  * placeholders, which is the honest dev-badge input (R-P2/R-P3).
+ *
+ * Publishing the mount is also the one moment R-C9 can be decided correctly
+ * ({@link rederiveActorRing}): the body's colour is not known until the loader has
+ * spoken, and it must be decided once, at boot, never per frame (R-C9). Doing both
+ * here means a later call site cannot publish a mount and forget the rule.
  */
 export function publishArtMount(
   textures: Phaser.Textures.TextureManager,
 ): readonly PlaceholderSlot[] {
   mounted = new Set(ART_TEXTURE_KEYS.filter((key) => textures.exists(key)));
+  rederiveActorRing(textures);
   return activePlaceholderSlots();
 }
 
