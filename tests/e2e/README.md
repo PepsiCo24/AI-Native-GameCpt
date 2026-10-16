@@ -738,6 +738,78 @@ the *cloud* — that the natural arm can no longer be failed by the mis-attribut
 is settled only by the post-merge round; the Orchestrator owns the push, the PR and
 that verdict. No run that has not happened is asserted here.
 
+### 1.8 QA-007a — the L15 latch-row red: the *selection* branch is closed, not merely unobserved
+
+Run **38845237536** (push `bed2cb9`, e2e job 116794357318) went **106 passed / 1 failed
+(21.6 m)** with `latch-door.spec.ts:134:5` →
+`L15 — the UI blocks the closed door and strands the player on a closed one`, verbatim:
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+That is a **fifth class**, distinct from QA-005f's four shapes (attribution /
+`BEAT-REQUIRED-ABSENT` / recorder / `resolve-limit`): a **wall-clock budget
+exhaustion** whose message carries **no assertion body at all**. The same code row was
+green in ~8 prior full rounds (QA-006 local 107/0 6.8 m; merge-tip local 107/0 5.7 m;
+cloud `ff0a8f8` 107/0 16.0 m; cloud main `5b058ff` 107/0 12.9 m), and the red commit
+`bed2cb9` was **docs-only** ahead of `ff0a8f8`.
+
+**The red is not a fixture/selection defect** — the branch QA-005g's measurement left
+implicit. QA-007a interrogated `cheapestDoorFixtures()` browser-free (`tsx` over
+`tests/e2e/helpers/levels.ts`; the throwaway scan was deleted before commit; the
+standing audit is `scripts/latch-pair-audit.ts`):
+
+| level | occupancy route | refusal route | distinct welded occupancies at min depth |
+|---|---:|---:|---:|
+| L6 | 3 | 4 | 1 (unique) |
+| L7 | 3 | 0 | 1 (unique) |
+| L8 | 5 | 2 | 1 (unique) |
+| L9 | 4 | 1 | 1 (unique) |
+| L10 | 8 | 3 | 1 (unique) |
+| L11 | 3 | 4 | 1 (unique) |
+| L12 | 3 | 4 | 1 (unique) |
+| L13 | 5 | 6 | 1 (unique) |
+| L14 | 7 | 8 | 1 (unique) |
+| L15 | **9** | **10** | 1 (unique) |
+
+Every door level's weld pins **exactly one** occupancy at the minimal depth (L9/L11/L12
+carry several welded *pairs*, but a single welded *occupancy*), `explore()`'s node order
+is identical across repeated calls, and `cheapestDoorFixtures(ref)` is a **pure function
+of one level ref** — permuting the dataset array reproduces every signature
+byte-for-byte, so dataset load order cannot enter the choice. L15's row therefore drives
+the one world the scan names (refusal 10 + occupancy 9 = **19 trusted presses**, two
+level opens) — the same work size QA-005g measured from the cloud.
+
+**Why it crossed the line.** The row's cost is frame-quantised (`pressDirection` = 2
+rendered frames each, `helpers/game.ts`) while the per-test budget is a fixed 30 s
+(`playwright.config.ts`). Local rounds on QA-007a's own vite (`PS_E2E_PORT=5236`, base
+`0f08c95`):
+
+| local round | census | L15 row |
+|---|---|---|
+| recon, `latch-door.spec.ts` alone | 22 passed (1.5 m) | 7.1 s |
+| full suite round 1 | **107 passed (6.6 m)** | 8.2 s |
+| full suite round 2 | **107 passed (10.0 m)** | **17.9 s** |
+| full suite round 3 | **107 passed (5.4 m)** | 7.4 s |
+
+Three clean full rounds, `latch-door.spec.ts:134` never the failing row: the row swung
+8.2 → 17.9 → 7.4 s on *identical code* while every assertion stayed green — the machine,
+not the board, moved it. At the cloud's red round it reached 30.9 s and crossed the
+fixed budget.
+
+**Disposition — named transient, remediated by QA-005g.** QA-005g (`cd3af77`, merged
+`091c483`) diagnosed the same run and gave the walk `test.setTimeout(90_000)` inside the
+derived `DOOR_LEVELS` loop (the `refusal.spec.ts:56` precedent), with no assertion change
+and no retry. QA-007a lands **no spec change**: duplicating the budget would be a second
+writer on the same range. Its contribution is the independent proof above — the failure
+cannot be a selection or game defect, only a wall clock — so the merged 90 s budget is
+the right class of remedy.
+
+**CI status: PENDING-CI.** The green-restoring round must be an **honest next round on
+the real tip** (the Orchestrator owns the push and the PR), never a silent re-run of
+`38845237536`.
+
 ---
 
 ## 2. Inventory — 88 cases
