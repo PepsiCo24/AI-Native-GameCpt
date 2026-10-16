@@ -397,8 +397,9 @@ regression is a red test rather than a lost terminal.
 | L16 `l016.json` | 7 × 6, sealed column `x = 4`, portal `(3,3)↔(6,5)`/B, goal `(5,0)`, doors `(6,0)`+`(5,1)` blue, switches `(5,0)`/B + `(6,1)`/B | 12 | 17.100000 | 1.7000 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 20/20 press-then-cross | 8 tiles | 42/42 |
 | L17 `l017.json` | 7 × 6, sealed column `x = 4`, portal `(3,3)↔(5,2)`/B, goal `(6,5)`, doors `(6,4)`+`(5,5)` blue, switches `(6,0)`/A + `(5,0)`/B | 14 | 19.027027 | 1.6757 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 60/60 press-then-cross | 8 tiles | 42/42 |
 | L18 `l018.json` | 7 × 6, sealed column `x = 3`, portal `(2,5)↔(4,4)`/A, goal `(6,1)`, **three** blue doors `(6,0)`+`(5,1)`+`(6,2)` (every neighbour of the goal), switches `(6,3)`/B + `(6,5)`/B + `(5,0)`/B | 16 | 20.907923 | 1.6360 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 189/189 press-then-cross | 9 tiles | 42/42 |
+| L19 `l019.json` | 7 × 6, sealed column `x = 3`, portal `(2,5)↔(4,0)`/A, goal `(5,4)` — **interior**, `x = 5` is the middle column — **four** blue doors `(5,3)`+`(4,4)`+`(6,4)`+`(5,5)` (every neighbour, all four), switches `(6,5)`/B + `(6,3)`/B + `(4,5)`/B + `(5,0)`/B | 18 | 22.885157 | 1.6284 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 231/231 press-then-cross | 10 tiles | 42/42 |
 
-Both are in the §4 acceptance region and both carry `D_exec = par + 3·B` exactly (the identity
+All are in the §4 acceptance region and all carry `D_exec = par + 3·B` exactly (the identity
 that makes the escalation check mean `par + 3·B`, not something else).
 
 **L16's taught beat** — *the latch is the door's only approach*: both of the goal's neighbours
@@ -422,6 +423,55 @@ escalation over L17 comes from the **shape** (door count 2 → 3, goal moved inw
 from lengthening a walk: the door count is the goal's own geometry, not an axis the author
 dials. `tests/solver/l16-l20-candidates.test.ts` pins all three rungs' obligations; the suite
 picks a new candidate up automatically because it walks the directory rather than a typed list.
+
+**L19's taught beat** — *the seal closes all four sides: the goal is in the middle of the room.*
+L18's three-door seal still left the goal **against an edge**, so three of its four sides were
+walls/door and the shape was "one edge, three doors". In `l019.json` the goal `(5,4)` is the
+**interior** tile of the far region (`x = 5` of `4…6`, `y = 4` of `0…5`) and therefore has
+**four** neighbours — and all four are doors (`(5,3)`, `(4,4)`, `(6,4)`, `(5,5)`), so there is no
+edge to lean on and four switches to find instead of three. The arity is still the goal's own
+geometry rather than a dial the author turns: on `7×6` a full seal is 2 (corner), 3 (edge) or 4
+(interior), and the ladder now walks that sequence 2 → 2 → 3 → 4. The escalation over L18 is
+measured, not asserted: `D_exec` rises `20.907923 → 22.885157` while `B` stays **in band**
+(1.6284) and `par` steps `16 → 18`.
+
+### The family census behind the L19 rung (measure, never tune-to-pass)
+
+`--stage=f` measures what each geometry family can carry *before* a lattice is run, so the shape
+step is picked from numbers. On `7×6` with the sealed-column grammar (`--stage=f --w=7 --h=6
+--id=19 --cxs=2,3,4 --seal=2-4`), 14 310 bare boards scanned, every family full-coverage:
+
+| cx | seal arity | scanned | clean | bare `par` max | on-rung (`bare ∈ {18,16,14}`) |
+|---|---|---|---|---|---|
+| 2 | 2 | 1012 | 506 | 14 | 2 |
+| 2 | 3 | 3036 | 1518 | 13 | 0 |
+| 2 | 4 | 2024 | 1012 | 12 | 0 |
+| 3 | 2 | 1156 | 578 | 14 | 2 |
+| 3 | 3 | 2890 | 1445 | 13 | 0 |
+| 3 | 4 | 1156 | 578 | 12 | 0 |
+| 4 | 2 | 1012 | 506 | 14 | 2 |
+| 4 | 3 | 2024 | 1012 | 13 | 0 |
+
+Two measured consequences. (1) **The bare route reaches 14 and no further on `7×6`**, and only at
+arity 2 — a corner goal. Arity 3 caps at 13 and arity 4 at 12, so a par-18 rung cannot come from
+the bare route at all on this grid; it must come from the press detour. (2) The arity-2 row is
+**L16/L17's shape already**: a par-18 board built there would be the same seal with a longer walk,
+which is exactly the escalation §6 has to avoid. So the shape step taken is arity 3 → **arity 4**.
+
+The arity-4 family on `7×6` is small and was therefore enumerated **completely**, not sampled:
+`--stage=d --w=7 --h=6 --cx=3 --id=19 --seal=4-4 --drop=8 --geo=17 --geos=1 --swcap=30000` judged
+all 17 160 switch 4-tuples of its single clean geometry and measured
+
+```
+measured par census of the judged space: 12:10230 14:6450 16:446 18:34
+census: 26 accept(s) of 17160 goal-gated candidate(s)
+rung pin: par === 18 on 26 of 26 accept(s); over-rung accepts = 0
+```
+
+— i.e. the family's reachable `par` is `{12, 14, 16, 18}` and **18 is its ceiling**, with 26 boards
+clearing every gate at exactly the rung value. The rung pin (`par === l15Par + 2·(id − 15)`
+exactly, not merely `≥`) is printed by the generator and asserted in the suite, so an accept that
+is longer than its rung is *named and dropped* rather than silently shipped as the rung.
 
 ### Named findings, recorded not smoothed
 
@@ -456,12 +506,29 @@ node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l018.json
 node_modules/.bin/vitest run tests/solver/l16-l20-candidates.test.ts
 ```
 
+L19 added `--stage=f` (the family census) and the grid/arity/window arguments:
+
+```
+node_modules/.bin/tsx scripts/author-l16-candidates.ts --stage=f --w=7 --h=6 --id=19 --cxs=2,3,4 --seal=2-4
+node_modules/.bin/tsx scripts/author-l16-candidates.ts --stage=d --w=7 --h=6 --cx=3 --id=19 \
+    --seal=4-4 --drop=8 --geo=17 --geos=1 --swcap=30000 --write
+node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l019.json --rung=19
+```
+
+`--w`/`--h` default to the shipped `7×6`, `--seal` to `2-3`, `--drop` to `4` and `--geo` to `0`, so
+every L16–L18 command line above still reproduces byte-for-byte; `--geo`/`--geos` publish which
+slice of the geometry list a run consumed, because a census that hides the rows it read is not a
+census. `--drop` is the enumeration bound on `par − bare` (the press detour): the inherited value
+encoded "each press costs 2 moves", which L17/L18 measured at 4 for a single press, so it is an
+argument with the census printing what each setting yields rather than a law assumed to hold.
+
 Stage D's lattice is a **full seal** enumeration: the doors are *every* neighbour of the goal
-(a corner goal forces two, a goal against one edge forces three) and only the switch n-tuples
-are enumerated — capped per geometry (`--swcap`, default 1500, printed) because the n-tuple
-count grows factorially. The cap is sampling, not a hidden filter: every landed candidate was
-proved from its bytes afterwards, and a mutation battery of six controls fails loudly if any of
-the obligations went slack.
+(a corner goal forces two, a goal against one edge forces three, an interior goal four) and only
+the switch n-tuples are enumerated — capped per geometry (`--swcap`, default 1500, printed)
+because the n-tuple count grows factorially. The cap is sampling, not a hidden filter: every
+landed candidate was proved from its bytes afterwards, and a mutation battery of six controls
+fails loudly if any of the obligations went slack. L19's own run set the cap above the family's
+whole 4-tuple space, so its census is exhaustive rather than sampled.
 
 `scripts/author-l16-candidates.ts` is rung-parameterised (`--id`, default 16) and the geometry
 lattice carries a §6.1.4 clone guard: a spawn/goal/portal triple already present in the shipped

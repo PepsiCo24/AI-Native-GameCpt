@@ -151,6 +151,66 @@ describe("L16+ candidates — derived block obligations, re-measured per run", (
   }
 
   /**
+   * ── Block-level obligations (LV-010f) ─────────────────────────────────────
+   *
+   * The per-candidate block above pins each board on its own. These three pin the
+   * **ladder**, which is the thing the design actually ships: the rungs must be a
+   * strictly rising sequence, each must sit exactly on its derived rung value, and
+   * the one `B` excursion that was accepted must stay the only one.
+   *
+   * All three read the landed bytes through the same readers; none compares against
+   * a number typed here except the *named* excursion list, which is a record of a
+   * measurement (F-L16-2), not a target.
+   */
+  const ladder = candidateFiles
+    .map((f) => {
+      const level = readLevel(CANDIDATES_DIR, f);
+      const graph = explore(level);
+      return { file: f, level, graph, diff: analyseDifficulty(level, graph), result: analyse(level, graph) };
+    })
+    .sort((a, b) => a.level.id - b.level.id);
+
+  it("rises strictly along the block: every rung's D_exec exceeds its predecessor's", () => {
+    expect(ladder.length).toBeGreaterThanOrEqual(2);
+    for (let i = 1; i < ladder.length; i += 1) {
+      const prev = ladder[i - 1] as (typeof ladder)[number];
+      const cur = ladder[i] as (typeof ladder)[number];
+      expect(prev.diff.Dexec).not.toBeNull();
+      expect(cur.diff.Dexec as number).toBeGreaterThan(prev.diff.Dexec as number);
+    }
+  });
+
+  it("sits exactly on each rung's derived par (l15Par + 2·(id − 15)), not merely above it", () => {
+    for (const rung of ladder) {
+      expect(rung.level.par).toBe(l15Par + 2 * (rung.level.id - 15));
+      expect(rung.result.shortestSolution).toBe(rung.level.par);
+    }
+  });
+
+  /**
+   * The `B`-band excursion register. §6.1.1's self-correcting guard says an
+   * out-of-band `B` must be **named**; it does not say the band may be widened.
+   * `l016.json` measures `B = 1.7000` against the shipped top `1.6875` (F-L16-2), it
+   * is recorded here by rung, and every other rung must be in band or the excursion
+   * has grown without being named. Measured, not asserted by hand: the tolerance is
+   * the band the shipped set itself reports.
+   */
+  const NAMED_B_EXCURSIONS: ReadonlyMap<number, string> = new Map([
+    [16, "F-L16-2: B=1.7000 above the shipped band top; the rung escalates on D_exec, the excursion is named not widened"],
+  ]);
+
+  it("keeps every B in band except the rungs named in the excursion register", () => {
+    for (const rung of ladder) {
+      const inBand = rung.diff.B >= bBand[0] && rung.diff.B <= bBand[1];
+      if (inBand) continue;
+      expect(
+        NAMED_B_EXCURSIONS.has(rung.level.id),
+        `${rung.file} measures B=${rung.diff.B.toFixed(4)} outside [${bBand[0]}, ${bBand[1]}] and is not named in the excursion register`,
+      ).toBe(true);
+    }
+  });
+
+  /**
    * Negative controls for the *suite itself*: each mutation must be refused by the
    * same readers that accepted the candidate above. A control that stops being
    * refused means the assertions above have gone slack, so this block is the

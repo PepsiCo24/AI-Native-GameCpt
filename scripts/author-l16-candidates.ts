@@ -1,5 +1,9 @@
 /**
- * `scripts/author-l16-candidates.ts` — LV-010: the **proposal side** for L16.
+ * `scripts/author-l16-candidates.ts` — LV-010/LV-010f: the **proposal side** for the
+ * L16+ rungs, now a **rung-generic generator** (LV-010f graduated the L16-only tool:
+ * the geometry, the grid and the seal arity are arguments with the historical L16–L18
+ * defaults, so the commands recorded in `src/levels/README.md` §2e still reproduce,
+ * and rung 19/20 reuses the very same code path instead of a copy of it).
  *
  * `docs/ai-native-pipeline.md` §1: LLM creates, the program proves. This file is
  * the program half, split in three deliberate stages:
@@ -63,6 +67,16 @@ const LEVEL_ID = Number(argOf("id") ?? "16");
 const GEO_LIMIT = Number(argOf("geos") ?? "4");
 const CAP = Number(argOf("cap") ?? "40000");
 const SEED = 20261016;
+
+/**
+ * **The grid.** `7×6` is the shipped block's shape and stays the default, so the
+ * L16–L18 commands reproduce byte-for-byte. LV-010f made it an argument because the
+ * rung-generic question "is this family exhausted at this par?" is a question about
+ * `W×H` and the sealed column together, and answering it by editing a constant
+ * would be an unmeasured claim.
+ */
+const W = Number(argOf("w") ?? "7");
+const H = Number(argOf("h") ?? "6");
 
 const x = (c: Coord): number => c[0];
 const y = (c: Coord): number => c[1];
@@ -306,10 +320,21 @@ function ladderGates(
 // 3. Geometry — the channel
 // ─────────────────────────────────────────────────────────────────────────────
 
-const W = 7;
-const H = 6;
-/** Sealed column. `3` gives a 3-column far region, the shipped block's shape. */
 const CX = Number(argOf("cx") ?? "3");
+/**
+ * **The seal arity window.** A "full seal" makes *every* neighbour of the goal a
+ * door, so the door count is the goal's own geometry. On the shipped `7×6` with the
+ * far region between the sealed column and the right edge the reachable arities are
+ * 2 (goal in a corner) and 3 (goal against an edge); a goal strictly *inside* the far
+ * region has 4. The window is an argument (default `2-3`, the inherited shape) and
+ * the census reports what each arity actually yields — the arity is escalated by
+ * moving the goal inward, never by typing a larger number into a door list.
+ */
+const SEAL = (() => {
+  const raw = argOf("seal") ?? "2-3";
+  const [lo, hi] = raw.split("-").map(Number);
+  return { lo: lo ?? 2, hi: hi ?? lo ?? 2 };
+})();
 const PLAYER = at(0, 0);
 const START_PHASE: Phase = "A";
 
@@ -660,7 +685,7 @@ if (STAGE === "map") {
     }
   console.log(`\nstage M — frame map for ${geoNote(row.geo)} (bare par ${String(r.shortestSolution)})`);
   console.log(
-    `  reachableStates=${String(r.reachableStates)} distinctPositions=${String(r.distinctPositions)}/42 ` +
+    `  reachableStates=${String(r.reachableStates)} distinctPositions=${String(r.distinctPositions)}/${String(W * H)} ` +
       `dualPhaseTiles=${String(r.dualPhaseTiles)} [${r.dualPhaseTileList.join(" ")}] deadStates=${String(r.deadStates)}`,
   );
   console.log("  entry phase per tile (row = y, col = x; '.' = in the sealed column or left region):");
@@ -904,7 +929,27 @@ if (STAGE === "verify" || STAGE === "v") {
   // neighbour set (a corner goal has exactly two, so the pair is forced), and the
   // switch pair from the far region minus those tiles.
   const gateGeos: GeoRow[] = [];
+  // The rung target is derived, not chosen: `l15Par + 2·(id − 15)`. Each press in
+  // the goal-gated shape costs 2 moves, so the bare route must be the target
+  // itself or short by 2 or 4 — anything else cannot land on the rung.
+  const target = cut.l15Par + 2 * (LEVEL_ID - 15);
+  // How far below the rung's target the BARE route may sit. The lattice adds the
+  // press detour, so `par − bare` is `Δpar`; `docs/level-design.md` §6.1.1's step law
+  // bounds the *step* between rungs, not this gap, so the gap is an enumeration
+  // bound that must be reported rather than a law that may be assumed. The inherited
+  // value 4 encoded "each press costs 2 moves", which L17/L18 measured at 4 for a
+  // single press; `--drop` widens it and the census prints what each setting yields.
+  const DROP = Number(argOf("drop") ?? "4");
+  const window: number[] = [];
+  for (let k = 0; k <= DROP; k += 2) window.push(target - k);
   for (const geo of geometries()) {
+    // The seal arity is the goal's own geometry (`goalNeighbours` below), so a
+    // geometry whose arity is outside the window cannot be a member of this family
+    // and is dropped before any solver run.
+    const arity = FAR_TILES.filter(
+      (t) => Math.abs(x(t) - x(geo.goal)) + Math.abs(y(t) - y(geo.goal)) === 1,
+    ).length;
+    if (arity < SEAL.lo || arity > SEAL.hi) continue;
     const parsed = LevelSchema.safeParse({ ...lead(geo, [], []), par: 1 });
     if (!parsed.success || !validateLevel(parsed.data).ok) continue;
     let graph: ReachableGraph;
@@ -916,11 +961,7 @@ if (STAGE === "verify" || STAGE === "v") {
     const r = analyse(parsed.data as Level, graph);
     if (!r.solvable || r.shortestSolution === null) continue;
     if (r.distinctPositions !== W * H || r.deadStates !== 0) continue;
-    // The rung target is derived, not chosen: `l15Par + 2·(id − 15)`. Each press in
-    // the goal-gated shape costs 2 moves, so the bare route must be the target
-    // itself or short by 2 or 4 — anything else cannot land on the rung.
-    const target = cut.l15Par + 2 * (LEVEL_ID - 15);
-    if (![target, target - 2, target - 4].includes(r.shortestSolution)) continue;
+    if (!window.includes(r.shortestSolution)) continue;
     // §6.1.4 "never clone a shipped board": a geometry whose spawn/goal/portal
     // triple already exists in the shipped set or among the committed candidates
     // is skipped, whatever its latch lattice looks like.
@@ -929,10 +970,24 @@ if (STAGE === "verify" || STAGE === "v") {
     usedGeometries.add(cloneKey);
     gateGeos.push({ geo, par: r.shortestSolution, coverage: `${String(r.distinctPositions)}/${String(W * H)}`, deadStates: 0 });
   }
-  console.log(`\nstage D goal-gated lattice: ${String(gateGeos.length)} geometry(ies) with bare par in {8,10,12}`);
+  console.log(
+    `\nstage D goal-gated lattice: ${String(gateGeos.length)} geometry(ies) with bare par in ` +
+      `{${window.map(String).join(",")}} · seal arity ${String(SEAL.lo)}-${String(SEAL.hi)} · grid ${String(W)}×${String(H)}`,
+  );
   const geosCap = Number(argOf("geos") ?? "40");
-  gateGeos.length = Math.min(gateGeos.length, geosCap);
+  const geoOffset = Number(argOf("geo") ?? "0");
+  const geoList = gateGeos.slice(geoOffset, geoOffset + geosCap);
+  // The geometry set is printed with its index: the enumeration is deterministic but
+  // the *slice* the run consumed is not visible from the accepts alone, and a census
+  // that hides which rows it read is not a census. `--geo`/`--geos` therefore select a
+  // published range rather than silently taking the head.
+  for (let i = 0; i < geoList.length; i += 1)
+    console.log(`  geo[${String(geoOffset + i)}] barePar=${String((geoList[i] as GeoRow).par)}  ${geoNote((geoList[i] as GeoRow).geo)}`);
+  gateGeos.length = 0;
+  gateGeos.push(...geoList);
   const histogram = new Map<string, number>();
+  /** Every judged candidate's measured `par` — the family's reachable-`par` census. */
+  const parHist = new Map<number, number>();
   const accepts: { note: string; level: Level; dexec: number }[] = [];
   const misses: { reason: string; note: string; par: number; dexec: number; b: number }[] = [];
   let total = 0;
@@ -962,7 +1017,7 @@ if (STAGE === "verify" || STAGE === "v") {
     // (`E4` `latch-route` is what makes the full seal necessary rather than
     // optional: it asks that *every* par route press a switch and then cross a door
     // it targets, so one free approach to the goal would fail it.)
-    if (goalNeighbours.length < 2 || goalNeighbours.length > 3) continue;
+    if (goalNeighbours.length < SEAL.lo || goalNeighbours.length > SEAL.hi) continue;
     if (goalNeighbours.some((t) => phaseAt(t) === null)) continue;
     const n = goalNeighbours.length;
     const doors: DoorDef[] = goalNeighbours.map((t, i) => ({
@@ -999,6 +1054,7 @@ if (STAGE === "verify" || STAGE === "v") {
         " · " +
         switches.map((s) => `${s.id}=${coordKey(s.tile)}/${s.activePhase}`).join(" ");
       const { outcome, level } = judge(lead(row.geo, doors, switches), cut);
+      if (outcome.par !== undefined) parHist.set(outcome.par, (parHist.get(outcome.par) ?? 0) + 1);
       if (!outcome.accepted || level === null) {
         histogram.set(outcome.reason, (histogram.get(outcome.reason) ?? 0) + 1);
         if (outcome.par !== undefined)
@@ -1014,21 +1070,34 @@ if (STAGE === "verify" || STAGE === "v") {
     visit();
   }
   console.log(`\ncensus: ${String(accepts.length)} accept(s) of ${String(total)} goal-gated candidate(s)`);
+  console.log(
+    `measured par census of the judged space: ${[...parHist.entries()].sort((a, b) => a[0] - b[0]).map(([p, c]) => `${String(p)}:${String(c)}`).join(" ") || "(none)"}`,
+  );
   console.log("rejection histogram:");
   for (const [k, v] of [...histogram.entries()].sort((x, y) => y[1] - x[1]))
     console.log(`  ${k}: ${String(v)}`);
-  const onRungD = misses.filter((m) => m.par === cut.l15Par + 2);
-  console.log(`on-rung rejections (par === ${String(cut.l15Par + 2)}): ${String(onRungD.length)}`);
+  const onRungD = misses.filter((m) => m.par === target);
+  console.log(`rung-target rejections (par === ${String(target)}): ${String(onRungD.length)}`);
   for (const m of onRungD.slice(0, 10))
     console.log(`  [${m.reason}] B=${m.b.toFixed(4)}\n    ${m.note}`);
-  if (WRITE && accepts.length > 0) {
+  // ── the rung pin: an accept whose par is not the rung's derived target ──────
+  //
+  // E2 (`par ≥ l15Par + 2·(id − 15)`) is the published law and it constrains the
+  // *step*, so a longer board is legal. The rung is a stronger, authored obligation:
+  // rung `id` carries `par = l15Par + 2·(id − 15)` exactly. An accept above the rung
+  // is therefore a **reported selection rejection** with its measurement, never a
+  // silent widening of the rung — the same discipline E1 applies to the `B` band.
+  const onTarget = accepts.filter((a) => a.level.par === target);
+  const aboveRung = accepts.filter((a) => (a.level.par ?? 0) > target);
+  console.log(
+    `\nrung pin: par === ${String(target)} on ${String(onTarget.length)} of ${String(accepts.length)} accept(s); ` +
+      `over-rung accepts = ${String(aboveRung.length)} (named and dropped, not written)`,
+  );
+  for (const a of aboveRung.slice(0, 5))
+    console.log(`  over-rung par=${String(a.level.par)} D_exec=${a.dexec.toFixed(6)} B=?  ${a.note}`);
+  if (WRITE && onTarget.length > 0) {
     mkdirSync(OUT_DIR, { recursive: true });
-    const chosen = accepts.reduce((a, b) => {
-      const pa = a.level.par ?? 0;
-      const pb = b.level.par ?? 0;
-      if (pb !== pa) return pb < pa ? b : a;
-      return b.dexec < a.dexec ? b : a;
-    });
+    const chosen = onTarget.reduce((a, b) => (b.dexec < a.dexec ? b : a));
     const file = join(OUT_DIR, `l${String(chosen.level.id).padStart(3, "0")}.json`);
     writeFileSync(file, `${JSON.stringify(chosen.level, null, 2)}\n`);
     console.log(
@@ -1038,6 +1107,124 @@ if (STAGE === "verify" || STAGE === "v") {
     console.log(`wrote ${file}\n  ${chosen.note}`);
     proveArtifact(file, cut);
   }
+} else if (STAGE === "f") {
+  // ── stage F: the FAMILY census ─────────────────────────────────────────────
+  //
+  // The rung question is "which geometry family can carry par N?", and the
+  // inherited answer for L16–L18 was a census of exactly one family. This stage
+  // measures the alternatives in the same terms — bare par histogram, full-coverage
+  // count, and how many geometries land inside the rung's derived bare-par window —
+  // so a family is chosen by a number and an exhausted family is *reported*, not
+  // assumed. It writes nothing.
+  //
+  // The rows are the same objects stage D enumerates; only the grouping differs.
+  const targetF = cut.l15Par + 2 * (LEVEL_ID - 15);
+  const windowF = [targetF, targetF - 2, targetF - 4];
+  interface FamRow {
+    readonly cx: number;
+    readonly arity: number;
+    readonly bare: number;
+    readonly solvable: boolean;
+    readonly full: boolean;
+    readonly clean: boolean;
+  }
+  const fam: FamRow[] = [];
+  for (const cx of (argOf("cxs") ?? "2,3,4").split(",").map(Number)) {
+    const left: Coord[] = [];
+    for (let py = 0; py < H; py += 1) for (let px = 0; px < cx; px += 1) left.push(at(px, py));
+    const far: Coord[] = [];
+    for (let py = 0; py < H; py += 1) for (let px = cx + 1; px < W; px += 1) far.push(at(px, py));
+    // The sealed column is `x = cx` itself, split by entry phase exactly as the
+    // inherited `COLUMN` derivation does for the authoring `CX`.
+    const colA: Coord[] = [];
+    const colB: Coord[] = [];
+    for (let py = 0; py < H; py += 1) {
+      const entry: Phase = (cx + py) % 2 === 1 ? START_PHASE : START_PHASE === "A" ? "B" : "A";
+      (entry === "A" ? colA : colB).push(at(cx, py));
+    }
+    if (left.length === 0 || far.length === 0 || cx >= W) continue;
+    for (const leftEnd of left)
+      for (const rightEnd of far) {
+        if (parity(leftEnd) === parity(rightEnd)) continue;
+        if (coordKey(leftEnd) === coordKey(PLAYER) || coordKey(rightEnd) === coordKey(PLAYER)) continue;
+        for (const portalPhase of ["A", "B"] as const)
+          for (const goal of far) {
+            if (goal === rightEnd) continue;
+            const arity = far.filter(
+              (t) => Math.abs(x(t) - x(goal)) + Math.abs(y(t) - y(goal)) === 1,
+            ).length;
+            if (arity < SEAL.lo || arity > SEAL.hi) continue;
+            const draft: Omit<Level, "par"> = {
+              id: LEVEL_ID,
+              width: W,
+              height: H,
+              startPhase: START_PHASE,
+              player: PLAYER,
+              goal,
+              phaseAWalls: colA,
+              phaseBWalls: colB,
+              doors: [],
+              switches: [],
+              portals: [{ id: "p1", pair: [leftEnd, rightEnd], activePhase: portalPhase }],
+            };
+            const parsed = LevelSchema.safeParse({ ...draft, par: 1 });
+            if (!parsed.success || !validateLevel(parsed.data).ok) {
+              fam.push({ cx, arity, bare: -1, solvable: false, full: false, clean: false });
+              continue;
+            }
+            const level = parsed.data as Level;
+            let graph: ReachableGraph;
+            try {
+              graph = explore(level);
+            } catch {
+              fam.push({ cx, arity, bare: -1, solvable: false, full: false, clean: false });
+              continue;
+            }
+            const r = analyse(level, graph);
+            const solvable = r.solvable && r.shortestSolution !== null;
+            const full = r.distinctPositions === W * H;
+            fam.push({
+              cx,
+              arity,
+              bare: solvable ? (r.shortestSolution as number) : -1,
+              solvable,
+              full,
+              clean: solvable && full && r.deadStates === 0,
+            });
+          }
+      }
+  }
+  console.log(
+    `\nstage F family census — grid ${String(W)}×${String(H)} · seal arity window ${String(SEAL.lo)}-${String(SEAL.hi)} · ` +
+      `rung ${String(LEVEL_ID)} bare-par window {${windowF.map(String).join(",")}}`,
+  );
+  const groups = new Map<string, FamRow[]>();
+  for (const row of fam) {
+    const key = `cx=${String(row.cx)} arity=${String(row.arity)}`;
+    const list = groups.get(key) ?? [];
+    list.push(row);
+    groups.set(key, list);
+  }
+  console.log(`  geometries scanned (all families): ${String(fam.length)}`);
+  for (const [key, list] of [...groups.entries()].sort()) {
+    const hist = new Map<number, number>();
+    for (const row of list) if (row.solvable) hist.set(row.bare, (hist.get(row.bare) ?? 0) + 1);
+    const clean = list.filter((r) => r.clean);
+    const onRung = clean.filter((r) => windowF.includes(r.bare));
+    const bareMax = list.filter((r) => r.solvable).reduce((m, r) => Math.max(m, r.bare), -1);
+    console.log(
+      `  ${key.padEnd(12)} scanned=${String(list.length).padEnd(5)} solvable=${String(list.filter((r) => r.solvable).length).padEnd(5)} ` +
+        `full-coverage+clean=${String(clean.length).padEnd(5)} bare max=${String(bareMax).padEnd(3)} ` +
+        `ON-RUNG=${String(onRung.length)}`,
+    );
+    console.log(
+      `      bare histogram: ${[...hist.entries()].sort((a, b) => a[0] - b[0]).map(([p, n]) => `${String(p)}:${String(n)}`).join(" ")}`,
+    );
+    console.log(
+      `      on-rung bare values: ${[...new Set(onRung.map((r) => r.bare))].sort((a, b) => a - b).join(" ") || "(none)"}`,
+    );
+  }
+  console.log("\n(stage f only — no latch lattice run, nothing written)");
 } else if (STAGE === "a") {
   console.log("\n(stage a only — no latch lattice run)");
 } else {
