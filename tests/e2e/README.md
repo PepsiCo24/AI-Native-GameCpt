@@ -46,6 +46,63 @@ Evidence (QA-005 run):
 | `npm run levels` | `10/10 level files ok · 10/10 negative cases rejected` → **PASS** |
 | `tsc --noEmit` | clean |
 
+### The deployed-artifact lane — `tests/e2e-live` (QA-005h): on demand, never in CI
+
+Everything above runs against a vite this repo just built from the working tree.
+Nothing above runs against **the artifact the world can load** — the GitHub Pages
+build of `main`. `tests/e2e-live/` is that lane, and it is one command:
+
+```bash
+npx playwright test --config=playwright.live.config.ts   # root config, its own testDir
+```
+
+For every shipped level it opens the *deployed* bundle with `?level=<n>` and drives
+the **solver's** par route (`loadReferenceLevels()` — the same helper the standing
+suite uses, so no move count is typed into the lane), then requires the deployed HUD
+to agree: a fresh session at move 0 with no dialog, `moves === route.length`, the win
+dialog up, the session still naming the level, and both error channels
+(`console.error` + `pageerror`) empty. Plus one `?level=99` fallback row and one row
+pinning the lane's own targeting rule (below).
+
+Measured 2026-10-16 against `main` = `5b058ff`, deployed bundle
+`assets/index-CCs6qr4w.js` — **17 passed (43.8 s)**, per-row 2.2–3.7 s, fallback row
+1.3 s (the Orchestrator's throwaway reference run: 16/16 in 31.8 s; this lane adds one
+cheap row, below). **Isolation, measured:** `npx playwright test --list` still reports
+**107 tests in 8 files** and `npx vitest run` still reports **32 files · 648 passed ·
+3 skipped** — the lane's directory is invisible to both rosters, in both directions.
+
+**It is deliberately NOT in CI.** The CI e2e job is a zero-retry **correctness** gate;
+a spec that loads a CDN-backed production URL would make a Pages/DNS/propagation
+incident indistinguishable from a code regression, and would put an external
+dependency inside the gate that answers "did this commit break the game". Two files
+make the separation structural, not conventional: this lane is a *separate config*
+(`playwright.live.config.ts` — Playwright only auto-loads the exact name
+`playwright.config.ts`, so a bare `npx playwright test` can never pick it up) with a
+*separate `testDir`* and **no `webServer` at all** (nothing is built or served here, so
+a mis-set base URL cannot silently re-point the lane at a local dev server).
+
+**Finding 1 — `PS_E2E_BASE_URL` cannot target this deployment (measured).** The
+standing suite's `levelUrl()` answers a **root-absolute** `/?level=<n>`; resolved
+against the Pages *project* root the URL API replaces the whole path, so
+`new URL("/?level=1", "https://pepsico24.github.io/AI-Native-GameCpt/").href` is
+`https://pepsico24.github.io/?level=1` — the user-pages root, one level above the
+project, not the game. The sub-path root is therefore spelled out in the lane's own
+file (`tests/e2e-live/live-target.ts` → `LIVE_ROOT` + `liveLevelUrl()`), and that
+resolution is **pinned as a test row** so the limitation cannot rot: if `levelUrl()`
+ever becomes deployment-safe the row goes red and the lane can drop its own builder.
+
+**Finding 2 — the win dialog is raised *after* the arrival beat (measured).** Reading
+the HUD with a single `hud()` call immediately after the last press sees
+`won === false` while `moves` is already the correct count: the flip/hop beat lands
+first, the overlay is raised after it. Re-measured on the deployed build before this
+lane was written: the immediate read was `won === false` on **12/15** rows (L11, L12
+and L15 happened to have made it already — the read is a **race**, which is exactly why
+it must not be trusted). The lane therefore reads the dialog with the auto-retrying
+locator (`await expect(page.locator(".ps-overlay")).toBeVisible()`), **never** a sleep:
+a sleep would hide a genuine slow-boot regression behind wall-clock padding, while the
+retrying assertion waits exactly as long as the app takes and fails loudly if the
+dialog never appears.
+
 ### QA-005b — the registry re-pin (10 → 11), and the two literals it cannot reach
 
 R-003 (`f484e23`) unlocked **L11** in the playable registry (11 level files, frozen
@@ -806,19 +863,45 @@ writer on the same range. Its contribution is the independent proof above — th
 cannot be a selection or game defect, only a wall clock — so the merged 90 s budget is
 the right class of remedy.
 
-**CI status: PENDING-CI.** The green-restoring round must be an **honest next round on
-the real tip** (the Orchestrator owns the push and the PR), never a silent re-run of
-`38845237536`.
+**CI status: CLOSED — remedy landed, three consecutive green cloud rounds measured under
+zero retries (2026-10-16, QA-005h).** The remedy is QA-005g (`cd3af77` — the derived
+`DOOR_LEVELS` walk carries `test.setTimeout(90_000)`; merged `091c483`), with no assertion
+change and no retry. Since then the tip has run **three consecutive green cloud rounds
+under zero retries**, all pushes to `develop`, each verified against its own log
+(`gh run view <id> --log`):
+
+| run | tip | runner's test line | e2e job wall clock | L15 row (`latch-door.spec.ts:134:5`) |
+|---|---|---|---|---|
+| `38849186852` | `091c483` | `107 passed (21.3m)` | 22m2s | 29.4 s |
+| `38851254805` | `3592134` | `107 passed (21.0m)` | 21m32s | 29.6 s |
+| `38853247944` | `4d4e61d` | `107 passed (21.2m)` | 21m47s | 29.7 s |
+
+The row that crossed the fixed 30 s budget at 30.9 s in `38845237536` now lands
+29.4–29.7 s in all three rounds: still the suite's heaviest row, now ~3× inside the
+merged 90 s budget — headroom on a wall clock, not a hidden retry (the job runs bare
+`npx playwright test`, `retries: 0`). **Written as measured, not as dispatched:** the
+dispatch quoted the first round as `21m3m`; the runner's own line is `107 passed (21.3m)`
+and that job's wall clock was 22m2s. The other two figures (21m32s / 21m47s) are job wall
+clocks and match. Nothing about the verdict depends on which clock is quoted.
 
 ---
 
-## 2. Inventory — 88 cases
+## 2. Inventory — 107 cases in 8 files (measured)
+
+**Dated note (2026-10-16, QA-005h).** The per-ticket blocks in §1 are **historical
+snapshots**: the `88/0` rounds, the `88 tests in 8 files` `--list` lines and the per-file
+case counts in §1.3–§1.8 were true when those blocks were written and are deliberately
+left as they stand. **This section is the only present-tense inventory in this file.**
+Its header total is the tail line of `npx playwright test --list`
+(`Total: 107 tests in 8 files`) and every number in the `cases` column is that tool's own
+per-file count, read off its output rather than tallied by hand —
+`19 + 29 + 22 + 6 + 8 + 4 + 7 + 12 = 107`, with 95 desktop rows and 12 mobile rows.
 
 | file | cases | project | what it pins |
 |---|---:|---|---|
-| `playthrough.spec.ts` | 15 | desktop | L1–L11 par route → win dialog; the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the L1→L11 unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L11` |
-| `refusal.spec.ts` | 22 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one |
-| `latch-door.spec.ts` | 14 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all six latch levels, in-core and through the UI |
+| `playthrough.spec.ts` | 19 | desktop | L1–L15 par route → win dialog; the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the L1→L15 unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L15` |
+| `refusal.spec.ts` | 29 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one |
+| `latch-door.spec.ts` | 22 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all ten latch levels (L6–L15, the dataset's derived contiguous tail), in-core and through the UI |
 | `portal.spec.ts` | 6 | desktop | M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
 | `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
@@ -833,7 +916,11 @@ directions, door states, latch fixtures and portal crossings come from `solve()`
 pixel count is typed into a spec; a level edit that removes a behaviour fails the run
 instead of leaving a stale fixture behind. The **dataset inventories** are derived
 too (`datasetIds` / `doorLevelIds` / `discoveredFileIds` / `inventoryViolation`), with
-exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3).
+exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3). A second, narrower
+hand-typed literal exists outside that helper set and is deliberate: `portal.spec.ts:91`
+re-baselines the *portal* inventory (`[11, 12, 13, 14, 15]`) against the derived
+`levelsWithPortals()` — the latches instead assert the structural rule (the door levels
+are the dataset's contiguous tail), so an unlock re-types nothing there.
 
 ---
 
