@@ -20,7 +20,11 @@
  *   formula with the production constant. Cell centres are therefore *the* cell
  *   centres the game hit-tests against.
  * - **Colours are tokens.** The actor probe compares against
- *   `theme(phase).actor.body` / `.ring` — never a hex literal in the test.
+ *   `theme(phase).actor.body` / `.ring` — never a hex literal in the test — and,
+ *   once the delivered A-03 pair is mounted (R-005a), against the **mounted
+ *   texture's own centre pixel**, decoded from the file the page actually loaded.
+ *   See {@link actorBodyAnchors}: the anchor set is a *union*, so the same probe
+ *   is green in the art state and in the degraded (texture 404 / blocked) state.
  */
 
 import { expect } from "@playwright/test";
@@ -33,6 +37,7 @@ import type { Vec } from "@/core/state/types";
 import { sameVec } from "@/core/state/types";
 import { computeLayout } from "@/game/renderer/grid-mapping";
 import type { BoardLayout } from "@/game/renderer/grid-mapping";
+import { PLACEHOLDER_SLOTS } from "@/game/theme/assets";
 import { LAYOUT, theme } from "@/game/theme/tokens";
 
 import { ARROW_KEY } from "./levels";
@@ -74,6 +79,16 @@ export async function openLevel(page: Page, url: string): Promise<void> {
       /* a blocked storage is still a fresh context — nothing to clear */
     }
   });
+  // QA-007 negative-harness switch (opt-in, inert unless set). Playwright has no
+  // config-level request hook, so "run the same 88 tests with the delivered art
+  // unreachable" is a page-level route — the dossier's own degrade mechanism.
+  // Every `*.png` the loader asks for is aborted, so `theme/art.ts` mounts nothing,
+  // every painter falls back to its vector placeholder and the probe anchors are the
+  // placeholder tokens. It is never set on a normal run, so it cannot mask a
+  // delivered-art regression: the art round is the one without it.
+  if (process.env["PS_E2E_ART_DEGRADE"] === "1") {
+    await page.route("**/*.png", (route) => route.abort());
+  }
   await page.goto(url);
   await expect(page.locator(".ps-shell")).toBeVisible();
   await expect(page.locator("#app canvas")).toBeAttached();
@@ -100,24 +115,64 @@ export async function settle(page: Page, ms = 320): Promise<void> {
  *
  * Only `error`-level console output is collected: Phaser logs `info`/`warn` on a
  * normal boot, and treating those as failures would make the probe unusable.
+ *
+ * The one carve-out is the QA-007 degrade harness: when `PS_E2E_ART_DEGRADE=1`
+ * makes {@link openLevel} abort the art PNGs, Chromium reports each aborted request
+ * as a `console.error` of its own. Those lines are *the harness's damage*, not the
+ * page's, so they are collected separately
+ * ({@link PageErrorWatch.suppressedByDegradeHarness}) instead of failing the walk —
+ * and only on that opt-in round, and only for the manifest basenames it aborted.
  */
 export interface PageErrorWatch {
   /** `console.error` texts seen so far, in order. */
   readonly consoleErrors: readonly string[];
   /** Uncaught page exception messages seen so far, in order. */
   readonly pageErrors: readonly string[];
+  /**
+   * `console.error` lines the **degrade harness itself** caused and which are
+   * therefore not page errors: Chromium's `Failed to load resource: net::ERR_FAILED`
+   * for an art PNG that {@link openLevel} deliberately aborted. Non-empty only in a
+   * `PS_E2E_ART_DEGRADE=1` round; on an art round this list is always empty and the
+   * full channel is asserted unchanged. Kept (not dropped) so the degrade round's
+   * report can cite exactly how many lines were its own doing.
+   */
+  readonly suppressedByDegradeHarness: readonly string[];
+}
+
+/**
+ * The basenames a degrade round is expected to abort — the delivered art the
+ * bundle ships, **derived** from the manifest's resolved slots (never typed out),
+ * each with the `.png` extension Phaser requested.
+ */
+function degradeArtBasenames(): readonly string[] {
+  return PLACEHOLDER_SLOTS.filter((slot) => slot.resolved).map((slot) => `${slot.assetName}.png`);
+}
+
+/** `true` when this `console.error` is the harness's own aborted-art noise. */
+function isHarnessArtNoise(text: string, url: string): boolean {
+  if (!text.startsWith("Failed to load resource")) return false;
+  const basename = url.split("/").pop() ?? "";
+  return degradeArtBasenames().includes(basename);
 }
 
 export function watchErrors(page: Page): PageErrorWatch {
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
+  const suppressedByDegradeHarness: string[] = [];
+  const degrading = process.env["PS_E2E_ART_DEGRADE"] === "1";
   page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
+    if (message.type() !== "error") return;
+    const text = message.text();
+    if (degrading && isHarnessArtNoise(text, message.location().url)) {
+      suppressedByDegradeHarness.push(text);
+      return;
+    }
+    consoleErrors.push(text);
   });
   page.on("pageerror", (error) => {
     pageErrors.push(error.message);
   });
-  return { consoleErrors, pageErrors };
+  return { consoleErrors, pageErrors, suppressedByDegradeHarness };
 }
 
 /** Assert both channels stayed empty, with the label that says which walk this was. */
@@ -483,7 +538,8 @@ export async function sampleCanvas(
   }, points as ReadonlyArray<{ x: number; y: number }>);
 }
 
-function hexToRgb(hex: string): Rgb {
+/** Parse a `#rrggbb` token into the sample type — for tests that must name an ink. */
+export function hexToRgb(hex: string): Rgb {
   return [
     Number.parseInt(hex.slice(1, 3), 16),
     Number.parseInt(hex.slice(3, 5), 16),
@@ -494,6 +550,280 @@ function hexToRgb(hex: string): Rgb {
 /** Max per-channel distance — the two colours are "the same pixel" under this. */
 export function rgbDistance(a: Rgb, b: Rgb): number {
   return Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
+}
+
+/* ─────────────── actor body anchors (R-005a art-aware pixel probe) ─────────── */
+
+/**
+ * One colour the player's body can legitimately be drawn with, this phase.
+ *
+ * Two sources, one per branch of `renderer/board-view.ts`'s `paintActor`:
+ *
+ * - `"vector"` — `theme(phase).actor.body`, the DEV PLACEHOLDER disc A-03 that
+ *   still paints whenever the delivered texture is not mounted (R-P2's fallback);
+ * - `"art"` — the **centre pixel of the mounted A-03 file**, decoded from the very
+ *   bytes the page's loader received ({@link actorBodyAnchors}).
+ *
+ * The decode is what makes the probe art-aware without a hex literal and without
+ * asking the page which branch it took: `paintActor` draws the sprite centred on
+ * the cell, so its own centre pixel is exactly what lands on the cell centre.
+ */
+export interface ActorBodyAnchor {
+  readonly rgb: Rgb;
+  /** Per-channel tolerance for this anchor (the sprite composites at alpha 253). */
+  readonly tolerance: number;
+  /** Human-readable provenance, for failure messages. */
+  readonly source: string;
+}
+
+/**
+ * Decode the centre pixel of one delivered spirit PNG, from the page's own
+ * resource log — or `null` when that file never arrived (a 404, a blocked request,
+ * an offline boot: the degraded state `theme/art.ts` is built around).
+ *
+ * The URL is **not** written here: it is read out of
+ * `performance.getEntriesByType("resource")` by matching the manifest name from
+ * `theme/assets.ts`, so the probe follows whatever `?url` import the build emitted
+ * (hashed or not) and simply finds nothing in a degrade round. The file is fetched
+ * and decoded in-page (`createImageBitmap`), which is the same bytes Phaser's
+ * loader used.
+ */
+const spriteCentres = new WeakMap<Page, Map<Phase, Promise<Rgb | null>>>();
+
+async function decodeSpiritCentre(page: Page, phase: Phase): Promise<Rgb | null> {
+  let perPage = spriteCentres.get(page);
+  if (perPage === undefined) {
+    perPage = new Map<Phase, Promise<Rgb | null>>();
+    spriteCentres.set(page, perPage);
+  }
+  const cached = perPage.get(phase);
+  if (cached !== undefined) return cached;
+
+  // The A-03 pair is two manifest rows, one Asset ID; the phase picks the row by
+  // the manifest name's own suffix (`echo_spirit_a` / `_b`), never a typed path.
+  const slot = PLACEHOLDER_SLOTS.find(
+    (entry) => entry.assetId === "A-03" && entry.assetName.endsWith(phase.toLowerCase()),
+  );
+  const pending = page.evaluate(async (assetName: string | null): Promise<Rgb | null> => {
+    if (assetName === null) return null;
+    const url = performance
+      .getEntriesByType("resource")
+      .map((entry) => entry.name)
+      .find((name) => name.endsWith(`/${assetName}.png`));
+    if (url === undefined) return null;
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const bitmap = await createImageBitmap(await response.blob());
+      const offscreen = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const ctx = offscreen.getContext("2d");
+      if (ctx === null) return null;
+      ctx.drawImage(bitmap, 0, 0);
+      const data = ctx.getImageData(bitmap.width >> 1, bitmap.height >> 1, 1, 1).data;
+      return [data[0] ?? 0, data[1] ?? 0, data[2] ?? 0];
+    } catch {
+      return null;
+    }
+  }, slot?.assetName ?? null);
+  perPage.set(phase, pending);
+  return pending;
+}
+
+/**
+ * Every colour the player's body may carry in `phase`, **as a set** — the vector
+ * token plus, when the delivered sprite is reachable, the sprite's own centre
+ * pixel. Union, not a branch on mount state: the two are mutually exclusive on the
+ * canvas (`paintActor` draws exactly one of them), so union-ing them keeps the
+ * "exactly one cell matches" verdict in both states and cannot rot when R-005b
+ * changes the manifest. Mock-free and layout-free.
+ */
+export async function actorBodyAnchors(page: Page, phase: Phase): Promise<readonly ActorBodyAnchor[]> {
+  const token = theme(phase).actor.body;
+  const anchors: ActorBodyAnchor[] = [
+    { rgb: hexToRgb(token), tolerance: 2, source: `vector body ${token}` },
+  ];
+  const sprite = await decodeSpiritCentre(page, phase);
+  if (sprite !== null) {
+    anchors.push({
+      rgb: sprite,
+      tolerance: 3,
+      source: `delivered spirit centre rgb(${sprite.join(",")})`,
+    });
+  }
+  return anchors;
+}
+
+/** `true` when `sample` is the body ink under **any** of `anchors`. */
+export function isActorBody(sample: Rgb | undefined, anchors: readonly ActorBodyAnchor[]): boolean {
+  if (sample === undefined) return false;
+  return anchors.some((anchor) => rgbDistance(sample, anchor.rgb) <= anchor.tolerance);
+}
+
+/* ─────────────────── one ink on one scanline — run census ────────────────── */
+
+export interface TokenRunCensus {
+  /** Longest contiguous stretch of samples equal to `token` (within `tolerance`). */
+  readonly longest: number;
+  /** Every run length seen, longest first — the shape of the row, for messages. */
+  readonly runs: readonly number[];
+  /** The token the row was searched for, and the tolerance used. */
+  readonly token: Rgb;
+  readonly tolerance: number;
+  /** Every sampled pixel on the centre row, in scan order. */
+  readonly samples: readonly Rgb[];
+}
+
+/**
+ * Count the contiguous runs of one ink on a tile's centre row: "how much of this
+ * row is *this* colour, in unbroken stretches".
+ *
+ * Used for the R-C7 occlusion claim, where the interesting quantity is not "does
+ * the switch token appear" but "can a stroke of it be **read**": a visible 2 px
+ * outline puts an unbroken stretch of at least its own stroke width on the row,
+ * whereas a single coincidental pixel of a delivered sprite is a run of one. The
+ * caller supplies the token (a phase's `obj.switch`) and the floor it takes from
+ * the production geometry (`switchParts(...).strokeWidth`), so the threshold is
+ * never a magic number.
+ */
+export async function centreRowTokenRuns(
+  page: Page,
+  geometry: BoardGeometry,
+  tile: Vec,
+  token: Rgb,
+  tolerance = 2,
+): Promise<TokenRunCensus> {
+  const cell = geometry.layout.cellSize;
+  const centre = geometry.cellCenterDevice(tile.x, tile.y);
+  const half = Math.ceil(cell / 2);
+  const offsets: number[] = [];
+  for (let dx = -half; dx <= half; dx += 1) offsets.push(dx);
+  const samples = await sampleCanvas(
+    page,
+    offsets.map((dx) => ({ x: centre.x + dx, y: centre.y })),
+  );
+  const runs: number[] = [];
+  let current = 0;
+  for (const sample of samples) {
+    if (rgbDistance(sample, token) <= tolerance) {
+      current += 1;
+    } else {
+      if (current > 0) runs.push(current);
+      current = 0;
+    }
+  }
+  if (current > 0) runs.push(current);
+  runs.sort((a, b) => b - a);
+  return {
+    longest: runs[0] ?? 0,
+    runs,
+    token,
+    tolerance,
+    samples,
+  };
+}
+
+/* ──────────────────── scanline ink run (art-agnostic probe) ──────────────── */
+
+/** Where the background references are sampled, as a fraction of the cell. */
+export const INK_REFERENCE_FRACTION = 0.4;
+/** How far a sample must sit from **every** reference to count as ink. */
+export const INK_THRESHOLD = 8;
+
+export interface InkRun {
+  /** Longest contiguous run of ink samples. */
+  readonly longest: number;
+  /** First / last index of that run (inclusive), for failure messages. */
+  readonly from: number;
+  readonly to: number;
+  /** Index of the tile's own centre sample (the actor is drawn centred). */
+  readonly centreIndex: number;
+  /** `true` when the longest run straddles {@link centreIndex} — the ink is *the actor*, not a tile edge. */
+  readonly coversCentre: boolean;
+  /** `longest / samples.length` — how much of the scanline the ink owns. */
+  readonly coverage: number;
+  /** Every sampled pixel on the centre row, in scan order. */
+  readonly samples: readonly Rgb[];
+  /** The background references this runner actually used. */
+  readonly references: readonly Rgb[];
+}
+
+/**
+ * Measure the **ink run** across one cell's centre row: the longest contiguous
+ * stretch of samples that differ from the cell's own background.
+ *
+ * ── Why not compare against a body token (R-005a) ────────────────────────────
+ * The transient probes were written against `theme(phase).actor.body`, which is
+ * the **placeholder** colour. Once the delivered A-03 sprite is mounted the body
+ * is art and no token describes it, so a token comparison measures "did the
+ * placeholder paint" rather than "is the actor covering the box". The background
+ * reference is taken at ±{@link INK_REFERENCE_FRACTION} of a cell — outside the
+ * actor disc in both branches (placeholder r ≈ 45 px, art r ≈ 40 px on a 128 px
+ * cell) and inside the tile, so it reads the tile's own ground / door / wall ink
+ * rather than a neighbour's. Ink is then a *differential* claim: "this pixel is
+ * not the tile's background", which holds for the vector disc and for the sprite
+ * alike.
+ *
+ * The claim it feeds is strictly stronger than a colour match: the caller can ask
+ * whether the actor's ink *contains* the switch box (radius comparison) and what
+ * fraction of the scanline it owns (coverage) — neither of which needs the body's
+ * colour at all.
+ *
+ * ── A dead read-back channel fails loudly, not silently ──────────────────────
+ * `sampleCanvas` answers a black pixel for every point when the presented frame is
+ * not readable, so both references are `[0,0,0]` and every sample equals them:
+ * nothing is ink, `longest` is 0 and `coversCentre` is `false`. The callers assert
+ * `coversCentre`, so the "the pixels are all black" failure is a failure — it can
+ * never be read as "the actor covers everything".
+ */
+export async function centreRowInk(
+  page: Page,
+  geometry: BoardGeometry,
+  tile: Vec,
+): Promise<InkRun> {
+  const cell = geometry.layout.cellSize;
+  const centre = geometry.cellCenterDevice(tile.x, tile.y);
+  const half = Math.ceil(cell / 2);
+  const offsets: number[] = [];
+  for (let dx = -half; dx <= half; dx += 1) offsets.push(dx);
+  const centreIndex = half;
+  const samples = await sampleCanvas(
+    page,
+    offsets.map((dx) => ({ x: centre.x + dx, y: centre.y })),
+  );
+  const referenceOffset = Math.round(cell * INK_REFERENCE_FRACTION);
+  const references = await sampleCanvas(page, [
+    { x: centre.x + referenceOffset, y: centre.y },
+    { x: centre.x - referenceOffset, y: centre.y },
+  ]);
+  const isInk = (sample: Rgb | undefined): boolean =>
+    sample !== undefined &&
+    references.every((reference) => rgbDistance(sample, reference) > INK_THRESHOLD);
+  let longest = 0;
+  let from = 0;
+  let runStart = 0;
+  let current = 0;
+  samples.forEach((sample, index) => {
+    if (isInk(sample)) {
+      if (current === 0) runStart = index;
+      current += 1;
+      if (current > longest) {
+        longest = current;
+        from = runStart;
+      }
+    } else {
+      current = 0;
+    }
+  });
+  return {
+    longest,
+    from,
+    to: longest === 0 ? from - 1 : from + longest - 1,
+    centreIndex,
+    coversCentre: longest > 0 && from <= centreIndex && centreIndex <= from + longest - 1,
+    coverage: samples.length === 0 ? 0 : longest / samples.length,
+    samples,
+    references,
+  };
 }
 
 /**
@@ -536,16 +866,31 @@ export interface ActorProbe {
 
 /**
  * Find the player's tile **from the pixels**: the cell whose centre is the actor
- * body token for the current phase.
+ * body in the current phase.
  *
  * This is the one claim the DOM cannot answer (the HUD owns no board state,
- * `hud.ts` §7.2), so it is read from the rendered board — an absolute anchor
- * (`theme(phase).actor.body`), not a relative "it changed" comparison.
+ * `hud.ts` §7.2), so it is read from the rendered board — against an **absolute**
+ * anchor set ({@link actorBodyAnchors}), never a relative "it changed"
+ * comparison.
+ *
+ * ── Why the anchor is a set (R-005a) ─────────────────────────────────────────
+ * `paintActor` draws either the delivered A-03 sprite or the vector placeholder,
+ * and the sprite's own colours are art, not tokens. Comparing the cell centre
+ * against `theme(phase).actor.body` alone was the failure mode of all 56 rows in
+ * the R-005a roster: in the art state the centre is the sprite's centre pixel, so
+ * the token comparison found `[]` on a perfectly healthy board. The union anchor
+ * answers "is this cell the player" in both mount states without asking the page
+ * which branch it took — and, because the two branches are mutually exclusive on
+ * the canvas, the "exactly one cell matches" verdict is unchanged.
+ *
+ * The census is still **the whole board**: every cell centre is sampled and every
+ * anchor is tested at every cell, so a second body-coloured tile is still a
+ * two-match failure, not a silent first-hit.
  */
 export async function actorCell(page: Page, geometry: BoardGeometry, level: Level): Promise<ActorProbe> {
   const shellPhase = await page.locator(".ps-shell").getAttribute("data-phase");
   const phase: Phase = shellPhase === "B" ? "B" : "A";
-  const body = hexToRgb(theme(phase).actor.body);
+  const anchors = await actorBodyAnchors(page, phase);
   const cells: Vec[] = [];
   for (let y = 0; y < level.height; y += 1) {
     for (let x = 0; x < level.width; x += 1) cells.push({ x, y });
@@ -554,14 +899,18 @@ export async function actorCell(page: Page, geometry: BoardGeometry, level: Leve
   const samples = await sampleCanvas(page, points);
   const matches: Vec[] = [];
   cells.forEach((cell, index) => {
-    const sample = samples[index];
-    if (sample !== undefined && rgbDistance(sample, body) <= 2) matches.push(cell);
+    if (isActorBody(samples[index], anchors)) matches.push(cell);
   });
   return {
     cells: matches,
     cell: matches.length === 1 ? (matches[0] ?? null) : null,
     samples,
   };
+}
+
+/** The anchor provenance, for a failure message — never a hex literal in the test. */
+function describeAnchors(anchors: readonly ActorBodyAnchor[]): string {
+  return anchors.map((anchor) => `${anchor.source} (±${String(anchor.tolerance)})`).join(" | ");
 }
 
 /**
@@ -626,9 +975,12 @@ export async function expectActorAt(
     probe = await actorCell(page, geometry, level);
     shellPhase = await page.locator(".ps-shell").getAttribute("data-phase");
   }
+  const phase: Phase = shellPhase === "B" ? "B" : "A";
+  const anchors = await actorBodyAnchors(page, phase);
   expect(
     probe.cell,
     `actor tile should be (${String(expected.x)},${String(expected.y)}) in phase ${String(shellPhase)}; ` +
-      `found ${JSON.stringify(probe.cells)} after ${String(Date.now() - startedAt)} ms`,
+      `found ${JSON.stringify(probe.cells)} after ${String(Date.now() - startedAt)} ms; ` +
+      `body anchors: ${describeAnchors(anchors)}`,
   ).toEqual(expected);
 }

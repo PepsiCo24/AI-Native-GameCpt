@@ -151,6 +151,36 @@ export interface TileObjectPaintContext {
   readonly transition: TileObjectTransition;
   /** The tile's own cell ground — the target of every glyph knockout (R-D3). */
   readonly knockout: number;
+  /**
+   * The delivered-art seam (R-005a), or `undefined` when the caller has no art
+   * registry — a painter must treat that as "nothing is mounted" and draw its
+   * vector placeholder. See {@link TileObjectArtPort}.
+   */
+  readonly art?: TileObjectArtPort;
+}
+
+/**
+ * Delivered art, as an L4 painter may use it (§11/R-P5, R-005a).
+ *
+ * A painter draws into a `Graphics2D`, which cannot draw a texture — so the split
+ * is: the **painter** owns the footprint rule (centre, size, idle pulse) and the
+ * **view** owns the `Phaser.GameObjects.Image`. `draw` is the one call that hands
+ * the resolved geometry over, `has` is what keeps the texture and the vector
+ * placeholder from ever drawing on top of each other.
+ *
+ * Keys are manifest export names resolved through `theme/assets.ts` (`slotKey`),
+ * never a file path: a painter knows *which slot* it stands in for, nothing about
+ * where the bytes live.
+ */
+export interface TileObjectArtPort {
+  /** `true` when the delivered texture for this key is mounted and can be drawn. */
+  has(textureKey: string): boolean;
+  /**
+   * Place the mounted texture for `textureKey` with its form centred on (`cx`,
+   * `cy`) and `w × h` device px. A no-op for a key that is not mounted, so a
+   * painter may call it after `has` without a second branch.
+   */
+  draw(textureKey: string, cx: number, cy: number, w: number, h: number): void;
 }
 
 export interface TileObjectSpec {
@@ -227,6 +257,10 @@ const GOAL: TileObjectSpec = {
       cssScale: ctx.cssScale,
       theme: ctx.theme,
       pulseScale: goalPulseScale(ctx.timeMs),
+      // R-005a — the delivered annulus draws through the view's art port when it is
+      // mounted; absent (a caller with no art registry, e.g. a unit test) means the
+      // vector ring + dot, which is exactly the degrade path.
+      art: ctx.art,
     }),
 };
 

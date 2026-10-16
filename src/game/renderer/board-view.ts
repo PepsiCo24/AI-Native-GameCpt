@@ -79,14 +79,22 @@ import {
 import type { BoardLayout, Viewport } from "@/game/renderer/grid-mapping";
 import {
   actorLook,
+  ACTOR_ART_BOX,
   easeOutQuad,
   hopArcOffset,
   landingSquash,
   lerpActorLook,
   paintActor,
+  paintActorOverlay,
 } from "@/game/renderer/objects/actor";
+import type { ActorPaintContext } from "@/game/renderer/objects/actor";
 import { L4_SLOT, TILE_OBJECTS } from "@/game/renderer/objects/registry";
-import type { L4Slot, TileObjectSpec, TileObjectTransition } from "@/game/renderer/objects/registry";
+import type {
+  L4Slot,
+  TileObjectArtPort,
+  TileObjectSpec,
+  TileObjectTransition,
+} from "@/game/renderer/objects/registry";
 import {
   assertLayerOrder,
   assertLayerStack,
@@ -96,8 +104,40 @@ import {
 import type { ObservedLayer } from "@/game/renderer/layers";
 import { mixTheme } from "@/game/renderer/theme-mix";
 import { WallTileView, staggerFor } from "@/game/renderer/wall-tiles";
+import { isArtMounted, slotKey } from "@/game/theme/art";
 import { flipTimings, theme, toInt } from "@/game/theme/tokens";
 import type { FlipTimings, ThemeTokens } from "@/game/theme/tokens";
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * The delivered textures this view draws, by manifest export name (§11/R-P5 +
+ * `theme/art.ts`). Read once at module load: a slot name that does not exist in
+ * `PLACEHOLDER_SLOTS` is a static mistake, and `slotKey` fails loudly instead of
+ * handing a painter an `undefined` key that would silently never mount.
+ * ──────────────────────────────────────────────────────────────────────────── */
+const SPIRIT_A_KEY = slotKey("echo_spirit_a");
+const SPIRIT_B_KEY = slotKey("echo_spirit_b");
+const BG_A_KEY = slotKey("bg_phase_a");
+const BG_B_KEY = slotKey("bg_phase_b");
+const GOAL_KEY = slotKey("goal");
+
+/**
+ * The drawn weight of **Phase B** in a pair of stacked sprites: `0` = pure A,
+ * `1` = pure B, and every value between is the §6.2 cross-fade.
+ *
+ * The stacking rule this implements is the one thing a cross-dissolve gets wrong
+ * if it is written naively. Fading *both* sprites (`α_A = 1 - w`, `α_B = w`) leaks
+ * the board through the actor at `w = 0.5` — compositing is `B·α_B + A·α_A·(1-α_B)
+ * + backdrop·(1-α_A)(1-α_B)`, i.e. 50 %/25 %/25 %. Drawing **A opaque at the
+ * bottom and fading only B in on top** is exact: `B·w + A·(1 - w)` for every `w`,
+ * with no backdrop term. The A/B pair sharing a byte-identical alpha mask
+ * (audit R-T04) is what makes that a true colour cross-fade rather than a
+ * silhouette blend — and it is the same arithmetic the old disc got from
+ * `lerpActorLook`: one scalar, `mix(from, to, t)`.
+ */
+function phaseWeight(from: Phase, to: Phase, mix: number): number {
+  const b = (phase: Phase): number => (phase === "B" ? 1 : 0);
+  return b(from) + (b(to) - b(from)) * mix;
+}
 
 /**
  * §5.2 cross-layer depths (bottom → top), **read from the one stack table in
@@ -185,13 +225,58 @@ export class BoardView {
 
   private readonly pageGfx: Phaser.GameObjects.Graphics;
   private readonly plateGfx: Phaser.GameObjects.Graphics;
+  /**
+   * L1 `backgroundImage` (§5.2, depth 5): the delivered A-04/A-05 plates, cover-fit
+   * to the play area and alpha cross-dissolved on §6.2's `background` row. `null`
+   * per phase when that file did not mount — the page ground underneath is the
+   * documented fallback, never a blank or a black frame.
+   */
+  private readonly backgroundArt: {
+    readonly A: Phaser.GameObjects.Image | null;
+    readonly B: Phaser.GameObjects.Image | null;
+  };
   /** §3.1d slot `wall` — the one stateful L4 class, so it owns its container (R-E6/R-E8). */
   private readonly wallGfx: Phaser.GameObjects.Graphics;
   /** Every L4 container that exists today, with the §3.1d slot it was created for. */
   private readonly l4Containers: readonly L4Container[];
   /** The registry seam: each painter and the L4 container its slot owns. */
   private readonly l4Painters: readonly L4Painter[];
+  /**
+   * Delivered art drawn at L4 (R-005a), by texture key: **at most one object per
+   * slot**, created once when the texture mounted and destroyed with the view. An
+   * empty map is the pre-integration state, not an error — every painter then draws
+   * its vector placeholder exactly as it did before.
+   */
+  private readonly l4Art = new Map<string, Phaser.GameObjects.Image>();
+  /**
+   * The port every L4 painter receives (`objects/registry.ts`): the painter resolves
+   * the geometry, this view owns the display object. `has` is what makes the texture
+   * and the vector placeholder mutually exclusive rather than layered.
+   */
+  private readonly artPort: TileObjectArtPort = {
+    has: (key) => this.l4Art.has(key),
+    draw: (key, cx, cy, w, h) => {
+      // A no-op for an unmounted key, and a resize **in place** for a mounted one:
+      // the goal's R-C8 pulse is a per-frame `setDisplaySize`, never a new object.
+      this.l4Art.get(key)?.setPosition(cx, cy).setDisplaySize(w, h);
+    },
+  };
+  /**
+   * L5 `actor` — **one** container, so the three-way order inside the actor is a
+   * data fact (child order) rather than a depth coincidence: phase ring +
+   * fallback body, then the delivered forms, then the identity ring + deny arc.
+   * See `objects/actor.ts` for why each half sits where it does.
+   */
+  private readonly actorRoot: Phaser.GameObjects.Container;
+  /** Below the body: R-C13.4's one-shot phase ring and the vector body fallback. */
   private readonly actorGfx: Phaser.GameObjects.Graphics;
+  /** The delivered A/B forms, or `null` when that file did not mount. */
+  private readonly spiritArt: {
+    readonly A: Phaser.GameObjects.Image | null;
+    readonly B: Phaser.GameObjects.Image | null;
+  };
+  /** Above the body (radially outside it): R-C9's identity ring and §6.5's deny arc. */
+  private readonly actorOverlayGfx: Phaser.GameObjects.Graphics;
   private readonly feedbackGfx: Phaser.GameObjects.Graphics;
   private readonly tintGfx: Phaser.GameObjects.Graphics;
 
@@ -230,6 +315,16 @@ export class BoardView {
 
     const s = this.scene;
     this.pageGfx = s.add.graphics().setDepth(DEPTH.pageGround);
+
+    // L1 — the delivered background plates, created once at their own depth and
+    // never re-created by a flip (R-E6's pattern one layer down): a phase change
+    // is an *alpha* on the two existing objects, not a new sprite.
+    const backgroundArt = {
+      A: this.createArtImage(BG_A_KEY, DEPTH.backgroundImage),
+      B: this.createArtImage(BG_B_KEY, DEPTH.backgroundImage),
+    };
+    this.backgroundArt = backgroundArt;
+
     this.plateGfx = s.add.graphics().setDepth(DEPTH.boardPlate);
 
     // L4 — one container per registry painter, each at the depth of the §3.1d
@@ -255,7 +350,32 @@ export class BoardView {
     containers.push({ slot: L4_SLOT.wall, gfx: this.wallGfx });
     this.l4Containers = containers;
 
-    this.actorGfx = s.add.graphics().setDepth(DEPTH.actor);
+    // L4 slot `goal` (§3.1d rank 3) — the delivered A-06 annulus, created once at
+    // the **slot's own depth**, so R-Z3 ("the ring never draws over a solid wall /
+    // closed door") holds for the texture exactly as it holds for the vector ring:
+    // `l4Depth(L4_SLOT.goal)` is the same number the goal's Graphics container got
+    // above, and both blockers keep their higher slots. Created after that container
+    // so that, at equal depth, an unmounted board and a mounted one differ only in
+    // *what is drawn*, never in the order things are drawn in.
+    const goalArt = this.createArtImage(GOAL_KEY, l4Depth(L4_SLOT.goal));
+    if (goalArt !== null) this.l4Art.set(GOAL_KEY, goalArt);
+
+    // L5 — one container at `DEPTH.actor`, children in the fixed order the actor's
+    // own module documents. The container is what the §5.2 stack guard sees, and
+    // what R-C13.1's "above every L4 layer" is asserted against.
+    this.actorGfx = s.add.graphics();
+    const spiritArt = {
+      A: this.createArtImage(SPIRIT_A_KEY, 0),
+      B: this.createArtImage(SPIRIT_B_KEY, 0),
+    };
+    this.spiritArt = spiritArt;
+    this.actorOverlayGfx = s.add.graphics();
+    const actorChildren: Phaser.GameObjects.GameObject[] = [this.actorGfx];
+    if (spiritArt.A !== null) actorChildren.push(spiritArt.A);
+    if (spiritArt.B !== null) actorChildren.push(spiritArt.B);
+    actorChildren.push(this.actorOverlayGfx);
+    this.actorRoot = s.add.container(0, 0, actorChildren).setDepth(DEPTH.actor);
+
     this.feedbackGfx = s.add.graphics().setDepth(DEPTH.cellFeedback);
     this.tintGfx = s.add.graphics().setDepth(DEPTH.plateTint);
 
@@ -266,15 +386,17 @@ export class BoardView {
         slot: container.slot,
         depth: container.gfx.depth,
       })),
-      this.actorGfx.depth,
+      this.actorRoot.depth,
     );
 
     // §5.2 — the same discipline one level up: the observed depths of the real
     // objects must be the spec's layer stack, checked against the one table in
     // `renderer/layers.ts` (L2/L3 share the plate's container on purpose). The
     // per-slot order *inside* L4 stays `assertLayerOrder`'s job above, which is
-    // where the §3.1d arithmetic lives. `backgroundImage` is absent because no art
-    // exists yet — the guard checks what was created, never what is merely reserved.
+    // where the §3.1d arithmetic lives. The guard checks what was **created**,
+    // never what is merely reserved — so `backgroundImage` is reported only when a
+    // delivered plate actually mounted (with no art there is no object at depth 5,
+    // and claiming one would make that row of the guard unfalsifiable).
     //
     // `objects` reports the depth of the **real bottom L4 container**, not the
     // constant `L4_DEPTH_BASE`: the base is a group marker and no object is ever
@@ -282,13 +404,16 @@ export class BoardView {
     // unfalsifiable (`assertLayerStack` checks `LAYER_GROUP_BASE` rows as a range).
     const observed: readonly ObservedLayer[] = [
       { name: "pageGround", depth: this.pageGfx.depth },
+      ...(this.backgroundArt.A === null && this.backgroundArt.B === null
+        ? []
+        : [{ name: "backgroundImage" as const, depth: DEPTH.backgroundImage }]),
       { name: "boardPlate", depth: this.plateGfx.depth },
       { name: "cellPlate", depth: this.plateGfx.depth },
       {
         name: "objects",
         depth: Math.min(...this.l4Containers.map((container) => container.gfx.depth)),
       },
-      { name: "actor", depth: this.actorGfx.depth },
+      { name: "actor", depth: this.actorRoot.depth },
       { name: "cellFeedback", depth: this.feedbackGfx.depth },
       { name: "plateTint", depth: this.tintGfx.depth },
     ];
@@ -308,12 +433,36 @@ export class BoardView {
       this.pageGfx,
       this.plateGfx,
       ...this.l4Containers.map((container) => container.gfx),
-      this.actorGfx,
       this.feedbackGfx,
       this.tintGfx,
     ]) {
       gfx.destroy();
     }
+    // The actor is one container and `Container.destroy` releases its children
+    // (the ring graphics and the spirit images), so they are not listed twice.
+    this.actorRoot.destroy();
+    // L4's delivered art lives outside any container (it sits at the slot's own
+    // depth), so it is released here rather than by a container destroy.
+    for (const image of this.l4Art.values()) image.destroy();
+    this.l4Art.clear();
+    this.backgroundArt.A?.destroy();
+    this.backgroundArt.B?.destroy();
+  }
+
+  /**
+   * One delivered texture as a display object, or `null` when it did not mount.
+   *
+   * `null` is the degrade path and it is deliberately not an error: the caller's
+   * painter then draws the vector placeholder it has always drawn (R-P2). Creating
+   * the object only when the texture exists also keeps the §5.2 boot guard honest —
+   * it asserts the depths that were *created*.
+   */
+  private createArtImage(
+    textureKey: string,
+    depth: number,
+  ): Phaser.GameObjects.Image | null {
+    if (!isArtMounted(textureKey)) return null;
+    return this.scene.add.image(0, 0, textureKey).setOrigin(0.5, 0.5).setDepth(depth);
   }
 
   /* ── layout ─────────────────────────────────────────────────────────────── */
@@ -571,14 +720,16 @@ export class BoardView {
   private paintGround(time: number): void {
     const { tokens: t } = this.tokenMix(time);
 
-    // L0 pageGround + L1 backgroundImage placeholder (A-04/A-05 not delivered).
-    // DEV PLACEHOLDER — A-04 bg_phase_a / A-05 bg_phase_b: integration adds an
-    // Image at DEPTH.backgroundImage and this rect becomes the letterbox. §6.2's
-    // `background` row (100–220) is this dissolve; with no art it is the page
-    // colour, which the `tokens` row already carries — one less moving part.
+    // L0 pageGround — kept as the **base layer under the art**, not replaced by it.
+    // The delivered plates are drawn above this rect, so (a) a mid-dissolve frame
+    // composites over a real colour rather than over nothing, and (b) a plate that
+    // did not mount degrades to exactly the pre-integration ground.
+    // DEV PLACEHOLDER — A-04 bg_phase_a / A-05 bg_phase_b: this flat `ground.page`
+    // fill, which is what either plate's slot falls back to.
     this.pageGfx.clear();
     this.pageGfx.fillStyle(toInt(t.ground.page), 1);
     this.pageGfx.fillRect(0, 0, this.scene.scale.width, this.scene.scale.height);
+    this.paintBackground(time);
 
     // L2 board plate — R-L4 opaque enough that background art never leaks in.
     const plate = this.layout.plate;
@@ -601,6 +752,57 @@ export class BoardView {
         this.plateGfx.fillRoundedRect(surface.x, surface.y, surface.w, surface.h, this.layout.radius);
       }
     }
+  }
+
+  /**
+   * L1 `backgroundImage` — §6.2's `background` row (100–220 ms Variant S / 150–250
+   * Variant CL / instant under reduced motion), read from the **same** flip the
+   * board is running. One scalar per frame and no tween queue, so a move arriving
+   * mid-dissolve snaps the pair to its target exactly like every other layer
+   * (§6.4) — and a settled board takes the `flip === null` branch, i.e. exactly
+   * `w = 1` or `0`, never a stale mid-dissolve alpha.
+   *
+   * Cover-fit is recomputed here, not cached: this runs only when the ground is
+   * dirty (resize, level change, flip), and `layout` is what R-L7 recomputes.
+   */
+  private paintBackground(time: number): void {
+    const { A, B } = this.backgroundArt;
+    if (A === null && B === null) return;
+
+    const flip = this.flip;
+    const raw =
+      flip === null
+        ? 1
+        : progress(
+            time,
+            flip.startAt + flip.timings.background.start,
+            flip.timings.background.dur,
+          );
+    const w = phaseWeight(
+      flip?.fromPhase ?? this.shown.phase,
+      this.shown.phase,
+      easeOutQuad(raw),
+    );
+
+    const width = this.scene.scale.width;
+    const height = this.scene.scale.height;
+    for (const image of [A, B]) {
+      if (image === null) continue;
+      // §11 — cover-fit to the play area: scale the 1920×1080 plate up until it
+      // covers the box on its short axis, then centre it. Letterboxing instead
+      // would show the page ground at the edges, which is a *fallback*, not a
+      // framing.
+      const cover = Math.max(width / image.frame.realWidth, height / image.frame.realHeight);
+      image.setDisplaySize(image.frame.realWidth * cover, image.frame.realHeight * cover);
+      image.setPosition(width / 2, height / 2);
+    }
+
+    // Each plate owns its own phase, so a *pair* dissolves and a *single* plate
+    // simply appears/disappears for its phase (the other slot's page ground is its
+    // honest fallback). `phaseWeight`'s stacking rule: A opaque under, B faded in.
+    const paired = A !== null && B !== null;
+    if (A !== null) A.setAlpha(paired ? 1 : 1 - w);
+    if (B !== null) B.setAlpha(w);
   }
 
   /**
@@ -684,6 +886,9 @@ export class BoardView {
           // from the same mixed map `paintGround` filled it with, so the punch is
           // exact at every frame of the `tokens` cross-fade.
           knockout: this.knockoutFor(tile.x, tile.y, tokens),
+          // R-005a — every painter gets the same port; only the goal stands in for
+          // delivered art today, and a class with no asset simply never asks.
+          art: this.artPort,
         });
       }
     }
@@ -726,9 +931,36 @@ export class BoardView {
       denyAlpha = timings.deny.ringAlpha;
     }
 
-    this.actorGfx.clear();
-    paintActor({
-      g: this.actorGfx,
+    // The A-03 pair is **one** element (two manifest rows, one Asset ID): half a
+    // pair is not a body, it is a stray sprite, so the texture path runs only when
+    // both forms mounted — otherwise the vector disc below draws, and R-P2's
+    // badge names the slot that failed.
+    const spiritA = this.spiritArt.A;
+    const spiritB = this.spiritArt.B;
+    if (spiritA !== null && spiritB !== null) {
+      const box = this.layout.cellSize * ACTOR_ART_BOX;
+      // `mix` is §6.2's `tokens` row — the same scalar the old disc's colour was
+      // lerped on, so the texture swap inherits its timing exactly.
+      const w = phaseWeight(flip?.fromPhase ?? this.shown.phase, this.shown.phase, mix);
+      for (const image of [spiritA, spiritB]) {
+        image.setPosition(cx, cy);
+        // §6.2 hop — squash is a *shape* rule, so it scales the sprite exactly as
+        // it scaled the ellipse; the pair's byte-identical alpha keeps A and B in
+        // step, so nothing shifts between the forms.
+        image.setDisplaySize(box * squash.sx, box * squash.sy);
+      }
+      // `phaseWeight`'s stacking rule: A opaque underneath, B faded in on top —
+      // fading both would leak the board through the actor at w = 0.5.
+      spiritA.setAlpha(1);
+      spiritB.setAlpha(w);
+    } else {
+      spiritA?.setAlpha(0);
+      spiritB?.setAlpha(0);
+    }
+
+    // Both halves of the actor painter share every field except the `Graphics`
+    // they draw into: one container, two passes, so `g` is supplied at the call.
+    const ctx: Omit<ActorPaintContext, "g"> = {
       cx,
       cy,
       cellSize: this.layout.cellSize,
@@ -736,6 +968,7 @@ export class BoardView {
       look,
       squash,
       denyAlpha,
+      textureBody: spiritA !== null && spiritB !== null,
       // R-C13.4 — geometry from the timing table, colour from the boot-derived
       // `fx.phaseRing` token. Fires once per flip that solidified the tile under
       // the player, never while standing (R-C8 forbids a looping ring).
@@ -760,7 +993,14 @@ export class BoardView {
               strokeWidthCss: flip.timings.ring.strokeWidth,
             }
           : null,
-    });
+    };
+
+    // One container, two painters, one fixed order: below the body, then the
+    // delivered forms (their own child slots), then the ring + deny arc above.
+    this.actorGfx.clear();
+    this.actorOverlayGfx.clear();
+    paintActor({ ...ctx, g: this.actorGfx });
+    paintActorOverlay({ ...ctx, g: this.actorOverlayGfx });
   }
 
   /** L6 — R-T6 hover ring (desktop affordance; never the only cue, never a hit area). */
