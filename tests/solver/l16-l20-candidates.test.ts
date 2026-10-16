@@ -16,9 +16,12 @@
  * members live in `src/levels/` root and the lessons that carry the `block-l1619`
  * obligation are their registry rows, so this suite walks the root set and derives
  * `BLOCK_IDS` from `documentedLesson(id)?.obligation` — never from a typed 16–19.
- * The candidate shelf (`src/levels/candidates/`) is asserted **empty**: its role was
- * to hold the block while the census stayed at the shipped 15, and that role is over
- * (the census now reads 19 through the single `EXPECTED_LEVEL_COUNT` pin).
+ * The candidate shelf (`src/levels/candidates/`) is asserted to hold **exactly the
+ * booked pre-registration set**, and only rungs strictly above the registered root
+ * max: the shelf's role is to hold a proven candidate *while its rung is above the
+ * census ceiling* (QA-012; R-003c moved l016–l019 off it the same way when they were
+ * registered). A shelf file at or below the ceiling is a root row hiding outside the
+ * census, and the pin below still catches it.
  *
  * Why the pre-block filter matters: the block's own rows clear the cut by design
  * (`D_exec` 17.1 … 22.9) and `l016` carries the one NAMED `B` excursion (1.7000).
@@ -107,7 +110,7 @@ describe("L16–L19 block — derived obligations, re-measured per run", () => {
     expect(PRE_BLOCK.at(-1)?.id).toBe(BLOCK_MIN - 1);
   });
 
-  it("is registered as the L16–L19 ladder the law publishes, and the shelf is empty", () => {
+  it("is registered as the L16–L19 ladder the law publishes, above a shelf that is pinned to the booked candidate", () => {
     // The four rows the `block-l1619` obligation names are exactly `BLOCK_L1619_IDS`.
     expect([...BLOCK_IDS]).toEqual([...BLOCK_L1619_IDS]);
     // Contiguous, one rung per id, id === file name — a mis-named rung would break
@@ -125,11 +128,36 @@ describe("L16–L19 block — derived obligations, re-measured per run", () => {
     }
   });
 
-  it("the candidate shelf is empty — the block no longer lives outside the census", () => {
+  /**
+   * The booked shelf, **named once**: the candidates that a pre-registration
+   * transcript (R-003b/R-003c lineage; LV-011 for `l020`) measured and proved while
+   * their rung sat above the registered root max. Registering a candidate moves it
+   * to `src/levels/` *and* off this list, in the same commit — so this pin cannot
+   * silently absorb a new shelf file, and a *missing* booked file fails too.
+   */
+  const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = ["l020.json"];
+
+  it("the shelf holds only the booked pre-registration candidates, all above the census ceiling", () => {
+    const rootMax = Math.max(...shipped.map((level) => level.id));
     const shelf = existsSync(CANDIDATES_DIR)
-      ? readdirSync(CANDIDATES_DIR).filter((n) => /^l\d+\.json$/.test(n))
+      ? readdirSync(CANDIDATES_DIR)
+          .filter((n) => /^l\d+\.json$/.test(n))
+          .sort()
       : [];
-    expect(shelf).toEqual([]);
+    // (a) Set equality with the booking: the shelf's role is a *named* hold, not a
+    //     dumping ground. A stray `l012.json` (a root row hiding outside the census)
+    //     or an unregistered extra is caught here.
+    expect(shelf).toEqual([...BOOKED_CANDIDATE_IDS_IN_SHELF]);
+    // (b) The honest law, re-derived per run: a shelf rung must strictly exceed the
+    //     registered root max. At or below it there is no "candidate" — there is a
+    //     duplicate of a registered rung, which would be a census lie.
+    expect(rootMax).toBe(19);
+    for (const name of shelf) {
+      const id = Number(/^l(\d+)\.json$/.exec(name)?.[1]);
+      expect(id, `${name} sits at or below the registered root max ${rootMax}`).toBeGreaterThan(
+        rootMax,
+      );
+    }
   });
 
   it("L20 is the documented ABSENT rung: the ladder's tail is the dataset's tail, and nothing claims to be above it", () => {
@@ -285,6 +313,23 @@ describe("L16–L19 block — derived obligations, re-measured per run", () => {
       expect(analyse(forged, explore(forged)).shortestSolution).not.toBe(forged.par);
     });
 
+    /**
+     * SEMANTICS DRIFT — booked for R-003d (F-L20-2). No logic change in this control.
+     *
+     * What this control encodes is the *switch-gated-door* reading of "latch removed":
+     * the bare board is still SOLVABLE, because the door's own phase colour keeps it
+     * passable in the other phase, and the refusal is named by the audit
+     * (`door-without-switch`) rather than by solvability. That reading is **by
+     * construction FALSE for a sealed-landing board**: `l020.json` (on the shelf) uses
+     * the latch as the landing device, so dropping `switches` makes the bare board
+     * UNSOLVABLE — which is why `scripts/prove-candidate.ts:652` already lists
+     * `"unsolvable"` beside `"latch-grade"` in that mutation's accepted-refusal set.
+     * When the registration train moves l020 into root, `base` becomes that board and
+     * this control MUST be re-pointed (assert the named `unsolvable` refusal) rather
+     * than inherited verbatim; the same applies to `allOffShortestSolution`'s
+     * "stays defined" clause below. Root rows l016–l019 are unaffected today: `base`
+     * is `BLOCK_MIN` = l016, a plain switch-gated door, so both clauses hold there.
+     */
     it("refuses a board with its latch removed (a bare door is a violation, not a puzzle)", () => {
       const naked: Level = { ...base, switches: [] };
       const nakedGraph = explore(naked);
