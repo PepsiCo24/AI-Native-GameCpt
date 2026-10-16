@@ -1468,6 +1468,26 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    by me now: UA-0014's integration record gates the train on the art chain's own green round, which is exactly
    what is red in (c). The next train carries QA-005g + `9c1bb70` with it.
 
+81. **The free-route ruling landed — and dispatch concurrency is now a resource.**
+   AGENTS.md §11 carries the standing user ruling (2026-10-16): every role defaults to
+   `opencode/deepseek-v4.1-flash-free`, vision tickets overriding per dispatch. Verified **on disk** by me
+   rather than assumed: `opencode.json`'s top-level `model` is the free route (`agents: {}` empty) **and all
+   ten** `.opencode/agents/*.md` frontmatter blocks carry `mode:` + `model: opencode/deepseek-v4.1-flash-free`
+   (`reviewer.md` additionally keeps its edit-deny permission block). The reason is in this ledger's own
+   casualties — RV-008's full audit, UA-0014 ×3, QA-004's batch of five — all request-cost-ceiling deaths on
+   the premium routes; the ruling is the right call for cost and it has a second-order effect the studio must
+   now plan around: **the free route rate-limits by concurrency.** Measured within minutes of the ruling:
+   QA-005h was mid-flight and producing (`playwright.live.config.ts` + `tests/e2e-live/**` on disk), RV-009
+   was dispatched beside it and died **instantly** on `Rate limit exceeded` — the same disease in a new
+   costume, not a code problem. Operational rule I am adopting and recording here: **serialize heavy lanes
+   (≤ 2 concurrent subagents) and re-dispatch onto an existing session instead of batching new ones.**
+   Consequence: the reviewer gap is **queued, not lost** — RV-009 (full art-chain audit, closing RV-008's
+   quota death) is re-dispatched the moment a slot frees; its worktree `agent/reviewer/rv-009-art-chain`
+   already exists. Named, not silently widened: the ruling is **text-only**, so art-byte reads (the
+   UA-0013/UA-0014 class) and any screen-image judging must carry an explicit per-dispatch model override —
+   `ui-art-director.md`'s description still says vision-capable while its pinned route is the free one, and
+   `docs/ai-model-matrix.md` has not caught up: **DG-005 (docs lane)** owns that pass.
+
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
 root cause in **my own** out-of-repo harness: it fabricated the initial state as `{ doorsOpen: {} }` instead of calling `initialState(level)`. Door openness is
