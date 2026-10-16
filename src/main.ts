@@ -48,6 +48,7 @@ import { LevelScene } from "@/game/scenes/level-scene";
 import type { AppIntents } from "@/game/systems/app-intents";
 import { GameSession } from "@/game/systems/session";
 import { assertNoPlaceholders } from "@/game/theme/assets";
+import { assertArtSourcesMatchSlots } from "@/game/theme/art";
 import { LAYOUT, theme, toInt } from "@/game/theme/tokens";
 
 /** R-L6: `devicePixelRatio` is capped at 2 — never a 3× framebuffer on mobile. */
@@ -77,6 +78,10 @@ function boot(container: HTMLElement): void {
     // R-P6 — the production gate. It throws only when art is expected to be
     // integrated (`ART_INTEGRATED`), see `theme/assets.ts`.
     assertNoPlaceholders();
+    // §11/R-P5 — the shipped URL table and the resolved slots must be the same
+    // set, both ways (`theme/art.ts`). Neither half of that mismatch is visible
+    // in a screenshot, so it is a boot rule.
+    assertArtSourcesMatchSlots();
     levels = loadPlayableLevels();
     // `?level=<n>` — the dev / playtest / E2E entrance (docs/ui-ux.md §1: there is
     // no level-select screen). Out of range falls back to L1; nothing is persisted
@@ -140,6 +145,11 @@ function boot(container: HTMLElement): void {
     measure,
     onCellSizeCss: (cellSizeCss) => {
       hud.setCellSizeCss(cellSizeCss);
+    },
+    // R-P2/R-P3 — the loader's measured answer replaces the declared one, so the
+    // dev labels name what is on the board (a failed mount re-lists its slot).
+    onArtStatus: (slots) => {
+      hud.setPlaceholderSlots(slots);
     },
     reducedMotion,
   });

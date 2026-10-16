@@ -37,6 +37,8 @@ import { BoardView } from "@/game/renderer/board-view";
 import type { Viewport } from "@/game/renderer/grid-mapping";
 import type { AppIntents } from "@/game/systems/app-intents";
 import type { GameSession } from "@/game/systems/session";
+import type { PlaceholderSlot } from "@/game/theme/assets";
+import { publishArtMount, queueDeliveredArt } from "@/game/theme/art";
 import { flipTimings } from "@/game/theme/tokens";
 
 /** Everything the scene needs, injected by the composition root (`src/main.ts`). */
@@ -51,6 +53,13 @@ export interface LevelSceneContext {
   readonly measure: () => Viewport;
   /** `BoardView.onLayout` → HUD (the R-T5 swipe hint needs the CSS cell size). */
   readonly onCellSizeCss: (cellSizeCss: number) => void;
+  /**
+   * The slots still drawn as placeholders **once the loader has resolved** —
+   * declared-unresolved *plus* anything that failed to mount. Fired once per
+   * scene, before the first frame (`create`), and it is the HUD's only art input:
+   * R-P2/R-P3's labels describe what is being drawn, never what was requested.
+   */
+  readonly onArtStatus: (slots: readonly PlaceholderSlot[]) => void;
   readonly reducedMotion: boolean;
 }
 
@@ -77,7 +86,26 @@ export class LevelScene extends Phaser.Scene {
 
   // `create` is not declared on `Phaser.Scene` (Phaser calls it by name), so it is
   // the one lifecycle method that must not carry `override`; `update` is declared.
+  /**
+   * §11 — the delivered art is queued here, so the **first presented frame** is
+   * already drawn with it (no placeholder→art pop). Two properties keep this from
+   * becoming an art dependency:
+   *
+   * 1. a file that 404s, is blocked or fails to decode is a *loader* outcome, not
+   *    a scene failure — Phaser finishes `preload` either way and every painter
+   *    falls back to its vector placeholder (`theme/art.ts` `isArtMounted`);
+   * 2. nothing outside `create()` can read the result, and `create()` reads it
+   *    once ({@link publishArtMount}), so art is always "what the board is drawn
+   *    with", never "whether the board is drawn".
+   */
+  preload(): void {
+    queueDeliveredArt(this);
+  }
+
   create(): void {
+    // The loader has resolved by now: publish what actually arrived so the HUD's
+    // R-P3 labels can be honest *before* the first frame (R-P2's degrade case).
+    this.ctx.onArtStatus(publishArtMount(this.textures));
     this.buildView(this.ctx.session.state);
 
     const scene = this;
