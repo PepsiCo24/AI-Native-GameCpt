@@ -263,6 +263,18 @@ test.describe("portal crossing is phase-gated (M2 — L11)", () => {
   });
 
   test("L11 — the same press through the UI: phase B teleports, phase A steps", async ({ page }) => {
+    // CI-envelope sizing (QA-005i). This row walks two derived routes plus the
+    // discriminating press, reading the HUD and probing pixels after every step,
+    // so it sat at ~72 % of the 30 s default before art shipped — named as a
+    // *watch row* for exactly that reason (item 77(d)): measured 20.7 s
+    // (run 38849186852) and 21.6 s (quiet green round). With the art bundle live
+    // it measured 30.8 s in run 38857692208 and went red on
+    // `Test timeout of 30000ms exceeded` — the wall-clock class QA-005g removed
+    // for `latch-door.spec.ts:134`, on the row that had no budget. Budget = ~3×
+    // the worst art-era observation, the same rule; wall clock only, and every
+    // claim below is unchanged.
+    test.setTimeout(90_000);
+
     const ref = refOf(REFS, PORTAL_LEVEL_ID);
     const { pair } = cheapestPortalFixtures(ref);
     expect(pair).not.toBeNull();
