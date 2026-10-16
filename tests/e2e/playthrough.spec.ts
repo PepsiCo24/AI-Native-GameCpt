@@ -79,6 +79,15 @@ test.describe("par route → win → HUD contract", () => {
     test(`L${String(ref.id)} — par route ${ref.route.map((d) => d[0]?.toUpperCase()).join("")} wins with the HUD tracking every flip`, async ({
       page,
     }) => {
+      // CI-envelope sizing (QA-005j) — one row per level, none of them had a
+      // budget before this one; the cost grows with the route (open + probe + a
+      // press and a HUD read per leg). Measured on the 2-core software-GL runner
+      // at the worst levels (L9/L10/L15): 23.7–26.4 s in the pre-gate slow round
+      // (`38862977845`) and 24.5–26.2 s in green round `38869874603` — 80–88 % of
+      // the 30 s default. Same class and same ~3× rule as `:135`/QA-005g; wall
+      // clock only, every assertion below is unchanged.
+      test.setTimeout(90_000);
+
       await installPixelReadback(page);
       await openLevel(page, levelUrl(ref.id));
 

@@ -199,6 +199,17 @@ test.describe("portal crossing is phase-gated (M2 — L11)", () => {
   test("L11 — the par route wins through the UI and the teleport leg jumps the board", async ({
     page,
   }) => {
+    // CI-envelope sizing (QA-005j) — the same wall-clock class and the same ~3×
+    // rule as QA-005g (`latch-door.spec.ts:134`) and this file's own `:265`
+    // (QA-005i), on the one row of the pair that had no budget. It walks the
+    // level's derived route with a pixel probe per leg. Measured on the 2-core
+    // software-GL runner: 23.7 s in the pre-gate slow round (`38862977845`) and
+    // 22.7 s / 24.4 s in the two green rounds that carried the readiness gate
+    // (`38869874603` / `38867895111`) — 76–81 % of the 30 s default, and the
+    // forced-concurrency census reddened it at 30 s (QA-010 dispatch). Fast rounds
+    // measure ~17 s, so the exposure is wall clock, never an assertion.
+    test.setTimeout(90_000);
+
     const ref = refOf(REFS, PORTAL_LEVEL_ID);
     await installPixelReadback(page);
     await openLevel(page, levelUrl(PORTAL_LEVEL_ID));

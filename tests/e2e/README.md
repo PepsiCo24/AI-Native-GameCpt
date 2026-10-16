@@ -251,6 +251,9 @@ runner measured **7 failed / 79 passed (16.9 min)** with `--retries=1`:
 | `transient.spec.ts:116` / `:257` (`frames > 15`, `gridMs < 60`) | local-calibrated constants | runner-aware: the idle frame grid is **measured first**, the recorder window is sized from it, and the `gridMs` ceiling is `max(60, 2 × idle)` |
 | `mobile.mobile.spec.ts:207` R-T4, `Expected: 1, Received: 0` | gesture commit vs HUD read | cached CDP session + a frame after `touchEnd` + the bounded `expectMoves` poll |
 | `controls.spec.ts:111`, `latch-door.spec.ts:134` L6/L10, `playthrough.spec.ts:79` L5, `portal.spec.ts:199` — runs `38863193343` / `38863790675`, `Expected 1, Received 0` and a depth-4 route counted **3** | **a press LOST at the input-attach window** — *not* a HUD-read race: the counter/phase are written **synchronously inside the DOM `keydown`'s own task** (§1.9 verification probe: an in-event read sees `moves 1` on a listening board and `moves 0` — still `0` three seconds later — when only the art loader is slowed) | `openLevel` waits for the delivered-art loader (`768e93e`, §1.9). The five rows A/B under `+1200 ms`/png: **5 failed → 5 passed**. The read path is deliberately **not** changed: a retrying read cannot recover a press that was never handled — the 2 s `expectMoves` poll on `mobile.mobile.spec.ts:331` failed exactly that way under the same cause |
+| `latch-door.spec.ts:217` L8 door walk, **29.2 s** (pre-gate slow round `38862977845`) / 28.9 s (`38869874603`) | **wall clock**, not an assertion — **97 %** of the 30 s default | QA-005j: documented 90 s CI budget (~3× worst, the QA-005g rule) |
+| `playthrough.spec.ts:79` L1→L15 par walk, worst **26.4 s** (`38862977845`) / 26.2 s (`38869874603`) | **wall clock**, not an assertion — **88 %** of the 30 s default | QA-005j: documented 90 s CI budget |
+| `portal.spec.ts:199` L11 UI walk, **23.7 s** (`38862977845`) / 24.4 s (`38867895111`) | **wall clock**, not an assertion — **81 %** of the 30 s default | QA-005j: documented 90 s CI budget (its sibling `:265` already had one, QA-005i) |
 
 **Both crossed rows crossed twice (QA-009).** The two QA-005i rows above went red *again* in
 run **38860398944** (`d9a83dd`), on the same messages and zero assertion flips —
@@ -261,7 +264,17 @@ control (identical tree, 31.4 m against 20.3 m) withdrew the art-inflation attri
 project-status item 84; local interleaved controls confirm the art state costs no more per frame,
 per boot, or per harness path. The budgets above are ceilings for the ENVIRONMENT wall clock
 (QA-005g class), sized by the budget-when-crossed law (item 77(d)) at ≥2.5× observed.
-No other row is budgeted.
+
+**QA-005j — the ceiling re-scan (from the logs, not by eye).** Every one of the **107** row times
+in the two green rounds that carried the readiness gate (`38867895111`, `38869874603`) was parsed
+from the job log and compared against *that row's own* ceiling (30 s default; 90 s / 120 s /
+360 s where set). Exactly **three** rows sat at ≥ 75 % of the default; none other is above 66 %
+of its budget. All three were already there *before* the gate — 29.2 s / 26.4 s / 23.7 s in the
+pre-gate slow round `38862977845`, and 18.0 s / 12.5 s / 17.0 s in the fast round `38861480689` —
+so this is the pre-existing wall-clock exposure, not the gate's cost; and they are the *same
+three families* the fast rounds lost presses on. The two risk regimes are therefore
+**complementary**: fast ⇒ a press lost at the input-attach window (fixed by the gate, §1.9);
+slow ⇒ wall clock against the ceiling (paid by these envelopes, wall clock only, `expect(`-diff 0).
 
 The `frames > 15` tooth survives by construction: the window is `max(700 ms,
 24 × idle grid)`, so it spans ≥ ~24 of the *runner's own* frames on any machine

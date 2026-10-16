@@ -215,6 +215,15 @@ test.describe("switch latch ⇒ door blocking (R-D1) and door occupancy (R-D7)",
   }
 
   test("L8 — the same walk, latched and unlatched, through the UI", async ({ page }) => {
+    // CI-envelope sizing (QA-005j) — the same class as this file's derived `:134`
+    // loop (QA-005g, 90 s), on a row that had been left at the 30 s default: two
+    // door walks plus a pixel probe per leg. Measured on the 2-core software-GL
+    // runner: 29.2 s in the pre-gate slow round (`38862977845`) and 28.9 s /
+    // 25.9 s in the two green rounds carrying the readiness gate (`38869874603` /
+    // `38867895111`) — 86–97 % of the ceiling. Budget = ~3× the worst observation,
+    // the QA-005g rule; wall clock only, every claim below is unchanged.
+    test.setTimeout(90_000);
+
     const ref = refOf(REFS, 8);
     const { occupancy, refusedEntry } = cheapestDoorFixtures(ref);
     expect(occupancy).not.toBeNull();
