@@ -1,14 +1,17 @@
 /**
- * L6–L15 unlock evidence — the playable slice, the `?level=` deep link, the
+ * The whole unlocked slice — the playable levels, the `?level=` deep link, the
  * progression through the door/switch content and the R-T6 hover gate.
  *
  * L11 (R-003) is the first unlocked board that carries a **portal**; R-003b then
- * registered ADR-design-0003's L12–L15 block (`docs/ai-native-pipeline.md` §8.10:
- * `par == shortestSolution` 15/15, validator 15/15 ok · 0 errors), so the portal
+ * registered ADR-design-0003's L12–L15 block, R-003c/GAME-001 the L16–L19 block and
+ * GAME-002/QA-014 the L20 terminal rung
+ * (`docs/ai-native-pipeline.md` §8.10/§8.13: `par == shortestSolution 20/20`,
+ * validator 20/20 ok · 0 errors), so the portal
  * assertions below are no longer "no shipped level has one" and the unlock sweep
- * covers the whole shipped slice. The registry pin re-typed here is **15** — the
- * L12–L15 block's own dossier value — and everything that can derive from the
- * loaded registry does (see `UNLOCKED_IDS` / `LEVEL_IDS`). The board files
+ * covers the whole shipped slice (QA-011: the registry census here derives from the
+ * dataset on disk and from the shared `EXPECTED_LEVEL_COUNT`; the typed id ladder
+ * that used to sit on line ~104 is gone, so an unlock needs no edit in this file).
+ * The board files
  * themselves are data owned by Level AI + Solver and are never edited from here.
  *
  * Everything here goes through the **shipped** path: `loadLevels()` (schema +
@@ -44,6 +47,7 @@ import {
   startIndexForLevel,
 } from "@/game/levels/level-registry";
 import { GameSession } from "@/game/systems/session";
+import { discoveredFileIds } from "../e2e/helpers/levels";
 
 const { levels, rejected } = loadLevels();
 
@@ -73,36 +77,23 @@ function hoverCell(session: GameSession, cell: Vec): Vec | null {
   return dir !== null && session.movePreview(dir) ? cell : null;
 }
 
-describe("level registry — L6–L15 are unlocked", () => {
+describe("level registry — L6–L20 are unlocked", () => {
   it("lists the whole authored slice, in order", () => {
-    // The registry's file list is the deliberately hand-typed pin (a silent
-    // `LEVEL_SOURCES` edit must fail here, not self-derive green): re-typed to the
-    // 15-level dataset of `docs/ai-native-pipeline.md` §8.10 (LV-009-B), whose
-    // registry unlock is R-003b / ADR-design-0003 §8 item 6.
-    expect(LEVEL_SOURCES.map((source) => source.file)).toEqual([
-      "l001.json",
-      "l002.json",
-      "l003.json",
-      "l004.json",
-      "l005.json",
-      "l006.json",
-      "l007.json",
-      "l008.json",
-      "l009.json",
-      "l010.json",
-      "l011.json",
-      "l012.json",
-      "l013.json",
-      "l014.json",
-      "l015.json",
-    ]);
+    // The registry's file list is checked against the **dataset on disk** (QA-011,
+    // derivation-first): `discoveredFileIds()` is an independent fs scan, so a
+    // hand-edited `LEVEL_SOURCES` still fails here — the typed `[…l015.json]` literal
+    // this used to hold was a second, stale copy of the dataset's own inventory and
+    // was exactly what R-003c's L16–L19 registration invalidated.
+    expect(LEVEL_SOURCES.map((source) => source.file)).toEqual(
+      discoveredFileIds().map((id) => `l${String(id).padStart(3, "0")}.json`),
+    );
   });
 
-  it("accepts every file: ids 1..15, nothing rejected, nothing dropped", () => {
+  it("accepts every file: ids 1..N, nothing rejected, nothing dropped (N = the discovered dataset)", () => {
     expect(rejected).toEqual([]);
-    expect(levels.map((level) => level.id)).toEqual(
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-    );
+    // Same two-source rule at the parsed level: the registry's own ids (read through
+    // the shipped loader) against the file names on disk.
+    expect(levels.map((level) => level.id)).toEqual(discoveredFileIds());
   });
 
   it("carries the M3 content from L6 on and a portal on every level from L11 on", () => {
@@ -222,7 +213,7 @@ describe("progression — the win dialog walks L5 into L6", () => {
   });
 });
 
-describe("L6–L15 are playable end-to-end (solver-verified routes)", () => {
+describe("the whole unlocked slice is playable end-to-end (solver-verified routes)", () => {
   for (const id of UNLOCKED_IDS) {
     it(`L${String(id)}: the shortest route wins in exactly \`par\` moves`, () => {
       const session = new GameSession(levels, {

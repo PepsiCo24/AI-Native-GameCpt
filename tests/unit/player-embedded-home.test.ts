@@ -48,6 +48,11 @@ import type { GameState, SearchState } from "@/core/state/types";
 import { LEVEL_SOURCES, loadLevels } from "@/game/levels/level-registry";
 import { wallRenderState } from "@/game/renderer/cell-state";
 import { GameSession } from "@/game/systems/session";
+import {
+  EXPECTED_LEVEL_COUNT,
+  contiguousIds,
+  discoveredFileIds,
+} from "../e2e/helpers/levels";
 import { door, makeLevel } from "../helpers/fixtures";
 
 const { levels, rejected } = loadLevels();
@@ -84,17 +89,18 @@ function graphOf(level: Level): ReachableGraph {
  * ──────────────────────────────────────────────────────────────────────────── */
 
 describe("isPlayerEmbedded — core owns it via solidAt (R-004)", () => {
-  it("the registry is the shipped fifteen (the sweep below is over real content)", () => {
+  it("the registry is the shipped dataset (the sweep below is over real content)", () => {
     expect(rejected).toEqual([]);
-    // The registry pin is the hand-typed id ladder (anti-re-baseline); the count
-    // is derived from it, so a dropped source fails the ladder, not a duplicated literal.
-    // Re-typed to the 15-level dataset of `docs/ai-native-pipeline.md` §8.10 (R-003b,
-    // ADR-design-0003 §8 item 6: L12–L15 registered as data).
+    // The registry pin is the dataset census (QA-011, derivation-first): the count is
+    // the shared `EXPECTED_LEVEL_COUNT` (the one hand-typed count in `tests/**`), the
+    // fs scan must agree with it, and the id ladder is a rule over the registry's own
+    // rows — contiguous `1 … count`. The typed `15` + `[1…15]` pair this used to hold
+    // was a second hand-typed count beside the dataset pin, and R-003c's L16–L20
+    // registration is what exposed it.
     expect(LEVEL_SOURCES).toHaveLength(levels.length);
-    expect(levels.length).toBe(15);
-    expect(levels.map((level) => level.id)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    ]);
+    expect(levels.length).toBe(EXPECTED_LEVEL_COUNT);
+    expect(discoveredFileIds().length).toBe(EXPECTED_LEVEL_COUNT);
+    expect(levels.map((level) => level.id)).toEqual(contiguousIds(EXPECTED_LEVEL_COUNT));
   });
 
   it("agrees with solidAt at every state of every shipped par route", () => {

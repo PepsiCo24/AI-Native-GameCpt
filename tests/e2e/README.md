@@ -250,6 +250,10 @@ runner measured **7 failed / 79 passed (16.9 min)** with `--retries=1`:
 | `refusal.spec.ts:48` (all params, on loaded machines) | the `cells: []` single-instant probe | the bounded poll above |
 | `transient.spec.ts:116` / `:257` (`frames > 15`, `gridMs < 60`) | local-calibrated constants | runner-aware: the idle frame grid is **measured first**, the recorder window is sized from it, and the `gridMs` ceiling is `max(60, 2 × idle)` |
 | `mobile.mobile.spec.ts:207` R-T4, `Expected: 1, Received: 0` | gesture commit vs HUD read | cached CDP session + a frame after `touchEnd` + the bounded `expectMoves` poll |
+| `controls.spec.ts:111`, `latch-door.spec.ts:134` L6/L10, `playthrough.spec.ts:79` L5, `portal.spec.ts:199` — runs `38863193343` / `38863790675`, `Expected 1, Received 0` and a depth-4 route counted **3** | **a press LOST at the input-attach window** — *not* a HUD-read race: the counter/phase are written **synchronously inside the DOM `keydown`'s own task** (§1.9 verification probe: an in-event read sees `moves 1` on a listening board and `moves 0` — still `0` three seconds later — when only the art loader is slowed) | `openLevel` waits for the delivered-art loader (`768e93e`, §1.9). The five rows A/B under `+1200 ms`/png: **5 failed → 5 passed**. The read path is deliberately **not** changed: a retrying read cannot recover a press that was never handled — the 2 s `expectMoves` poll on `mobile.mobile.spec.ts:331` failed exactly that way under the same cause |
+| `latch-door.spec.ts:217` L8 door walk, **29.2 s** (pre-gate slow round `38862977845`) / 28.9 s (`38869874603`) | **wall clock**, not an assertion — **97 %** of the 30 s default | QA-005j: documented 90 s CI budget (~3× worst, the QA-005g rule) |
+| `playthrough.spec.ts:79` L1→L15 par walk, worst **26.4 s** (`38862977845`) / 26.2 s (`38869874603`) | **wall clock**, not an assertion — **88 %** of the 30 s default | QA-005j: documented 90 s CI budget |
+| `portal.spec.ts:199` L11 UI walk, **23.7 s** (`38862977845`) / 24.4 s (`38867895111`) | **wall clock**, not an assertion — **81 %** of the 30 s default | QA-005j: documented 90 s CI budget (its sibling `:265` already had one, QA-005i) |
 
 **Both crossed rows crossed twice (QA-009).** The two QA-005i rows above went red *again* in
 run **38860398944** (`d9a83dd`), on the same messages and zero assertion flips —
@@ -260,7 +264,17 @@ control (identical tree, 31.4 m against 20.3 m) withdrew the art-inflation attri
 project-status item 84; local interleaved controls confirm the art state costs no more per frame,
 per boot, or per harness path. The budgets above are ceilings for the ENVIRONMENT wall clock
 (QA-005g class), sized by the budget-when-crossed law (item 77(d)) at ≥2.5× observed.
-No other row is budgeted.
+
+**QA-005j — the ceiling re-scan (from the logs, not by eye).** Every one of the **107** row times
+in the two green rounds that carried the readiness gate (`38867895111`, `38869874603`) was parsed
+from the job log and compared against *that row's own* ceiling (30 s default; 90 s / 120 s /
+360 s where set). Exactly **three** rows sat at ≥ 75 % of the default; none other is above 66 %
+of its budget. All three were already there *before* the gate — 29.2 s / 26.4 s / 23.7 s in the
+pre-gate slow round `38862977845`, and 18.0 s / 12.5 s / 17.0 s in the fast round `38861480689` —
+so this is the pre-existing wall-clock exposure, not the gate's cost; and they are the *same
+three families* the fast rounds lost presses on. The two risk regimes are therefore
+**complementary**: fast ⇒ a press lost at the input-attach window (fixed by the gate, §1.9);
+slow ⇒ wall clock against the ceiling (paid by these envelopes, wall clock only, `expect(`-diff 0).
 
 The `frames > 15` tooth survives by construction: the window is `max(700 ms,
 24 × idle grid)`, so it spans ≥ ~24 of the *runner's own* frames on any machine
@@ -974,25 +988,230 @@ product's behaviour is unchanged, and on a slow connection that window is real (
 input belongs to the Game Designer / UI-Art lanes — it is logged as an open question in
 `docs/project-status.md`, item 86.
 
+**Independent verification of the class claim (QA-010-midwalk-race dispatch, 2026-10-16).**
+A second dispatch filed QA-010 with a rival class — "the harness samples the HUD between the
+press and the arrival beat and reads a stale or doubled value", remedy "route the racing reads
+through a beat-aware/auto-retrying path". Its premise is true and its conclusion does not
+follow, and that gap is now measured rather than argued.
+
+*Classification (read-only).* All five cloud row-families read the HUD through the **same
+single-`page.evaluate` snapshot** (`hud()`, `helpers/game.ts:307`) — so the dispatch's premise
+holds as stated:
+
+| cloud row (test id) | failing assertion | read | file:line |
+|---|---|---|---|
+| `latch-door.spec.ts:134:5` L6/L10 | `"the searched route is a legal route of exactly that depth"` | one snapshot | `latch-door.spec.ts:170` → `:171` |
+| `latch-door.spec.ts:217:3` L8 | `"latched: the same direction now lands"` | one snapshot | `latch-door.spec.ts:249` → `:250` |
+| `playthrough.spec.ts:79:5` L5/L1 | `` `moves after ${leg.key} (move ${leg.moveCount})` `` | one snapshot | `playthrough.spec.ts:97` → `:98` |
+| `portal.spec.ts:199:3` L11 | `` `moves after ${leg.key} (teleport leg)` `` | one snapshot | `portal.spec.ts:224` → `:229` |
+| `controls.spec.ts:111:3` | `(await hud(page)).moves` | one snapshot | `controls.spec.ts:120` → `:121` |
+
+*Why the premise does not imply the class.* The HUD write is **synchronous with the input**:
+`host.move` → `scene.tryMove` (`level-scene.ts:197`) → `session.move`, the core reducer
+(`session.ts:135`) → `events.emit("move")` (`session.ts:158`) → the HUD's own subscription
+`renderCounters` (`hud.ts:333`), which writes `movesLabel.textContent` (`hud.ts:320`) — all in
+the call stack of the DOM `keydown` that Phaser re-emits synchronously (`input-map.ts:129`; the
+queue re-walk is documented in `key-handler.ts`). A snapshot therefore cannot read a value
+"short by one" on a listening board; only a retrying read of an *in-flight* write could — and
+`pressDirection` already waits two rendered frames after the press resolves.
+
+*The probe that separates loss from staleness.* Three reads per trial, 8 trials per arm, same
+bytes, `?level=5`, one `ArrowDown` straight after `openLevel`: (i) the suite's own snapshot read;
+(ii) a `keydown` listener registered **after boot** (so it runs after Phaser's), reading
+`.ps-moves` synchronously **inside the DOM event's task**; (iii) the same snapshot **3 s later**.
+
+| arm (identical `src/**`; only art delivery differs) | (i) after press | (ii) in-event, same task | (iii) after 3 s |
+|---|---|---|---|
+| pre-fix base `db49823`, fast art | `moves=1 phase=B` (8/8) | **`moves 1`** (8/8) | `1 / B` |
+| pre-fix base `db49823`, art `+1200 ms` | `moves=0 phase=A` (8/8) | **`moves 0`** (8/8) | **`0 / A` — still lost** |
+| post-fix (`768e93e`), art `+1200 ms` | `moves=1 phase=B` (8/8) | `moves 1` (8/8) | `1 / B` |
+
+Read (ii) closes the staleness hypothesis for good: on a listening board the counter is already
+`1` **before the keydown task ends**, so no later read — snapshot or poll — can lag it. Read
+(iii) shows the failed press never commits, in a slow-loader window of over three seconds. The
+reds are a **loss function of the input-attach window**, not a **read function of scheduling**;
+"(ii)=1 must hold or the press was lost" is the invariant the class needs and does not have.
+
+*The real rows, A/B, same instrument (`--workers=2`, zero retries).* The five families under
+`+1200 ms`/png through an external proxy on the pre-fix base: **5 failed** (the CI signature
+verbatim). Post-fix with the in-tree `PS_E2E_ART_DELAY_MS=1200`: **5 passed**.
+
+*The forcing condition, honestly.* One dev server (`:5233`), `--workers=6`, zero retries:
+pre-fix round 1 **55 passed / 0 failed (3.5 m)**; post-fix rounds 1–3 **55 / 0** (3.2 m / 3.5 m /
+3.5 m). **Contention alone does not reproduce this class locally** — consistent with §1.9's
+cloud observation that the *fast* rounds were the red ones: the window needs the loader slow,
+not the CPU busy. No fabricated repro is claimed: the reproduction is the delayed-art arm, and
+it is a positive control (it fails before the gate and passes after it, on the same rows).
+
+**The full census round at that same forcing condition — and the one red it produced, classified
+apart.** `npx playwright test --workers=6` (both projects, zero retries, one `:5233` server):
+**106 passed / 1 failed (6.3 m)**. The red is `portal.spec.ts:199` — one of the five families
+above — and its error is **`Test timeout of 30000ms exceeded`**, stack
+`waitForFrames (helpers/game.ts:49) ← pressDirection (game.ts:423) ← portal.spec.ts:223`: the
+row ran **31.7 s** against the global 30 s default, i.e. it *timed out mid-walk*; **no assertion
+flipped** (`Expected 1 / Received 0` does not appear, and every one of the five rows was green
+in the three targeted `--workers=6` rounds). This is the **wall-clock class** of §1.3, not a
+residual instance of the read class: the 6-worker protocol made the machine's own frame grid
+**244.4 ms** (≈4× off 60 Hz; recorded `gridMs` values 83.3 / 116.7 / 139.0 / 199.9 / 244.4).
+**Not budgeted here, deliberately** — the shipped CI configuration is `workers: 1` (the config's
+own choice, for the transient frame protocol), so the condition that crossed this row is this
+ticket's non-shipped forcing protocol, not the product; portal rows crossing in-budget is
+already what §1.3's watch rows track (item 77(d)'s budget-when-crossed law), and no `expect(`
+line was touched.
+
+*Standing rule — corrected, not restated.* The dispatch's proposed rule
+("mid-walk state reads must settle the beat before asserting") is **refused as false for
+this path**: there is no beat to settle between a keydown and `.ps-moves`. The law is
+**"a short walk counter is a LOST press, never a stale read: check the input-attach window
+(`openLevel`'s loader gate is the source of truth), and do not answer it with a retry"** —
+a retry converts a loud lost-input red into a silent delay and hides the class. The
+counter-example is already on the record: the mobile row failed *inside* a bounded 2 s
+`expectMoves` poll (`38863790675`), which is precisely the remedy that was proposed.
+
+*Disposition.* The dispatch's remedy has **no target**; nothing in `tests/e2e/**` was changed by
+this ticket beyond this ledger (assertion count, messages and the 107 census untouched), and
+`db49823 → develop` changes **no `src/**` byte**, so the A/B isolates the loader gate exactly.
+The probe is a ~40-line throwaway spec (run as `tests/e2e/zz-qa010-probe.spec.ts` in the
+dispatch worktree, **deleted before the census round** so the inventory stays at 107) — the
+three reads above are its whole content, so it rebuilds from this paragraph alone.
+
 ---
 
-## 2. Inventory — 107 cases in 8 files (measured)
+### 1.10 QA-014 — the 20-row pin migration, and the shelf guard it had to keep live
+
+The migration itself is one number (`EXPECTED_LEVEL_COUNT` 19 → 20) plus every derived
+row that moved with it; §2 is the present-tense inventory. Two things in it are worth
+their own record, because both are *liveness* claims rather than counts.
+
+**The shelf's booked set is now empty, and empty is compared, not counted.**
+`tests/solver/l16-l20-candidates.test.ts` asserted its candidate shelf against a
+**booked** list (`["l020.json"]`) while that rung sat above the registered root max.
+R-003d registered the rung, so the booking is `[]` — but the assertion stayed **set
+equality** (`expect(shelf).toEqual([...BOOKED_CANDIDATE_IDS_IN_SHELF])`) precisely so
+the empty case cannot go vacuous. Proved live, on this branch, by dropping files in and
+watching the guard fire by name (each `cp` followed by an `rm`, `src/**` left
+byte-identical — the worktree is clean afterwards):
+
+```
+$ cp src/levels/l020.json src/levels/candidates/l020.json
+  × the shelf holds only the booked pre-registration candidates (now none), all above the census ceiling
+    AssertionError: expected [ 'l020.json' ] to deeply equal []      # a re-appearing registered rung
+$ cp src/levels/l012.json src/levels/candidates/l012.json
+    AssertionError: expected [ 'l012.json' ] to deeply equal []      # a root row hiding outside the census (BELOW rootMax)
+$ cp src/levels/l020.json src/levels/candidates/l021.json
+    AssertionError: expected [ 'l021.json' ] to deeply equal []      # an UNREGISTERED extra (ABOVE rootMax)
+```
+
+The second half of the law — every shelf rung must strictly exceed the registered root
+max — is kept as written and is now **live for the next booking** (`rootMax` itself is
+asserted against the shared dataset pin, so the ceiling still cannot be justified by a
+dataset that moved without the pin moving). With the booking empty its loop is
+unreachable today; that is stated rather than hidden, and the emptiness is what the
+set-equality tooth above actually guards.
+
+**The latch-removed control was re-pointed, not inherited or deleted.** QA-012's drift
+note (F-L20-2) booked the semantics: the *switch-gated-door* reading of "remove the
+latch" (bare board still SOLVABLE, refusal named `door-without-switch`) is **by
+construction false** for a sealed-landing board, because there the latch carries
+*existence*. `base` is `BLOCK_MIN` = l016, so the original control was kept **verbatim**
+(its class is real and still shipped) and the landing rung got the **named `unsolvable`
+reading as its own control**, measured on the registered bytes:
+
+```
+$ # l020 with its switches dropped, via the shipped readers
+naked.solvable            = false          # the reading that does NOT transfer from l016's class
+naked.violations          ⊇ door-without-switch  # the collapse is attributable, not a mystery
+naked.allOffShortest      = null           # and null BEFORE the mutation too
+```
+
+The `allOffStaysDefined` clause got the same treatment: on this class the sanctioned
+measurement is `null` before *and* after the mutation, so it is replaced by the equality
+`null === null` — the honest form of the same emptiness — instead of the weaker
+`not.toBeNull()` that only holds on l016's class.
+
+**A third row moved by rule, not by edit: L20's exhaustive-leg branch.** `route-budget`'s
+n-11 row attempts the unpruned walk and, when the production cap refuses it, asserts the
+refusal; QA-011 derived that at 19 rungs and the admitting set was L1–L16. The new rung
+takes the **refusal leg** — measured here with a throwaway probe on the registered bytes:
+`l020` raises `RouteEnumerationError` at `cap = 2,000,000`, `visits = 2,000,001`,
+`par = 20`, while `l15` (76,132 visits) and `l16` (1,363,684) still fit, i.e. the
+admitting set is unchanged and **no test edit was needed for the branch**; only the
+comment that recorded the QA-011 measurement gained the continuation row (776 / 844 /
+881 / **1,157 ms** for l017–l020 under a concurrent e2e round, all far inside the row's
+30 s guard).
+
+**No production byte was touched.** `git status --porcelain` on the dispatch worktree
+lists `tests/**` only.
+
+---
+
+## 2. Inventory — 132 cases in 8 files (measured)
 
 **Dated note (2026-10-16, QA-005h).** The per-ticket blocks in §1 are **historical
 snapshots**: the `88/0` rounds, the `88 tests in 8 files` `--list` lines and the per-file
 case counts in §1.3–§1.8 were true when those blocks were written and are deliberately
 left as they stand. **This section is the only present-tense inventory in this file.**
-Its header total is the tail line of `npx playwright test --list`
-(`Total: 107 tests in 8 files`) and every number in the `cases` column is that tool's own
-per-file count, read off its output rather than tallied by hand —
-`19 + 29 + 22 + 6 + 8 + 4 + 7 + 12 = 107`, with 95 desktop rows and 12 mobile rows.
+
+**Update (2026-10-16, QA-014 — the 20-row migration, and the FIRST browser walk of
+L20 ever).** GAME-002 registered LV-011's sealed landing at the dataset root (`l020.json`
++ registry row 20 at `4deeb50`), so `EXPECTED_LEVEL_COUNT` moved **19 → 20** in the same
+batch, and the three specs that pin the *ladder* grew with it — 127 → **132 tests in 8
+files** (120 desktop + 12 mobile), the tail line of `npx playwright test --list`:
+`24 + 32 + 39 + 6 + 8 + 4 + 7 + 12 = 132`. The rows below are that tool's own per-file
+counts, read off its output. The whole suite ran green under **zero retries** on the
+frozen bytes of this branch (`PS_E2E_PORT=5244 npx playwright test --retries=0`) —
+**132 passed / 0 failed / 0 flaky** in **666 s = 11.1 m**, i.e. **inside the 19-row
+envelope band** (597.4 s = 10.0 m and 705.3 s = 11.8 m, the two QA-011 rounds) even
+though the census grew and the tail is heavier: slow-row sums, in the QA-005g shape,
+are refusal 246.8 s, playthrough 168.0 s, latch-door 133.4 s, transient 35.2 s, mobile
+34.9 s, controls 24.9 s, portal 14.4 s, input-replay 4.8 s (Σ 662.4 s).
+
+**Three green rounds, and which one is the frozen-bytes evidence.** Round 1 was taken
+*before* this batch's own comment insertions, which moved the chain row
+`playthrough.spec.ts:156 → :163`; rounds 2 and 3 ran after, on the shipped spec bytes
+(`PS_E2E_PORT=5244 npx playwright test --retries=0`, `EXIT=0` each):
+**132 passed / 0 failed in 660 s = 11.0 m (round 2) and 636 s = 10.6 m (round 3)**. The
+four ladder-growing rows across the three rounds, largest-first:
+
+| row | round 1 | round 2 | round 3 | envelope |
+|---|---|---|---|---|
+| unlock chain `playthrough.spec.ts:163` | **57.1 s** | 55.3 s | 52.8 s | 360 s (15.9 % worst) |
+| L20 refusal (`refusal.spec.ts:48`) | **28.1 s** | 28.1 s | 26.6 s | `refusalRouteEnvelopeMs(20)` = 223 s (12.6 % worst) |
+| L20 par walk (`playthrough.spec.ts:79`) | **10.8 s** | 10.2 s | 9.7 s | 90 s (12.0 % worst) |
+| L20 latch-door (`latch-door.spec.ts:134`) | 11.6 s | 11.6 s | **12.3 s** | 90 s (13.7 % worst) |
+| …L19 latch-door, for the ordering claim | 13.3 s | 12.3 s | 12.9 s | — |
+
+Three green rounds differing by ≤ 4 s on every pinned row, with **L20 < L19 on the latch
+row in all three**, is why the numbers below are quoted as observations rather than as a
+best case; the **worst leg of each triple** (bold) is the one used in every envelope
+comparison, and both reference tables below are still true on it.
+
+**No budget was re-derived for this migration, and the arithmetic is why.** The rung is
+the one the derived `refusalRouteEnvelopeMs(par)` was written for (QA-013), so it was
+absorbed with **zero re-migration**: `refusalRouteEnvelopeMs(20) = 223 s` against the
+measured **L20 refusal row 28.1 s = 12.6 % of budget** — while the flat `90_000` it
+replaced would have read 31 % locally and ≈166 s on QA-013's own conservative cloud
+factor, i.e. crossed. The other three ladder-growing rows are unchanged and **none
+crossed**: the unlock chain (`playthrough.spec.ts:163`) re-measured at **57.1 / 55.3 / 52.8 s
+of its 360 s** across the three rounds (15.9 % worst; QA-011's two 19-row rounds were
+51.4 s and 56.3 s, so +1 rung costs +0.8…+5.7 s — the route-length delta), the per-level
+playthrough row at **L20 10.8 / 10.2 / 9.7 s of 90 s** (12.0 % worst, the par-20 peak), and
+the latch-door row at **L20 11.6 / 11.6 / 12.3 s of 90 s** (13.7 % worst) — which is still
+*below* L19 in every round (13.3 / 12.3 / 12.9 s), because the
+sealed landing's portal-entered
+pocket yields a **shorter** occupancy route (measured presses L19 27 → **L20 21**). The
+chain stays a **named WATCH ROW** with its constant *held*, not raised: its two
+projection models disagree by 2.5× (suite-level 2.7–3.2× ⇒ 154–183 s ✓; row-class 8× ⇒
+457 s ✗), so an envelope derived now would be a choice between projections rather than
+a fitted observation — the next cloud round is the crossing observation item 77(d)
+requires. No default was touched and no constant was silently widened.
 
 | file | cases | project | what it pins |
 |---|---:|---|---|
-| `playthrough.spec.ts` | 19 | desktop | L1–L15 par route → win dialog; the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the L1→L15 unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L15` |
-| `refusal.spec.ts` | 29 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one |
-| `latch-door.spec.ts` | 22 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all ten latch levels (L6–L15, the dataset's derived contiguous tail), in-core and through the UI |
-| `portal.spec.ts` | 6 | desktop | M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
+| `playthrough.spec.ts` | 24 | desktop | L1–L20 par route → win dialog (one row per shipped level, from the dataset); the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the **L1→L20** unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L20` and never a stale `L1–L5` |
+| `refusal.spec.ts` | 39 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one (now including L16–L20) — each row's wall-clock budget is the par-derived `refusalRouteEnvelopeMs(ref.par)`, so L20 arrived with its own 223 s envelope and no test edit |
+| `latch-door.spec.ts` | 32 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all **fifteen** latch levels (L6–L20, the dataset's derived contiguous tail — the rule, not a typed list), in-core and through the UI |
+| `portal.spec.ts` | 6 | desktop | the **portal column is every level from L11's debut to the tail** (the rule; QA-011 retired the typed `[11…15]` literal); M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
 | `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
 | `transient.spec.ts` | 7 | desktop | the resampling channel is live; **P1** the 90 ms refusal arc with a **post-hoc** arbiter (QA-005e) whose trigger step comes from the observer's **execution order** (QA-005f: `frameIndex` + `ranAt`, never stamp arithmetic) — the full pixel claim whenever a beat is observed, or a named `RESOLVE-LIMIT` when the recording's own log proves no step could run inside the arc's window, or a loud `BEAT-REQUIRED-ABSENT` when one did and the beat is missing; **P1b** that limit fabricated with a 140 ms/frame stretcher (where the prediction is exact by construction); **P2** the press beat's occlusion proof (timing inequality + pixel-measured geometry) and the bounded arrival transient |
@@ -1006,11 +1225,13 @@ directions, door states, latch fixtures and portal crossings come from `solve()`
 pixel count is typed into a spec; a level edit that removes a behaviour fails the run
 instead of leaving a stale fixture behind. The **dataset inventories** are derived
 too (`datasetIds` / `doorLevelIds` / `discoveredFileIds` / `inventoryViolation`), with
-exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3). A second, narrower
-hand-typed literal exists outside that helper set and is deliberate: `portal.spec.ts:91`
-re-baselines the *portal* inventory (`[11, 12, 13, 14, 15]`) against the derived
-`levelsWithPortals()` — the latches instead assert the structural rule (the door levels
-are the dataset's contiguous tail), so an unlock re-types nothing there.
+exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3). **QA-011 retired the
+last hand-typed literal beside it**: `portal.spec.ts:91` used to re-baseline the
+*portal* inventory as `[11, 12, 13, 14, 15]`; it now asserts the *rule* the dataset
+obeys (`levelsWithPortals()` equals every level id from L11 on), which is what the
+frozen literal could not see — a portal-free rung at L16+ — and the latches assert the
+same shape of rule (the door levels are the dataset's contiguous tail). So the honest
+statement is: **one typed count, zero typed inventories.**
 
 ---
 

@@ -1,5 +1,5 @@
 /**
- * Level registry — loads the authored L1–L15 files and **validates every one**
+ * Level registry — loads the authored L1–L20 files and **validates every one**
  * before it can reach the board.
  *
  * `docs/architecture.md` §7 / ADR-0004: schema → rule validation → (solver, at CI
@@ -41,6 +41,11 @@ import l012 from "@/levels/l012.json";
 import l013 from "@/levels/l013.json";
 import l014 from "@/levels/l014.json";
 import l015 from "@/levels/l015.json";
+import l016 from "@/levels/l016.json";
+import l017 from "@/levels/l017.json";
+import l018 from "@/levels/l018.json";
+import l019 from "@/levels/l019.json";
+import l020 from "@/levels/l020.json";
 
 interface LevelSource {
   readonly file: string;
@@ -77,6 +82,23 @@ export const LEVEL_SOURCES: readonly LevelSource[] = [
   { file: "l013.json", raw: l013 },
   { file: "l014.json", raw: l014 },
   { file: "l015.json", raw: l015 },
+  // L16–L19 is R-003c's registered block (the ADR-design-0003 successor clause:
+  // constant doors on the latch block, `docs/ai-native-pipeline.md` §8.11). All
+  // four are `switchRequired: required` — the first non-exempt latch: all-OFF is
+  // a measured no-goal state — and 19/19 ship with `par == shortestSolution`.
+  // Same shape of input as L1–L15: four rows, no new scene logic, no painter seam.
+  { file: "l016.json", raw: l016 },
+  { file: "l017.json", raw: l017 },
+  { file: "l018.json", raw: l018 },
+  { file: "l019.json", raw: l019 },
+  // L20 is R-003d's registered tail rung of the same latch block, closing
+  // L16–L20 (ADR-design-0003 successor clause, `docs/ai-native-pipeline.md`
+  // §8.11): `switchRequired: required` like its four block-mates — all-OFF is a
+  // measured no-goal state — par 20 / D_exec 24.729412, 252 ordered two-press
+  // routes and 14 refusals on the certified root. Same shape of input as
+  // L1–L19: one row, no new scene logic, no painter seam. The file stays a
+  // read-only input (`src/levels/**` is Level AI + Solver's).
+  { file: "l020.json", raw: l020 },
 ];
 
 export interface LoadReport {
@@ -145,7 +167,7 @@ export function startIndexForLevel(levels: readonly Level[], requested: number |
 }
 
 /**
- * `L1–L15` — the **shipped ladder's own range**, derived from the playable list.
+ * `L1–L20` — the **shipped ladder's own range**, derived from the playable list.
  *
  * The end panel's copy must name the ladder the player actually cleared, so it is
  * computed from the registry rather than written down: QA-005 pinned the stale

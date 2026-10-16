@@ -29,7 +29,7 @@
 
 import { expect, test } from "@playwright/test";
 
-import { loadReferenceLevels, levelUrl } from "./helpers/levels";
+import { loadReferenceLevels, levelUrl, refusalRouteEnvelopeMs } from "./helpers/levels";
 import {
   expectActorAt,
   boardGeometry,
@@ -53,7 +53,40 @@ test.describe("illegal move ⇒ no move, no flip, no position change", () => {
       // 2-core software-GL CI runner it exceeded the default 30 s wall clock
       // (measured: L3/L4/L9 at 30.8 s, project-status item 66) while it runs in
       // ~5 s locally. Wall clock, never an assertion: every claim below is intact.
-      test.setTimeout(90_000);
+      //
+      // QA-011 at 19 rows — this is now the suite's slowest per-level class, and
+      // the tail is the peak: measured locally on the frozen bytes (`--retries=0`,
+      // art-era, two green rounds) L16 13.4→22.1 / L17 14.0→23.6 / L18 18.4→28.0 /
+      // **L19 20.1→28.4 s**, against L15 8.9 s and ~5 s for L3/L4/L9 — because the
+      // refusal surface is walked once per leg and the tail's par is 12/14/16/18.
+      // That is 22–32 % of the budget on this fast machine. Projected onto CI with
+      // the suite-level factor of these rounds (10.0/11.8 m local vs the art-era
+      // cloud round's 31.6 m ≈ 2.7–3.2×) L19 lands at ~55–90 s, and with the
+      // QA-011's projection landed exactly here: observation round `38890893868`
+      // (develop `77a6ba6`, job `116940140379`) hard-timed-out L18 and L19 at this
+      // very constant while L15/L16/L17 passed — the projected 120–170 s row class
+      // against 90 s, confirmed. So the constant is replaced by a **par-derived
+      // envelope** (item 77(d)); the measured table and the fit live in
+      // `refusalRouteEnvelopeMs` (tests/e2e/helpers/levels.ts). Par comes from the
+      // level's own solver-shortest solution (`ref.par`), never from the id — so
+      // **L20 (par 20) is absorbed by the same formula with zero re-migration**
+      // (it evaluates to 223 s), and every further rung is a computed number.
+      // Retries stay forbidden and every assertion above/below is untouched: this
+      // is wall clock, and only wall clock.
+      //
+      // QA-014 at 20 rows — **the par-20 rung ran, and the derived envelope absorbed
+      // it with zero re-migration, exactly as item 77(d) predicted.** This round
+      // (`PS_E2E_PORT=5244`, `--retries=0`, art-era bytes, 132/132 green, 11.1 m,
+      // the FIRST browser walk of L20 ever) measured the family as
+      // L15 11.6 / L16 14.8 / L17 15.9 / L18 19.5 / L19 21.8 / **L20 28.1 s**, so:
+      // `refusalRouteEnvelopeMs(20) = 223_000 ms` against a **28.1 s** observation =
+      // **12.6 % of budget**, and L20 is the family's new peak as predicted (par 20).
+      // The constant this replaced (`90_000`) would have put the same observation at
+      // 31 % locally and at `28.1 × 5.9 ≈ 166 s` on QA-013's own conservative cloud
+      // factor — i.e. **crossed**, the exact red that round `38890893868` produced on
+      // L18/L19. No constant was touched for this migration; the arithmetic lives in
+      // `refusalRouteEnvelopeMs`'s docstring (tests/e2e/helpers/levels.ts).
+      test.setTimeout(refusalRouteEnvelopeMs(ref.par));
 
       await installPixelReadback(page);
       await openLevel(page, levelUrl(ref.id));

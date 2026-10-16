@@ -1,7 +1,30 @@
 # Playtest Log
 
 > Owners: **QA Engineer** and **Playtest Analyst**
-> Version: **V0.6** · Date: 2026-10-15
+> Version: **V0.7** · Date: 2026-10-16 (newest banner first; V0.6 and older preserved below)
+
+> **V0.7 (PA-003, Playtest Analyst):** **New companion pre-registration — the L20 SEALED-LANDING risk
+> protocol (GD-007 handoff, ADR-design-0004 decision 8); declares re-freeze event RF-2.** decision 8 and
+> `docs/level-design.md` §6.2.5 hand the two named L20 comprehension risks ("the pocket reads as a trap";
+> "the arrived phase may be the wrong phase to act") to this lane ("**M5 restarts and M6 undos on L20 vs
+> L19 must not spike**; if they do, the device is re-designed, never re-labelled"), and L20's real board
+> now exists (`src/levels/candidates/l020.json` — `par 20`, `D_exec` 24.729412, 252/252 ordered two-press
+> routes, all-OFF UNSATISFIABLE, gate chain 15/15 ACCEPT). §11 (frozen 2026-10-15 on the L1–L10 ladder)
+> could not contain L20 rows, so the protocol is **new**: rows **PL-1…PL-4**, the per-risk signals and
+> thresholds, the **L19 within-participant contrast rule** and the GREEN/RED keep-vs-re-work rule are
+> frozen in `docs/playtest-analysis/PA-003-l20-sealed-landing-risk-protocol.md` — **one truth source; no
+> threshold is copied into this file**. **RF-2 grounds:** (1) §6 still reads "No session has been run …
+> every cell below is empty on purpose" (re-verified at this commit), so **n = 0 stands and re-freezing
+> voids no datum** (RF-1 precedent, §11.0 item 3); (2) **§9 and §11 are unedited by this commit** — no
+> threshold, probe string or level index in either moves; (3) the object of measurement (a Solver-proven
+> L20 board + its published law) post-dates the V0.6 freeze. **Blocking precondition, not PA-owned:** L20
+> is a *candidate, not a registered level* (`src/levels/candidates/README.md`; the count pins read 19), so
+> the next round cannot reach it until the registration ticket lands — until then the L20 rows are
+> `NOT TESTABLE ON THIS BUILD` / `INCOMPLETE` (§9.10.4), never PASS. **Manifest note:** the
+> `stage2-v06-manifest.sha256` row for this file is **superseded by RF-2**; a fresh manifest is the RF-2
+> landing step (next PA pass) — flagged here, **never silently stale**. *(Ticket-label note: this "PA-003"
+> is the L20 protocol; the V0.4 banner below is a **different** older PA-003 — do not merge them.)*
+
 > **V0.6 (PA-006, Playtest Analyst):** **Stage-2 instrument RE-FROZEN against the shipped ladder
 > L1–L10 — re-freeze event RF-1, §11.0.** The V0.5 BUT (`41d5a4b`) predates the L6–L10 unlock
 > (`c6af636`) and the public Pages release (`3601935`, `https://pepsico24.github.io/AI-Native-GameCpt/`):

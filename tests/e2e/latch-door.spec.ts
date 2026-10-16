@@ -138,8 +138,10 @@ test.describe("switch latch ⇒ door blocking (R-D1) and door occupancy (R-D7)",
       // `refusal.spec.ts:56` ("Wall clock, never an assertion"). This is the
       // suite's heaviest per-level walk: two level opens
       // (`installPixelReadback` + `openLevel` + `boardGeometry` each), and the
-      // derived `DOOR_LEVELS` tail costs 19 trusted presses at L15 (refusal
-      // route 10 + occupancy route 9; L12 7 / L13 11 / L14 15 / L15 19), each
+      // derived `DOOR_LEVELS` tail now costs 27 trusted presses at L19 (refusal
+      // route 10 + occupancy route 17). Re-measured on the derived tail after
+      // R-003c registered L16–L19 (QA-011): L12 7 / L13 11 / L14 15 / L15 19 /
+      // L16 23 / L17 21 / L18 25 / L19 27 — up 42 % on the old L15 peak, each
       // press followed by a HUD read and pixel probes. Measured on the 2-core
       // software-GL CI runner at `latch-door.spec.ts:134` L15: 21.2 s in the
       // quiet round (run 38843718456, 107 passed), and 30.9 s in run
@@ -149,7 +151,26 @@ test.describe("switch latch ⇒ door blocking (R-D1) and door occupancy (R-D7)",
       // docs-only, so the difference is contention on a wall clock, not a rule
       // or an assertion. The budget below is wall clock only — every claim in
       // this test is unchanged, a hang still fails, just later — and it is a
-      // per-test budget inside the derived loop, so it covers L6…L15 alike.
+      // per-test budget inside the derived loop, so it covers L6…L19 alike.
+      // WATCH ROW (QA-011, named not silently widened): L19 is the new press
+      // peak; scaled from the L15 observation by presses (30.9 × 27/19 ≈ 44 s)
+      // and then by the slow-round variance (~1.5×, project-status item 84) it
+      // enters at ~66 s of this 90 s budget. Measured directly on this branch
+      // (`--retries=0`, art-era, frozen bytes, two rounds): L15 9.6 s / L16 11.4 s /
+      // L17 11.0 s / L18 12.0 s / L19 12.7 → 13.4 s locally — 14–15 % of the budget
+      // at the peak, so the row is inside with room. The next round that shows any
+      // latch row above ~75 s gets its own derived envelope.
+      //
+      // QA-014 at 20 rows — the press count is derived per level and L20 does NOT
+      // extend the peak; it *lowers* it. Measured on this round's bytes from the same
+      // fixtures the test uses (`cheapestDoorFixtures`, route lengths only — the same
+      // arithmetic the table above uses): L15 19 / L16 25 / L17 23 / L18 27 / L19 27 /
+      // **L20 21** (refusal route 11 + occupancy route 10). The sealed landing's
+      // pocket is entered by a portal and walked as a *shorter* occupancy route, so
+      // the heaviest latch walk stays L18/L19. Wall clock agrees: this round
+      // (`PS_E2E_PORT=5244`, `--retries=0`, art-era bytes, 132/132 green, 11.1 m)
+      // measured **L20 11.6 s vs L19 13.3 s**, i.e. **12.9 % of the 90 s budget** and
+      // below the previous peak — so no row crossed and the budget stands unchanged.
       // Cloud policy is zero retries (INFRA-001): a red is diagnosed, not
       // pardoned.
       test.setTimeout(90_000);
@@ -215,6 +236,15 @@ test.describe("switch latch ⇒ door blocking (R-D1) and door occupancy (R-D7)",
   }
 
   test("L8 — the same walk, latched and unlatched, through the UI", async ({ page }) => {
+    // CI-envelope sizing (QA-005j) — the same class as this file's derived `:134`
+    // loop (QA-005g, 90 s), on a row that had been left at the 30 s default: two
+    // door walks plus a pixel probe per leg. Measured on the 2-core software-GL
+    // runner: 29.2 s in the pre-gate slow round (`38862977845`) and 28.9 s /
+    // 25.9 s in the two green rounds carrying the readiness gate (`38869874603` /
+    // `38867895111`) — 86–97 % of the ceiling. Budget = ~3× the worst observation,
+    // the QA-005g rule; wall clock only, every claim below is unchanged.
+    test.setTimeout(90_000);
+
     const ref = refOf(REFS, 8);
     const { occupancy, refusedEntry } = cheapestDoorFixtures(ref);
     expect(occupancy).not.toBeNull();

@@ -9,7 +9,7 @@
  * dip law lives on), in both of its forms.
  *
  * ── THE TWO THINGS THIS FILE IS CAREFUL ABOUT ────────────────────────────────
- *  1. **Zero is a measurement, not a hole.** `T = 0` and `R = 0` on all ten shipped
+ *  1. **Zero is a measurement, not a hole.** `T = 0` and `R = 0` on every shipped
  *     levels, so each is paired with a *non-vacuous* control: a board that violates
  *     `docs/level-design.md` §4 and really does report `T > 0` / `R > 0`. Without
  *     those controls, a broken `T` would be indistinguishable from the theorem below.
@@ -114,7 +114,7 @@ describe("LV-007B · item 3 — the §2 weights are provisional, published, and 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. The measured L1–L10 table (the doc's §5.1, now with B / T / R / D)
+// 2. The measured dataset table (the doc's §5.1, now with B / T / R / D)
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface DifficultyPin {
@@ -130,7 +130,7 @@ interface DifficultyPin {
   readonly bRaw: number;
   /** Diagnostic: share of states with exactly one legal move (§5.1). */
   readonly forced: number;
-  /** Diagnostic: the *other* reading of `T` — saturated at `L − 1` on all ten. */
+  /** Diagnostic: the *other* reading of `T` — saturated at `L − 1` on every shipped level. */
   readonly lookahead: number;
   readonly states: number;
 }
@@ -176,9 +176,38 @@ const PINS: Readonly<Record<number, DifficultyPin>> = {
   13: { L: 6, B: 1.632911, T: 0, R: 0, M: 4, D: 30.898734, dexec: 10.898734, bRaw: 3.0633, forced: 0.0127, lookahead: 5, states: 79 },
   14: { L: 8, B: 1.652632, T: 0, R: 0, M: 4, D: 32.957895, dexec: 12.957895, bRaw: 3.1368, forced: 0.0105, lookahead: 7, states: 95 },
   15: { L: 10, B: 1.656566, T: 0, R: 0, M: 4, D: 34.969697, dexec: 14.969697, bRaw: 3.1515, forced: 0.0000, lookahead: 9, states: 99 },
+  // R-003c — the L16–L19 block, registered at the dataset root (`208c5eb`, registry
+  // rows at `a75b420`). The four rows below are **measured from the landed bytes** by
+  // the shipped metric functions (the same read-out `scripts/solve-levels.ts` prints
+  // and `docs/level-difficulty.report.json` stores), so the table stopped being "the
+  // L1–L15 table": it is the dataset's table. The block's shape in one column: `M = 4`
+  // on 4/4 (M1+M3+M2), `T ≡ R ≡ 0` (§4's region holds — the seal is *total*, so there
+  // is no dead pocket to fall into), `L` steps exactly 12/14/16/18 (the P2 rung
+  // `par(L15) + 2·(id − 15)`, enforced by the `block-l1619-rung` gate) and `D_exec`
+  // climbs 17.10 → 22.89 because `B` is *above* the L1–L15 band on the first rung and
+  // settles back into it (1.7000 → 1.6757 → 1.6360 → 1.6284). `l016`'s `B` is the one
+  // **named** excursion (F-L16-2, `BLOCK_L1619_NAMED_B_EXCURSIONS`); the register is
+  // re-pinned by `tests/solver/l16-l20-candidates.test.ts` against this table's band.
+  16: { L: 12, B: 1.700000, T: 0, R: 0, M: 4, D: 37.1, dexec: 17.1, bRaw: 3.26, forced: 0.01, lookahead: 11, states: 260 },
+  17: { L: 14, B: 1.675676, T: 0, R: 0, M: 4, D: 39.027027, dexec: 19.027027, bRaw: 3.27, forced: 0.01, lookahead: 13, states: 259 },
+  18: { L: 16, B: 1.635974, T: 0, R: 0, M: 4, D: 40.907923, dexec: 20.907923, bRaw: 3.20, forced: 0.01, lookahead: 15, states: 467 },
+  19: { L: 18, B: 1.628386, T: 0, R: 0, M: 4, D: 42.885157, dexec: 22.885157, bRaw: 3.15, forced: 0.02, lookahead: 17, states: 923 },
+  // R-003d / QA-014 — the block's **terminal** rung, registered by GAME-002 at
+  // `4deeb50`. L20 is the sealed landing (ADR-design-0004): the portal hands the
+  // player a new start inside a walk-sealed pocket whose only exit is a door, so the
+  // shortest plan is the ORDERED `land → press → leave → press` chain. Shape in one
+  // column: `L = par = 20` (the P2 rung `par(L15) + 2·(20 − 15)`), `M = 4`,
+  // `T ≡ R ≡ 0` (§4's region holds — 0 dead, `noUnrecoverableOk` true), `B` 1.576471
+  // settles the excursion back into the L1–L15 band `[1.25, 1.6875]` (so no new
+  // entry in `BLOCK_L1619_NAMED_B_EXCURSIONS`), and `D_exec = 24.729412` rises past
+  // L19's 22.885157 — which is what re-registered the tail ceiling at R-003d.
+  // Values measured HERE from the landed bytes by the shipped metric functions
+  // (`scripts/solve-levels.ts`'s read-out, `docs/level-difficulty.report.json`
+  // record 20) — derived, then typed, exactly like every row above.
+  20: { L: 20, B: 1.576471, T: 0, R: 0, M: 4, D: 44.729412, dexec: 24.729412, bRaw: 3.04, forced: 0.05, lookahead: 19, states: 1275 },
 };
 
-describe("LV-007B · item 3 — the L1–L10 difficulty table, measured", () => {
+describe("LV-007B · item 3 — the shipped dataset's difficulty table, measured", () => {
   it("the pin table covers the dataset", () => {
     expect(Object.keys(PINS).map(Number).sort((a, b) => a - b)).toEqual(
       SHIPPED_IDS,
@@ -230,7 +259,7 @@ describe("LV-007B · item 3 — the L1–L10 difficulty table, measured", () => 
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("LV-007C · item 2 — `D_exec` is a derived reading of the published terms, not a second metric", () => {
-  it("the two forms agree on all ten: `D − w5·M` = `w1·L + w2·B + w3·T + w4·R`", () => {
+  it("the two forms agree on every shipped level: `D − w5·M` = `w1·L + w2·B + w3·T + w4·R`", () => {
     // The field is computed from the formula's own non-`M` terms and the subtraction
     // is the cross-check — so the identity is asserted, never assumed. This is the
     // "both forms printed" contract of `scripts/solve-levels.ts`'s `difficultyExec`
@@ -330,7 +359,7 @@ describe("LV-007C · item 2 — `D_exec` is a derived reading of the published t
     const l10 = analyseDifficulty(shippedBoard(10), explore(shippedBoard(10)));
     expect(l10.Dexec).toBeCloseTo(13.642857, 6);
     expect((l10.Dexec as number).toFixed(2)).toBe("13.64");
-    // …and the value published for every level of the ten is the one the CLI prints
+    // …and the value published for every shipped level is the one the CLI prints
     // (`difficultyExec Dexec=…`), on the same axis the seam law is written on — with
     // LV-008's L11 (8.57) and LV-009-B's block (8.23 / 10.90 / 12.96 / 14.97) appended
     // in dataset order, so this list is the published 2-dp column of §5.2 whole.
@@ -355,6 +384,17 @@ describe("LV-007C · item 2 — `D_exec` is a derived reading of the published t
       "10.90",
       "12.96",
       "14.97",
+      // R-003c — the L16–L19 block, in dataset order: the registered rungs'
+      // measured execution axis (17.10 / 19.03 / 20.91 / 22.89), which is the same
+      // column `docs/level-difficulty.md` §5.2 and the sidecar now print.
+      "17.10",
+      "19.03",
+      "20.91",
+      "22.89",
+      // QA-014 — R-003d's terminal rung: the sealed landing's measured 24.729412,
+      // i.e. the column's first value past L19. Par 20 is what the derived refusal
+      // envelope (`refusalRouteEnvelopeMs`, tests/e2e/helpers/levels.ts) absorbs.
+      "24.73",
     ]);
   });
 });
@@ -503,7 +543,7 @@ describe("LV-007B · item 3 — the L5→L6 seam: measured, and not the dip §3 
 
   it("`lookaheadDepth` (the other reading of `T`) saturates at `L − 1` — it is not the missing lever", () => {
     // Pinned so nobody adopts the alternative reading expecting a differentiator:
-    // on all ten shipped levels the deepest state where a move can waste the par is
+    // on every shipped level the deepest state where a move can waste the par is
     // exactly one step before the goal. It is retained as a *diagnostic* (the number
     // a re-worded §2 would have to beat), never as a weight.
     for (const id of SHIPPED_IDS) {

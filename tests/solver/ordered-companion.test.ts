@@ -245,7 +245,11 @@ describe("LV-007B · item 2 — the shipped latch levels are orderable latches",
     const latched = SHIPPED_IDS.filter(
       (id) => solve(shippedBoard(id)).refusedThenEnteredTiles > 0,
     );
-    expect(latched).toEqual([6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+    // Derived as a *rule* over the discovered ids, not a typed trie: the latch column
+    // opens at L6 (the M3 debut) and is the dataset's contiguous tail, so a level
+    // authored above L6 without a witnessed refusal still fails here (QA-011 replaced
+    // the `[6…15]` literal that R-003c's registration invalidated).
+    expect(latched).toEqual(SHIPPED_IDS.filter((id) => id >= 6));
     for (const id of latched) {
       const result = solve(shippedBoard(id));
       expect(result.refusedBeforeEnteredTileList, `l${id}`).toEqual(
@@ -355,6 +359,41 @@ const ORDERED_PINS: Readonly<
   15: {
     unordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "5,3"],
     ordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "5,3"],
+  },
+  // R-003c — the L16–L19 block, registered at the dataset root. All four are
+  // goal-gated seals (every approach to the goal is a door), so the refusal the player
+  // is meant to witness is the door line itself: the column of refused door tiles
+  // (`4,0…4,5` on the first two rungs, `3,0…3,5` on the last two) plus the two or four
+  // sealed entries into the goal. The two readers agree on 4/4 — the ordered list is
+  // the unordered one — and the count climbs with the ramp (8/8/9/10 tiles), which is
+  // this block's §5 substitute for gate (i): the latch is witnessed, not merely
+  // load-bearing (`allOffGoalReachable: false` on 4/4).
+  16: {
+    unordered: ["4,0", "4,1", "4,2", "4,3", "4,4", "4,5", "5,1", "6,0"],
+    ordered: ["4,0", "4,1", "4,2", "4,3", "4,4", "4,5", "5,1", "6,0"],
+  },
+  17: {
+    unordered: ["4,0", "4,1", "4,2", "4,3", "4,4", "4,5", "5,5", "6,4"],
+    ordered: ["4,0", "4,1", "4,2", "4,3", "4,4", "4,5", "5,5", "6,4"],
+  },
+  18: {
+    unordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "5,1", "6,0", "6,2"],
+    ordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "5,1", "6,0", "6,2"],
+  },
+  19: {
+    unordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "4,4", "5,3", "5,5", "6,4"],
+    ordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "4,4", "5,3", "5,5", "6,4"],
+  },
+  // R-003d / QA-014 — the block's terminal rung: the sealed landing. The refusal the
+  // player is meant to witness is the *door line plus the sealed goal approaches*
+  // (14 tiles, the block's widest column: the `3,0…3,5` line, `4,1`/`4,4`, and the
+  // `5,0…6,4` entries on the landing's walk-sealed pocket), and the two readers agree
+  // again — the ordered list is the unordered one — so ADR-0002's coincidence holds on
+  // the 5th rung too. This is the block's §5 substitute for gate (i): the latch is
+  // witnessed, not merely load-bearing (`allOffGoalReachable: false` measured 22/1275).
+  20: {
+    unordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "4,1", "4,4", "5,0", "5,2", "5,3", "5,5", "6,3", "6,4"],
+    ordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "3,5", "4,1", "4,4", "5,0", "5,2", "5,3", "5,5", "6,3", "6,4"],
   },
 };
 

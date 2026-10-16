@@ -182,13 +182,17 @@ describe("LV-008 · §2 — the debut's named-gate suite is green, verdict for v
     // (19/16/20/15 tiles), so "only from L11" is a statement about the *start* of the
     // column, which is what the schedule claims. A board before L11 still cannot
     // satisfy it, and no member of the dataset after L11 is portal-free.
+    // R-003c — the L16–L19 block continues the column (24/24/18/18), and QA-014/R-003d
+    // appended the terminal rung (18/42), so the derived "from the debut up" rule below
+    // is what the registration is checked against: the typed `[11…15]` tail QA-011
+    // retired could not see a portal-free rung at L16+.
     const earlierThan = (id: number): readonly number[] =>
       SHIPPED_IDS.filter(
         (entry) => entry < id && solve(shippedBoard(entry)).dualPhaseTiles > 0,
       );
     expect(earlierThan(11)).toEqual([]);
     expect(SHIPPED_IDS.filter((id) => solve(shippedBoard(id)).dualPhaseTiles > 0)).toEqual(
-      [11, 12, 13, 14, 15],
+      SHIPPED_IDS.filter((id) => id >= 11),
     );
   });
 
