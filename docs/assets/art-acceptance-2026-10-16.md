@@ -72,4 +72,4 @@ python3 docs/assets/evidence-2026-10-16-revision/art-audit-rev02.py
 
 - Numeric track: **49/50 PASS · 1 reclassified with accepted-reference evidence** — no unexplained red remains.
 - Visual track: **7/8 PASS · 1 named aura-colour defect** (options above).
-- **ASSET GATE: awaiting the human signature (waive-or-regen decision included).** Integration (R-005) starts only after the user signs this round.
+- **ASSET GATE: SIGNED by the human on 2026-10-16 ("签 R-005")** — the revision round is ACCEPTED AS DELIVERED; the `echo_spirit_a` aura clause is taken as a recorded WAIVER under human authority (a later regen remains zero-cost: same-path swap, no wiring change, `docs/assets/codex-mini-prompt-spirit-aura.md` stays on file). Integration proceeds as R-005a (canvas slots) + R-005b (ui_kit disposition, after the UA spec ruling).
