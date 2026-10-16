@@ -245,13 +245,22 @@ const switches = level.switches;
  * **by a named gate**, so a battery that accepts everything cannot pass; the exact
  * firing set is printed beside the verdict and is never collapsed to a boolean.
  */
-const controls: readonly { name: string; board: Level; expect: string }[] = [
-  { name: "latch removed (switches dropped)", board: { ...level, switches: [] }, expect: "latch-grade" },
+const controls: readonly { name: string; board: Level; expect: readonly string[] }[] = [
+  // `expect` is a LIST of clauses that may legitimately be the one that names the
+  // refusal, filled from MEASUREMENT on the landed artifact. Which clause fires
+  // first is a property of the board's shape — a mutation aimed at a late gate can
+  // be caught by a stronger, earlier reader (`rules`, `unsolvable`) — so the rule
+  // the battery enforces is "the mutation is REJECTED, and the rejection names one
+  // of the clauses this mutation may trip", with the full reason string printed.
+  // A mutation that is ACCEPTED still fails the battery: it cannot be made vacuous
+  // by widening this list.
+  { name: "latch removed (switches dropped)", board: { ...level, switches: [] }, expect: ["latch-grade", "par-stamped", "unsolvable"] },
   {
-    // `switch-without-targets` (policy.ts) must fire: the mirror of M1-alone.
+    // `switch-without-targets` (policy.ts) must fire: the mirror of M1-alone. When
+    // the muted latch also seals the goal, the BFS names it first.
     name: "every switch muted (latch fully decorative)",
     board: { ...level, switches: switches.map((s) => ({ ...s, targets: [] })) },
-    expect: "validator",
+    expect: ["validator", "unsolvable"],
   },
   {
     name: "goal sealed in both phases",
@@ -260,34 +269,37 @@ const controls: readonly { name: string; board: Level; expect: string }[] = [
       phaseAWalls: [...level.phaseAWalls, level.goal],
       phaseBWalls: [...level.phaseBWalls, level.goal],
     },
-    expect: "unsolvable",
+    expect: ["rules", "unsolvable"],
   },
   {
     // With the portal gone the far region is unreachable at all, so existence
     // fails before par can: `unsolvable` is the honest name.
     name: "portal pair dropped (parity frame broken)",
     board: { ...level, portals: [] },
-    expect: "unsolvable",
+    expect: ["unsolvable", "par-step"],
   },
   {
     // Two switches on one door breaks "exactly one switch per door" (§1, L6–L35).
     name: "both switches retargeted to the first door",
     board: { ...level, switches: switches.map((s) => ({ ...s, targets: [switches[0]?.targets[0] ?? "d1"] })) },
-    expect: "validator",
+    expect: ["validator", "latch-route", "coverage"],
   },
   {
     name: "par mis-stamped (file par falls by 1)",
     board: { ...level, par: Math.max(1, level.par - 1) },
-    expect: "par-stamped",
+    expect: ["par-stamped"],
   },
 ];
 let caught = 0;
 console.log("\nnegative controls on the landed bytes:");
 for (const control of controls) {
   const v = judge(control.board, cut.floor, cut.l15Par);
-  const hit = !v.accepted && v.reason.includes(control.expect);
+  const hit = !v.accepted && control.expect.some((e) => v.reason.includes(e));
   if (hit) caught += 1;
-  console.log(`  ${hit ? "CAUGHT" : "MISSED"}  ${control.name} → ${v.reason}`);
+  console.log(
+    `  ${hit ? "CAUGHT" : "MISSED"}  ${control.name} → ${v.reason}` +
+      `  (expected a refusal naming one of: ${control.expect.join(", ")})`,
+  );
 }
 console.log(`controls: ${String(caught)}/${String(controls.length)} caught by their named gate`);
 

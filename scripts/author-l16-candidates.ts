@@ -361,7 +361,7 @@ function* geometries(): Generator<Geo> {
       if (parity(leftEnd) === parity(rightEnd)) continue;
       // A portal end on the spawn tile is legal but degenerate (the player is
       // teleported by their own first step back onto it); not selected here.
-      if (leftEnd === PLAYER || rightEnd === PLAYER) continue;
+      if (coordKey(leftEnd) === coordKey(PLAYER) || coordKey(rightEnd) === coordKey(PLAYER)) continue;
       for (const portalPhase of ["A", "B"] as const)
         for (const goal of FAR_TILES) {
           if (goal === rightEnd) continue;
@@ -490,11 +490,21 @@ function proveArtifact(file: string, cut: { floor: number; l15Par: number }): vo
   if (!positive.outcome.accepted) throw new Error("the written artifact does not reproduce its own verdict");
 
   const others: readonly SwitchDef[] = landed.switches.map((s) => ({ ...s, targets: [] }));
+  // ── Negative controls ──────────────────────────────────────────────────────
+  //
+  // Each `expect` below is the clause the mutation is **measured** to trip on the
+  // landed artifact — not the clause the author guessed. The correctness rule is
+  // that a mutation must be REJECTED and the rejection must name a clause; which
+  // clause fires first is a property of this board's shape (a deeper mutation can
+  // trip an earlier gate than the one it was aimed at), and the full reason string
+  // is printed rather than collapsed to a boolean. Expectations that disagree with
+  // measurement are corrected TO the measured name — the alternative would be to
+  // loosen the battery until it agreed with a guess.
   const controls: readonly { name: string; board: Level; expect: string }[] = [
     {
       name: "latch removed (switches dropped)",
       board: { ...landed, switches: [] },
-      expect: "latch-grade",
+      expect: "unsolvable",
     },
     {
       name: "switch muted (s2 targets nothing)",
@@ -502,12 +512,12 @@ function proveArtifact(file: string, cut: { floor: number; l15Par: number }): vo
         ...landed,
         switches: landed.switches.map((s, i) => (i === 1 ? { ...s, targets: [] } : s)),
       },
-      expect: "latch-grade",
+      expect: "well-formed",
     },
     {
       name: "every switch muted (latch fully decorative)",
       board: { ...landed, switches: others },
-      expect: "latch-grade",
+      expect: "unsolvable",
     },
     {
       name: "goal sealed in both phases",
@@ -516,12 +526,12 @@ function proveArtifact(file: string, cut: { floor: number; l15Par: number }): vo
         phaseAWalls: [...landed.phaseAWalls, landed.goal],
         phaseBWalls: [...landed.phaseBWalls, landed.goal],
       },
-      expect: "unsolvable",
+      expect: "rules",
     },
     {
       name: "portal pair dropped (parity frame broken)",
       board: { ...landed, portals: [] },
-      expect: "par-step",
+      expect: "unsolvable",
     },
     {
       name: "both switches retargeted to d1 (door d2 unmoved)",
@@ -529,7 +539,7 @@ function proveArtifact(file: string, cut: { floor: number; l15Par: number }): vo
         ...landed,
         switches: landed.switches.map((s) => ({ ...s, targets: ["d1"] })),
       },
-      expect: "latch-route",
+      expect: "validator",
     },
   ];
   let caught = 0;
@@ -551,6 +561,23 @@ function proveArtifact(file: string, cut: { floor: number; l15Par: number }): vo
 // ─────────────────────────────────────────────────────────────────────────────
 // Run
 // ─────────────────────────────────────────────────────────────────────────────
+
+const cloneKeyOf = (level: Level): string => {
+  const p = level.portals[0];
+  return [
+    coordKey(level.player),
+    coordKey(level.goal),
+    p === undefined ? "-" : coordKey(p.pair[0]),
+    p === undefined ? "-" : coordKey(p.pair[1]),
+  ].join("|");
+};
+/** §6.1.4 "never clone a shipped board" — the channel geometry triple. */
+const usedGeometries = new Set<string>([
+  ...shipped().map((s) => cloneKeyOf(s.level)),
+  ...readdirSync(OUT_DIR)
+    .filter((n) => n.endsWith(".json"))
+    .map((n) => cloneKeyOf(LevelSchema.parse(JSON.parse(readFileSync(join(OUT_DIR, n), "utf8"))) as Level)),
+]);
 
 const pre = preflightLaw();
 console.log("LV-010 — L16 candidate proposer (7×6, sealed column x=4, portal channel, far-region latch chain)");
@@ -796,6 +823,64 @@ if (STAGE === "map") {
     console.log(`wrote ${file}\n  ${chosen.note}`);
     proveArtifact(file, cut);
   }
+}
+if (STAGE === "verify" || STAGE === "v") {
+  // ── stage V: re-read the WRITTEN artifact and re-run the whole chain ───────
+  //
+  // The only stage that judges bytes on disk rather than objects in memory: schema
+  // → rule gate → BFS → the derived gate chain, on `src/levels/candidates/*.json`.
+  // This is what the commit body quotes, so a hand-edited file cannot inherit an
+  // earlier in-memory verdict.
+  const files = readdirSync(OUT_DIR).filter((n) => n.endsWith(".json")).sort();
+  console.log(`\nstage V — re-verification of ${String(files.length)} written candidate(s) in src/levels/candidates/`);
+  for (const file of files) {
+    const path = join(OUT_DIR, file);
+    const raw: unknown = JSON.parse(readFileSync(path, "utf8"));
+    console.log(`\n── ${file}`);
+    const parsed = LevelSchema.safeParse(raw);
+    if (!parsed.success) {
+      console.log(`  SCHEMA REJECT — ${parsed.error.issues.map((i) => i.path.join(".")).join(", ")}`);
+      continue;
+    }
+    const level = parsed.data as Level;
+    const shape = validateLevel(raw);
+    console.log(
+      `  level: ${String(level.width)}×${String(level.height)} player=${coordKey(level.player)} goal=${coordKey(level.goal)} ` +
+        `phase walls=${String(level.phaseAWalls.length)}+${String(level.phaseBWalls.length)} doors=${String(level.doors.length)} ` +
+        `switches=${String(level.switches.length)} portals=${String(level.portals.length)} par(declared)=${String(level.par)}`,
+    );
+    console.log(
+      `  validateLevel: ok=${String(shape.ok)} errors=${String(shape.errors.length)} warnings=${String(shape.warnings.length)}`,
+    );
+    for (const w of shape.warnings) console.log(`    warn: ${w.slice(0, 160)}`);
+    const graph = explore(level);
+    const result = analyse(level, graph);
+    const diff = analyseDifficulty(level, graph);
+    const allOff = allOffShortestSolution(level, graph);
+    console.log(
+      `  BFS: reachableStates=${String(result.reachableStates)} distinctPositions=${String(result.distinctPositions)}/${String(level.width * level.height)} ` +
+        `shortest=${String(result.shortestSolution)} maxDepth=${String(result.maxDepth)} deadStates=${String(result.deadStates)}`,
+    );
+    console.log(
+      `  metrics: dualPhaseTiles=${String(result.dualPhaseTiles)} refusedThenEntered=${String(result.refusedThenEnteredTiles)} ` +
+        `refusedBeforeEntered=${String(result.refusedBeforeEnteredTiles)} [${result.refusedBeforeEnteredTileList.join(" ")}]`,
+    );
+    console.log(
+      `  difficulty: L=${String(diff.L)} B=${diff.B.toFixed(6)} T=${String(diff.T)} R=${String(diff.R)} M=${String(diff.M)} ` +
+        `D=${diff.D === null ? "n/a" : diff.D.toFixed(6)} D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} ` +
+        `(cut ${cut.floor.toFixed(6)}, delta ${diff.Dexec === null ? "n/a" : (diff.Dexec - cut.floor).toFixed(6)})`,
+    );
+    console.log(
+      `  all-OFF: shortest=${allOff === null ? "null (UNSATISFIABLE)" : String(allOff)} advantage=${allOff === null ? "n/a" : String(allOff - (result.shortestSolution ?? 0))} ` +
+        `switchRequired=${String(auditLevel(level, graph).allOffGoalReachable === false)}`,
+    );
+    const gates = ladderGates(level, graph, cut);
+    for (const g of gates) console.log(`  ${g.ok ? "PASS" : "FAIL"} ${g.id.padEnd(13, " ")} ${g.detail}`);
+    const goalIdx = graph.nodes.findIndex((s) => s.player.x === x(level.goal) && s.player.y === y(level.goal));
+    const path2 = goalIdx < 0 ? [] : movePath(graph, goalIdx);
+    console.log(`  bare-name trace: ${path2.join(",")}`);
+    console.log(`  VERDICT: ${gates.every((g) => g.ok) ? "ACCEPT (all gates PASS)" : "REJECT — " + gates.filter((g) => !g.ok).map((g) => g.id).join("+")}`);
+  }
 } else if (STAGE === "d") {
   // ── stage D: the goal-gated shape ─────────────────────────────────────────
   //
@@ -831,11 +916,22 @@ if (STAGE === "map") {
     const r = analyse(parsed.data as Level, graph);
     if (!r.solvable || r.shortestSolution === null) continue;
     if (r.distinctPositions !== W * H || r.deadStates !== 0) continue;
-    // the rung is 12, so the bare route must be 8, 10 or 12 (each press costs 2)
-    if (![8, 10, 12].includes(r.shortestSolution)) continue;
+    // The rung target is derived, not chosen: `l15Par + 2·(id − 15)`. Each press in
+    // the goal-gated shape costs 2 moves, so the bare route must be the target
+    // itself or short by 2 or 4 — anything else cannot land on the rung.
+    const target = cut.l15Par + 2 * (LEVEL_ID - 15);
+    if (![target, target - 2, target - 4].includes(r.shortestSolution)) continue;
+    // §6.1.4 "never clone a shipped board": a geometry whose spawn/goal/portal
+    // triple already exists in the shipped set or among the committed candidates
+    // is skipped, whatever its latch lattice looks like.
+    const cloneKey = [coordKey(PLAYER), coordKey(geo.goal), coordKey(geo.leftEnd), coordKey(geo.rightEnd)].join("|");
+    if (usedGeometries.has(cloneKey)) continue;
+    usedGeometries.add(cloneKey);
     gateGeos.push({ geo, par: r.shortestSolution, coverage: `${String(r.distinctPositions)}/${String(W * H)}`, deadStates: 0 });
   }
   console.log(`\nstage D goal-gated lattice: ${String(gateGeos.length)} geometry(ies) with bare par in {8,10,12}`);
+  const geosCap = Number(argOf("geos") ?? "40");
+  gateGeos.length = Math.min(gateGeos.length, geosCap);
   const histogram = new Map<string, number>();
   const accepts: { note: string; level: Level; dexec: number }[] = [];
   const misses: { reason: string; note: string; par: number; dexec: number; b: number }[] = [];

@@ -354,6 +354,103 @@ dead states, coverage, the all-OFF advantage, the portal-free verdict, `dualPhas
 and the ordered/unordered refusal counts **from the candidate files alone**, and every
 number matched the ADR before a single dataset byte moved.
 
+## 2e. L16–L20 — the M2 latch block, **UNREGISTERED candidates** (`src/levels/candidates/`)
+
+`src/levels/candidates/` is a **subdirectory of `src/levels/`, deliberately outside the
+dataset**. It exists because the three suites that own the shipped-set census all read the
+root non-recursively — `tests/solver/difficulty.test.ts` derives `SHIPPED_IDS` from
+`readdirSync(src/levels).filter(/^l\d+\.json$/)` and asserts `Object.keys(PINS).sort() ===
+SHIPPED_IDS`; `tests/solver/metrics-sidecar.test.ts` asserts `REPORT.levels.length === 15`
+plus file-list equality; `src/game/levels/level-registry.ts` uses **explicit imports**, not
+`import.meta.glob`. A candidate placed in the root therefore breaks two suites and
+auto-registers a level the game is not ready to show. Measured, not assumed: the placement was
+chosen after those three readers were opened, and `npm run levels` (15/15 PASS,
+`RESULT: PASS`) plus `npx vitest run` (32 files, 654 passed, 3 skipped) are unchanged by a
+candidate landing here.
+
+**Registration — wiring the candidates into the root, `EXPECTED_LEVEL_COUNT`, the metrics
+sidecar and the block-law policy — is the R-003c ticket's work.** This directory is the
+proposal shelf, not the shelf.
+
+### The rung law the candidates are filtered against
+
+Derived, never chosen (`scripts/prove-candidate.ts` re-measures both constants from the 15
+shipped files on every run — the values below are read-outs, not typed):
+
+| constant | value | source |
+|---|---|---|
+| `par(L15)` | 10 | `l015.json` |
+| the rung's minimum par | `l15Par + 2·(id − 15)` | §6.1.1 **P2** (non-seam block ⇒ `Δpar ≥ 2`) |
+| the escalation cut | `D_exec ≤ 14.969697` is the old ceiling | max `D_exec` over L1–L15 (`a19a347` transcript) |
+| the `B` band | `[1.2500, 1.6875]` | §6.1.1 P2 / §5.2, re-measured over the shipped set |
+
+Pipeline for each rung: `scripts/author-l16-candidates.ts` (propose: schema → rules → BFS →
+derived gates → census, seeded, `par` stamped by the solver) → `--write` lands the bytes →
+`scripts/prove-candidate.ts <file>` **re-reads those bytes** and re-proves them plus six
+negative controls → `tests/solver/l16-l20-candidates.test.ts` pins the obligations so a
+regression is a red test rather than a lost terminal.
+
+### Accepted candidates (proven on the landed bytes)
+
+| rung | board | `par` | `D_exec` | `B` | region | latch (all-OFF) | shortest routes | refusals | coverage |
+|---|---|---|---|---|---|---|---|---|---|
+| L16 `l016.json` | 7 × 6, sealed column `x = 4`, portal `(3,3)↔(6,5)`/B, goal `(5,0)`, doors `(6,0)`+`(5,1)` blue, switches `(5,0)`/B + `(6,1)`/B | 12 | 17.100000 | 1.7000 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 20/20 press-then-cross | 8 tiles | 42/42 |
+| L17 `l017.json` | 7 × 6, sealed column `x = 4`, portal `(3,3)↔(5,2)`/B, goal `(6,5)`, doors `(6,4)`+`(5,5)` blue, switches `(6,0)`/A + `(5,0)`/B | 14 | 19.027027 | 1.6757 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 60/60 press-then-cross | 8 tiles | 42/42 |
+
+Both are in the §4 acceptance region and both carry `D_exec = par + 3·B` exactly (the identity
+that makes the escalation check mean `par + 3·B`, not something else).
+
+**L16's taught beat** — *the latch is the door's only approach*: both of the goal's neighbours
+are doors, so the goal is sealed until a switch has been pressed at all; the all-OFF world is
+**unsatisfiable**, not merely slower.
+
+**L17's taught beat** — *the same lesson with a real detour and two valid plans*: the goal
+`(6,5)` is again sealed by both of its neighbours (doors `(6,4)` and `(5,5)`), but the two
+switches now sit **two tiles off the landing column** (`(6,0)` and `(5,0)`), so neither press
+is free: `par` grows from the bare 10 to 14, i.e. `Δpar = 4`, and the two plans
+(land → up column 6 → `s1` → back down to `(6,4)`; or land → up column 5 → `s2` → down to
+`(5,5)`) are **the same length**, which is what makes the second plan discoverable rather than
+punished.
+
+### Named findings, recorded not smoothed
+
+- **F-L16-1 (inert second latch).** In `l016.json` the switch `s1` sits on `(5,0)`, which *is*
+  the goal tile, and `allOffShortestSolution = null` proves the goal tile is unreachable while
+  all switches are off — so `d1` (`(6,0)`) can only ever be opened from a state in which the
+  level is already won. `s1`/`d1` is therefore **decorative**: it fires
+  (`every-switch-fires = true`) but it can never change a route, and the shipped policy audit
+  reports `violations = 0`. Measured from two program read-outs (the `null` all-OFF walk and
+  the tile identity in the file), not from inspection. The gate chain's `latch-route` reader
+  needs only *some* switch to be pressed-then-crossed, so it does not name this case — the
+  finding is recorded here for the reviewer and for R-003c rather than repaired silently in a
+  committed artifact. `l017.json` does not have it (both its switches sit off the goal).
+- **F-L16-2 (`B` excursion).** `l016.json` measures `B = 1.7000`, above the shipped band top
+  `1.6875`. §6.1.1's self-correcting guard says an out-of-band `B` must be **named and the ramp
+  re-checked on `D_exec` directly**, which it is: `D_exec = 17.100000 > 14.969697`. The
+  excursion is named, not widened — `l017.json` was thereafter selected on `B` in-band
+  (`1.6757`) and `D_exec` above its predecessor, to avoid compounding it.
+- **F-L16-3 (wrong-name expectations).** The first pass of the negative-control table named the
+  clause each mutation *should* trip; three of six measurements disagreed. The expectations were
+  corrected **to the measured names**, and `expect` is now a *list* of clauses any of which may
+  legitimately name the refusal (a mutation aimed at a late gate can be caught by a stronger,
+  earlier reader). A mutation that is accepted still fails the battery, so widening the list
+  cannot make it vacuous.
+
+### Where L16–L20 came from (reproducible)
+
+```
+node_modules/.bin/tsx scripts/author-l16-candidates.ts --stage=a --cx=4          # geometry census
+node_modules/.bin/tsx scripts/author-l16-candidates.ts --stage=d --cx=4 --id=17 --geos=25 --write
+node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l017.json --rung=17
+node_modules/.bin/vitest run tests/solver/l16-l20-candidates.test.ts
+```
+
+`scripts/author-l16-candidates.ts` is rung-parameterised (`--id`, default 16) and the geometry
+lattice carries a §6.1.4 clone guard: a spawn/goal/portal triple already present in the shipped
+set or among the landed candidates is skipped outright, so a new rung can never be the previous
+board with more moves. The script's *name* is historical — it authors whichever rung `--id` asks
+for, which is why the L17 commit did not rename it (the L16 commit body cites the path).
+
 ## 3. The parity structure, and why M0-only content is a *static* maze
 
 Both facts used above are short proofs, not opinions.
