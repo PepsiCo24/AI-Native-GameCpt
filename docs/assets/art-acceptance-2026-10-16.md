@@ -56,8 +56,20 @@ Batch-1 `chamfer()` never used its own `boundary()`/`edt()` helpers and measured
 python3 docs/assets/evidence-2026-10-16-revision/art-audit-rev02.py
 ```
 
+## Visual track result (UA-0012b, landed same day)
+
+`docs/assets/art-visual-review-2026-10-16.md` — **VISUAL ACCEPTANCE 7/8 PASS**. Every clause green except one, precisely named:
+
+- **`echo_spirit_a` aura colour**: the rim/glow reads warm cream (hue ≈ 47°) where req-08 mandates a **pale sky-blue** aura. Body colour, silhouette, framing, small-size readability and the B form's moonlight-blue aura are all correct — this is a one-clause colour defect on the halo band only, not a shape/identity problem (the batch-1 killer stays dead: alpha masks are still byte-identical).
+- The logo edge-AA clause CONFIRMED the numeric reclassification above: no black halo over ivory.
+
+## Options for the human gate
+
+1. **WAIVE** the aura clause (record the waiver, sign 8/8) — the defect is sub-perceptual at 32–48 px gameplay sizes where identity is carried by the body;
+2. **RE-GEN** the single clause via the surgical brief `docs/assets/codex-mini-prompt-spirit-aura.md` (A's aura only → B re-derived from A's alpha; R-T04 block re-runs with a new rim-band hue gate ∈ [185°, 225°]).
+
 ## Status
 
 - Numeric track: **49/50 PASS · 1 reclassified with accepted-reference evidence** — no unexplained red remains.
-- Visual track: UA-0012b adjudicating the non-numeric clauses (spelling, 14-element census, small-size readability, style grammar) → `docs/assets/art-visual-review-2026-10-16.md`.
-- **ASSET GATE: awaiting the human signature.** Integration (R-005) starts only after the user signs this round.
+- Visual track: **7/8 PASS · 1 named aura-colour defect** (options above).
+- **ASSET GATE: awaiting the human signature (waive-or-regen decision included).** Integration (R-005) starts only after the user signs this round.
