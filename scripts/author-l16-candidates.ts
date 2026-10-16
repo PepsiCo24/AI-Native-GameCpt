@@ -936,7 +936,10 @@ if (STAGE === "verify" || STAGE === "v") {
   const accepts: { note: string; level: Level; dexec: number }[] = [];
   const misses: { reason: string; note: string; par: number; dexec: number; b: number }[] = [];
   let total = 0;
+  /** Ordered switch n-tuples examined per geometry — sampling, and the cap is printed. */
+  const swCap = Number(argOf("swcap") ?? "1500");
   for (const row of gateGeos) {
+    let tried = 0;
     const bare = LevelSchema.parse({ ...lead(row.geo, [], []), par: 1 }) as Level;
     const entry = bareEntryMap(bare, explore(bare));
     const phaseAt = (t: Coord): Phase | null => {
@@ -948,47 +951,67 @@ if (STAGE === "verify" || STAGE === "v") {
       (t) => Math.abs(x(t) - x(row.geo.goal)) + Math.abs(y(t) - y(row.geo.goal)) === 1,
     );
     const switchTiles = FAR_TILES.filter((t) => t !== row.geo.goal);
-    for (let di = 0; di < goalNeighbours.length; di += 1)
-      for (let dj = 0; dj < goalNeighbours.length; dj += 1) {
-        if (di === dj) continue;
-        const d1Tile = goalNeighbours[di] as Coord;
-        const d2Tile = goalNeighbours[dj] as Coord;
-        if (phaseAt(d1Tile) === null || phaseAt(d2Tile) === null) continue;
-        for (let si = 0; si < switchTiles.length; si += 1)
-          for (let sj = 0; sj < switchTiles.length; sj += 1) {
-            if (si === sj) continue;
-            const s1Tile = switchTiles[si] as Coord;
-            const s2Tile = switchTiles[sj] as Coord;
-            if (s1Tile === d1Tile || s1Tile === d2Tile || s2Tile === d1Tile || s2Tile === d2Tile) continue;
-            const p1 = phaseAt(s1Tile);
-            const p2 = phaseAt(s2Tile);
-            if (p1 === null || p2 === null) continue;
-            total += 1;
-            const doors: DoorDef[] = [
-              { id: "d1", color: closedIn(phaseAt(d1Tile) as Phase), tiles: [d1Tile] },
-              { id: "d2", color: closedIn(phaseAt(d2Tile) as Phase), tiles: [d2Tile] },
-            ];
-            const switches: SwitchDef[] = [
-              { id: "s1", tile: s1Tile, activePhase: p1, targets: ["d1"] },
-              { id: "s2", tile: s2Tile, activePhase: p2, targets: ["d2"] },
-            ];
-            const note =
-              `${geoNote(row.geo)} · gates d1=${coordKey(d1Tile)}/${closedIn(phaseAt(d1Tile) as Phase)} d2=${coordKey(d2Tile)}/${closedIn(phaseAt(d2Tile) as Phase)} ` +
-              `· s1=${coordKey(s1Tile)}/${p1} s2=${coordKey(s2Tile)}/${p2}`;
-            const { outcome, level } = judge(lead(row.geo, doors, switches), cut);
-            if (!outcome.accepted || level === null) {
-              histogram.set(outcome.reason, (histogram.get(outcome.reason) ?? 0) + 1);
-              if (outcome.par !== undefined)
-                misses.push({ reason: outcome.reason, note, par: outcome.par, dexec: outcome.dexec ?? Number.NaN, b: outcome.b ?? Number.NaN });
-              continue;
-            }
-            accepts.push({ note, level, dexec: outcome.dexec ?? Number.NaN });
-            console.log(
-              `  ACCEPT  ${note}\n          par=${String(outcome.par)} D_exec=${(outcome.dexec ?? 0).toFixed(6)} ` +
-                `(cut +${((outcome.dexec ?? 0) - cut.floor).toFixed(6)}) B=${(outcome.b ?? 0).toFixed(4)} coverage=${String(outcome.coverage)} barePar=${String(row.par)}`,
-            );
-          }
+    // ── A FULL SEAL: every neighbour of the goal is a door ────────────────────
+    //
+    // The door count is therefore the goal's own geometry, not an axis the author
+    // dials: a corner goal has n = 2 neighbours, a goal against one edge has n = 3.
+    // That is what makes this beat escalatable by moving the goal INWARD instead of
+    // by lengthening a walk — and why the enumeration below is over the switch
+    // n-tuples only: the doors are forced, the switches are chosen.
+    //
+    // (`E4` `latch-route` is what makes the full seal necessary rather than
+    // optional: it asks that *every* par route press a switch and then cross a door
+    // it targets, so one free approach to the goal would fail it.)
+    if (goalNeighbours.length < 2 || goalNeighbours.length > 3) continue;
+    if (goalNeighbours.some((t) => phaseAt(t) === null)) continue;
+    const n = goalNeighbours.length;
+    const doors: DoorDef[] = goalNeighbours.map((t, i) => ({
+      id: `d${String(i + 1)}`,
+      color: closedIn(phaseAt(t) as Phase),
+      tiles: [t],
+    }));
+    const pool = switchTiles.filter((t) => !goalNeighbours.includes(t) && phaseAt(t) !== null);
+    const picks: number[] = [];
+    const visit = (): void => {
+      if (tried >= swCap) return;
+      if (picks.length < n) {
+        for (let i = 0; i < pool.length; i += 1) {
+          if (picks.includes(i)) continue;
+          picks.push(i);
+          visit();
+          picks.pop();
+          if (tried >= swCap) return;
+        }
+        return;
       }
+      tried += 1;
+      total += 1;
+      const swTiles = picks.map((i) => pool[i] as Coord);
+      const switches: SwitchDef[] = swTiles.map((t, i) => ({
+        id: `s${String(i + 1)}`,
+        tile: t,
+        activePhase: phaseAt(t) as Phase,
+        targets: [`d${String(i + 1)}`],
+      }));
+      const note =
+        `${geoNote(row.geo)} · seal(${String(n)}) ` +
+        doors.map((d) => `${d.id}=${coordKey(d.tiles[0] as Coord)}/${d.color}`).join(" ") +
+        " · " +
+        switches.map((s) => `${s.id}=${coordKey(s.tile)}/${s.activePhase}`).join(" ");
+      const { outcome, level } = judge(lead(row.geo, doors, switches), cut);
+      if (!outcome.accepted || level === null) {
+        histogram.set(outcome.reason, (histogram.get(outcome.reason) ?? 0) + 1);
+        if (outcome.par !== undefined)
+          misses.push({ reason: outcome.reason, note, par: outcome.par, dexec: outcome.dexec ?? Number.NaN, b: outcome.b ?? Number.NaN });
+        return;
+      }
+      accepts.push({ note, level, dexec: outcome.dexec ?? Number.NaN });
+      console.log(
+        `  ACCEPT  ${note}\n          par=${String(outcome.par)} D_exec=${(outcome.dexec ?? 0).toFixed(6)} ` +
+          `(cut +${((outcome.dexec ?? 0) - cut.floor).toFixed(6)}) B=${(outcome.b ?? 0).toFixed(4)} coverage=${String(outcome.coverage)} barePar=${String(row.par)}`,
+      );
+    };
+    visit();
   }
   console.log(`\ncensus: ${String(accepts.length)} accept(s) of ${String(total)} goal-gated candidate(s)`);
   console.log("rejection histogram:");

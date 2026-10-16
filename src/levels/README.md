@@ -396,6 +396,7 @@ regression is a red test rather than a lost terminal.
 |---|---|---|---|---|---|---|---|---|---|
 | L16 `l016.json` | 7 × 6, sealed column `x = 4`, portal `(3,3)↔(6,5)`/B, goal `(5,0)`, doors `(6,0)`+`(5,1)` blue, switches `(5,0)`/B + `(6,1)`/B | 12 | 17.100000 | 1.7000 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 20/20 press-then-cross | 8 tiles | 42/42 |
 | L17 `l017.json` | 7 × 6, sealed column `x = 4`, portal `(3,3)↔(5,2)`/B, goal `(6,5)`, doors `(6,4)`+`(5,5)` blue, switches `(6,0)`/A + `(5,0)`/B | 14 | 19.027027 | 1.6757 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 60/60 press-then-cross | 8 tiles | 42/42 |
+| L18 `l018.json` | 7 × 6, sealed column `x = 3`, portal `(2,5)↔(4,4)`/A, goal `(6,1)`, **three** blue doors `(6,0)`+`(5,1)`+`(6,2)` (every neighbour of the goal), switches `(6,3)`/B + `(6,5)`/B + `(5,0)`/B | 16 | 20.907923 | 1.6360 | `deadStates 0`, `noUnrecoverableOk`, `T ≡ R ≡ 0` | **UNSATISFIABLE** (`null`) | 189/189 press-then-cross | 9 tiles | 42/42 |
 
 Both are in the §4 acceptance region and both carry `D_exec = par + 3·B` exactly (the identity
 that makes the escalation check mean `par + 3·B`, not something else).
@@ -411,6 +412,16 @@ is free: `par` grows from the bare 10 to 14, i.e. `Δpar = 4`, and the two plans
 (land → up column 6 → `s1` → back down to `(6,4)`; or land → up column 5 → `s2` → down to
 `(5,5)`) are **the same length**, which is what makes the second plan discoverable rather than
 punished.
+
+**L18's taught beat** — *the seal widens: every way in is a door.* The goal `(6,1)` has
+**three** neighbours and all three are doors, so there is no free approach left at all and the
+all-OFF world is again unsatisfiable — but now the player has to find one of **three** switches
+(`(6,3)`, `(6,5)`, `(5,0)`, all phase B), none of which sits on the landing column of the portal
+`(4,4)`. `par` grows from the bare 12 to 16 (`Δpar = 4`, two presses at +2 each) and the
+escalation over L17 comes from the **shape** (door count 2 → 3, goal moved inward) rather than
+from lengthening a walk: the door count is the goal's own geometry, not an axis the author
+dials. `tests/solver/l16-l20-candidates.test.ts` pins all three rungs' obligations; the suite
+picks a new candidate up automatically because it walks the directory rather than a typed list.
 
 ### Named findings, recorded not smoothed
 
@@ -440,10 +451,17 @@ punished.
 
 ```
 node_modules/.bin/tsx scripts/author-l16-candidates.ts --stage=a --cx=4          # geometry census
-node_modules/.bin/tsx scripts/author-l16-candidates.ts --stage=d --cx=4 --id=17 --geos=25 --write
-node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l017.json --rung=17
+node_modules/.bin/tsx scripts/author-l16-candidates.ts --stage=d --cx=3 --id=18 --geos=45 --write
+node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l018.json --rung=18
 node_modules/.bin/vitest run tests/solver/l16-l20-candidates.test.ts
 ```
+
+Stage D's lattice is a **full seal** enumeration: the doors are *every* neighbour of the goal
+(a corner goal forces two, a goal against one edge forces three) and only the switch n-tuples
+are enumerated — capped per geometry (`--swcap`, default 1500, printed) because the n-tuple
+count grows factorially. The cap is sampling, not a hidden filter: every landed candidate was
+proved from its bytes afterwards, and a mutation battery of six controls fails loudly if any of
+the obligations went slack.
 
 `scripts/author-l16-candidates.ts` is rung-parameterised (`--id`, default 16) and the geometry
 lattice carries a §6.1.4 clone guard: a spawn/goal/portal triple already present in the shipped
