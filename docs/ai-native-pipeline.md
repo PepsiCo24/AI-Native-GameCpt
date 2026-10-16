@@ -1,7 +1,7 @@
 # AI Native Pipeline — Phase Shift: Echo Grid
 
 > Owner: **Level AI + Solver** with **Orchestrator** (formatting maintenance by Docs + GitHub; content belongs to the owners)
-> Version: V1.6 · Date: 2026-10-16
+> Version: V1.7 · Date: 2026-10-16
 
 ---
 
@@ -934,7 +934,171 @@ far-region phase wall makes its tile unstandable and the 42/42 coverage gate the
 every blocker must be an openable door) and a **sealed landing** (the portal lands in a pocket
 whose exit is a door → the ordered two-press chain `docs/level-design.md` §5's "2-step
 lookahead" still has not delivered) — are recorded for the next lane. Neither is built; no rung
-claims them.
+claims them. **Superseded for one half by §8.14 (LV-011):** the **sealed landing** was adopted by
+GD-007 (ADR-`design-0004`) and a par-20 board now exists as a proven **candidate** on the shelf; the
+**gauntlet** is **REJECTED** there and remains unbuilt by ruling, not by omission. Nothing in this
+section's numbers moves — L16–L19 are still the block, and its registered ceiling is still par 18 /
+`D_exec` 22.885157.
+
+### 8.14 LV-011 — L20 authored: the **sealed landing** is built, censused, and proven as a candidate (2026-10-16)
+
+**What the rung needed, and what was built.** §8.13 closed with the L20 gap restated permanently: the
+goal-gated full-seal device L16–L19 are built from measures a ceiling of `par 18` / `D_exec 22.885157`
+on `7×6` at every arity, and two constructions were named for the next lane — a **gauntlet** and a
+**sealed landing**. GD-007 published the mechanism ruling as **ADR-`design-0004`** (`docs/decisions/
+design-0004-l20-mechanism-sealed-landing.md`): the **sealed landing is ADOPTED**, the **gauntlet is
+REJECTED** (it needs ≥ 6 doors on a 7×6 arity-3 ring, and walls cannot remove an approach because a
+far-region phase wall makes its tile unstandable — the 42/42 coverage gate then fails, so every blocker
+must be an openable door). This pass implements the adopted device only: no gauntlet stage, no gate for
+it, nothing to reject later.
+
+**The device, as the program measures it on the landed bytes.** The portal lands the player inside a
+**pocket** — a tile-set whose boundary is enterable in **one phase only**, so a **single door object**
+can seal it — and the pocket is *walk-sealed*: the landing is reached only by the teleport, never on
+foot. The far region is portal-only (the `x = CX` column is parity-dead from the left region and
+enterable in exactly one far-frame phase — §8.13 / ADR-0009), so the shortest plan must execute the
+ordered chain **land → press the pocket switch → cross the pocket door → press a seal switch**. On
+`l020.json` that is: landing `5,1` behind `p1 (2,5) ⇄ (5,1)`/A, pocket `[5,1 6,0 6,1 6,2]`, boundary
+`[4,1 5,0 5,2 6,3]` covered by **exactly one** door `d1`, pocket switch `s1 (6,0)`/A → `d1`, goal
+`(5,4)` with its four neighbours all blue doors driven by `s2`–`s5`. The prover derives that pocket
+**independently from the file** — never from the authoring script — and that independence is the entire
+reason the two instrument corrections below were caught.
+
+**The law is what judges, and it is the prover's own reading.** `scripts/prove-candidate.ts` keeps its
+§8.12 role (re-measure the CUT from the shipped 15 on every run, `measureCut()` still excluding
+`BLOCK_L1619_IDS`, so the block's own `22.885157` never becomes the ceiling it is judged against) and
+gains the rung-≥20 chain: `par-stamped` · `region` · `escalation` · `par-step` · `latch-grade` ·
+`latch-route` · `refused-beat` · `coverage` · `validator` · `well-formed` ·
+`rung-plus-block-escalation` (`D_exec > 22.885157` **AND** `B ∈ [1.2500, 1.6875]` — a rung above the
+block must clear the block, not only the L1–L15 cut) · `par-rung-exact` (exact, not a floor), plus the
+five device gates **g1–g5** (`docs/level-design.md` §6.2.6, ADR-design-0004 decision 5): pocket
+on-foot-unreachable and leak-free · boundary covered by exactly one door object with 0 free leaks and 0
+phase walls · the ordered two-press chain on every shortest route · the all-OFF world unsatisfiable ·
+**the census identity broken** (`par ≠ min_i(d(start→s_i) + 1 + d(s_i→goal))`, §8.12 V1.5 — that
+identity holds only while every seal tile is directly adjacent to the free far region).
+
+**The landed candidate, measured (not typed).**
+
+| file | grid | `par` (solver) | `D_exec` | `B` | routes / press-then-cross | refusals | coverage | all-OFF world | gates |
+|---|---|---|---|---|---|---|---|---|---|
+| `src/levels/candidates/l020.json` | 7 × 6 | **20** | **24.729412** (> 22.885157 by 1.844255) | **1.5765** (in band) | 252/252 | 14 tiles | 42/42 | **UNSATISFIABLE** (`null`) | **15/15 ACCEPT** |
+
+`RESULT: PASS` on the landed bytes; `rung-plus-block-escalation` quotes both required inequalities
+machine-checked; the `B` band and the cut are re-derived from the live L1–L15 files on every run.
+
+**The census behind it — accepts were found, not conjured.** `scripts/author-l20.ts` is a new tool
+(not a stage of the L16–L19 one: that tool enumerates the goal-gated seal, where the pocket concept
+does not exist) with stage **P** (pocket class census: every connected pocket tile-set up to
+`--pocketsize`, measured for the single-phase seal and the leak test), stage **SL** (the lattice
+`portal entry × pocket × pocket switch × goal × seal-switch tuple`, each tuple re-derived and judged),
+stage **V** (re-read the written artifact and re-run the chain), the §6.1.4 **clone guard** on the
+stricter seal-inclusive geometry key (`player|goal|portal-pair|seal-door-tiles`), and `probePar()` as
+the **rung pin filter** (schema → rules → explore → par), so only a board measuring exactly `par 20`
+reaches the gates.
+
+| run | devices | tuples judged | accepts | rejection histogram | per-landing par ceilings |
+|---|---|---|---|---|---|
+| `--stage=sl` (pockets ≤ 5) | 238 | 269 484 | **640** | `par-not-rung: 268844` — the rung pin is the *only* filter that fires | 22 (`6,4` · `5,5`) · 21 (`5,0` · `6,1`) · 19 (`5,2` `6,3` `5,4` `6,5`) · 18 (`6,0` `5,1` `6,2` `5,3`) |
+| `--stage=sl --pocketsize=8 --write` | 2 788 | 284 784 | **640** (the same set) | `par-not-rung: 284144` | same |
+
+Both runs print `par-20 candidates refused by a gate: 0` — i.e. **every** tuple that reached the rung
+was accepted by all gates; the refusals are all upstream of par. `D_exec` over the 640 accepts runs
+**24.729412 … 24.790588** and `B` **1.5765 … 1.6485**, both inside their obligations, so the selection
+is the *derived* one: **exactly the rung's par, then minimal `D_exec`, then enumeration order**. Two
+honesty notes that belong in the record: (a) the par census histogram has a **hole at 20** on purpose —
+par-20 boards are *judged*, not tabulated, so `19:1056 21:192 22:96` is the ceiling evidence while `20`
+never appears; (b) **accept counts are enumeration-tuple counts, not distinct-board counts** — the same
+pocket set can be reached by more than one insertion order in `pocketCandidates`, so "640" is a class
+statement about the lattice, not "640 different levels".
+
+**Two instrument corrections — both false refusals, both fixed to the shipped rule.** Pass 1 censused
+the whole ≤5 class and returned `0 accept(s) of 269484`, with two of the five gates lying:
+
+1. `landingArrival()` searched for a **walk-in** onto the landing. `applyMove` fires a portal when a
+   move *enters* an end in the portal's `activePhase` and flips the phase **after** that move, so the
+   arrival state is the teleport's **successor**. The reader reported `arrival=NOT FOUND`.
+2. The **g1 escape flood** counted moves made *after* leaving the pocket, so a single return-to-start
+   cycle inflated `escapes` by every later move. Only **edges out of the pocket** now count; the
+   near-end return is named separately (stepping back onto the landing IS a portal end — ADR-0009 — so
+   it is a cycle that re-enters the portal at a price, never a way into the far region).
+
+Both are justified by the rule, not by the outcome: pass 1's refusal *detail* already named both facts
+(`arrival=NOT FOUND`, `escapes=53, returns=1`) before the accept count moved at all, and the
+disagreement between the search and the prover — two independent implementations of the same law — is
+what made them visible. The corrected ≤5 census returns **640 accepts** and is committed verbatim in
+`scripts/author-l20.transcript.md` §1–§3. **F-L20-1** records them as false refusals of the
+*instrument*, with the search-side correction mirrored into the prover.
+
+**One negative control per new gate — and one inherited control that MISSED.** The prover's battery is
+now **11/11 caught by their named gate**, each of g1–g5 measured *before* its `expect` list was
+written. The inherited control *"both switches retargeted to the first door"* **MISSED**: this board
+carries **five** switches, and moving every switch onto `d1` leaves the far region unopenable, so the
+first refusal is `unsolvable` — not `validator`/`latch-route`/`coverage`. Per **F-L16-3** the control
+was renamed to its measured meaning (`every switch retargeted…`) and its `expect` list corrected **to
+the measured names**; an `expect` that has not been measured is not evidence. **F-L20-4** records it.
+The gates' own controls are surgical-in-intent and honest about coupling: `g1` (drop the pocket door)
+and `g2` (drop one boundary tile) both fire as a *set* of gate names, printed in full beside the
+verdict, so a control caught for the wrong reason is visible rather than hidden behind a boolean.
+
+**How much of the device space is proven — the open boundary, named.** Stage P's ≤8 class is
+**complete** (`16 431 095` pocket tile-sets tested · `13 163 780` single-phase boundary · **2 788**
+leak-free) and its leak-free size histogram is `3:34 · 4:204 · 6:510 · 7:2040` — no size-5 and **no
+size-8 member**, i.e. the largest leak-free pocket the lattice can build at `--pocketsize=8` is 7.
+But `--stage=p --pocketsize=10` (started, **deliberately killed after 25 lines** — exponential in
+`--pocketsize`, and unnecessary because an accept exists inside ≤8) measures **more** leak-free pockets
+on the same landings: `5,1` goes 12 → **40** per near end, `6,0` 12 → 40, `5,0` 3 → 13. So the ≤8 class
+is a **slice**, not the whole space. Recorded as **F-L20-3: class completeness OPEN at ≥ 9** — a named
+boundary, never promoted to a completeness theorem, and never used to claim 20 is the device's ceiling.
+The per-landing ceilings *are* measured where they are claimed: a filtered pass on landing `6,2` reaches
+`par 18` and a 200 000-tuple `--cap` pass on `6,5` reaches `par 19`, while the full census's histogram
+shows `21:192 22:96` from other landings — the rung is the *window*, not a wall.
+
+**Acceptance on this tree (measured; report-only-up).** validator `npm run levels` → **19/19 ok ·
+0 errors · 52 warnings · 11/11 negative probes**, exit 0 · solver `solve-levels.ts src/levels/candidates
+--audit` → **1/1 PASS**, `solvable=true shortestSolution=20 parMatch=true`, `parRoutes 252`,
+`switchRequired=true`, `deadStates 0`, `noUnrecoverableOk`, `D_exec = par + 3·B` · `tsc --noEmit` →
+**production clean**, the one red row being `tests/solver/policy-negative-controls.test.ts(552,7)`
+(the QA-011 pin, **pre-existing at `b597f64`**) · `vitest run` → the delta is **one suite switching from
+"crashed with 0 tests executed" to "ran, 17 executed"**: baseline (candidate absent) **33 files ·
+12 failed / 21 passed · 42 failed / 648 passed / 3 skipped (693) · 1 failed suite**; with the candidate
+**33 files · 12 failed / 21 passed · 45 failed / 662 passed / 3 skipped (710) · 0 failed suites**. **No
+test that passed at the baseline fails now** — all 42 baseline failures are still failures, and the
+three new reds are inside `tests/solver/l16-l20-candidates.test.ts`, which was already RED.
+
+The three reds, itemised because two of them are not about this candidate's shape and one is:
+(i) *"re-derives the cut and the first rung from the shipped set"* — the fixture's `shipped` must be 15
+and the registered dataset is **19** (GAME-001 / R-003c vs the fixture literal), base-red; (ii) *"rises
+strictly along the block"* — the shelf holds exactly **one** candidate, so a ladder comparison cannot
+run (shelf composition, not a board); (iii) *"refuses a board with its latch removed (a bare door is a
+violation, not a puzzle)"* — **F-L20-2**: the control asserts the naked board (`switches: []`) is still
+**solvable** so that the audit names `door-without-switch` rather than solvability. On a **sealed
+landing** that premise is false **by construction** — `g4` measures the all-OFF world UNSATISFIABLE
+(the pocket door's base colour is closed in the arrival phase), which is exactly what the adopted law
+requires. The expectation encodes a property of the L16–L19 goal-gated seal that this device
+deliberately breaks: the **same class of false refusal as F-L20-1, on the test side**. `tests/**` is
+QA-011's lane, so it is **reported, not edited** — named with its mechanism and with the measured
+`allOffShortestSolution = null`, for QA to re-measure. The nine `l020.json (rung 20)` obligations in
+that suite all **PASS**, so the candidate is measured by the pinned suite **and** by
+`scripts/prove-candidate.ts` independently.
+
+**Cross-lane, named and not taken.** `src/levels/candidates/l020.json` is a **candidate on the shelf**:
+registration into the dataset root, the registry row (`src/game/levels/level-registry.ts`), the count
+pin (`tests/e2e/helpers/levels.ts:76 EXPECTED_LEVEL_COUNT`), the metrics sidecar regeneration, the eight
+derived pin tables of `src/levels/README.md` §7, and any change to the registered
+`block-l1619-tail-ceiling` are **R-003c / Orchestrator**, not this pass. In particular the registered
+ceiling stays `par 18` / `D_exec 22.885157`: a proven candidate does **not** widen the registered stop,
+and the gate that enforces the stop is untouched. `src/game/**`, `tests/**` and
+`docs/level-design.md` were not edited; no shipped byte, gate constant or weight moved.
+
+**Reproducing this record.** `npx tsx scripts/author-l20.ts --stage=p --pocketsize=8` (stage P),
+`--stage=sl --pocketsize=8 --write` (stage SL + land), `npx tsx scripts/prove-candidate.ts
+src/levels/candidates/l020.json --rung=20` (< 1 s), `npm run levels`, `npx tsx scripts/solve-levels.ts
+src/levels/candidates --audit`. The committed transcript is `scripts/author-l20.transcript.md`
+(complete stage-P ≤8 class, both stage-SL censuses with their summary tails, the two per-landing passes,
+the full prover run with gates, controls and verdict, the pass-1 evidence of both instrument bugs, and
+the ≤10 datum as the named open boundary). `--write` re-derives every byte it writes, so re-running the
+census re-writes the same artifact; a re-run that disagrees with the transcript is a finding, not a
+rebuild.
 
 ## 9. Change log
 
@@ -957,3 +1121,4 @@ claims them.
 | 2026-10-16 | V1.4 | **LV-010f — L19 is proven: the seal closes its fourth side.** The block gains a fourth rung, **L19 `l019.json` · `par 18` · `D_exec 22.885157` · `B` 1.6284 · 231/231 press-then-cross · 10 refusals · 42/42**, all nine gates ACCEPT on the landed bytes and 6/6 mutation controls caught by their named gate. The **shape step is a census result, not a choice**: `--stage=f` (new) measured 14 310 bare boards across the sealed-column families at `7×6` and showed the bare route reaches `par 14` and no further — and only at seal arity 2, which is L16/L17's shape already — while arity 3 caps at 13 and arity 4 at 12; so the step taken is arity **3 → 4**: the goal moves off the edge into the **interior** (`(5,4)`, four neighbours, all four doors) and the ladder now walks the full-seal sequence 2 → 2 → 3 → 4. The arity-4 family was enumerated **completely** (17 160 tuples, `--swcap` above the whole space) giving `par census 12:10230 14:6450 16:446 18:34` — 18 is the family's ceiling and 26 boards clear every gate at exactly the rung value. The generator is now **rung- and family-generic** (`--w`/`--h`/`--seal`/`--drop`/`--geo`, defaults reproducing every L16–L18 command byte-for-byte) and prints a **rung pin**: an accept longer than `l15Par + 2·(id − 15)` is named and dropped, never shipped as the rung. The block test gains three **ladder-level** obligations (strict `D_exec` rise, exact rung `par`, the named `B`-excursion register) → `vitest` **32 files · 670 passed · 3 skipped**. Registration/`EXPECTED_LEVEL_COUNT`/sidecar/block-law stay **R-003c** | Level AI + Solver (LV-010f) |
 | 2026-10-16 | V1.5 | **LV-010f — L20 is NOT authored, and the block's stop is a measurement.** After L19 the par-20 rung was searched for and **not** found: the census says the goal-gated full-seal device L16–L19 are built from has a measured ceiling of exactly **18 on `7×6`** at every arity. Enumerated, not sampled: arity 2 (both bare-14 geometries, 210 tuples each) `14:201 16:9`; arity 3 (2 184 tuples) `12:1584 14:452 16:139 18:9` and `12:1224 14:910 16:50`; arity 4 — L19's own board — (17 160 tuples) `12:10230 14:6450 16:446 18:34`. `7×7` does reach `par 22` (43 680 tuples: `12:21840 14:18018 16:2457 18:1197 20:108 22:60`) but with a seal **byte-identical in shape to L19's** at the **same bare par 12**, so the extra moves are press-detour length on an already-taught shape — a re-ran longer walk, refused as a rung's escalation. **Why it is structural, measured:** with a full seal the shortest plan opens exactly ONE door, because every seal tile is directly adjacent to the free far region — on `l019.json` and `l018.json` every single-door board (that door plus only its own switch, all others deleted) is solvable at `shortest = 12` while all-OFF is unsatisfiable. So `par = min_i (d(start→s_i) + 1 + d(s_i→goal))` and the only escalation available is where the cheapest switch sits. Two constructions that would force a *second* press were identified and recorded for the next lane — a **gauntlet** (every approach to the goal's ring itself behind a door; note that walls cannot be used to remove an approach, because a far-region phase wall makes its tile unstandable and the 42/42 coverage gate then fails, so every blocker must be an openable door) and a **sealed landing** (the portal lands in a pocket whose exit is a door → an ordered two-step chain, `docs/level-design.md` §5's still-undelivered "2-step lookahead"). **Neither was built and no rung claims them**; the block ships as L16–L19 and waits for a mechanism. Barrel unchanged: no gate widened, no band moved, no shipped row touched | Level AI + Solver (LV-010f) |
 | 2026-10-16 | V1.6 | **R-003c — the shelf empties and the block is registered: the four rungs are dataset, and the law is what judges them.** New **§8.13** records the registration end-to-end. *(The copy)* `git mv` of `l016`–`l019` from `src/levels/candidates/` into the root — a **byte-copy, never an edit** — with identity proven by git blob hash against `3cc6df2:src/levels/candidates/lNNN.json` (`4635a866…`/`97ce1448…`/`486fedac…`/`3feca910…`) and the check **failing** rather than skipping when git cannot answer. *(The law, before the numbers)* `BLOCK_L1619_*` constants + the six-id `BlockL1619GateId` union + `blockL1619Gates()` + four lesson rows **all `switchRequired: "required"`** (measured, not decreed: the all-OFF subgraph contains no goal state on 4/4, so this latch carries **existence** — L16–L19 are the first latch block in the set that is not `"exempt"`) + six new `gate-block-l1619-*` codes. *(The gate that could have been self-serving)* `scripts/prove-candidate.ts`'s `measureCut()` now **excludes `BLOCK_L1619_IDS`** from the cut basis: without it, registering the rungs would have let the block's own max `D_exec` (22.885157) become the ceiling it is judged against, and all four rungs would have been **falsely REJECTed**. *(The re-attestation)* `scripts/attest-lv010-block.ts` + committed transcript, `RESULT: REGISTERED-MATCH`, exit 0 — byte identity; the law's basis re-derived from the live L1–L15 files (10 / 14.969697 / `[1.2500, 1.6875]`, all MATCH against the imported constants); **every booked number re-measured from the root bytes**; all gates PASS per rung; the ladder (exact rung `par`, strictly rising `D_exec`, terminal = the 22.885157 ceiling); and **6/6 negative controls caught by name** — one per gate, in-lane (the `tests/**` `Record<PolicyViolationCode, …>` is deliberately left RED with its six missing keys named for QA). *(The parity claim)* the registered bytes re-measure the booked `12/17.100000 · 14/19.027027 · 16/20.907923 · 18/22.885157` **identically** — every published number is a Solver read-out of the root files, never a candidate note; the tail-ceiling gate compare is 6-dp for exactly that reason (bit-exact wrongly refused `l019`). *(Acceptance)* validator `19/19 ok · 0 errors · 52 warnings` (11/11 probes) · solver `19/19 PASS` (1 standing escalation, `l008`) · sidecar regenerated to **19 records** · `tsc` clean on production · `vitest` **33 files → 9 failed / 38 rows**, every red one a count- or dataset-derived pin itemised with **file:line** in `src/levels/README.md` §7. *(A measured finding, not a mystery)* `route-budget.test.ts`'s exhaustive-vs-pruned equality runs an **unpruned** walk under the default `PAR_ROUTE_VISIT_CAP = 2_000_000`, and the new rungs' unpruned demand is **1,363,684 / 17,779,004 / 98,736,430 / > 5 × 10⁸** work units (L16→L19) while the **pruned** walk every shipped tool uses costs 115/570 … 2162/7386 on the same boards — n-11's lookahead prune shown to be load-bearing, with the numbers handed to QA. *(Cross-lane, named not taken)* the registry row (`src/game/levels/level-registry.ts`), `EXPECTED_LEVEL_COUNT` `tests/e2e/helpers/levels.ts:76`, and eight derived pin tables; `src/levels/candidates/README.md` created so the empty shelf reads as **graduated**, not lost. *(The permanent gap)* **L20 is not authored** and no fifth rung was invented: the goal-gated full-seal device's ceiling is par 18 / `D_exec` 22.885157 on `7×6` at every arity, `7×7` reaches par 22 only by re-running L19's exact seal shape longer (refused as an escalation), and `block-l1619-tail-ceiling` enforces the stop as an equality — a par-20 rung needs a new lattice stage (gauntlet or sealed landing), recorded for the next lane. **No earlier row, gate, band, weight or shipped number moved** | Level AI + Solver (R-003c) |
+| 2026-10-16 | V1.7 | **LV-011 — L20 is authored: the ADOPTED sealed landing is built, censused, and proven as a candidate.** New **§8.14**. *(The law first)* GD-007 / ADR-`design-0004`: **sealed landing ADOPTED, gauntlet REJECTED** (≥ 6 doors on a 7×6 arity-3 ring, and walls cannot remove an approach — a far-region phase wall makes its tile unstandable and the 42/42 coverage gate fails); only the adopted device is implemented, no stage and no gate for the rejected one. *(The search)* new tool `scripts/author-l20.ts` — stage **P** (pocket class census), stage **SL** (the lattice `portal entry × pocket × pocket switch × goal × seal-switch tuple`, each tuple re-derived and judged), stage **V**, the §6.1.4 clone guard on the **stricter seal-inclusive** geometry key, `probePar()` as the rung pin filter; **238 devices / 269 484 tuples** at pockets ≤ 5 and **2 788 / 284 784** at ≤ 8 give the **same 640 accepts**, the whole rejection histogram being `par-not-rung` (the rung pin is the only filter that fires) with `par-20 candidates refused by a gate: 0`; accepts run `D_exec` 24.729412…24.790588 · `B` 1.5765…1.6485, and the selection is derived (exact rung par → min `D_exec` → enumeration order). *(The instrument)* **F-L20-1**: pass 1 returned `0 accept(s) of 269484` from **two false refusals** — `landingArrival()` searched a *walk-in* where `applyMove` fires the portal on **entry** and flips after it (so the arrival is the teleport's successor), and g1's escape flood counted moves made *after* leaving the pocket (now edges out of the pocket only, with the near-end return named); both corrected to the shipped rule and mirrored in the prover, justified by the rule and not by the outcome, and visible only because two independent implementations disagreed. *(The proof)* `l020.json` = **par 20 · `D_exec` 24.729412 · `B` 1.5765 · 252/252 press-then-cross · 14 refusals · 42/42 · all-OFF UNSATISFIABLE · gates 15/15 ACCEPT**, with the rung-≥20 chain adding `rung-plus-block-escalation` (`> 22.885157` **and** `B` in band), `par-rung-exact` and **g1–g5** (pocket on-foot-unreachable and leak-free · boundary sealed by **exactly one** door object, 0 free leaks, 0 walls · the ordered two-press chain on every route · all-OFF unsatisfiable · **the census identity broken** — the identity's value 16 < par 20 while every par route presses 2 switches). *(The battery)* **11/11 caught by their named gate**, each g1–g5 control measured before its `expect` was written — and **F-L20-4**: the inherited *"both switches retargeted"* control **MISSED** (this board carries five, and the first refusal is `unsolvable`), so per F-L16-3 it was **renamed to its measured meaning** and its `expect` corrected to the measured names. *(The open boundary)* **F-L20-3**: stage P's ≤8 class is complete (`16 431 095` tested · `13 163 780` single-phase boundary · 2 788 leak-free, sizes `3:34 4:204 6:510 7:2040`) but `--pocketsize=10` measures **more** leak-free pockets on the same landings (`5,1` 12 → 40, `6,0` 12 → 40, `5,0` 3 → 13) — recorded as **class completeness OPEN at ≥ 9**, a named slice, never a completeness theorem and never a ceiling claim. *(Acceptance / report-only-up)* validator 19/19 ok · 0 errors · 52 warnings · 11/11 probes; solver `src/levels/candidates --audit` **1/1 PASS** with `parMatch=true`; `tsc` production clean (the single red row is the QA-011 pin, pre-existing at `b597f64`); `vitest` delta is **one suite turning from "crashed, 0 tests executed" into "ran, 17 executed"** — baseline 33 files · 12 failed / 21 passed · 42 failed / 648 passed / 3 skipped · 1 failed suite → 33 files · 12 failed / 21 passed · 45 failed / 662 passed / 3 skipped · 0 failed suites, **no previously-passing test failing**, the three new reds itemised (two are the fixture's `15`-vs-`19` and the one-candidate shelf; the third is **F-L20-2**, reported not edited: QA's *latch-removed* control asserts a bare board stays solvable, which a sealed landing falsifies **by construction** — the same class of false refusal as F-L20-1, on the test side, handed to QA-011 with its mechanism). *(Cross-lane, named not taken)* registration, the registry row, `EXPECTED_LEVEL_COUNT`, the sidecar and the **registered `block-l1619-tail-ceiling`** stay R-003c/Orchestrator — the registered ceiling is still par 18 / 22.885157 and a proven candidate does not widen it. Transcript: `scripts/author-l20.transcript.md` | Level AI + Solver (LV-011) |
