@@ -1,0 +1,14 @@
+{
+  "id": 14,
+  "width": 7,
+  "height": 4,
+  "startPhase": "A",
+  "player": [3, 3],
+  "goal": [6, 3],
+  "phaseAWalls": [[5, 0], [5, 2]],
+  "phaseBWalls": [[5, 1], [5, 3]],
+  "doors": [{ "id": "d1", "color": "blue", "tiles": [[6, 2]] }],
+  "switches": [{ "id": "s1", "tile": [6, 1], "activePhase": "B", "targets": ["d1"] }],
+  "portals": [{ "id": "p1", "pair": [[0, 1], [6, 0]], "activePhase": "A" }],
+  "par": 8
+}

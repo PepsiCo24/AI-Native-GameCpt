@@ -1,7 +1,7 @@
 # AI Native Pipeline — Phase Shift: Echo Grid
 
 > Owner: **Level AI + Solver** with **Orchestrator** (formatting maintenance by Docs + GitHub; content belongs to the owners)
-> Version: V0.9 · Date: 2026-10-15
+> Version: V1.1 · Date: 2026-10-16
 
 ---
 
@@ -521,7 +521,139 @@ node_modules/.bin/vitest run                               # incl. tests/solver/
 
 The ten pre-existing solver-dump lines are byte-identical to the pre-LV-008 run; L11 is appended
 as line 11 and the only other diff is the aggregate count lines. ADR-0004 in force throughout:
-reject, never repair.
+reject, never repair. (LV-009-B's record is **§8.10**: the invariant it re-asserts is that the
+pre-LV-008 dump lines are *still* byte-identical, with L12–L15 appended in order.)
+
+### 8.10 LV-009-B — the L12–L15 block enters the dataset (2026-10-16)
+
+**The law came first, and the law is written down elsewhere.** `docs/decisions/design-0003-l1215-block-law.md`
+carries the block's constants, its four per-board verdicts and its §8 acceptance law. This
+record is the *pipeline* half: what the program did with that law, in what order, and what
+it measured — because the only claim that ships a level is a program claim.
+
+**1. Attestation before the data (STEP 0).** The first commit of the task
+(`e8a456d`, `scripts/attest-lv009-block.ts` + its committed transcript) re-derived **every**
+ADR-design-0003 constant from the four candidate files *as an isolated dataset* — a byte-copy
+of the LV-009-A dossier's `candidates/` tree whose four files were proved `sha256 IDENTICAL`
+to the recorded blobs first. It printed `par`, `D_exec`, `T`, `R`, dead states, coverage, the
+all-OFF advantage (a *restricted* all-OFF BFS, not a depth read from the full graph), the
+portal-free verdict, `dualPhaseTiles` and the ordered/unordered refusal counts. Result:
+**LAW-MATCH, exit 0, no `STOP_AND_ROUTE`** — 4/6/8/10 · 8.230769/10.898734/12.957895/14.969697 ·
+`T ≡ R ≡ 0` · 0 dead states · coverage 100 % (21/21, 24/24, 28/28, 35/35) · portal-free
+`7` (L12) and UNSATISFIABLE (L13–L15) · `allOffShortest − par = 2` on 4/4 · 19/16/20/15
+dual-phase tiles · 3/5/5/6 refused-then-entered tiles with the ordered list equal on 4/4.
+The ADR's dip ceiling was re-read from the live `l011.json` in the same run: **8.573171**.
+Nothing was fitted to a target; a divergence would have been a named stop, not a repair.
+
+**2. Then the law was encoded, then the bytes were copied.** `@/core/solver/policy` gained the
+constants (`BLOCK_L1215_PAR_*`, `BLOCK_LATCH_MIN_PAR_ADVANTAGE`, `BLOCK_L1215_TAIL_EXEC_FLOOR`,
+`BLOCK_L1215_DIP_CEILING`, `BLOCK_L1215_PORTAL_LOAD`, `BLOCK_L1215_IDS`), six `BlockGateId`
+entries, six `gate-block-*` codes, four `DOCUMENTED_LESSONS` rows with the new
+`block-l1215` obligation, `allOffShortestSolution()` and `blockL1215Gates()` — **before**
+`src/levels/l012.json … l015.json` were copied in. The candidate JSON files were byte-copied
+and never edited; no policy *number* of an earlier block was touched (the debut's
+`PORTAL_DEBUT_EXEC_BUDGET` is deliberately **not** re-purposed — ADR §8 item 1).
+
+**3. Every new code got a negative control, and the two couplings are stated.** The suite's
+`Record<PolicyViolationCode, …>` makes a code without a control a compile error, and this
+block's six controls are measured rather than assumed: the par-ramp control (authored `par` 6
+on L12's board → **one** violation), the coverage control (one cell sealed in *both* phases →
+20/21 → **one** violation, which is why the clause is not implied by solvability), the latch
+control (the latch removed — couples with gate (ii), and the coupling is a **theorem**:
+gate (ii) PASS ⇒ no all-OFF route is as short as par, so G1 can never fail alone; the
+implication is asserted over every board in the suite), the portal-load control (`l013` with
+one wall moved to the other phase: walk-only solves again while par stays 6 → **one**
+violation), the dip control (L12's board one row taller: par still 4, coverage still 35/35,
+`D_exec` 8.723881 > 8.573171 → **one** violation) and the tail control (`l014` wearing `id: 15`
+— deliberately **not** surgical, because a one- and two-wall search over `l015` (48 slots,
+1128 pairs) measured that no sealing pulls the last member's execution axis under 13.64).
+
+**4. Acceptance, as the numbers the program printed** (this tree, this task):
+`scripts/validate-levels.ts` → **15/15 level files ok · 0 errors · 28 warnings (0
+multi-switch-door)** · `RESULT: PASS` (the warnings ledger is the 13 → 28 growth the ADR's §8
+item 5 predicted, all explainable and none a gate); `scripts/solve-levels.ts --report` →
+**15/15 PASS**, `par == shortestSolution` 15/15, 0 dead / 0 unrecoverable on the whole set,
+1 ESCALATION (the standing `l008` `dual-phase-tiles`), sidecar regenerated
+(`docs/level-difficulty.report.json`, 15 records); `tsc --noEmit` → 0; `vitest run` →
+**30 files, 617 passed, 3 skipped**; `vite build` → ok.
+
+**5. What did *not* happen.** No candidate was edited, no level was auto-repaired, no test was
+weakened to make a board pass, and the solver's policy numbers were not moved. Two things are
+**not** this role's to do and are handed over by name: the **registry unlock**
+(`src/game/levels/level-registry.ts` still imports `l001`–`l011`, so `?level=12..15` does not
+resolve — the playthrough rows and the L1→L15 unlock chain therefore stay RED) and the
+**UA capture-entry round** ADR §8 item 6 requires (the doors × portals painter seam, the sealed
+line reading as a wall column, the portal ends reading as a pair) before the block is
+registered as playable. The dataset pin `tests/e2e/helpers/levels.ts:EXPECTED_LEVEL_COUNT`
+moved 11 → 15 — the one cross-lane byte this task is authorized to touch — so the inventory
+gate now checks the dataset against the dataset, and the remaining red rows name the
+*registry*, not the data. Item 6 measures that sentence instead of asserting it, and finds the two
+rows it does not cover.
+
+**6. The one e2e round — every red row named, and the probe that isolates the cause.** Preflight
+per the standing protocol (`pgrep -f "playwright test"` → zero foreign matches, port `5219` free,
+no process rooted in this tree), then **one** managed run, `PS_E2E_PORT=5219 playwright test
+--retries=0`: inventory **107 tests in 8 files** → **20 failed · 87 passed (6.0 m)**, no retry.
+
+*The 20 rows, by cause.* **19 of 20 are the registry gap**, and the mechanism is the registry's own
+documented contract — `startIndexForLevel`: *"Out of range / unknown / absent ⇒ index 0 (L1)"* — so
+`?level=12` loads L1 before a single frame is judged: 4 × `playthrough` HUD labels (`L 12`…`L 15`
+read `L 01`), L11's own row (its dialog says `原型结束 / Prototype over`, because the playable
+ladder still ends at L11), the L1→L15 unlock chain (times out on the Next click that L11 refuses to
+show) and the end-dialog row (`?level=15` never reaches an overlay), 5 × `latch-door`, 7 ×
+`refusal` (the refusal fixtures are the block's own geometry; the UI is standing on L1's board). The
+20th is **not** the registry: `tests/e2e/portal.spec.ts:82` pins the literal `[PORTAL_LEVEL_ID]`
+against a dataset-derived list that is now `[11,12,13,14,15]` — stale *by design*, since
+ADR-design-0003 makes portals mandatory on L13–L15 and a shortcut on L12.
+
+*Then the probe that separates "the data is unplayable" from "the import list is short."* A
+temporary, clearly-labelled, **uncommitted** edit appended `l012`–`l015` to `LEVEL_SOURCES` and
+changed nothing else; it was reverted immediately after the run (`git status` clean, probe markers
+`0`, file bytes restored to `HEAD`). The four UI-walk specs then measured **74 passed · 2 failed
+(3.6 m)**: every playthrough row (L11 and L12–L15), the **L1 → L15 unlock chain**, the end-dialog
+row and all seven refusal rows go green — the four boards are **winnable through the real UI**. The
+two survivors under the probe are neither the registry nor this lane's pen:
+
+- `tests/e2e/latch-door.spec.ts:102` (L12 only): expected `(5,1)`, received `(4,2)`.
+  `scripts/latch-pair-audit.ts` measures the board's reachable set on two independent arms and finds
+  **2** co-located discriminating pairs under the spec's own fixture bookkeeping and **12** under
+  `isLegalMove` alone over L12's 78 reachable states; L6–L11 and L13–L15 all read HOLDS. L12's
+  cheapest occupancy fixture (depth 3, pre-arrival `(4,2)A`, arriving `right`, door `d1`) *does*
+  pair with a depth-4 refusal fixture — but the spec picks the cheapest refusal **independently**,
+  and that is `(5,1)A down` at the same depth, a tie broken by node order. So the welded pair exists
+  on the board and the red row is **fixture selection**: the spec's own docstring ("two reachable
+  states on the same tile in the same phase whose only difference is whether the switch was
+  pressed") is not what `cheapestDoorFixtures()` implements. Board exonerated by measurement, no
+  data edit proposed.
+- `tests/e2e/portal.spec.ts:82`: the dataset-derived pin above, QA's file, QA's pen.
+
+Handover is therefore three named items, all outside this lane: the **registry unlock** and the
+**UA capture-entry round** (Gameplay Engineer / UI-Art, ADR §8 item 6), and these **two e2e pins**
+(QA — the portal list and the latch pair selection). Nothing red is left unexplained, and nothing
+was patched or weakened here to make a row green.
+
+**7. Reproduce this record.**
+
+```bash
+node_modules/.bin/tsx scripts/attest-lv009-block.ts            # STEP 0: LAW-MATCH on the candidates
+node_modules/.bin/tsx scripts/solve-levels.ts                  # 15/15 PASS (L12–L15: 9/7 gates, all PASS)
+node_modules/.bin/tsx scripts/solve-levels.ts --report         # + regenerate docs/level-difficulty.report.json
+node_modules/.bin/tsx scripts/validate-levels.ts               # 15/15 level files ok · 0 errors
+node_modules/.bin/vitest run                                   # incl. tests/solver/policy-negative-controls.test.ts §2d
+node_modules/.bin/tsx scripts/latch-pair-audit.ts              # L6-L15: the co-located latch pairs (item 6's L12 finding)
+PS_E2E_PORT=5219 node_modules/.bin/playwright test --retries=0  # 107 tests / 8 files — 20 red, all named in item 6
+```
+
+The ten pre-LV-008 dump lines are byte-identical; L11–L15 are appended in order and the only
+other diffs are the aggregate count lines. ADR-0004 in force throughout: reject, never repair.
+
+### 8.11 Sibling records
+
+The **player-facing** half of this record — which painter seam each new object needs, and what
+the block must *read* as on screen before it may be registered — belongs to `docs/ui-ux.md`
+(UI / Art Director) and is quoted, never restated, here. The design law is
+`docs/decisions/design-0003-l1215-block-law.md`; the dataset's own per-level derivations are
+`src/levels/README.md` §2d.
 
 ## 9. Change log
 
@@ -537,3 +669,5 @@ reject, never repair.
 | 2026-10-15 | V0.7 | **LV-007C items 2–3 — the execution axis in this pipeline's record, and the target-curve reconciliation it points at.** *Item 2* (landed in its own commit): §4's metric block names `D_exec = D − w5·M` as a **component** of `D` (ADR-design-0001) and §8.7 item 3 records that the CLI prints it per level (`difficultyExec`, `@/core/solver/difficulty` `DifficultyBreakdown.Dexec`), both forms, `null` iff the board is unsolvable; `D`'s formula, weights and published values untouched. *Item 3*: §4's dip sentence now names its source precisely (`docs/level-difficulty.md` §3's "block starts with a dip" rule against the **pre-V0.6** `docs/level-design.md` §6 clause), and §8.7 item 3 records that §3 of `docs/level-difficulty.md` was **re-keyed** to the V0.6 execution-axis law — pre-ADR-0009 schedule (door L21 / portal L36) and pre-measurement absolute `D` bands withdrawn **by name**, block table following `docs/game-design.md` §8, dips scheduled only at the two real seams (**L6**, **L11**), legal-force numbers limited to L1–L10 (measured) + L11 (pre-registered). No solver behaviour, verdict, gate or contract changes in either item | Level AI + Solver (LV-007C) |
 | 2026-10-15 | V0.8 | **LV-008 — the first complete mechanic-debut pass: `l011.json`, the M2 (portal) debut.** New **§8.8** records the second and last seam end-to-end: the pre-registered acceptance contract (`docs/level-design.md` §6 V0.6 / `docs/level-difficulty.md` §3.3–§3.4: `D_exec < 13.64`, `par ≤ 4`, exactly one opposite-colour pair, no false routes, below-OFFERED) filtered **before** the board existed; the committed seeded proposal family (`scripts/author-l11-candidates.ts`, `SEED = 20261015`, 54 candidates, histogram `gate-shortest-solution-presses-switch-and-crosses-door` 49 / `gate-portal-par-cap` 4); the 1 accept that is the shipped file (`shipped=MATCH`, `par=4`, `Dexec=8.5732`); the two named negative probes (same-colour pair → level-layer hard **error**, bypassable portal → `gate-portal-crossing-on-every-par-route`); the five new `PortalGateId` codes, each with its negative control under the §8.3 one-control-per-code law, and the deliberately **absent** `portalRequired`/"lesson-portal-required" check (unreachable ⇒ it would violate that law; the load-bearing question stays on shared gate (ii) + `switchRequired: "exempt"`); **gate (iv) satisfied for the first time** (`dualPhaseTiles = 21`), so §8.5's escalation paragraph gains its resolution note while the whitelist stays one gate on one board (`l008`); the §8.5 ordered/unordered **promotion trigger tested and not fired** (`[5,0]` on both readers). Honest gaps stated, not hidden: the seam-law control is a documented **boundary** board (shipped `l010` re-labelled `id: 11`, `D_exec = 13.642857 ≥ 13.64`), no surgical variant exists on `l011` because dead pockets there measure `deadStates = 0` / `T = 0`; the portal-pair control is surgical in its phase clause but its count clause couples to gate (ii) on one variant (recorded, not shipped); and on the **total** axis the debut is *not* a dip (`D` 28.6429 → 28.5732 while `M` +1) — the same structural sawtooth §8.7 item 3 records for L5→L6, real on `D_exec` (13.6429 → 8.5732, −5.07) and invisible on `D`, with no weight tuned to change it. §8.4 law 2 named the second gate family (L1–L11 lesson rows), §8.6's reproducer gained the new script, §8.7 item 3 / §8.5's trigger paragraph and §7's script list were reconciled to the authored state, and new **§8.9** is the current end-to-end block (11/11 PASS). Legal-force numbers are now L1–L11 measured | Level AI + Solver (LV-008) |
 | 2026-10-15 | V0.9 | **LV-007E — the metrics sidecar: ADR-architecture-0003 Ruling 3 executed.** The accepted-set metrics stop being recompute-only: `docs/level-difficulty.report.json` is the committed artifact, emitted by `node_modules/.bin/tsx scripts/solve-levels.ts --report` (builder `scripts/metrics-report.ts`, calling the same `auditLevel` the gate and §4's inventory already name) and carrying one record per shipped level (the §8 contract fields + `par` read back from the file + the §2 breakdown `L B T R M D D_exec` + the diagnostics + the ordered/unordered latch tile lists + `parRoutes`/`embedRoutes`/`embedForced` + the per-level escalations, today exactly one: `l008`'s `dual-phase-tiles`), the weight vector, the two published seam read-outs with their weighted decomposition, and a `generatedFrom` block hashing the level files' **canonical content** (no git sha, no timestamp — reproducible across worktrees, still tree-bound). Freshness is a test, not a promise: `tests/solver/metrics-sidecar.test.ts` rebuilds the file and asserts byte-equality with the committed bytes, so a level edit, a weight re-calibration or a solver change without a regeneration is RED at the causing commit; it also pins `docs/level-difficulty.md` §5.2's cells against the artifact at the table's printed precision and cross-checks `tests/solver/difficulty.test.ts`'s hand-typed pins (non-vacuity: a builder bug cannot agree with itself). §8.9's reproduce list gains the emit; `docs/level-difficulty.md` §5.2 declares itself the human mirror and §5's stale "no sidecar exists" sentence is corrected. **The CLI's stdout dump is unchanged** — `--report` writes silently, so this document's §8.6/§8.9 baselines stay diffable; the sidecar adds no print, no metric and no rule | Level AI + Solver (LV-007E) |
+| 2026-10-16 | V1.0 | **LV-009-B — the L12–L15 block integrated: the law first, the program second, the data third.** New **§8.10** records the integration end-to-end: the **STEP 0** attestation commit (`e8a456d`, `scripts/attest-lv009-block.ts` + committed transcript) that re-derived *every* constant of **ADR-design-0003** from the four candidates as an **isolated, sha256-verified dataset** **before any dataset byte moved** (`LAW-MATCH`, exit 0, no `STOP_AND_ROUTE`: par 4/6/8/10 · `D_exec` 8.230769/10.898734/12.957895/14.969697 · `T ≡ R ≡ 0` · 0 dead states · coverage 100 % · portal-free 7 / UNSATISFIABLE · all-OFF advantage **+2** on 4/4 · 19/16/20/15 dual-phase tiles · 3/5/5/6 refusal tiles, ordered == unordered 4/4); then the **law encoded before the data** (six `BlockGateId`s, six `gate-block-*` codes, the `block-l1215` obligation rows, `allOffShortestSolution()`, `blockL1215Gates()`, the dip ceiling re-read from the live `l011.json` at **8.573171**, and the debut's `PORTAL_DEBUT_EXEC_BUDGET` deliberately **not** re-purposed); then a **byte-copy** of the four candidate files, never an edit; then **one measured negative control per new code** — four surgical, two deliberately coupled with the coupling named (the latch control couples with gate (ii) by **theorem**: gate (ii) PASS ⇒ no all-OFF route is as short as par, so G1 can never fail alone, asserted as an implication over every board; the tail control is the interior member wearing the last member's id because a 48-slot / 1128-pair wall search measured that no sealing pulls L15's execution axis under 13.64). Acceptance on this tree: validator **15/15 ok · 0 errors · 28 warnings** · solver **15/15 PASS** (1 standing escalation) · sidecar regenerated to 15 records · `tsc` 0 · vitest **30 files · 617 passed · 3 skipped** · build ok. Recorded as **not** this role's to do: the **registry unlock** (`src/game/levels/level-registry.ts` still imports `l001`–`l011`) and the **UA capture-entry round** of ADR-design-0003 §8 item 6 — both handed over by name, so the remaining RED rows name the *registry*, not the data. New **§8.11** points at the sibling records instead of restating them | Level AI + Solver (LV-009-B) |
+| 2026-10-16 | V1.1 | **LV-009-B, the e2e half — the red rows stop being inferred.** §8.10 gains **item 6**: one managed full run (`PS_E2E_PORT=5219 … --retries=0`) at **107 tests / 8 files → 20 failed · 87 passed (6.0 m)**, with **every** red row named and attributed — 19 of 20 from the registry gap (quoted at the mechanism: `startIndexForLevel`'s *"unknown ⇒ index 0 (L1)"*, so `?level=12` plays L1: 4 HUD labels, L11's own dialog, the L1→L15 unlock chain, the end-dialog row, 5 latch-door, 7 refusal) and **1** from a *dataset-derived* pin that the block law legitimately invalidates (`portal.spec.ts:82`, `[11]` → `[11,12,13,14,15]`, QA's pen). Then the **transient registry probe** — clearly labelled, uncommitted, reverted (`git status` clean, bytes back to `HEAD`) — which lifts the four UI-walk specs to **74 passed · 2 failed (3.6 m)** and thereby proves the four boards are **winnable through the real UI**: the L1→L15 unlock chain included. The surviving L12 latch row is triaged by a new committed audit tool, **`scripts/latch-pair-audit.ts`** (two independent arms: the spec's own fixture bookkeeping and `isLegalMove` alone over the reachable set): L12 ships **2 / 12** co-located discriminating pairs while L6–L11 and L13–L15 read HOLDS, so the row is **fixture selection** in `cheapestDoorFixtures()`' independent cheapest-of-each-kind pick (the tie that lands on `(5,1)A down` instead of the pairing `(4,2)A right`), not a board gap — the spec's docstring describes a search the helper does not perform. No data byte, no solver number and no test changed; handover is three named items (registry unlock, UA capture-entry round, two QA pins). Header version resynced to the changelog | Level AI + Solver (LV-009-B) |

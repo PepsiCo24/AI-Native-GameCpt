@@ -245,7 +245,7 @@ describe("LV-007B · item 2 — the shipped latch levels are orderable latches",
     const latched = SHIPPED_IDS.filter(
       (id) => solve(shippedBoard(id)).refusedThenEnteredTiles > 0,
     );
-    expect(latched).toEqual([6, 7, 8, 9, 10, 11]);
+    expect(latched).toEqual([6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
     for (const id of latched) {
       const result = solve(shippedBoard(id));
       expect(result.refusedBeforeEnteredTileList, `l${id}`).toEqual(
@@ -337,6 +337,25 @@ const ORDERED_PINS: Readonly<
   // world and accepted on the par route (the teleport is what puts the player next to it
   // in phase A), so both forms report the same single tile.
   11: { unordered: ["5,0"], ordered: ["5,0"] },
+  // LV-009-B — the L12–L15 block: all four are latch boards whose switch sits just
+  // inside the door it drives (a wall, a door, or a sealed line between them), so the
+  // refund-first beat is orderable on 4/4 and the two readers report the same list —
+  // ADR-design-0003's "refusedBeforeEntered == refusedThenEntered" leg, measured.
+  // The counts climb with the ramp (3/5/5/6 tiles), which is the §5 substitute for
+  // gate (i) on this block: the latch is witnessed, not merely load-bearing.
+  12: { unordered: ["1,0", "2,1", "5,2"], ordered: ["1,0", "2,1", "5,2"] },
+  13: {
+    unordered: ["4,0", "4,1", "4,2", "4,3", "5,1"],
+    ordered: ["4,0", "4,1", "4,2", "4,3", "5,1"],
+  },
+  14: {
+    unordered: ["5,0", "5,1", "5,2", "5,3", "6,2"],
+    ordered: ["5,0", "5,1", "5,2", "5,3", "6,2"],
+  },
+  15: {
+    unordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "5,3"],
+    ordered: ["3,0", "3,1", "3,2", "3,3", "3,4", "5,3"],
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
