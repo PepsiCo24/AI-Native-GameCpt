@@ -89,7 +89,12 @@ import {
 } from "@/game/renderer/objects/actor";
 import type { ActorPaintContext } from "@/game/renderer/objects/actor";
 import { L4_SLOT, TILE_OBJECTS } from "@/game/renderer/objects/registry";
-import type { L4Slot, TileObjectSpec, TileObjectTransition } from "@/game/renderer/objects/registry";
+import type {
+  L4Slot,
+  TileObjectArtPort,
+  TileObjectSpec,
+  TileObjectTransition,
+} from "@/game/renderer/objects/registry";
 import {
   assertLayerOrder,
   assertLayerStack,
@@ -113,6 +118,7 @@ const SPIRIT_A_KEY = slotKey("echo_spirit_a");
 const SPIRIT_B_KEY = slotKey("echo_spirit_b");
 const BG_A_KEY = slotKey("bg_phase_a");
 const BG_B_KEY = slotKey("bg_phase_b");
+const GOAL_KEY = slotKey("goal");
 
 /**
  * The drawn weight of **Phase B** in a pair of stacked sprites: `0` = pure A,
@@ -236,6 +242,26 @@ export class BoardView {
   /** The registry seam: each painter and the L4 container its slot owns. */
   private readonly l4Painters: readonly L4Painter[];
   /**
+   * Delivered art drawn at L4 (R-005a), by texture key: **at most one object per
+   * slot**, created once when the texture mounted and destroyed with the view. An
+   * empty map is the pre-integration state, not an error — every painter then draws
+   * its vector placeholder exactly as it did before.
+   */
+  private readonly l4Art = new Map<string, Phaser.GameObjects.Image>();
+  /**
+   * The port every L4 painter receives (`objects/registry.ts`): the painter resolves
+   * the geometry, this view owns the display object. `has` is what makes the texture
+   * and the vector placeholder mutually exclusive rather than layered.
+   */
+  private readonly artPort: TileObjectArtPort = {
+    has: (key) => this.l4Art.has(key),
+    draw: (key, cx, cy, w, h) => {
+      // A no-op for an unmounted key, and a resize **in place** for a mounted one:
+      // the goal's R-C8 pulse is a per-frame `setDisplaySize`, never a new object.
+      this.l4Art.get(key)?.setPosition(cx, cy).setDisplaySize(w, h);
+    },
+  };
+  /**
    * L5 `actor` — **one** container, so the three-way order inside the actor is a
    * data fact (child order) rather than a depth coincidence: phase ring +
    * fallback body, then the delivered forms, then the identity ring + deny arc.
@@ -324,6 +350,16 @@ export class BoardView {
     containers.push({ slot: L4_SLOT.wall, gfx: this.wallGfx });
     this.l4Containers = containers;
 
+    // L4 slot `goal` (§3.1d rank 3) — the delivered A-06 annulus, created once at
+    // the **slot's own depth**, so R-Z3 ("the ring never draws over a solid wall /
+    // closed door") holds for the texture exactly as it holds for the vector ring:
+    // `l4Depth(L4_SLOT.goal)` is the same number the goal's Graphics container got
+    // above, and both blockers keep their higher slots. Created after that container
+    // so that, at equal depth, an unmounted board and a mounted one differ only in
+    // *what is drawn*, never in the order things are drawn in.
+    const goalArt = this.createArtImage(GOAL_KEY, l4Depth(L4_SLOT.goal));
+    if (goalArt !== null) this.l4Art.set(GOAL_KEY, goalArt);
+
     // L5 — one container at `DEPTH.actor`, children in the fixed order the actor's
     // own module documents. The container is what the §5.2 stack guard sees, and
     // what R-C13.1's "above every L4 layer" is asserted against.
@@ -405,6 +441,10 @@ export class BoardView {
     // The actor is one container and `Container.destroy` releases its children
     // (the ring graphics and the spirit images), so they are not listed twice.
     this.actorRoot.destroy();
+    // L4's delivered art lives outside any container (it sits at the slot's own
+    // depth), so it is released here rather than by a container destroy.
+    for (const image of this.l4Art.values()) image.destroy();
+    this.l4Art.clear();
     this.backgroundArt.A?.destroy();
     this.backgroundArt.B?.destroy();
   }
@@ -846,6 +886,9 @@ export class BoardView {
           // from the same mixed map `paintGround` filled it with, so the punch is
           // exact at every frame of the `tokens` cross-fade.
           knockout: this.knockoutFor(tile.x, tile.y, tokens),
+          // R-005a — every painter gets the same port; only the goal stands in for
+          // delivered art today, and a class with no asset simply never asks.
+          art: this.artPort,
         });
       }
     }
