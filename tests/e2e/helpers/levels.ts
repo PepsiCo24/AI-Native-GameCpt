@@ -26,13 +26,14 @@
  * sidestepping a bundler-only import shape — and `tests/e2e/helpers/levels.ts`
  * is a **test** file, so this is not a second production path.
  *
- * The file list is discovered from the directory; the hand-pinned registry count
- * is {@link EXPECTED_LEVEL_COUNT} ("the registry ships 11 levels" — R-002 tree
- * plus R-003's L11 unlock at `f484e23`), which `playthrough.spec.ts` compares the
- * discovered set against. **Every other inventory is derived** (QA-005c OQ2):
- * {@link datasetIds}, {@link doorLevelIds}, {@link discoveredFileIds} and
- * {@link inventoryViolation} — so an unlock costs one pin, not three, while a
- * dataset change still raises the alarm. See `tests/e2e/README.md` §1.
+ * The file list is discovered from the directory; the hand-pinned count is
+ * {@link EXPECTED_LEVEL_COUNT} (the dataset's **15**-level ladder — R-002 tree →
+ * R-003's L11 unlock at `f484e23` → LV-009-B's L12–L15 block, ADR-design-0003 §8),
+ * which `playthrough.spec.ts` compares the discovered set against. **Every other
+ * inventory is derived** (QA-005c OQ2): {@link datasetIds}, {@link doorLevelIds},
+ * {@link discoveredFileIds} and {@link inventoryViolation} — so an unlock costs one
+ * pin, not three, while a dataset change still raises the alarm.
+ * See `tests/e2e/README.md` §1.
  */
 
 import { readFileSync, readdirSync } from "node:fs";
@@ -66,10 +67,11 @@ import { sameVec } from "@/core/state/types";
  *
  * ⚠ The pin names the **dataset**, and the dataset is what it is checked against.
  * The *playable* registry (`src/game/levels/level-registry.ts`) is a second,
- * independent list that still ships 11 levels as of this commit, so the specs that
- * walk levels through the UI (playthrough rows for L12–L15, the L1→L15 unlock
- * chain) stay RED until the Gameplay Engineer's registry unlock (R-003) lands —
- * see this task's `OPEN_QUESTIONS`, named handoff, not a quiet pin.
+ * independent list; R-003b registered L12–L15 (`3cd643e`) so it now ships the same
+ * fifteen, and the UI-walk specs (playthrough rows for L12–L15, the L1→L15 unlock
+ * chain, `?level=12..15`) resolve off it and run green. The dataset pin stays
+ * independent on purpose: it is the alarm that fires when the files move, whether
+ * or not the registry follows.
  */
 export const EXPECTED_LEVEL_COUNT = 15;
 
