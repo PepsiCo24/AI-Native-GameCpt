@@ -46,6 +46,63 @@ Evidence (QA-005 run):
 | `npm run levels` | `10/10 level files ok · 10/10 negative cases rejected` → **PASS** |
 | `tsc --noEmit` | clean |
 
+### The deployed-artifact lane — `tests/e2e-live` (QA-005h): on demand, never in CI
+
+Everything above runs against a vite this repo just built from the working tree.
+Nothing above runs against **the artifact the world can load** — the GitHub Pages
+build of `main`. `tests/e2e-live/` is that lane, and it is one command:
+
+```bash
+npx playwright test --config=playwright.live.config.ts   # root config, its own testDir
+```
+
+For every shipped level it opens the *deployed* bundle with `?level=<n>` and drives
+the **solver's** par route (`loadReferenceLevels()` — the same helper the standing
+suite uses, so no move count is typed into the lane), then requires the deployed HUD
+to agree: a fresh session at move 0 with no dialog, `moves === route.length`, the win
+dialog up, the session still naming the level, and both error channels
+(`console.error` + `pageerror`) empty. Plus one `?level=99` fallback row and one row
+pinning the lane's own targeting rule (below).
+
+Measured 2026-10-16 against `main` = `5b058ff`, deployed bundle
+`assets/index-CCs6qr4w.js` — **17 passed (43.8 s)**, per-row 2.2–3.7 s, fallback row
+1.3 s (the Orchestrator's throwaway reference run: 16/16 in 31.8 s; this lane adds one
+cheap row, below). **Isolation, measured:** `npx playwright test --list` still reports
+**107 tests in 8 files** and `npx vitest run` still reports **32 files · 648 passed ·
+3 skipped** — the lane's directory is invisible to both rosters, in both directions.
+
+**It is deliberately NOT in CI.** The CI e2e job is a zero-retry **correctness** gate;
+a spec that loads a CDN-backed production URL would make a Pages/DNS/propagation
+incident indistinguishable from a code regression, and would put an external
+dependency inside the gate that answers "did this commit break the game". Two files
+make the separation structural, not conventional: this lane is a *separate config*
+(`playwright.live.config.ts` — Playwright only auto-loads the exact name
+`playwright.config.ts`, so a bare `npx playwright test` can never pick it up) with a
+*separate `testDir`* and **no `webServer` at all** (nothing is built or served here, so
+a mis-set base URL cannot silently re-point the lane at a local dev server).
+
+**Finding 1 — `PS_E2E_BASE_URL` cannot target this deployment (measured).** The
+standing suite's `levelUrl()` answers a **root-absolute** `/?level=<n>`; resolved
+against the Pages *project* root the URL API replaces the whole path, so
+`new URL("/?level=1", "https://pepsico24.github.io/AI-Native-GameCpt/").href` is
+`https://pepsico24.github.io/?level=1` — the user-pages root, one level above the
+project, not the game. The sub-path root is therefore spelled out in the lane's own
+file (`tests/e2e-live/live-target.ts` → `LIVE_ROOT` + `liveLevelUrl()`), and that
+resolution is **pinned as a test row** so the limitation cannot rot: if `levelUrl()`
+ever becomes deployment-safe the row goes red and the lane can drop its own builder.
+
+**Finding 2 — the win dialog is raised *after* the arrival beat (measured).** Reading
+the HUD with a single `hud()` call immediately after the last press sees
+`won === false` while `moves` is already the correct count: the flip/hop beat lands
+first, the overlay is raised after it. Re-measured on the deployed build before this
+lane was written: the immediate read was `won === false` on **12/15** rows (L11, L12
+and L15 happened to have made it already — the read is a **race**, which is exactly why
+it must not be trusted). The lane therefore reads the dialog with the auto-retrying
+locator (`await expect(page.locator(".ps-overlay")).toBeVisible()`), **never** a sleep:
+a sleep would hide a genuine slow-boot regression behind wall-clock padding, while the
+retrying assertion waits exactly as long as the app takes and fails loudly if the
+dialog never appears.
+
 ### QA-005b — the registry re-pin (10 → 11), and the two literals it cannot reach
 
 R-003 (`f484e23`) unlocked **L11** in the playable registry (11 level files, frozen
