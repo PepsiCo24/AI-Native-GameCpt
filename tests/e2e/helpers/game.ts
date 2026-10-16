@@ -619,6 +619,69 @@ export function isActorBody(sample: Rgb | undefined, anchors: readonly ActorBody
   return anchors.some((anchor) => rgbDistance(sample, anchor.rgb) <= anchor.tolerance);
 }
 
+/* ─────────────────── one ink on one scanline — run census ────────────────── */
+
+export interface TokenRunCensus {
+  /** Longest contiguous stretch of samples equal to `token` (within `tolerance`). */
+  readonly longest: number;
+  /** Every run length seen, longest first — the shape of the row, for messages. */
+  readonly runs: readonly number[];
+  /** The token the row was searched for, and the tolerance used. */
+  readonly token: Rgb;
+  readonly tolerance: number;
+  /** Every sampled pixel on the centre row, in scan order. */
+  readonly samples: readonly Rgb[];
+}
+
+/**
+ * Count the contiguous runs of one ink on a tile's centre row: "how much of this
+ * row is *this* colour, in unbroken stretches".
+ *
+ * Used for the R-C7 occlusion claim, where the interesting quantity is not "does
+ * the switch token appear" but "can a stroke of it be **read**": a visible 2 px
+ * outline puts an unbroken stretch of at least its own stroke width on the row,
+ * whereas a single coincidental pixel of a delivered sprite is a run of one. The
+ * caller supplies the token (a phase's `obj.switch`) and the floor it takes from
+ * the production geometry (`switchParts(...).strokeWidth`), so the threshold is
+ * never a magic number.
+ */
+export async function centreRowTokenRuns(
+  page: Page,
+  geometry: BoardGeometry,
+  tile: Vec,
+  token: Rgb,
+  tolerance = 2,
+): Promise<TokenRunCensus> {
+  const cell = geometry.layout.cellSize;
+  const centre = geometry.cellCenterDevice(tile.x, tile.y);
+  const half = Math.ceil(cell / 2);
+  const offsets: number[] = [];
+  for (let dx = -half; dx <= half; dx += 1) offsets.push(dx);
+  const samples = await sampleCanvas(
+    page,
+    offsets.map((dx) => ({ x: centre.x + dx, y: centre.y })),
+  );
+  const runs: number[] = [];
+  let current = 0;
+  for (const sample of samples) {
+    if (rgbDistance(sample, token) <= tolerance) {
+      current += 1;
+    } else {
+      if (current > 0) runs.push(current);
+      current = 0;
+    }
+  }
+  if (current > 0) runs.push(current);
+  runs.sort((a, b) => b - a);
+  return {
+    longest: runs[0] ?? 0,
+    runs,
+    token,
+    tolerance,
+    samples,
+  };
+}
+
 /* ──────────────────── scanline ink run (art-agnostic probe) ──────────────── */
 
 /** Where the background references are sampled, as a fraction of the cell. */

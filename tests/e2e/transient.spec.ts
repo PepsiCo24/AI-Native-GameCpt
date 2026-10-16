@@ -97,16 +97,25 @@ import type { Page } from "@playwright/test";
 import { ARROW_KEY, loadReferenceLevels, levelUrl, refOf } from "./helpers/levels";
 import type { LevelRef } from "./helpers/levels";
 import {
+  actorBodyAnchors,
   boardGeometry,
   canvasColourHealth,
+  centreRowInk,
+  centreRowTokenRuns,
   expectActorAt,
   expectMoves,
   expectNoPageErrors,
+  hexToRgb,
   hud,
   installPixelReadback,
+  INK_THRESHOLD,
+  isActorBody,
   openLevel,
+  phaseOf,
   pressDirection,
+  rgbDistance,
   sampleCanvas,
+  settle,
   waitForFrames,
   watchErrors,
 } from "./helpers/game";
@@ -842,37 +851,19 @@ test.describe("P2 — the switch press beat is occluded by construction", () => 
     expect(state.phase).toBe("B");
 
     const tile = { x: 3, y: 1 };
-    const centre = geometry.cellCenterDevice(tile.x, tile.y);
     const cell = geometry.layout.cellSize;
 
-    // Measure the actor's radius from the canvas: the contiguous run of actor-body
-    // pixels across the cell's centre row (the body is the last-painted layer).
-    const points: { x: number; y: number }[] = [];
-    for (let dx = -Math.ceil(cell / 2); dx <= Math.ceil(cell / 2); dx += 1) {
-      points.push({ x: centre.x + dx, y: centre.y });
-    }
-    const samples = await sampleCanvas(page, points);
-    const body = theme("B").actor.body;
-    const bodyRgb: Rgb = [
-      Number.parseInt(body.slice(1, 3), 16),
-      Number.parseInt(body.slice(3, 5), 16),
-      Number.parseInt(body.slice(5, 7), 16),
-    ];
-    const isBody = (sample: Rgb | undefined): boolean =>
-      sample !== undefined &&
-      Math.max(
-        Math.abs(sample[0] - bodyRgb[0]),
-        Math.abs(sample[1] - bodyRgb[1]),
-        Math.abs(sample[2] - bodyRgb[2]),
-      ) <= 2;
-    const matches = samples.map((sample) => isBody(sample));
-    let longest = 0;
-    let current = 0;
-    for (const hit of matches) {
-      current = hit ? current + 1 : 0;
-      longest = Math.max(longest, current);
-    }
-    const actorRadius = longest / 2;
+    // Measure the actor's radius from the canvas: the contiguous run of **ink**
+    // across the cell's centre row (the body is the last-painted layer, so the run
+    // is the disc — vector placeholder or delivered A-03 sprite alike; see
+    // `centreRowInk`). Ink, not a body token: under R-005a the body's colour is
+    // art, and what this test needs is the body's *extent*, not its colour.
+    const ink = await centreRowInk(page, geometry, tile);
+    const actorRadius = ink.longest / 2;
+    expect(
+      ink.coversCentre,
+      `the actor's ink run must straddle the tile centre (run ${String(ink.from)}..${String(ink.to)} of ${String(ink.samples.length)}, centre ${String(ink.centreIndex)}, refs ${ink.references.map((r) => r.join(",")).join(" / ")})`,
+    ).toBe(true);
     expect(actorRadius, "the actor body was found on its own tile").toBeGreaterThan(cell * 0.3);
 
     // The production switch geometry, at its widest (emphasis = 1).
@@ -885,11 +876,11 @@ test.describe("P2 — the switch press beat is occluded by construction", () => 
       `the switch box's furthest inked point (${farCorner.toFixed(1)} px) must be inside the actor disc (r=${actorRadius.toFixed(1)} px)`,
     ).toBeLessThan(actorRadius);
 
-    // The pixel cross-check: at rest the scanline across the box is uniform actor
-    // body — the switch, in either latch state, is not visible while occupied.
+    // The pixel cross-check: at rest the scanline across the box is dominated by
+    // the actor — the switch, in either latch state, is not visible while occupied.
     expect(
-      longest / matches.length,
-      "the occupied cell's centre row is dominated by the actor body, not by the switch outline",
+      ink.coverage,
+      `the occupied cell's centre row is dominated by the actor, not by the switch outline (ink ${String(ink.longest)} of ${String(ink.samples.length)} samples)`,
     ).toBeGreaterThan(0.5);
   });
 
@@ -963,17 +954,68 @@ test.describe("P2 — the switch press beat is occluded by construction", () => 
     await installPixelReadback(page);
     await openLevel(page, levelUrl(8));
     const geometry = await boardGeometry(page, ref.level);
-    const tile = { x: 2, y: 0 };
+    const tile = { x: 2, y: 0 }; // L8's switch s1
     const centre = geometry.cellCenterDevice(tile.x, tile.y);
-    const boxHalf = (geometry.layout.cellSize * 0.4) / 2;
+    const cell = geometry.layout.cellSize;
+    const boxHalf = (cell * 0.4) / 2;
 
-    // Settled on the switch tile, phase B.
-    for (const direction of ["up", "right", "right"] as const) await pressDirection(page, direction);
-    await waitForFrames(page, 4);
+    // The production switch geometry at rest, at this runner's scale. Its stroke is
+    // the floor for "a stroke of the outline is readable": a visible outline puts an
+    // **unbroken** stretch of at least that many pixels on the centre row, so
+    // anything shorter than it cannot be a readable outline.
+    const rect = cellRect(geometry.layout, tile.x, tile.y);
+    const atRest = switchParts(rect, cell, geometry.renderScale, 0);
+    const strokePx = Math.max(2, Math.round(atRest.strokeWidth));
+
+    // ── The control: the same tile, free, settled ─────────────────────────────
+    // Walk up to the switch's neighbour. The tile is now unoccupied and nothing
+    // covers the outline — the differential's non-vacuity proof. Measured settled,
+    // so the phase's token is the final value and not a cross-fade blend
+    // (`renderer/theme-mix.ts`).
+    await pressDirection(page, "up");
+    await pressDirection(page, "right");
+    await settle(page);
+    const freePhase = phaseOf(await hud(page));
+    expect(freePhase, "precondition: one move from the switch, in the opening phase").toBe("A");
+    const free = await centreRowTokenRuns(page, geometry, tile, hexToRgb(theme(freePhase).obj.switch));
+    expect(
+      free.longest,
+      `the control: on a FREE switch tile the outline must be readable — a run of ≥ ${String(strokePx)} px of obj.switch ${freePhase} is expected on the centre row (runs ${JSON.stringify(free.runs)})`,
+    ).toBeGreaterThanOrEqual(strokePx);
+
+    // ── The claim: occupied, settled ──────────────────────────────────────────
+    await pressDirection(page, "right");
+    await settle(page);
     expect((await hud(page)).phase).toBe("B");
 
-    // A diagonal through the box's corners: any point on the box's outline is at
-    // most `boxHalf * sqrt(2)` from the tile centre.
+    // The actor's own extent on this tile, measured the art-agnostic way
+    // (`centreRowInk`: longest run that is not the tile's background).
+    const ink = await centreRowInk(page, geometry, tile);
+    const actorRadius = ink.longest / 2;
+    expect(
+      ink.coversCentre,
+      `the actor's ink run must straddle the tile centre (run ${String(ink.from)}..${String(ink.to)} of ${String(ink.samples.length)}, centre ${String(ink.centreIndex)})`,
+    ).toBe(true);
+    expect(actorRadius, "the actor body covers its own tile").toBeGreaterThan(cell * 0.3);
+
+    // The emphasis geometry at its widest (emphasis = 1): the box's furthest inked
+    // point lies inside the actor disc, so the outline cannot be read around the
+    // player either.
+    const wide = switchParts(rect, cell, geometry.renderScale, 1);
+    const farCorner = Math.hypot(wide.box.w / 2, wide.box.h / 2) + wide.strokeWidth / 2;
+    expect(
+      farCorner,
+      `the switch box's furthest inked point (${farCorner.toFixed(1)} px) must be inside the actor disc (r=${actorRadius.toFixed(1)} px)`,
+    ).toBeLessThan(actorRadius);
+
+    // A diagonal through the box's corners: every point on the box's outline is
+    // covered by the actor's ink — i.e. it is *not the tile's own background*. This
+    // is the pixel-level form of "the outline is not readable" and, unlike the old
+    // `!= obj.switch` clause, it holds for the delivered A-03 sprite too. (That
+    // clause is unassertable under art: the sprite contains a pixel exactly equal to
+    // `obj.switch` B at probe 6 — the art coincidence routed as a QA-007 FINDING and
+    // already accepted by UA-0014. The differential below is the tooth that replaces
+    // it, and it is stronger: it measures the whole row, not nine points.)
     const points = [-1, 0, 1].flatMap((sx) =>
       [-1, 0, 1].map((sy) => ({
         x: centre.x + sx * Math.round(boxHalf),
@@ -981,34 +1023,40 @@ test.describe("P2 — the switch press beat is occluded by construction", () => 
       })),
     );
     const samples = await sampleCanvas(page, points);
-    const body = theme("B").actor.body;
-    const bodyRgb: Rgb = [
-      Number.parseInt(body.slice(1, 3), 16),
-      Number.parseInt(body.slice(3, 5), 16),
-      Number.parseInt(body.slice(5, 7), 16),
-    ];
-    const outline = theme("B").obj.switch;
-    const outlineRgb: Rgb = [
-      Number.parseInt(outline.slice(1, 3), 16),
-      Number.parseInt(outline.slice(3, 5), 16),
-      Number.parseInt(outline.slice(5, 7), 16),
-    ];
-    const distance = (a: Rgb, b: Rgb): number =>
-      Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
-
+    const references = ink.references;
+    const isInk = (sample: Rgb | undefined): boolean =>
+      sample !== undefined && references.every((r) => rgbDistance(sample, r) > INK_THRESHOLD);
     for (const [index, sample] of samples.entries()) {
       expect(sample, "every probe returned a pixel").toBeDefined();
-      if (sample === undefined) continue;
       expect(
-        distance(sample, outlineRgb),
-        `probe ${String(index)} lands on the switch box outline, so it must not be the switch token`,
-      ).toBeGreaterThan(2);
+        isInk(sample),
+        `probe ${String(index)} lands on the switch box outline, so it must be covered by the actor's ink, not the tile background (refs ${references.map((r) => r.join(",")).join(" / ")})`,
+      ).toBe(true);
     }
+
+    // …and the switch's own ink cannot be *read* anywhere on that row: no unbroken
+    // stretch of even one stroke width survives, whereas the free tile above ran
+    // `free.longest` px of it. The old equality clause asked nine points "is this
+    // the token"; this asks the whole scanline "is any stroke of it left", and it is
+    // anchored by its own free-tile control instead of by the placeholder's colour.
+    const occupied = await centreRowTokenRuns(page, geometry, tile, hexToRgb(theme("B").obj.switch));
+    expect(
+      occupied.longest,
+      `the occupied cell's centre row must carry no readable switch stroke: longest run of obj.switch B is ${String(occupied.longest)} px (runs ${JSON.stringify(occupied.runs)}), the free tile showed ${String(free.longest)} px, one stroke is ${String(strokePx)} px`,
+    ).toBeLessThan(strokePx);
+    expect(
+      occupied.longest,
+      "…and it must be strictly less of the overview ink than the same tile carried while free",
+    ).toBeLessThan(free.longest);
+
     // …and at least the centre probe *is* the actor: the cell reads as the player.
+    // Anchor union (placeholder token ∪ delivered sprite centre), so it holds in
+    // both mount states.
     const centreSample = samples[4];
     expect(centreSample).toBeDefined();
-    if (centreSample !== undefined) {
-      expect(distance(centreSample, bodyRgb), "the tile centre is the actor body").toBeLessThanOrEqual(2);
-    }
+    expect(
+      isActorBody(centreSample, await actorBodyAnchors(page, "B")),
+      "the tile centre is the actor body",
+    ).toBe(true);
   });
 });
