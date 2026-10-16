@@ -255,9 +255,12 @@ runner measured **7 failed / 79 passed (16.9 min)** with `--retries=1`:
 run **38860398944** (`d9a83dd`), on the same messages and zero assertion flips —
 `Test timeout of 30000ms exceeded.` / `Test timeout of 120000ms exceeded.` — while run
 **38861480689** (`e469e72`, **byte-identical test tree**) went **107 passed / 0 failed (20.3 m)**.
-Class: contention on top of the systematic +50–65 % art-era inflation — wall clock, never an
-assertion; the budgets above are the art-era ceilings, sized by the budget-when-crossed law
-(item 77(d)) at ≥2.5× the observed art-era row. No other row is budgeted.
+Class: contention on top of **runner variance** — wall clock, never an assertion. The same-code
+control (identical tree, 31.4 m against 20.3 m) withdrew the art-inflation attribution per
+project-status item 84; local interleaved controls confirm the art state costs no more per frame,
+per boot, or per harness path. The budgets above are ceilings for the ENVIRONMENT wall clock
+(QA-005g class), sized by the budget-when-crossed law (item 77(d)) at ≥2.5× observed.
+No other row is budgeted.
 
 The `frames > 15` tooth survives by construction: the window is `max(700 ms,
 24 × idle grid)`, so it spans ≥ ~24 of the *runner's own* frames on any machine
