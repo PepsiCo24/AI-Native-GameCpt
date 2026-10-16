@@ -1461,7 +1461,8 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    reach — the refusal family sits at **55 s against its 90 s budget (61 %)**, so the two crossed rows need
    **derived budgets (QA-005g class)** *and* the inflation itself needs **classification before anyone blames
    the game**: the decisive experiment is in-page frame time in the art vs degrade state, which separates product
-   frame cost from harness cost. Dispatched as **QA-005i**.
+   frame cost from harness cost. **Booked as QA-005i** — queued behind QA-005h on the `tests/**`
+   single-writer rule, not yet dispatched.
    (d) **`main` is still exposed to the class we just removed** — `git show main:tests/e2e/latch-door.spec.ts |
    grep -c setTimeout` = **0** and `git show main:.github/workflows/ci.yml | grep -c test-results` = **0**, i.e.
    `main`'s standing gate has neither the 90 s budget nor the failure-artifact upload. Deliberately **not** merged
