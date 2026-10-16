@@ -79,12 +79,15 @@ import {
 import type { BoardLayout, Viewport } from "@/game/renderer/grid-mapping";
 import {
   actorLook,
+  ACTOR_ART_BOX,
   easeOutQuad,
   hopArcOffset,
   landingSquash,
   lerpActorLook,
   paintActor,
+  paintActorOverlay,
 } from "@/game/renderer/objects/actor";
+import type { ActorPaintContext } from "@/game/renderer/objects/actor";
 import { L4_SLOT, TILE_OBJECTS } from "@/game/renderer/objects/registry";
 import type { L4Slot, TileObjectSpec, TileObjectTransition } from "@/game/renderer/objects/registry";
 import {
@@ -96,8 +99,37 @@ import {
 import type { ObservedLayer } from "@/game/renderer/layers";
 import { mixTheme } from "@/game/renderer/theme-mix";
 import { WallTileView, staggerFor } from "@/game/renderer/wall-tiles";
+import { isArtMounted, slotKey } from "@/game/theme/art";
 import { flipTimings, theme, toInt } from "@/game/theme/tokens";
 import type { FlipTimings, ThemeTokens } from "@/game/theme/tokens";
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * The delivered textures this view draws, by manifest export name (§11/R-P5 +
+ * `theme/art.ts`). Read once at module load: a slot name that does not exist in
+ * `PLACEHOLDER_SLOTS` is a static mistake, and `slotKey` fails loudly instead of
+ * handing a painter an `undefined` key that would silently never mount.
+ * ──────────────────────────────────────────────────────────────────────────── */
+const SPIRIT_A_KEY = slotKey("echo_spirit_a");
+const SPIRIT_B_KEY = slotKey("echo_spirit_b");
+
+/**
+ * The drawn weight of **Phase B** in a pair of stacked sprites: `0` = pure A,
+ * `1` = pure B, and every value between is the §6.2 cross-fade.
+ *
+ * The stacking rule this implements is the one thing a cross-dissolve gets wrong
+ * if it is written naively. Fading *both* sprites (`α_A = 1 - w`, `α_B = w`) leaks
+ * the board through the actor at `w = 0.5` — compositing is `B·α_B + A·α_A·(1-α_B)
+ * + backdrop·(1-α_A)(1-α_B)`, i.e. 50 %/25 %/25 %. Drawing **A opaque at the
+ * bottom and fading only B in on top** is exact: `B·w + A·(1 - w)` for every `w`,
+ * with no backdrop term. The A/B pair sharing a byte-identical alpha mask
+ * (audit R-T04) is what makes that a true colour cross-fade rather than a
+ * silhouette blend — and it is the same arithmetic the old disc got from
+ * `lerpActorLook`: one scalar, `mix(from, to, t)`.
+ */
+function phaseWeight(from: Phase, to: Phase, mix: number): number {
+  const b = (phase: Phase): number => (phase === "B" ? 1 : 0);
+  return b(from) + (b(to) - b(from)) * mix;
+}
 
 /**
  * §5.2 cross-layer depths (bottom → top), **read from the one stack table in
@@ -191,7 +223,22 @@ export class BoardView {
   private readonly l4Containers: readonly L4Container[];
   /** The registry seam: each painter and the L4 container its slot owns. */
   private readonly l4Painters: readonly L4Painter[];
+  /**
+   * L5 `actor` — **one** container, so the three-way order inside the actor is a
+   * data fact (child order) rather than a depth coincidence: phase ring +
+   * fallback body, then the delivered forms, then the identity ring + deny arc.
+   * See `objects/actor.ts` for why each half sits where it does.
+   */
+  private readonly actorRoot: Phaser.GameObjects.Container;
+  /** Below the body: R-C13.4's one-shot phase ring and the vector body fallback. */
   private readonly actorGfx: Phaser.GameObjects.Graphics;
+  /** The delivered A/B forms, or `null` when that file did not mount. */
+  private readonly spiritArt: {
+    readonly A: Phaser.GameObjects.Image | null;
+    readonly B: Phaser.GameObjects.Image | null;
+  };
+  /** Above the body (radially outside it): R-C9's identity ring and §6.5's deny arc. */
+  private readonly actorOverlayGfx: Phaser.GameObjects.Graphics;
   private readonly feedbackGfx: Phaser.GameObjects.Graphics;
   private readonly tintGfx: Phaser.GameObjects.Graphics;
 
@@ -255,7 +302,22 @@ export class BoardView {
     containers.push({ slot: L4_SLOT.wall, gfx: this.wallGfx });
     this.l4Containers = containers;
 
-    this.actorGfx = s.add.graphics().setDepth(DEPTH.actor);
+    // L5 — one container at `DEPTH.actor`, children in the fixed order the actor's
+    // own module documents. The container is what the §5.2 stack guard sees, and
+    // what R-C13.1's "above every L4 layer" is asserted against.
+    this.actorGfx = s.add.graphics();
+    const spiritArt = {
+      A: this.createArtImage(SPIRIT_A_KEY, 0),
+      B: this.createArtImage(SPIRIT_B_KEY, 0),
+    };
+    this.spiritArt = spiritArt;
+    this.actorOverlayGfx = s.add.graphics();
+    const actorChildren: Phaser.GameObjects.GameObject[] = [this.actorGfx];
+    if (spiritArt.A !== null) actorChildren.push(spiritArt.A);
+    if (spiritArt.B !== null) actorChildren.push(spiritArt.B);
+    actorChildren.push(this.actorOverlayGfx);
+    this.actorRoot = s.add.container(0, 0, actorChildren).setDepth(DEPTH.actor);
+
     this.feedbackGfx = s.add.graphics().setDepth(DEPTH.cellFeedback);
     this.tintGfx = s.add.graphics().setDepth(DEPTH.plateTint);
 
@@ -266,7 +328,7 @@ export class BoardView {
         slot: container.slot,
         depth: container.gfx.depth,
       })),
-      this.actorGfx.depth,
+      this.actorRoot.depth,
     );
 
     // §5.2 — the same discipline one level up: the observed depths of the real
@@ -288,7 +350,7 @@ export class BoardView {
         name: "objects",
         depth: Math.min(...this.l4Containers.map((container) => container.gfx.depth)),
       },
-      { name: "actor", depth: this.actorGfx.depth },
+      { name: "actor", depth: this.actorRoot.depth },
       { name: "cellFeedback", depth: this.feedbackGfx.depth },
       { name: "plateTint", depth: this.tintGfx.depth },
     ];
@@ -308,12 +370,30 @@ export class BoardView {
       this.pageGfx,
       this.plateGfx,
       ...this.l4Containers.map((container) => container.gfx),
-      this.actorGfx,
       this.feedbackGfx,
       this.tintGfx,
     ]) {
       gfx.destroy();
     }
+    // The actor is one container and `Container.destroy` releases its children
+    // (the ring graphics and the spirit images), so they are not listed twice.
+    this.actorRoot.destroy();
+  }
+
+  /**
+   * One delivered texture as a display object, or `null` when it did not mount.
+   *
+   * `null` is the degrade path and it is deliberately not an error: the caller's
+   * painter then draws the vector placeholder it has always drawn (R-P2). Creating
+   * the object only when the texture exists also keeps the §5.2 boot guard honest —
+   * it asserts the depths that were *created*.
+   */
+  private createArtImage(
+    textureKey: string,
+    depth: number,
+  ): Phaser.GameObjects.Image | null {
+    if (!isArtMounted(textureKey)) return null;
+    return this.scene.add.image(0, 0, textureKey).setOrigin(0.5, 0.5).setDepth(depth);
   }
 
   /* ── layout ─────────────────────────────────────────────────────────────── */
@@ -726,9 +806,36 @@ export class BoardView {
       denyAlpha = timings.deny.ringAlpha;
     }
 
-    this.actorGfx.clear();
-    paintActor({
-      g: this.actorGfx,
+    // The A-03 pair is **one** element (two manifest rows, one Asset ID): half a
+    // pair is not a body, it is a stray sprite, so the texture path runs only when
+    // both forms mounted — otherwise the vector disc below draws, and R-P2's
+    // badge names the slot that failed.
+    const spiritA = this.spiritArt.A;
+    const spiritB = this.spiritArt.B;
+    if (spiritA !== null && spiritB !== null) {
+      const box = this.layout.cellSize * ACTOR_ART_BOX;
+      // `mix` is §6.2's `tokens` row — the same scalar the old disc's colour was
+      // lerped on, so the texture swap inherits its timing exactly.
+      const w = phaseWeight(flip?.fromPhase ?? this.shown.phase, this.shown.phase, mix);
+      for (const image of [spiritA, spiritB]) {
+        image.setPosition(cx, cy);
+        // §6.2 hop — squash is a *shape* rule, so it scales the sprite exactly as
+        // it scaled the ellipse; the pair's byte-identical alpha keeps A and B in
+        // step, so nothing shifts between the forms.
+        image.setDisplaySize(box * squash.sx, box * squash.sy);
+      }
+      // `phaseWeight`'s stacking rule: A opaque underneath, B faded in on top —
+      // fading both would leak the board through the actor at w = 0.5.
+      spiritA.setAlpha(1);
+      spiritB.setAlpha(w);
+    } else {
+      spiritA?.setAlpha(0);
+      spiritB?.setAlpha(0);
+    }
+
+    // Both halves of the actor painter share every field except the `Graphics`
+    // they draw into: one container, two passes, so `g` is supplied at the call.
+    const ctx: Omit<ActorPaintContext, "g"> = {
       cx,
       cy,
       cellSize: this.layout.cellSize,
@@ -736,6 +843,7 @@ export class BoardView {
       look,
       squash,
       denyAlpha,
+      textureBody: spiritA !== null && spiritB !== null,
       // R-C13.4 — geometry from the timing table, colour from the boot-derived
       // `fx.phaseRing` token. Fires once per flip that solidified the tile under
       // the player, never while standing (R-C8 forbids a looping ring).
@@ -760,7 +868,14 @@ export class BoardView {
               strokeWidthCss: flip.timings.ring.strokeWidth,
             }
           : null,
-    });
+    };
+
+    // One container, two painters, one fixed order: below the body, then the
+    // delivered forms (their own child slots), then the ring + deny arc above.
+    this.actorGfx.clear();
+    this.actorOverlayGfx.clear();
+    paintActor({ ...ctx, g: this.actorGfx });
+    paintActorOverlay({ ...ctx, g: this.actorOverlayGfx });
   }
 
   /** L6 — R-T6 hover ring (desktop affordance; never the only cue, never a hit area). */
