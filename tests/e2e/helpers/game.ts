@@ -28,7 +28,7 @@
  */
 
 import { expect } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import type { Page, Request } from "@playwright/test";
 
 import type { Level } from "@/core/level";
 import type { Direction } from "@/core/state/move";
@@ -62,13 +62,58 @@ export async function waitForFrames(page: Page, frames = 2): Promise<void> {
 }
 
 /**
- * `?level=<n>` fresh session: storage cleared, shell mounted, board painted.
+ * How long {@link openLevel} waits for the delivered-art loader to settle (ms).
+ *
+ * Not a pacing budget: the five delivered PNGs are served by the same dev server
+ * as the rest of the page, and this window exists so a genuinely hung loader reports
+ * *that* ("the loader never settled") instead of surfacing as "the press did nothing"
+ * two assertions later. A normal boot settles in tens of ms.
+ */
+export const ART_LOADER_TIMEOUT_MS = 30_000;
+
+/**
+ * `?level=<n>` fresh session: storage cleared, shell mounted, **art loader settled,
+ * board painted and input attached**.
  *
  * The readiness sequence is: the `.ps-shell` (HUD constructor, synchronous), the
- * `<canvas>` (`new Phaser.Game`), then ≥ 3 frames — `LevelScene.create()` (which
- * attaches the keyboard/pointer input) runs on the first game step after the
- * canvas exists. Call {@link installPixelReadback} *before* this when the test
- * needs canvas pixels.
+ * `<canvas>` (`new Phaser.Game`), the **delivered-art loader** (`LevelScene.preload`
+ * → `theme/art.ts` `queueDeliveredArt`, five real image fetches), and only then
+ * `LevelScene.create()` — which is where `attachInput` runs
+ * (`src/game/scenes/level-scene.ts:137`). So the board does **not** listen until the
+ * loader resolves, and that is an **I/O** condition, not a frame count.
+ *
+ * ── The measured defect this gate closes (TICKET-QA-010) ─────────────────────
+ *
+ * This function used to stop after ≥ 3 animation frames, on the stated premise that
+ * `create()` "runs on the first game step after the canvas exists". That premise is
+ * false once `preload()` does real loading: `create()` waits for the loader, while
+ * `waitForFrames(3)` is ~25–50 ms of wall clock on a fast runner and ~100–300 ms on
+ * a slow one. The window between the two is *silent input loss* — no console error,
+ * no feedback, and the HUD already looks alive.
+ *
+ * Measured on `?level=1` (5 × 3, no walls), pressing `ArrowRight` immediately after
+ * the frame gate, 10 trials per arm:
+ *
+ * | arm | first press lands |
+ * |---|---|
+ * | art delayed 1200 ms | **0/10** (0 moves — and the second press is lost with it) |
+ * | art delayed 1200 ms, then wait 1500 ms | 6/6 |
+ * | no delay (art fast) | 10/10 |
+ *
+ * That is exactly the CI failure shape of rounds `38863193343` (4 failed / 103
+ * passed, 14.1 m) and `38863790675` (10 failed / 97 passed, 15.0 m): `Expected 1,
+ * Received 0` on the first press, a solver route of depth 4 counted as 3, a swipe
+ * whose delivery was *asserted* yet never counted, and `.ps-overlay` never appearing
+ * — across unrelated files, **all in the fast rounds**, while the slow rounds
+ * (20.3 m / 31.8 m, *same* `src/**` and same specs) passed 107/0. The slow rounds
+ * were not luckier: their 3 frames were simply worth more wall clock than the
+ * loader needed.
+ *
+ * Waiting here honours the game's real contract instead of racing it. It is not a
+ * sleep — the poll returns on the loader's own completion event — and a loader that
+ * hangs now fails **loudly at this wait** instead of silently as "the press did
+ * nothing". Call {@link installPixelReadback} *before* this when the test needs
+ * canvas pixels.
  */
 export async function openLevel(page: Page, url: string): Promise<void> {
   await page.addInitScript(() => {
@@ -89,14 +134,69 @@ export async function openLevel(page: Page, url: string): Promise<void> {
   if (process.env["PS_E2E_ART_DEGRADE"] === "1") {
     await page.route("**/*.png", (route) => route.abort());
   }
-  await page.goto(url);
-  await expect(page.locator(".ps-shell")).toBeVisible();
-  await expect(page.locator("#app canvas")).toBeAttached();
-  await page.waitForFunction(() => {
-    const canvas = document.querySelector("canvas");
-    return canvas !== null && canvas.width > 0 && canvas.height > 0;
-  });
-  await waitForFrames(page, 3);
+  // TICKET-QA-010 regression arm (opt-in, inert unless set): the same delivered art,
+  // served late. It is the *only* way to make the input-loss window reproducible on
+  // demand — the defect needs a loader slower than the frame gate — and it is what
+  // the fix's evidence above (10/10 lost) and its verification (see the ledger) were
+  // measured with. Never set on a normal run.
+  const artDelayMs = Number(process.env["PS_E2E_ART_DELAY_MS"] ?? "") || 0;
+  if (artDelayMs > 0) {
+    await page.route("**/*.png", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, artDelayMs));
+      await route.continue();
+    });
+  }
+
+  // Attached **before** `goto`: on a fast machine the loader can start and finish
+  // in the same task graph that mounts the canvas, i.e. before the first `expect`
+  // below has resolved — a watch installed after it would miss its own condition.
+  const inFlight = new Set<Request>();
+  let seen = 0;
+  // `\.png$` and not `\.png\?`: the app's module graph also fetches each sprite as
+  // a `?url` module (`.../echo_spirit_a.png?import&url`) during `goto`, and counting
+  // that as delivered art would let the poll return *before* `preload` even queued
+  // the images — the early-return race this gate exists to remove, measured on the
+  // slow-loader arm as a blank board with only the vector anchor. The same
+  // assumption the QA-007 degrade route (`**/*.png`) already makes.
+  const isDeliveredArt = (request: Request): boolean => /\.png$/i.test(request.url());
+  const onRequest = (request: Request): void => {
+    if (!isDeliveredArt(request)) return;
+    seen += 1;
+    inFlight.add(request);
+  };
+  const onSettled = (request: Request): void => {
+    if (isDeliveredArt(request)) inFlight.delete(request);
+  };
+  page.on("request", onRequest);
+  page.on("requestfinished", onSettled);
+  page.on("requestfailed", onSettled);
+
+  try {
+    await page.goto(url);
+    await expect(page.locator(".ps-shell")).toBeVisible();
+    await expect(page.locator("#app canvas")).toBeAttached();
+    await page.waitForFunction(() => {
+      const canvas = document.querySelector("canvas");
+      return canvas !== null && canvas.width > 0 && canvas.height > 0;
+    });
+    // The readiness condition that actually decides whether the board is listening:
+    // at least one delivered-art image fetch started, and none is still open.
+    // `queueDeliveredArt` queues all of them in one batch, so "settled" is reached
+    // once and stays true — including on the QA-007 arm, where the aborted requests
+    // land in `requestfailed`.
+    await expect
+      .poll(() => seen > 0 && inFlight.size === 0, {
+        timeout: ART_LOADER_TIMEOUT_MS,
+        message:
+          "the delivered-art loader never settled — LevelScene.create() (and with it the board and its input) waits on it; `PS_E2E_ART_DEGRADE=1` and `PS_E2E_ART_DELAY_MS` also gate here",
+      })
+      .toBe(true);
+    await waitForFrames(page, 3);
+  } finally {
+    page.off("request", onRequest);
+    page.off("requestfinished", onSettled);
+    page.off("requestfailed", onSettled);
+  }
 }
 
 /** Let a flip (≤ 220 ms, §6.1) and its DOM transitions resolve. */
