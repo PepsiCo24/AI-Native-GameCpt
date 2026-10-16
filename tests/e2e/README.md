@@ -863,19 +863,45 @@ writer on the same range. Its contribution is the independent proof above — th
 cannot be a selection or game defect, only a wall clock — so the merged 90 s budget is
 the right class of remedy.
 
-**CI status: PENDING-CI.** The green-restoring round must be an **honest next round on
-the real tip** (the Orchestrator owns the push and the PR), never a silent re-run of
-`38845237536`.
+**CI status: CLOSED — remedy landed, three consecutive green cloud rounds measured under
+zero retries (2026-10-16, QA-005h).** The remedy is QA-005g (`cd3af77` — the derived
+`DOOR_LEVELS` walk carries `test.setTimeout(90_000)`; merged `091c483`), with no assertion
+change and no retry. Since then the tip has run **three consecutive green cloud rounds
+under zero retries**, all pushes to `develop`, each verified against its own log
+(`gh run view <id> --log`):
+
+| run | tip | runner's test line | e2e job wall clock | L15 row (`latch-door.spec.ts:134:5`) |
+|---|---|---|---|---|
+| `38849186852` | `091c483` | `107 passed (21.3m)` | 22m2s | 29.4 s |
+| `38851254805` | `3592134` | `107 passed (21.0m)` | 21m32s | 29.6 s |
+| `38853247944` | `4d4e61d` | `107 passed (21.2m)` | 21m47s | 29.7 s |
+
+The row that crossed the fixed 30 s budget at 30.9 s in `38845237536` now lands
+29.4–29.7 s in all three rounds: still the suite's heaviest row, now ~3× inside the
+merged 90 s budget — headroom on a wall clock, not a hidden retry (the job runs bare
+`npx playwright test`, `retries: 0`). **Written as measured, not as dispatched:** the
+dispatch quoted the first round as `21m3m`; the runner's own line is `107 passed (21.3m)`
+and that job's wall clock was 22m2s. The other two figures (21m32s / 21m47s) are job wall
+clocks and match. Nothing about the verdict depends on which clock is quoted.
 
 ---
 
-## 2. Inventory — 88 cases
+## 2. Inventory — 107 cases in 8 files (measured)
+
+**Dated note (2026-10-16, QA-005h).** The per-ticket blocks in §1 are **historical
+snapshots**: the `88/0` rounds, the `88 tests in 8 files` `--list` lines and the per-file
+case counts in §1.3–§1.8 were true when those blocks were written and are deliberately
+left as they stand. **This section is the only present-tense inventory in this file.**
+Its header total is the tail line of `npx playwright test --list`
+(`Total: 107 tests in 8 files`) and every number in the `cases` column is that tool's own
+per-file count, read off its output rather than tallied by hand —
+`19 + 29 + 22 + 6 + 8 + 4 + 7 + 12 = 107`, with 95 desktop rows and 12 mobile rows.
 
 | file | cases | project | what it pins |
 |---|---:|---|---|
-| `playthrough.spec.ts` | 15 | desktop | L1–L11 par route → win dialog; the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the L1→L11 unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L11` |
-| `refusal.spec.ts` | 22 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one |
-| `latch-door.spec.ts` | 14 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all six latch levels, in-core and through the UI |
+| `playthrough.spec.ts` | 19 | desktop | L1–L15 par route → win dialog; the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the L1→L15 unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L15` |
+| `refusal.spec.ts` | 29 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one |
+| `latch-door.spec.ts` | 22 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all ten latch levels (L6–L15, the dataset's derived contiguous tail), in-core and through the UI |
 | `portal.spec.ts` | 6 | desktop | M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
 | `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
@@ -890,7 +916,11 @@ directions, door states, latch fixtures and portal crossings come from `solve()`
 pixel count is typed into a spec; a level edit that removes a behaviour fails the run
 instead of leaving a stale fixture behind. The **dataset inventories** are derived
 too (`datasetIds` / `doorLevelIds` / `discoveredFileIds` / `inventoryViolation`), with
-exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3).
+exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3). A second, narrower
+hand-typed literal exists outside that helper set and is deliberate: `portal.spec.ts:91`
+re-baselines the *portal* inventory (`[11, 12, 13, 14, 15]`) against the derived
+`levelsWithPortals()` — the latches instead assert the structural rule (the door levels
+are the dataset's contiguous tail), so an unlock re-types nothing there.
 
 ---
 
