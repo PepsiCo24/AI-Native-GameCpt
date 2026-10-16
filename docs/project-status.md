@@ -1410,6 +1410,19 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
    the known prettier non-cleanliness of `latch-door.spec.ts` / `refusal.spec.ts` at HEAD stays with the
    standing `chore(format)` sweep (item 11).
 
+78. **Same-hour integrations this office landed on develop (so the ledger shows both seats' hands).**
+   `32ee339` — QA-007a independent proof record for the 77(b) red (README §1.8, +72): welded-occupancy
+   uniqueness proven browser-free across L6–L15 (fixture pure in one ref), row measured 8.2/17.9/7.4 s in
+   three clean local 107/0 rounds, 343 executions zero failures; no second timeout authored. `7be2297` —
+   UA-0014 complete: ui-ux **V0.9.4** three binary rulings on the R-005a wiring (R-1 host box **KEEP**
+   `1.0 × cell`, 0.70 restated as form extent, renderer flip declined; R-2 paint order **AMENDED** to
+   shipped `phase ring < body < R-C9 identity ring < deny arc`; R-3 A4 switch-corner **ACCEPTED**) + §11
+   integration record INTEGRATED-PENDING-MERGE + manifest **V0.5.5** canvas-slot rows. The UA session died
+   three times on request-cost quota; everything is its own wording — the final three manifest cells were
+   transcribed verbatim from its committed A-03 pattern by this office as disaster recovery, zero new
+   decisions, attribution in `511401c`. In flight: QA-007-art-probes (56-red roster → art-aware, both-states
+   contract) on `76e65c3`; then the chain merge, then R-005b flips `ART_INTEGRATED`.
+
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
 root cause in **my own** out-of-repo harness: it fabricated the initial state as `{ doorsOpen: {} }` instead of calling `initialState(level)`. Door openness is
