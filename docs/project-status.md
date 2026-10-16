@@ -1432,6 +1432,42 @@ chapter. User lanes unchanged (req-08/11 revision art, the frozen `df353a0` coho
 
 79. **Art chain merged + RV-008b verdicts.** `agent/qa/qa-007-art-probes` (5 commits on R-005a's 6, HEAD `7334e7f`) merged into develop at **`e8d2a9e`** after the full merge-gate battery: tsc 0 · vitest **32 files / 648 passed / 3 skipped** (only-up by exactly the 16 new `art-theme.test.ts` cases) · levels 15/15 · build ✓ with **all five art PNGs emitted into dist** (first build that actually ships art) · **full e2e 107 passed (7.0 m) zero-retry** locally; cloud round **`38857692208`** in flight as the art-bundle's first cloud sample. Reviewer lane: RV-008 (full audit) died on request-cost quota, **RV-008b narrow returned the two verdicts on the books** — the degrade-console suppression (`72da294`) is **SIGNED** (triple gate: opt-in env ∧ message text ∧ URL basename ∈ derived manifest names; inert on the default art round; cannot mask non-art errors; residual degrade-round-only loader-bug ambiguity accepted with reasons), and **QA-007-F1 is REAL/HIGH** (`ringVisible` boot-derived from theme tokens, never from the drawn sprite → art-B's 2.34:1 body ships without its mandated R-C9 ring). Disposal: **R-005b** dispatched (ui_kit slot retired per UA-0013's declared consequence → dev strip empties by construction; `ART_INTEGRATED` flipped with BOTH boot-gate directions proved by measurement; F1 re-derived from `theme/art.ts`'s mounted-body measurement — same source of truth the probes use, placeholder path byte-preserved), both-state full rounds are its acceptance. The merge-message discipline held: the 56-red roster was resolved by STRENGTHENING (union anchor, ink+extent, 129-sample differential with self non-vacuity control), zero assertions lost, both art and degrade states green.
 
+80. **The shipped artifact, verified first-party — and the art bundle's first cloud sample is the clock, not the game.**
+   (a) **Live deployment driven, not assumed.** `main` = `5b058ff` serves HTTP 200 with bundle
+   `assets/index-CCs6qr4w.js` (the train-2 hash), and a temporary Playwright lane drove the **deployed Pages URL**
+   itself — `?level=1..15`, each walked along the **program solver's** par route — with the suite's own helpers
+   (`pressDirection` / `hud` / `watchErrors`), so no expectation was hand-typed and nothing was re-implemented:
+   **16/16 passed in 31.8 s** (15 par routes + the `?level=99` fallback row), each row 1.8–2.3 s, **moves == par,
+   win dialog up, ladder label carried, `console.error` and `pageerror` both empty**. Two findings the permanent
+   version must carry (dispatched as **QA-005h**): **`PS_E2E_BASE_URL` cannot target this deployment** —
+   `levelUrl()` returns a root-absolute `/?level=<n>`, which against the Pages sub-path resolves to
+   `https://pepsico24.github.io/?level=<n>`; and **the dialog is raised after the arrival beat**, so a single
+   `hud()` read right after the last press sees `won === false` with `moves` already correct (this failed all 15
+   rows in the throwaway version, and the fix is the auto-retrying locator, never a sleep). Temporary files deleted,
+   nothing committed.
+   (b) **The QA-005g deliverable is closed by three consecutive green rounds under zero retries on pushed tips:**
+   `38849186852` (e2e 22m2s, 107 passed 21.3m), `38851254805` (21m32s, 107 passed 21.0m), `38853247944`
+   (21m47s, 107 passed 21.2m).
+   (c) **RED, and it is the wall clock again — but a different mechanism.** The art bundle's first cloud sample
+   **`38857692208`** (`e8d2a9e`, verify ✓ 41 s) ran e2e **32m14s → 2 failed / 105 passed (31.6m)**: the L11 portal
+   row `portal.spec.ts:265` (**30.8 s** against its 30 s default) and the unlock chain `playthrough.spec.ts:135`
+   (**2.1m = 126 s** against its 120 s budget). Both errors are bare timeouts
+   (`page.evaluate: Test timeout of 30000ms/120000ms exceeded`) — **zero assertion flips**, so the class is
+   QA-005g's, not a game defect. The mechanism is **systematic, not a draw**: across the 63 slow desktop rows,
+   the art state inflates **every** UI row by a consistent **+50–65 %** against the pre-art green round — refusal
+   L3 30.9→48.7, L4 33.8→50.9, L8 23.5→38.9, L9 34.5→55.0, L10 26.7→42.5, L13 21.1→33.8, L14 24.4→40.3,
+   portal L11 20.7→30.8, unlock chain 96→126 s (slow-row sum 14.8m→22.2m; the same order of inflation shows
+   locally, art 8.1m vs degrade 5.9m). Consequence: heads that were comfortable pre-art are now ceilings in
+   reach — the refusal family sits at **55 s against its 90 s budget (61 %)**, so the two crossed rows need
+   **derived budgets (QA-005g class)** *and* the inflation itself needs **classification before anyone blames
+   the game**: the decisive experiment is in-page frame time in the art vs degrade state, which separates product
+   frame cost from harness cost. Dispatched as **QA-005i**.
+   (d) **`main` is still exposed to the class we just removed** — `git show main:tests/e2e/latch-door.spec.ts |
+   grep -c setTimeout` = **0** and `git show main:.github/workflows/ci.yml | grep -c test-results` = **0**, i.e.
+   `main`'s standing gate has neither the 90 s budget nor the failure-artifact upload. Deliberately **not** merged
+   by me now: UA-0014's integration record gates the train on the art chain's own green round, which is exactly
+   what is red in (c). The next train carries QA-005g + `9c1bb70` with it.
+
 **The 9/200 residue — CLOSED, and the fault was mine.** LV-002B proved doors-only content cannot produce a refused-then-entered tile at all (exhaustive
 1,048,576-board sweep, 0 exceptions; 2,000-board randomized scan, 0/2000; plus a latch positive control showing the metric is genuinely live). I then found the
 root cause in **my own** out-of-repo harness: it fabricated the initial state as `{ doorsOpen: {} }` instead of calling `initialState(level)`. Door openness is
