@@ -135,12 +135,19 @@ test.describe("par route → win → HUD contract", () => {
   test(`the unlock chain runs L1 → L${String(EXPECTED_LEVEL_COUNT)} through the win dialog's own Next button`, async ({
     page,
   }) => {
-    // CI-envelope sizing (QA-005c): one test drives the whole ladder — 11 par
-    // routes, 11 HUD reads and 10 `Next` clicks. On the 2-core software-GL CI
-    // runner that exceeded the default 30 s wall clock (measured 30.9 s,
-    // project-status item 66) while it runs in ~12 s locally. The budget is wall
-    // clock, never an assertion: every claim below is unchanged.
-    test.setTimeout(120_000);
+    // CI-envelope sizing (QA-005c, re-derived for the art era by QA-005i): one
+    // test drives the whole ladder — 15 par routes, 15 HUD reads and 14 `Next`
+    // clicks. On the 2-core software-GL CI runner that exceeded the default 30 s
+    // wall clock (measured 30.9 s, project-status item 66) while it runs in
+    // ~12 s locally, so QA-005c gave it 120 s. Shipping art then re-priced every
+    // UI row: this row measured 96 s pre-art (run 38849186852) and 126 s with the
+    // art bundle live (run 38857692208, `2 failed / 105 passed`) — it crossed its
+    // own 120 s budget, and the roster-wide envelope is +50–65 % (slow-row sum
+    // 14.8 m → 22.2 m), so the budget is re-derived at ~3× the worst art-era
+    // observation, the same rule QA-005g used for `latch-door.spec.ts:134`
+    // (30.9 s → 90 s). The budget is wall clock, never an assertion: every claim
+    // below is unchanged.
+    test.setTimeout(360_000);
 
     await openLevel(page, levelUrl(1));
 
