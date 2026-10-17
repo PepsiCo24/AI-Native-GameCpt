@@ -64,12 +64,25 @@ import {
 } from "@/core/solver/policy";
 
 const LEVELS_DIR = fileURLToPath(new URL("../src/levels/", import.meta.url));
+const CANDIDATES_DIR = fileURLToPath(new URL("../src/levels/candidates/", import.meta.url));
 const argOf = (name: string): string | null => {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
   return hit === undefined ? null : hit.slice(name.length + 3);
 };
 const CANDIDATE = process.argv[2] ?? fileURLToPath(new URL("../src/levels/candidates/l016.json", import.meta.url));
 const RUNG = Number(argOf("rung") ?? "16");
+/**
+ * The **family** judged. `sl` = the L20 sealed-landing device (§6.2.6, one pocket); `g` = Act II's
+ * **multi-pocket** class (§7.2/§7.4 stage G, ≥ 2 walk-sealed rooms). The family is never inferred
+ * from the outcome: it is an argument, and the gates it selects are printed.
+ */
+const FAMILY = argOf("family") ?? (RUNG >= 21 ? "g" : "sl");
+/** `--measure-controls`: print each control's *measured* refusal without asserting it (F-L16-3 order). */
+const MEASURE_CONTROLS = process.argv.includes("--measure-controls");
+/** `--ladder=21,22,23,24,25`: prove the whole batch in order and print the ladder table. */
+const LADDER = (argOf("ladder") ?? "").split(",").filter((s) => s !== "").map(Number);
+/** `--peak=`: the Act I measured peak the batch must clear (printed by the authoring tool). */
+const ACT1_PEAK = Number(argOf("peak") ?? "24.729412");
 
 interface Gate {
   readonly id: string;
@@ -85,6 +98,8 @@ interface Verdict {
   readonly gates: readonly Gate[];
   /** The pocket derived from the landed bytes (rung ≥ 20 only), for printing. */
   readonly view: PocketView | null;
+  /** The multi-pocket device derived from the landed bytes (family `g` only), for printing. */
+  readonly gview?: GView | null;
 }
 
 /** The shipped dataset, judged by the same readers this file uses. */
@@ -125,7 +140,15 @@ function measureCut(): { floor: number; l15Par: number; n: number; basis: readon
 }
 
 /** The rung gates. `floor`/`l15Par` arrive measured; the board arrives from disk. */
-function judge(level: Level, floor: number, l15Par: number, rung: number, viewOverride?: PocketView | null): Verdict {
+function judge(
+  level: Level,
+  floor: number,
+  l15Par: number,
+  rung: number,
+  viewOverride?: PocketView | null,
+  family: string = FAMILY,
+  gViewOverride?: GView | null,
+): Verdict {
   const shape = validateLevel(level);
   let graph: ReachableGraph;
   try {
@@ -194,11 +217,43 @@ function judge(level: Level, floor: number, l15Par: number, rung: number, viewOv
       ok: diff.Dexec !== null && diff.Dexec > floor,
       detail: `D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} > CUT ${floor.toFixed(6)}`,
     },
-    {
-      id: "par-step",
-      ok: stamped >= l15Par + 2 * (proven.id - 15),
-      detail: `par=${String(stamped)} ≥ ${String(l15Par + 2 * (proven.id - 15))} (l15Par ${String(l15Par)} + 2·${String(proven.id - 15)}, §6.1.1 P2)`,
-    },
+    ...(family === "g"
+      ? ([
+          {
+            id: "act2-par-band",
+            ok: stamped > ACT2_PAR_BAND[0] && stamped < ACT2_PAR_BAND[1],
+            detail:
+              `par=${String(stamped)} strictly inside Act II's band (${String(ACT2_PAR_BAND[0])}, ${String(ACT2_PAR_BAND[1])}) ` +
+              `(§7.2; the exact-rung ladder of §6.1.1 P2 is NOT the law inside the act band — it is measured below as the named finding it is)`,
+          },
+          {
+            id: "act2-exec-band",
+            ok: diff.Dexec !== null && diff.Dexec >= ACT2_EXEC_BAND[0] && diff.Dexec <= ACT2_EXEC_BAND[1],
+            detail:
+              `D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} ∈ [${ACT2_EXEC_BAND[0].toFixed(2)}, ${ACT2_EXEC_BAND[1].toFixed(2)}] ` +
+              `(§7.2's derived Act II band; derived from the measured B band through D_exec = par + 3·B — no new maths)`,
+          },
+          {
+            id: "act2-b-band",
+            ok: diff.B >= BLOCK_L1619_B_BAND[0] && diff.B <= BLOCK_L1619_B_BAND[1],
+            detail: `B=${diff.B.toFixed(4)} ∈ [${BLOCK_L1619_B_BAND[0].toFixed(4)}, ${BLOCK_L1619_B_BAND[1].toFixed(4)}] (the measured band; F-L16-2 excursion would have to be named)`,
+          },
+          {
+            id: "act-peak",
+            ok: PEAK_RUNG === null || rung === PEAK_RUNG ? (diff.Dexec !== null && diff.Dexec > ACT1_PEAK) : true,
+            detail:
+              `D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} vs Act I's measured peak ${ACT1_PEAK.toFixed(6)} ` +
+              `(delta ${diff.Dexec === null ? "n/a" : (diff.Dexec - ACT1_PEAK).toFixed(6)}) — §7.3 puts the across-act obligation on the act's measured ` +
+              `PEAK, never on every interior member: ${PEAK_RUNG === null ? "no ladder given, so the clause is reported (this file is treated as the peak)" : `ladder peak rung = L${String(PEAK_RUNG)}`}`,
+          },
+        ] as Gate[])
+      : ([
+          {
+            id: "par-step",
+            ok: stamped >= l15Par + 2 * (proven.id - 15),
+            detail: `par=${String(stamped)} ≥ ${String(l15Par + 2 * (proven.id - 15))} (l15Par ${String(l15Par)} + 2·${String(proven.id - 15)}, §6.1.1 P2)`,
+          },
+        ] as Gate[])),
     {
       id: "latch-grade",
       ok:
@@ -233,6 +288,36 @@ function judge(level: Level, floor: number, l15Par: number, rung: number, viewOv
       detail: `doors=${String(proven.doors.length)} switches=${String(proven.switches.length)}`,
     },
   ];
+
+  // ── family "g" (Act II multi-pocket): the device derived from the landed bytes ──
+  if (family === "g") {
+    const gview = gViewOverride === undefined ? multiPocketFromBytes(proven) : gViewOverride;
+    const extras: Gate[] = [];
+    if (gview === null) {
+      extras.push({
+        id: "g6-room-structure",
+        ok: false,
+        detail:
+          "the multi-pocket device could not be derived from the landed bytes: §7.4's stage G needs exactly one portal pair, exactly one end " +
+          "unreachable on foot (the landing), and ≥ 2 walk-sealed rooms each covered by exactly ONE openable door object. " +
+          `Measured: ${String(proven.portals.length)} portal(s), ${String(sealedRooms(proven).length)} sealed room(s)`,
+      });
+    } else {
+      extras.push(...multiPocketGates(proven, graph, result, gview));
+    }
+    const gates: readonly Gate[] = [...base, ...extras];
+    const failed = gates.filter((g) => !g.ok);
+    return {
+      accepted: failed.length === 0,
+      reason: failed.length === 0 ? "ACCEPT" : failed.map((g) => g.id).join("+"),
+      par: stamped,
+      dexec: diff.Dexec,
+      b: diff.B,
+      gates,
+      view: null,
+      gview,
+    };
+  }
 
   // ── rung ≥ 20: the block-escalation pair and the sealed-landing gates g1–g5 ──
   const extras: Gate[] = [];
@@ -592,136 +677,795 @@ function sealedLandingGates(
   return [g1, g2, g3, g4, g5];
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// The MULTI-POCKET device (family `g`) — Act II · docs/level-design.md §7.2 / §7.4
+// stage G, read off the landed bytes. The class is defined by *measurements on the
+// board*, never by the generator's lattice:
+//
+//   1. exactly ONE portal pair, exactly one of its ends unreachable on foot (the
+//      landing; §6.2.3 item 1 + the ADR-0009 opposite-colour law);
+//   2. **walk-sealed rooms** — maximal connected tile-sets whose every outward
+//      neighbour is covered by exactly ONE door object, with no phase wall and no
+//      free leak on the boundary (§6.2.3 items 2–3, read without the CX column);
+//   3. ≥ 2 such rooms, one holding the landing, one holding the goal (the
+//      multi-pocket class of §7.4's stage G);
+//   4. the press chain measured on the solver's par routes, then *forced* by staged
+//      worlds: removing the first k switches must leave the (k+1)-th switch's tile
+//      and the goal unreachable (§6.2.3 item 4, the ordered ≥ 2-press chain).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Act II's published par band — strict (`docs/level-design.md` §7.2). */
+const ACT2_PAR_BAND: readonly [number, number] = [16, 24];
+/** Act II's published `D_exec` band (§7.2; derived from the measured `B` band, not new maths). */
+const ACT2_EXEC_BAND: readonly [number, number] = [19.75, 29.06];
+/** The batch's peak rung, when a ladder was given (§7.3: the across-act clause rides on the peak). */
+const PEAK_RUNG: number | null = LADDER.length > 0 ? Math.max(...LADDER) : null;
+
+interface RoomView {
+  readonly tiles: readonly Coord[];
+  readonly boundary: readonly Coord[];
+  /** Distinct door ids covering the boundary (exactly one, or the room is not sealed). */
+  readonly doorIds: readonly string[];
+  readonly doorTiles: readonly Coord[];
+  readonly wallTiles: readonly Coord[];
+  readonly freeTiles: readonly Coord[];
+  readonly switchIds: readonly string[];
+  readonly hasGoal: boolean;
+  readonly hasLanding: boolean;
+}
+
+interface GView {
+  readonly landing: Coord;
+  readonly near: Coord;
+  readonly rooms: readonly RoomView[];
+  readonly landingRoom: RoomView;
+  readonly goalRoom: RoomView;
+  readonly order: "landing-first" | "by-size";
+}
+
+/** The four tile-neighbours of `t` that are in bounds (the grid edge blocks by itself). */
+function inBoundsNeighbours(level: Level, t: Coord): Coord[] {
+  const out: Coord[] = [];
+  for (const d of DIRECTIONS) {
+    const n = at2(t, d);
+    if (n[0] < 0 || n[1] < 0 || n[0] >= level.width || n[1] >= level.height) continue;
+    out.push(n);
+  }
+  return out;
+}
+
+/**
+ * Every **walk-sealed room** of the board, derived from the bytes: a maximal connected
+ * set of tiles that are neither a phase wall nor a door tile, whose entire boundary is
+ * covered by exactly one door object — no phase-wall boundary tile (F-L19-2: a wall on
+ * the boundary makes its tile unstandable and the 42/42 coverage gate fails) and no
+ * free boundary tile (an open leak).
+ */
+function sealedRooms(level: Level): RoomView[] {
+  const wall = new Set([...level.phaseAWalls, ...level.phaseBWalls].map(coordKey));
+  const doorOf = new Map<string, string>();
+  for (const d of level.doors) for (const t of d.tiles) doorOf.set(coordKey(t), d.id);
+  const blocked = (t: Coord): boolean => wall.has(coordKey(t)) || doorOf.has(coordKey(t));
+  const seen = new Set<string>();
+  const rooms: RoomView[] = [];
+  for (let y = 0; y < level.height; y += 1) {
+    for (let x = 0; x < level.width; x += 1) {
+      const s = [x, y] as Coord;
+      if (seen.has(coordKey(s)) || blocked(s)) continue;
+      const tiles: Coord[] = [];
+      const q: Coord[] = [s];
+      seen.add(coordKey(s));
+      for (let i = 0; i < q.length; i += 1) {
+        const t = q[i] as Coord;
+        tiles.push(t);
+        for (const n of inBoundsNeighbours(level, t)) {
+          if (seen.has(coordKey(n)) || blocked(n)) continue;
+          seen.add(coordKey(n));
+          q.push(n);
+        }
+      }
+      const inside = new Set(tiles.map(coordKey));
+      const bmap = new Map<string, Coord>();
+      for (const t of tiles) for (const n of inBoundsNeighbours(level, t)) if (!inside.has(coordKey(n))) bmap.set(coordKey(n), n);
+      const boundary = [...bmap.values()].sort((p, q2) => coordKey(p).localeCompare(coordKey(q2)));
+      const doorIds = [...new Set(boundary.map((t) => doorOf.get(coordKey(t))).filter((id): id is string => id !== undefined))].sort();
+      const wallTiles = boundary.filter((t) => wall.has(coordKey(t)));
+      const freeTiles = boundary.filter((t) => !wall.has(coordKey(t)) && !doorOf.has(coordKey(t)));
+      // The room is a walk-sealed ROOM only when a single door object covers its whole
+      // boundary. Anything else (a wall boundary, two doors, an open leak) is a region,
+      // not a room, and the gate that wants a room will say so by name.
+      if (doorIds.length !== 1 || wallTiles.length > 0 || freeTiles.length > 0) continue;
+      const sorted = [...tiles].sort((p, q2) => coordKey(p).localeCompare(coordKey(q2)));
+      rooms.push({
+        tiles: sorted,
+        boundary,
+        doorIds,
+        doorTiles: boundary.filter((t) => doorOf.has(coordKey(t))),
+        wallTiles,
+        freeTiles,
+        switchIds: level.switches.filter((sw) => inside.has(coordKey(sw.tile))).map((sw) => sw.id),
+        hasGoal: inside.has(coordKey(level.goal)),
+        hasLanding: false,
+      });
+    }
+  }
+  return rooms;
+}
+
+function multiPocketFromBytes(level: Level): GView | null {
+  if (level.portals.length !== 1) return null;
+  const portal = level.portals[0] as PortalDef;
+  const [a, b] = portal.pair;
+  const foot = walkPositions(level);
+  const behind = [a, b].filter((e) => !foot.has(coordKey(e)));
+  if (behind.length !== 1) return null;
+  const landing = behind[0] as Coord;
+  const near = coordKey(a) === coordKey(landing) ? b : a;
+  const rooms = sealedRooms(level).map((r) => ({
+    ...r,
+    hasLanding: r.tiles.some((t) => coordKey(t) === coordKey(landing)),
+  }));
+  if (rooms.length < 2) return null; // §7.4 stage G: the MULTI-pocket class
+  const landingRoom = rooms.find((r) => r.hasLanding);
+  const goalRoom = rooms.find((r) => r.hasGoal);
+  if (landingRoom === undefined || goalRoom === undefined) return null;
+  return { landing, near, rooms, landingRoom, goalRoom, order: "landing-first" };
+}
+
+/** The reachable *positions* of a world (a staged world for the forcing measurement). */
+function reachablePositions(level: Level): Set<string> | null {
+  try {
+    const g = explore(level);
+    return new Set(g.nodes.map((s) => coordKey([s.player.x, s.player.y] as Coord)));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Re-measure a room's boundary against **the level as it is now**: the injected view of the
+ * negative-control battery carries geometry derived from the *unmutated* board, so the gates
+ * must not read its cached boundary fields — they re-derive them from the tiles. This is what
+ * lets a control that only *perturbs* a door still be named by the gate it targets.
+ */
+function measureRoom(level: Level, tiles: readonly Coord[], hasLanding: boolean): RoomView {
+  const wall = new Set([...level.phaseAWalls, ...level.phaseBWalls].map(coordKey));
+  const doorOf = new Map<string, string>();
+  for (const d of level.doors) for (const t of d.tiles) doorOf.set(coordKey(t), d.id);
+  const inside = new Set(tiles.map(coordKey));
+  const bmap = new Map<string, Coord>();
+  for (const t of tiles) for (const n of inBoundsNeighbours(level, t)) if (!inside.has(coordKey(n))) bmap.set(coordKey(n), n);
+  const boundary = [...bmap.values()].sort((p, q2) => coordKey(p).localeCompare(coordKey(q2)));
+  const doorIds = [...new Set(boundary.map((t) => doorOf.get(coordKey(t))).filter((id): id is string => id !== undefined))].sort();
+  return {
+    tiles,
+    boundary,
+    doorIds,
+    doorTiles: boundary.filter((t) => doorOf.has(coordKey(t))),
+    wallTiles: boundary.filter((t) => wall.has(coordKey(t))),
+    freeTiles: boundary.filter((t) => !wall.has(coordKey(t)) && !doorOf.has(coordKey(t))),
+    switchIds: level.switches.filter((sw) => inside.has(coordKey(sw.tile))).map((sw) => sw.id),
+    hasGoal: inside.has(coordKey(level.goal)),
+    hasLanding,
+  };
+}
+
+/** The switch inside the landing room that opens the landing room's OWN door (§6.2.3 item 4). */
+function firstPressSwitch(level: Level, view: GView): string | null {
+  const inRoom = level.switches.filter((s) => view.landingRoom.switchIds.includes(s.id));
+  const own = inRoom.find((s) => s.targets.some((t) => view.landingRoom.doorIds.includes(t)));
+  return own?.id ?? inRoom[0]?.id ?? null;
+}
+
+/**
+ * The multi-pocket gates `g0`–`g6`. `graph` is the landed board's reachable graph, so every
+ * number is a re-measurement of the bytes on disk; `par` is the solver's.
+ */
+function multiPocketGates(
+  level: Level,
+  graph: ReachableGraph,
+  result: { shortestSolution: number | null; distinctPositions: number },
+  view: GView,
+): readonly Gate[] {
+  const par = result.shortestSolution ?? level.par;
+  const portal = level.portals[0] as PortalDef;
+  const [pa, pb] = portal.pair;
+  // Every room's geometry is RE-MEASURED against the level as it now stands (the battery's
+  // injected view carries the unmutated board's cached boundary — see {@link measureRoom}).
+  const rooms = view.rooms.map((r) => measureRoom(level, r.tiles, r.hasLanding));
+  const landingRoom = rooms.find((r) => r.hasLanding) ?? view.landingRoom;
+  const goalRoom = rooms.find((r) => r.hasGoal) ?? view.goalRoom;
+  /** The view with every room re-measured against the current bytes — what the gates read. */
+  const v: GView = { ...view, rooms, landingRoom, goalRoom };
+
+  // ── the arrival state: the state the teleport produces (all switches OFF) ─────
+  let arrival: SearchState | null = null;
+  for (const s of graph.nodes) {
+    if (!everySwitchOff(level, s)) continue;
+    for (const d of DIRECTIONS) {
+      if (!isLegalMove(level, s, move(d))) continue;
+      const clicked = at2([s.player.x, s.player.y] as Coord, d);
+      if (coordKey(clicked) !== coordKey(v.near)) continue;
+      const n = applyMove(level, s, move(d));
+      if (coordKey([n.player.x, n.player.y] as Coord) === coordKey(v.landing)) arrival = n;
+    }
+  }
+
+  // ── g0 — exactly one portal pair, one end behind it, ends of opposite parity ──
+  const g0: Gate = {
+    id: "g0-portal-pair",
+    ok:
+      level.portals.length === 1 &&
+      (pa[0] + pa[1]) % 2 !== (pb[0] + pb[1]) % 2 &&
+      arrival !== null,
+    detail:
+      `portal(s)=${String(level.portals.length)} (required exactly 1 — §6.2.3 item 1); pair ${coordKey(pa)}–${coordKey(pb)} ` +
+      `parities ${String((pa[0] + pa[1]) % 2)} / ${String((pb[0] + pb[1]) % 2)} (opposite required, ADR-0009's opposite-colour law sets the frames apart); ` +
+      `landing end ${coordKey(v.landing)} (the end not on foot), near end ${coordKey(v.near)}; ` +
+      `the teleport fires on entry and is measured landing there: arrival=${arrival === null ? "NOT FOUND" : `phase ${arrival.phase}`}`,
+  };
+
+  // ── g1 — the landing room is not on foot reachable, and it is sealed pre-press ─
+  // "On foot" is read the way §6.2.3 item 2 reads it: the **portal-free** board (the teleport
+  // removed; doors and latches still playable) — the walking-only subgraph has no entry.
+  const foot = walkPositions(level);
+  const landingKeys = new Set(v.landingRoom.tiles.map(coordKey));
+  const footInRoom = [...landingKeys].filter((k) => foot.has(k)).length;
+  const allRoomKeys = new Set(v.rooms.flatMap((r) => r.tiles.map(coordKey)));
+  const footInAnyRoom = [...allRoomKeys].filter((k) => foot.has(k)).length;
+  let escapes = 0;
+  let returns = 0;
+  if (arrival !== null) {
+    const seen = new Set<string>([hashState(arrival)]);
+    const q: SearchState[] = [arrival];
+    for (let i = 0; i < q.length; i += 1) {
+      const s = q[i] as SearchState;
+      for (const n of nextStates(level, s)) {
+        if (!everySwitchOff(level, n)) continue;
+        const key = coordKey([n.player.x, n.player.y] as Coord);
+        if (!landingKeys.has(key)) {
+          if (key === coordKey(v.near)) returns += 1;
+          else escapes += 1;
+          continue;
+        }
+        const h = hashState(n);
+        if (seen.has(h)) continue;
+        seen.add(h);
+        q.push(n);
+      }
+    }
+  }
+  const g1: Gate = {
+    id: "g1-pocket-on-foot",
+    ok: arrival !== null && footInRoom === 0 && footInAnyRoom === 0 && escapes === 0,
+    detail:
+      `landing room [${v.landingRoom.tiles.map(coordKey).join(" ")}] (door ${v.landingRoom.doorIds.join("")}): ` +
+      `on-foot-reachable (portal-free board) room tiles=${String(footInRoom)} (required 0 — §6.2.3 item 2); ` +
+      `on-foot-reachable tiles over ALL ${String(v.rooms.length)} sealed room(s)=${String(footInAnyRoom)} (required 0: the device is portal-only in every room); ` +
+      `pre-press edges leaving the room=${String(escapes)} (required 0); edges back onto the near end ${coordKey(v.near)}=${String(returns)} (named: the landing is a portal end, so stepping back is a priced cycle, never an exit — ADR-0009)`,
+  };
+
+  // ── g2 — every sealed room's only exit is ONE openable door (no wall, no leak) ─
+  const notSealed = v.rooms.filter(
+    (r) => r.doorIds.length !== 1 || r.wallTiles.length > 0 || r.freeTiles.length > 0,
+  );
+  const g2: Gate = {
+    id: "g2-room-exit-door",
+    ok: v.rooms.length >= 2 && notSealed.length === 0,
+    detail:
+      `${String(v.rooms.length)} walk-sealed room(s) derived from the bytes ` +
+      `[${v.rooms.map((r) => `${r.doorIds.join("")}:${r.tiles.map(coordKey).join("+")}`).join(" · ")}]; ` +
+      `rooms whose boundary is not exactly one door object, or carries a phase wall (F-L19-2), or an open leak=${String(notSealed.length)} (required 0)`,
+  };
+
+  // ── g6 — the multi-pocket STRUCTURE (§7.4 stage G's class, measured) ─────────
+  const covering = v.rooms.map((r) => r.doorIds[0] as string);
+  const distinctDoors = new Set(covering).size === v.rooms.length;
+  const landingDriven = v.landingRoom.switchIds.some((id) => {
+    const sw = level.switches.find((s) => s.id === id);
+    return sw !== undefined && sw.targets.some((t) => v.landingRoom.doorIds.includes(t));
+  });
+  const goalDrivenFromOutside = v.goalRoom.switchIds.length === 0 &&
+    level.switches.some((s) => s.targets.some((t) => v.goalRoom.doorIds.includes(t)));
+  const g6: Gate = {
+    id: "g6-room-structure",
+    ok:
+      v.rooms.length >= 2 &&
+      distinctDoors &&
+      landingDriven &&
+      goalDrivenFromOutside &&
+      v.landingRoom.hasLanding &&
+      v.goalRoom.hasGoal,
+    detail:
+      `rooms=${String(v.rooms.length)} (required ≥ 2 — §6.2.3's device carries a landing channel and the goal's own seal); ` +
+      `covering doors distinct=${String(distinctDoors)} [${covering.join(" ")}]; ` +
+      `landing room carries the switch that opens ITS OWN door=${String(landingDriven)} (switch(es) in the landing room [${v.landingRoom.switchIds.join(" ")}] ` +
+      `targeting [${v.landingRoom.doorIds.join(" ")}]); the goal's room is switch-free and its door is driven from elsewhere=${String(goalDrivenFromOutside)} ` +
+      `(goal room [${v.goalRoom.tiles.map(coordKey).join(" ")}] door [${v.goalRoom.doorIds.join(" ")}] switch(es) [${v.goalRoom.switchIds.join(" ")}])`,
+  };
+
+  // ── g3 — the ordered ≥ 2-press chain, measured AND forced ────────────────────
+  const targetsOf = new Map(level.switches.map((s) => [s.id, s.targets]));
+  const doorTilesOf = new Map<string, Set<string>>();
+  for (const d of level.doors) doorTilesOf.set(d.id, new Set(d.tiles.map(coordKey)));
+  let routes = 0;
+  const orders: string[] = [];
+  let ordered = 0;
+  let minPresses = Number.POSITIVE_INFINITY;
+  const firstChain = firstPressSwitch(level, view);
+  forEachParRoute(level, par, (route) => {
+    routes += 1;
+    const order: string[] = [];
+    const first = new Map<string, number>();
+    for (let i = 0; i < route.length; i += 1) {
+      const rec = route[i];
+      if (rec === undefined) continue;
+      const tile = coordKey([rec.state.player.x, rec.state.player.y] as Coord);
+      for (const [id, tiles] of doorTilesOf) if (tiles.has(tile) && !first.has(`cross:${id}`)) first.set(`cross:${id}`, i);
+      for (const id of rec.toggledOn) {
+        if (!order.includes(id)) order.push(id);
+        if (!first.has(`press:${id}`)) first.set(`press:${id}`, i);
+      }
+    }
+    minPresses = Math.min(minPresses, order.length);
+    orders.push(order.join(">"));
+    // the strict milestone order: press(s_i) < cross(door(s_i)) < press(s_{i+1}) …
+    let last = -1;
+    let ok = true;
+    for (let i = 0; i < order.length; i += 1) {
+      const sw = order[i] as string;
+      const door = (targetsOf.get(sw) ?? [])[0] ?? "";
+      const p = first.get(`press:${sw}`);
+      const c = first.get(`cross:${door}`);
+      if (p === undefined || c === undefined || p <= last || c <= p) {
+        ok = false;
+        break;
+      }
+      last = c;
+    }
+    if (ok && order.length >= 3 && order[0] === firstChain) ordered += 1;
+  });
+  const sharedOrder = new Set(orders).size === 1 ? (orders[0] ?? "") : null;
+  const chain = sharedOrder === null ? [] : sharedOrder.split(">");
+
+  // the FORCING measurement: staged worlds. Removing the first k switches must leave the
+  // (k+1)-th switch's tile and the goal unreachable — "the second switch is reachable only
+  // after the first door opens" (§6.2.3 item 4) as a measured statement, not a reading.
+  const staged: { removed: string[]; target: string; targetReachable: boolean | null; goalReachable: boolean | null }[] = [];
+  for (let k = 1; k < chain.length; k += 1) {
+    const removed = chain.slice(0, k);
+    const world: Level = { ...level, switches: level.switches.filter((s) => !removed.includes(s.id)) };
+    const pos = reachablePositions(world);
+    const sw = level.switches.find((s) => s.id === chain[k]);
+    staged.push({
+      removed,
+      target: chain[k] as string,
+      targetReachable: pos === null ? null : sw !== undefined && pos.has(coordKey(sw.tile)),
+      goalReachable: pos === null ? null : pos.has(coordKey(level.goal)),
+    });
+  }
+  const forcingOk = staged.length === chain.length - 1 && staged.every((s) => s.targetReachable === false && s.goalReachable === false);
+  const g3: Gate = {
+    id: "g3-ordered-chain",
+    ok: routes > 0 && sharedOrder !== null && chain.length >= 3 && ordered === routes && forcingOk,
+    detail:
+      `par=${String(par)} · ${String(routes)} shortest route(s); press order(s) [${[...new Set(orders)].join(" | ")}] ` +
+      `(one shared order required; ${sharedOrder === null ? "NOT SHARED" : `chain ${sharedOrder}`}); distinct switches per route: min=${Number.isFinite(minPresses) ? String(minPresses) : "n/a"} (required ≥ 3); ` +
+      `routes executing press→cross in the strict order with the landing room's switch first: ${String(ordered)}/${String(routes)}; ` +
+      `FORCING by staged worlds: ` +
+      (staged.length === 0
+        ? "not measurable (no chain)"
+        : staged
+            .map(
+              (s) =>
+                `drop{${s.removed.join(",")}} ⇒ switch ${s.target} tile reachable=${String(s.targetReachable)} goal reachable=${String(s.goalReachable)}`,
+            )
+            .join(" · ")) +
+      ` — every staged world must read FALSE for both (§6.2.3 item 4, ordered and forced, not merely present)`,
+  };
+
+  // ── g4 — switchRequired, measured ───────────────────────────────────────────
+  const allOffShortest = allOffShortestSolution(level, graph);
+  const allOffReach = goalReachableWithAllSwitchesOff(level, graph);
+  const g4: Gate = {
+    id: "g4-switch-required",
+    ok: allOffShortest === null && !allOffReach,
+    detail:
+      `allOffShortest=${allOffShortest === null ? "null (all-OFF world UNSATISFIABLE)" : String(allOffShortest)} allOffGoalReachable=${String(allOffReach)} ` +
+      `par=${String(par)} — with every switch OFF the landing room's door refuses its only exit, so the whole far region beyond it is unreachable: the latch carries existence`,
+  };
+
+  // ── g5 — the census identity is BROKEN (the mechanism's whole point) ────────
+  const freePositions = new Set<string>();
+  {
+    const start = graph.nodes[0] as SearchState;
+    const seen = new Set<string>([hashState(start)]);
+    const q: SearchState[] = [start];
+    for (let i = 0; i < q.length; i += 1) {
+      const s = q[i] as SearchState;
+      if (!everySwitchOff(level, s)) continue;
+      freePositions.add(coordKey([s.player.x, s.player.y] as Coord));
+      for (const n of nextStates(level, s)) {
+        if (!everySwitchOff(level, n)) continue;
+        const h = hashState(n);
+        if (seen.has(h)) continue;
+        seen.add(h);
+        q.push(n);
+      }
+    }
+  }
+  const landingDoorIds = new Set(v.landingRoom.doorIds);
+  const sealTiles = level.doors.filter((d) => !landingDoorIds.has(d.id)).flatMap((d) => d.tiles);
+  const notAdjacent = sealTiles.filter((t) => !inBoundsNeighbours(level, t).some((n) => freePositions.has(coordKey(n))));
+  const deviceFree: Level = {
+    ...level,
+    doors: level.doors.filter((d) => !landingDoorIds.has(d.id)),
+    switches: level.switches.filter((s) => !v.landingRoom.switchIds.includes(s.id)),
+  };
+  let identityValue: number | null = null;
+  try {
+    identityValue = analyse(deviceFree, explore(deviceFree)).shortestSolution;
+  } catch {
+    identityValue = null;
+  }
+  const g5: Gate = {
+    id: "g5-identity-broken",
+    ok: notAdjacent.length >= 1 && identityValue !== null && identityValue < par && minPresses >= 2,
+    detail:
+      `par = min_i(d(start→s_i) + 1 + d(s_i→goal)) is the census identity (ai-native-pipeline §8.12 V1.5); it holds only while every seal tile is directly ` +
+      `adjacent to the free far region. Measured: ${String(sealTiles.length)} seal tile(s) outside the landing room, ${String(notAdjacent.length)} NOT adjacent ` +
+      `to the all-OFF free region [${notAdjacent.map(coordKey).join(" ")}] (free region ${String(freePositions.size)} position(s)); the identity's VALUE — the world ` +
+      `with the landing device (door ${v.landingRoom.doorIds.join("")} + its switch[es]) removed — solves at ${identityValue === null ? "n/a" : String(identityValue)} ` +
+      `< par ${String(par)}: its one-press arithmetic no longer computes this board`,
+  };
+
+  return [g0, g1, g2, g6, g3, g4, g5];
+}
+
 // ── run ───────────────────────────────────────────────────────────────────────
 
 const cut = measureCut();
 console.log(`prove-candidate — CUT re-measured from the shipped set: D_exec max = ${cut.floor.toFixed(6)} ` +
   `· par(L15) = ${String(cut.l15Par)} · ${String(cut.n)} shipped files · basis ids [${cut.basis.join(", ")}] ` +
   `(the L16–L19 ladder is excluded from its own filter — see measureCut)`);
-console.log(`candidate ${CANDIDATE} · rung ${String(RUNG)}`);
-
-const raw = JSON.parse(readFileSync(CANDIDATE, "utf8")) as unknown;
-const parsed = LevelSchema.safeParse(raw);
-if (!parsed.success) {
-  console.log("SCHEMA: REJECT — the frozen zod schema refuses the file");
-  process.exit(1);
-}
-const level = parsed.data as Level;
-const verdict = judge(level, cut.floor, cut.l15Par, RUNG);
 console.log(
-  `\npar=${verdict.par === null ? "n/a" : String(verdict.par)} ` +
-    `D_exec=${verdict.dexec === null ? "n/a" : verdict.dexec.toFixed(6)} ` +
-    `B=${verdict.b === null ? "n/a" : verdict.b.toFixed(4)} ` +
-    `(CUT ${cut.floor.toFixed(6)}, delta ${verdict.dexec === null ? "n/a" : (verdict.dexec - cut.floor).toFixed(6)})`,
+  `family ${FAMILY}${FAMILY === "g" ? " (Act II multi-pocket — §7.2 / §7.4 stage G)" : " (the L20 sealed landing — §6.2.6)"}` +
+    ` · Act I's measured peak the batch must clear: ${ACT1_PEAK.toFixed(6)}` +
+    (PEAK_RUNG === null ? " (no --ladder: the across-act clause is reported per file)" : ` · ladder peak rung L${String(PEAK_RUNG)}`),
 );
-if (verdict.view !== null) {
-  const v = verdict.view;
-  console.log(
-    `derived pocket (from the landed bytes, never from the authoring script): landing ${coordKey(v.landing)} (behind the portal) · ` +
-      `near ${coordKey(v.near)} · pocket [${v.pocket.map(coordKey).join(" ")}] ${String(v.pocket.length)} tile(s) · ` +
-      `boundary [${v.boundary.map(coordKey).join(" ")}] · covering door id(s) [${v.doorIds.join(" ")}] · ` +
-      `switch(es) inside the pocket [${v.switchIds.join(" ")}]`,
-  );
+
+interface Proved {
+  readonly ok: boolean;
+  readonly verdict: Verdict;
+  readonly level: Level | null;
+  readonly caught: number;
+  readonly controls: number;
 }
-for (const g of verdict.gates) console.log(`  ${g.ok ? "ok  " : "FAIL"} ${g.id.padEnd(13)} ${g.detail}`);
-// Warnings are not gates (AGENTS.md §7: a warning is not a gate) — they are named
-// so nothing ships silently carrying one.
-for (const w of validateLevel(level).warnings) console.log(`  warn ${w}`);
-console.log(`\nGATES: ${verdict.accepted ? "ACCEPT" : `REJECT — ${verdict.reason}`}`);
+
+function proveOne(file: string, rung: number): Proved {
+  console.log(`\n${"─".repeat(78)}\ncandidate ${file} · rung ${String(rung)}`);
+  const raw = JSON.parse(readFileSync(file, "utf8")) as unknown;
+  const parsed = LevelSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.log("SCHEMA: REJECT — the frozen zod schema refuses the file");
+    return { ok: false, verdict: { accepted: false, reason: "schema", par: null, dexec: null, b: null, gates: [], view: null }, level: null, caught: 0, controls: 0 };
+  }
+  const level = parsed.data as Level;
+  const verdict = judge(level, cut.floor, cut.l15Par, rung);
+  console.log(
+    `\npar=${verdict.par === null ? "n/a" : String(verdict.par)} ` +
+      `D_exec=${verdict.dexec === null ? "n/a" : verdict.dexec.toFixed(6)} ` +
+      `B=${verdict.b === null ? "n/a" : verdict.b.toFixed(4)} ` +
+      `(CUT ${cut.floor.toFixed(6)}, delta ${verdict.dexec === null ? "n/a" : (verdict.dexec - cut.floor).toFixed(6)}; ` +
+      `delta vs Act I peak ${verdict.dexec === null ? "n/a" : (verdict.dexec - ACT1_PEAK).toFixed(6)})`,
+  );
+  if (verdict.view !== null) {
+    const v = verdict.view;
+    console.log(
+      `derived pocket (from the landed bytes, never from the authoring script): landing ${coordKey(v.landing)} (behind the portal) · ` +
+        `near ${coordKey(v.near)} · pocket [${v.pocket.map(coordKey).join(" ")}] ${String(v.pocket.length)} tile(s) · ` +
+        `boundary [${v.boundary.map(coordKey).join(" ")}] · covering door id(s) [${v.doorIds.join(" ")}] · ` +
+        `switch(es) inside the pocket [${v.switchIds.join(" ")}]`,
+    );
+  }
+  const gv = verdict.gview ?? null;
+  if (gv !== null) {
+    console.log(
+      `derived multi-pocket device (from the landed bytes, never from the authoring script): landing ${coordKey(gv.landing)} (behind the portal) · ` +
+        `near ${coordKey(gv.near)} · ${String(gv.rooms.length)} walk-sealed room(s): ` +
+        gv.rooms
+          .map(
+            (r) =>
+              `${r.doorIds.join("")}[${r.tiles.map(coordKey).join(" ")}]${r.hasLanding ? "(landing)" : ""}${r.hasGoal ? "(goal)" : ""}`,
+          )
+          .join(" · "),
+    );
+  }
+  for (const g of verdict.gates) console.log(`  ${g.ok ? "ok  " : "FAIL"} ${g.id.padEnd(16)} ${g.detail}`);
+  // Warnings are not gates (AGENTS.md §7: a warning is not a gate) — they are named
+  // so nothing ships silently carrying one.
+  for (const w of validateLevel(level).warnings) console.log(`  warn ${w}`);
+  console.log(`\nGATES: ${verdict.accepted ? "ACCEPT" : `REJECT — ${verdict.reason}`}`);
+
+  const controls = controlTable(level, rung, verdict, gv);
+  console.log("\nnegative controls on the landed bytes:");
+  let caught = 0;
+  for (const control of controls) {
+    const v = judge(control.board, cut.floor, cut.l15Par, rung, control.view, FAMILY, control.gview);
+    const named = control.mustFire === undefined ? null : v.reason.includes(control.mustFire);
+    if (MEASURE_CONTROLS) {
+      console.log(
+        `  MEASURED ${control.name} → ${v.accepted ? "ACCEPTED (!!)" : v.reason}` +
+          (control.mustFire === undefined ? "" : `  [gate ${control.mustFire} named: ${String(named)}]`),
+      );
+      continue;
+    }
+    const hit = !v.accepted && control.expect.some((e) => v.reason.includes(e)) && named !== false;
+    if (hit) caught += 1;
+    console.log(
+      `  ${hit ? "CAUGHT" : "MISSED"}  ${control.name} → ${v.reason}` +
+        (control.mustFire === undefined
+          ? `  (expected a refusal naming one of: ${control.expect.join(", ")})`
+          : `  [expected a refusal naming one of: ${control.expect.join(", ")}; gate ${control.mustFire} named: ${String(named)}]`),
+    );
+  }
+  const controlsOk = MEASURE_CONTROLS ? true : caught === controls.length;
+  console.log(
+    MEASURE_CONTROLS
+      ? `controls: ${String(controls.length)} measured (no assertion — this is the EXPECTATION pass, F-L16-3 order)`
+      : `controls: ${String(caught)}/${String(controls.length)} caught by their named gate`,
+  );
+  const ok = verdict.accepted && controlsOk;
+  console.log(`\nRESULT: ${ok ? "PASS" : "FAIL"}`);
+  return { ok, verdict, level, caught, controls: controls.length };
+}
+
+const ladderRows: { id: number; par: number | null; dexec: number | null; b: number | null; coverage: string | null; chain: string | null; accepted: boolean }[] = [];
+let allOk = true;
+const targets = LADDER.length > 0 ? LADDER : [RUNG];
+if (LADDER.length > 0) console.log(`ladder mode: proving ${LADDER.map((i) => `L${String(i)}`).join(" → ")} from src/levels/candidates/`);
+for (const id of targets) {
+  const file =
+    LADDER.length > 0 ? join(CANDIDATES_DIR, `l${String(id).padStart(3, "0")}.json`) : CANDIDATE;
+  const r = proveOne(file, id);
+  allOk = allOk && r.ok;
+  const coverage = r.verdict.gates.find((g) => g.id === "coverage")?.detail ?? null;
+  const chain = r.verdict.gates.find((g) => g.id === "g3-ordered-chain")?.detail ?? r.verdict.gates.find((g) => g.id === "latch-route")?.detail ?? null;
+  ladderRows.push({
+    id,
+    par: r.verdict.par,
+    dexec: r.verdict.dexec,
+    b: r.verdict.b,
+    coverage: coverage === null ? null : (/(\d+\/\d+)/.exec(coverage)?.[1] ?? coverage),
+    chain,
+    accepted: r.verdict.accepted,
+  });
+}
+
+if (LADDER.length > 0) {
+  console.log(`\n${"═".repeat(78)}\nLADDER TABLE — ${LADDER.map((i) => `L${String(i)}`).join(", ")} (§7.2 band, §7.3 rise, §7.7 handoff)`);
+  console.log(
+    "rung · par · D_exec · B · coverage · prev-step Δpar · strictly-rising D_exec · Δ vs Act I peak " + ACT1_PEAK.toFixed(6),
+  );
+  let prevPar: number | null = null;
+  let prevExec: number | null = null;
+  for (const row of ladderRows) {
+    const dPar = prevPar === null || row.par === null ? null : row.par - prevPar;
+    const rise = prevExec === null || row.dexec === null ? null : row.dexec - prevExec;
+    console.log(
+      `L${String(row.id)} · par ${String(row.par)} · ${row.dexec === null ? "n/a" : row.dexec.toFixed(6)} · ` +
+        `${row.b === null ? "n/a" : row.b.toFixed(4)} · ${row.coverage ?? "n/a"} · ` +
+        `Δpar ${dPar === null ? "—" : `${dPar >= 2 ? "≥2" : "<2"} (${String(dPar)})`} · ` +
+        `rise ${rise === null ? "—" : `${rise > 0 ? "OK" : "DIP"} (${rise.toFixed(6)})`} · ` +
+        `delta ${row.dexec === null ? "n/a" : (row.dexec - ACT1_PEAK).toFixed(6)}`,
+    );
+    prevPar = row.par;
+    prevExec = row.dexec;
+  }
+  const maxRow = ladderRows.reduce<typeof ladderRows[number] | null>(
+    (acc, r) => (acc === null || (r.dexec ?? Number.NEGATIVE_INFINITY) > (acc.dexec ?? Number.NEGATIVE_INFINITY) ? r : acc),
+    null,
+  );
+  console.log(
+    `batch peak: ${maxRow === null || maxRow.dexec === null ? "n/a" : `L${String(maxRow.id)} at ${maxRow.dexec.toFixed(6)}`} · ` +
+      `Act I measured peak ${ACT1_PEAK.toFixed(6)} · §7.3 act-peak clause ${maxRow !== null && maxRow.dexec !== null && maxRow.dexec > ACT1_PEAK ? "DISCHARGED" : "NOT DISCHARGED"} ` +
+      `· headroom to the Act II ceiling ${ACT2_EXEC_BAND[1].toFixed(2)}: ${maxRow === null || maxRow.dexec === null ? "n/a" : (ACT2_EXEC_BAND[1] - maxRow.dexec).toFixed(6)}`,
+  );
+  console.log(`LADDER RESULT: ${allOk ? "PASS" : "FAIL"} (${String(ladderRows.filter((r) => r.accepted).length)}/${String(ladderRows.length)} rung(s) ACCEPT, every control caught on every rung)`);
+}
+
+process.exit(allOk ? 0 : 1);
 
 // ── negative controls on the landed bytes ─────────────────────────────────────
 
-const switches = level.switches;
-/**
- * Each control names the gate that **must** fire, and the name is the measured one
- * — not the one a reader might guess. A mutation can be refused by more than one
- * legal clause (a muted switch is also a `switch-without-targets` policy violation
- * *before* it is a weak latch; a portal-free board is UNSOLVABLE before its par can
- * be compared). What the control battery proves is that every mutation is refused
- * **by a named gate**, so a battery that accepts everything cannot pass; the exact
- * firing set is printed beside the verdict and is never collapsed to a boolean.
- */
-const controls: { name: string; board: Level; expect: readonly string[]; view?: PocketView | null }[] = [
-  // `expect` is a LIST of clauses that may legitimately be the one that names the
-  // refusal, filled from MEASUREMENT on the landed artifact. Which clause fires
-  // first is a property of the board's shape — a mutation aimed at a late gate can
-  // be caught by a stronger, earlier reader (`rules`, `unsolvable`) — so the rule
-  // the battery enforces is "the mutation is REJECTED, and the rejection names one
-  // of the clauses this mutation may trip", with the full reason string printed.
-  // A mutation that is ACCEPTED still fails the battery: it cannot be made vacuous
-  // by widening this list.
-  // R-003d / F-L20-2: on a SEALED-LANDING board the latch carries existence, so this mutation is
-  // measured as the NAMED `unsolvable` refusal — the bare-board-solvable reading of the ladder's
-  // boards does not transfer (QA-012's drift note; this file's control table).
-  { name: "latch removed (switches dropped)", board: { ...level, switches: [] }, expect: RUNG >= 20 ? ["unsolvable"] : ["latch-grade", "par-stamped", "unsolvable"] },
-  {
-    // `switch-without-targets` (policy.ts) must fire: the mirror of M1-alone. When
-    // the muted latch also seals the goal, the BFS names it first.
-    name: "every switch muted (latch fully decorative)",
-    board: { ...level, switches: switches.map((s) => ({ ...s, targets: [] })) },
-    expect: ["validator", "unsolvable"],
-  },
-  {
-    name: "goal sealed in both phases",
-    board: {
-      ...level,
-      phaseAWalls: [...level.phaseAWalls, level.goal],
-      phaseBWalls: [...level.phaseBWalls, level.goal],
-    },
-    expect: ["rules", "unsolvable"],
-  },
-  {
-    // With the portal gone the far region is unreachable at all, so existence
-    // fails before par can: `unsolvable` is the honest name.
-    name: "portal pair dropped (parity frame broken)",
-    board: { ...level, portals: [] },
-    expect: ["unsolvable", "par-step"],
-  },
-  {
-    // Every switch on one door breaks "exactly one switch per door" (§1, L6–L35).
-    // MEASURED, not guessed (F-L16-3): with all five switches moved onto `d1` the
-    // board has no route to the goal at all — `d1` is a parity wall's door, so the
-    // far region can no longer be opened — and the BFS names `unsolvable` first.
-    // The name says "every", not "both": this board carries five switches.
-    name: "every switch retargeted to the first door",
-    board: { ...level, switches: switches.map((s) => ({ ...s, targets: [switches[0]?.targets[0] ?? "d1"] })) },
-    expect: ["unsolvable", "validator", "latch-route", "coverage"],
-  },
-  {
-    name: "par mis-stamped (file par falls by 1)",
-    board: { ...level, par: Math.max(1, level.par - 1) },
-    expect: ["par-stamped"],
-  },
-];
+interface Control {
+  readonly name: string;
+  readonly board: Level;
+  /**
+   * The clauses that may legitimately be the one that NAMES the refusal, filled from
+   * MEASUREMENT on the landed artifact (F-L16-3 / F-L20-4). A mutation aimed at a late
+   * gate can be caught by a stronger, earlier reader (`rules`, `unsolvable`), so the rule
+   * enforced is "the mutation is REJECTED, and the rejection names one of the clauses this
+   * mutation may trip" — with the full reason string printed beside the verdict. A mutation
+   * that is ACCEPTED fails the battery regardless of the list's width.
+   */
+  readonly expect: readonly string[];
+  /**
+   * The gate this control **targets**: asserted to be among the firing set. `expect` stays a
+   * union (a mutation may legitimately be refused by a stronger, earlier reader — F-L20-4),
+   * but a control battery whose gates were never *named* would be vacuous, so every family-`g`
+   * control also asserts that its own gate fired.
+   */
+  readonly mustFire?: string;
+  readonly view?: PocketView | null;
+  readonly gview?: GView | null;
+}
 
-// ── rung ≥ 20: one negative control per sealed-landing gate g1–g5 ─────────────
-// Each mutation is *measured* before its `expect` list is written (F-L16-3): the
-// list names the clauses that may legitimately be the first to refuse the mutation,
-// and the whole reason string is printed beside the verdict.
-let caught = 0;
-if (RUNG >= 20) {
-  const view = verdict.view;
-  if (view === null) {
-    console.log(
-      "\nsealed-landing controls (g1–g5): NOT APPLICABLE — the landed bytes do not describe the pocket device " +
-        "(see `pocket-derived` above), so there is no pocket to mutate.",
-    );
-  } else {
-    const pocketDoor = view.pocketDoor;
-    const pocketDoorId = pocketDoor?.id ?? "-";
+/**
+ * The control battery: the six inherited mutations, the sealed-landing set (family `sl`),
+ * and — for family `g` — **one control per new gate** plus the landing-device controls read
+ * in the multi-pocket shape. Expectations are measured, never guessed.
+ */
+function controlTable(level: Level, rung: number, verdict: Verdict, gview: GView | null): Control[] {
+  const switches = level.switches;
+  const controls: Control[] = [
+    {
+      name: "latch removed (switches dropped)",
+      board: { ...level, switches: [] },
+      expect: rung >= 20 ? ["unsolvable"] : ["latch-grade", "par-stamped", "unsolvable"],
+    },
+    {
+      name: "every switch muted (latch fully decorative)",
+      board: { ...level, switches: switches.map((s) => ({ ...s, targets: [] })) },
+      expect: ["validator", "unsolvable"],
+    },
+    {
+      name: "goal sealed in both phases",
+      board: { ...level, phaseAWalls: [...level.phaseAWalls, level.goal], phaseBWalls: [...level.phaseBWalls, level.goal] },
+      expect: ["rules", "unsolvable"],
+    },
+    {
+      name: "portal pair dropped (parity frame broken)",
+      board: { ...level, portals: [] },
+      expect: FAMILY === "g" ? ["unsolvable", "g0-portal-pair"] : ["unsolvable", "par-step"],
+    },
+    {
+      name: "every switch retargeted to the first door",
+      board: { ...level, switches: switches.map((s) => ({ ...s, targets: [switches[0]?.targets[0] ?? "d1"] })) },
+      expect: ["unsolvable", "validator", "latch-route", "coverage"],
+    },
+    {
+      name: "par mis-stamped (file par falls by 1)",
+      board: { ...level, par: Math.max(1, level.par - 1) },
+      expect: ["par-stamped"],
+    },
+  ];
+
+  if (FAMILY === "g") {
+    if (gview === null) {
+      console.log("\nfamily-g controls (g0–g6): NOT APPLICABLE — the landed bytes do not describe a multi-pocket device.");
+      return controls;
+    }
+    const landingDoor = gview.landingRoom.doorIds[0] as string;
+    const goalDoor = gview.goalRoom.doorIds[0] as string;
+    const landingSwitches = gview.landingRoom.switchIds;
     controls.push(
       {
-        // R-003d `-rung at 20`: the rung clause is an EQUALITY at rung 20 too, and this is the
-        // cheapest mutation that can lie about it — the registered bytes with the authored `par`
-        // moved off the derived rung (20 -> 19).
+        // g0 — a second opposite-parity portal pair on the same board: §6.2.3 item 1 says
+        // "exactly one", and the derivation itself needs one end behind the (single) portal.
+        name: "g0 control — a second portal pair added (§6.2.3 item 1: exactly one)",
+        board: {
+          ...level,
+          portals: [...level.portals, { id: "p2", pair: [[1, 0], [3, 4]], activePhase: "A" }],
+        },
+        gview,
+        mustFire: "g0-portal-pair",
+        expect: [
+          "g0-portal-pair", "validator", "par-stamped", "escalation", "act2-par-band", "act2-exec-band", "act-peak",
+          "latch-grade", "latch-route", "g3-ordered-chain", "g4-switch-required", "g5-identity-broken",
+        ],
+      },
+      {
+        // g1 — the landing room's door dropped: the room becomes on-foot reachable once the
+        // portal's frame is broken open by walking round through the freed tiles.
+        name: `g1 control — the landing room's door "${landingDoor}" dropped (the room is no longer portal-only)`,
+        board: { ...level, doors: level.doors.filter((d) => d.id !== landingDoor) },
+        gview,
+        mustFire: "g1-pocket-on-foot",
+        expect: [
+          "g1-pocket-on-foot", "g2-room-exit-door", "g6-room-structure", "g3-ordered-chain", "g5-identity-broken",
+          "validator", "par-stamped", "act2-par-band", "act2-exec-band", "act-peak",
+        ],
+      },
+      {
+        // g2 — one boundary tile dropped from the landing room's door: a free leak in the
+        // room's boundary (the seal is no longer one whole door object).
+        name: `g2 control — one landing-room boundary tile dropped from door "${landingDoor}" (a free leak)`,
+        board: { ...level, doors: level.doors.map((d) => (d.id === landingDoor ? { ...d, tiles: d.tiles.slice(1) } : d)) },
+        gview,
+        mustFire: "g2-room-exit-door",
+        expect: [
+          "g2-room-exit-door", "region", "g1-pocket-on-foot", "g3-ordered-chain", "g5-identity-broken",
+          "par-stamped", "act2-par-band", "act2-exec-band", "act-peak",
+        ],
+      },
+      {
+        // g6 — the landing device removed entirely (its door AND its switch): the board stays
+        // solvable, but the multi-pocket derivation collapses, so the STRUCTURE gate must be
+        // the one that names it. No view override: the derivation is allowed to fail here,
+        // because that failure IS the gate's subject.
+        name: "g6 control — the landing device removed (door + switch): the multi-pocket derivation collapses",
+        board: {
+          ...level,
+          doors: level.doors.filter((d) => d.id !== landingDoor),
+          switches: level.switches.filter((s) => !landingSwitches.includes(s.id)),
+        },
+        mustFire: "g6-room-structure",
+        expect: ["g6-room-structure", "par-stamped", "act2-par-band", "act2-exec-band", "act-peak"],
+      },
+      {
+        // g3 — the goal's seal door dropped: the chain loses its last press and the goal's
+        // room is no longer sealed. The view is injected so every gate still measures a device.
+        name: `g3 control — the goal's seal door "${goalDoor}" dropped (the chain loses a press)`,
+        board: { ...level, doors: level.doors.filter((d) => d.id !== goalDoor) },
+        gview,
+        mustFire: "g3-ordered-chain",
+        expect: [
+          "g3-ordered-chain", "g2-room-exit-door", "g6-room-structure", "g5-identity-broken", "validator",
+          "par-stamped", "escalation", "act2-par-band", "act2-exec-band", "act-peak",
+        ],
+      },
+      {
+        // g4 — every door and switch dropped: with nothing to press, the all-OFF world reaches
+        // the goal, so the latch no longer carries existence.
+        name: "g4 control — every door and switch dropped (existence stops needing any press)",
+        board: { ...level, doors: [], switches: [] },
+        gview,
+        mustFire: "g4-switch-required",
+        expect: [
+          "g4-switch-required", "g1-pocket-on-foot", "g2-room-exit-door", "g6-room-structure", "g3-ordered-chain",
+          "latch-grade", "latch-route", "par-stamped", "escalation", "act2-par-band", "act2-exec-band", "act2-b-band", "act-peak",
+        ],
+      },
+      {
+        // g5 — the identity-holding world: the landing device removed WITH the derived view
+        // injected, so g5 measures the identity's value against the same device. The identity
+        // then computes the mutated board's own par, so it no longer breaks it.
+        name: "g5 control — the landing-device-removed world (the census identity holds again)",
+        board: {
+          ...level,
+          doors: level.doors.filter((d) => d.id !== landingDoor),
+          switches: level.switches.filter((s) => !landingSwitches.includes(s.id)),
+        },
+        gview,
+        mustFire: "g5-identity-broken",
+        expect: [
+          "g5-identity-broken", "g1-pocket-on-foot", "g2-room-exit-door", "g6-room-structure", "g3-ordered-chain",
+          "par-stamped", "act2-par-band", "act2-exec-band", "act-peak",
+        ],
+      },
+    );
+    return controls;
+  }
+
+  // ── family `sl`: one control per sealed-landing gate g1–g5 (rung ≥ 20) ──────
+  if (rung >= 20) {
+    const view = verdict.view;
+    if (view === null) {
+      console.log(
+        "\nsealed-landing controls (g1–g5): NOT APPLICABLE — the landed bytes do not describe the pocket device " +
+          "(see `pocket-derived` above), so there is no pocket to mutate.",
+      );
+      return controls;
+    }
+    const pocketDoorId = view.pocketDoor?.id ?? "-";
+    controls.push(
+      {
         name: "rung-20 control — `-rung`: par mis-stamped 19 under rung 20 (the derived rung is an equality)",
         board: { ...level, par: Math.max(1, level.par - 1) },
         expect: ["par-rung-exact", "par-stamped"],
       },
       {
-        // R-003d F-L20-2: the control QA-012 named. Dropping every switch on the landed L20 bytes
-        // removes the pocket exit AND the goal's four seal doors, so the world has no goal state
-        // at all — the named refusal must be `unsolvable`.
         name: "F-L20-2 control — every switch dropped (the latch carries EXISTENCE: the named refusal is `unsolvable`)",
         board: { ...level, switches: [] },
         expect: ["unsolvable"],
@@ -733,10 +1477,7 @@ if (RUNG >= 20) {
       },
       {
         name: `g2 control — one pocket-boundary tile dropped from door "${pocketDoorId}" (a free leak)`,
-        board: {
-          ...level,
-          doors: level.doors.map((d) => (d.id === pocketDoorId ? { ...d, tiles: d.tiles.slice(1) } : d)),
-        },
+        board: { ...level, doors: level.doors.map((d) => (d.id === pocketDoorId ? { ...d, tiles: d.tiles.slice(1) } : d)) },
         expect: ["g2-pocket-exit-door", "g1-pocket-on-foot", "validator", "rules"],
       },
       {
@@ -750,10 +1491,6 @@ if (RUNG >= 20) {
         expect: ["g4-switch-required", "g1-pocket-on-foot", "latch-grade", "par-rung-exact", "validator"],
       },
       {
-        // The identity-holding world of g5(b): the pocket device removed, the same
-        // pocket VIEW injected (the mutation deletes the device, so the derivation
-        // would otherwise have no landing to find) — this is the world in which the
-        // census identity computes L20's par, so g5 must name it.
         name: "g5 control — the pocket-device-removed world (the census identity holds again)",
         board: {
           ...level,
@@ -765,19 +1502,5 @@ if (RUNG >= 20) {
       },
     );
   }
+  return controls;
 }
-console.log("\nnegative controls on the landed bytes:");
-for (const control of controls) {
-  const v = judge(control.board, cut.floor, cut.l15Par, RUNG, control.view);
-  const hit = !v.accepted && control.expect.some((e) => v.reason.includes(e));
-  if (hit) caught += 1;
-  console.log(
-    `  ${hit ? "CAUGHT" : "MISSED"}  ${control.name} → ${v.reason}` +
-      `  (expected a refusal naming one of: ${control.expect.join(", ")})`,
-  );
-}
-console.log(`controls: ${String(caught)}/${String(controls.length)} caught by their named gate`);
-
-const ok = verdict.accepted && caught === controls.length;
-console.log(`\nRESULT: ${ok ? "PASS" : "FAIL"}`);
-process.exit(ok ? 0 : 1);
