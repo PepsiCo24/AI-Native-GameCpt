@@ -1,5 +1,5 @@
 /**
- * Level registry — loads the authored L1–L20 files and **validates every one**
+ * Level registry — loads the authored L1–L25 files and **validates every one**
  * before it can reach the board.
  *
  * `docs/architecture.md` §7 / ADR-0004: schema → rule validation → (solver, at CI
@@ -46,6 +46,11 @@ import l017 from "@/levels/l017.json";
 import l018 from "@/levels/l018.json";
 import l019 from "@/levels/l019.json";
 import l020 from "@/levels/l020.json";
+import l021 from "@/levels/l021.json";
+import l022 from "@/levels/l022.json";
+import l023 from "@/levels/l023.json";
+import l024 from "@/levels/l024.json";
+import l025 from "@/levels/l025.json";
 
 interface LevelSource {
   readonly file: string;
@@ -99,6 +104,27 @@ export const LEVEL_SOURCES: readonly LevelSource[] = [
   // L1–L19: one row, no new scene logic, no painter seam. The file stays a
   // read-only input (`src/levels/**` is Level AI + Solver's).
   { file: "l020.json", raw: l020 },
+  // L21–L25 is R-004a's registered Act II batch 1 (the ADR-design-0003 successor
+  // clause's own successor — the act-scale tail law, `docs/ai-native-pipeline.md`
+  // §8.16 / `src/levels/README.md` §2f): moved out of `src/levels/candidates/` by
+  // `git mv`, rename 100 %, `sha256` **and** git blobs identical on both sides, no
+  // content edit during the move. All five are `switchRequired: required` like the
+  // L16–L20 latch block — all-OFF is a measured no-goal state (UNSATISFIABLE ×5) —
+  // and each carries its own per-member gates (`ACT_II_B1_LADDER` in
+  // `@/core/solver/policy`): par **17 / 18 / 20 / 21 / 23**, `par == shortestSolution`
+  // 5/5 at D_exec 21.581395 / 22.584 / 24.62 / 25.604651 / 27.604651, coverage 42/42
+  // and 13/13 controls caught on every rung (`LADDER RESULT: PASS`, act-peak
+  // DISCHARGED at 1.455349 headroom). The registration did **not** move the block law
+  // (`BLOCK_L1619_IDS` is still `[16 … 20]`, L20 not re-stamped). Same shape of input
+  // as L1–L20: five rows, no new scene logic, no new painter seam — the door / switch
+  // / portal painters all shipped before them, so requiring them of `?level=21..25`
+  // and of the L1→L25 chain is exactly this data edit and nothing else. The files stay
+  // read-only inputs here (`src/levels/**` is Level AI + Solver's).
+  { file: "l021.json", raw: l021 },
+  { file: "l022.json", raw: l022 },
+  { file: "l023.json", raw: l023 },
+  { file: "l024.json", raw: l024 },
+  { file: "l025.json", raw: l025 },
 ];
 
 export interface LoadReport {
@@ -167,7 +193,7 @@ export function startIndexForLevel(levels: readonly Level[], requested: number |
 }
 
 /**
- * `L1–L20` — the **shipped ladder's own range**, derived from the playable list.
+ * `L1–L25` — the **shipped ladder's own range**, derived from the playable list.
  *
  * The end panel's copy must name the ladder the player actually cleared, so it is
  * computed from the registry rather than written down: QA-005 pinned the stale
