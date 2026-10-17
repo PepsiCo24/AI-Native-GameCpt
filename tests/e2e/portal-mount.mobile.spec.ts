@@ -18,6 +18,19 @@
  * Guarded by `testMatch: "**\/*.mobile.spec.ts"` in `playwright.config.ts`, so the
  * rows run on a real Pixel 5 emulation (touch + mobile UA), never on a shrunken
  * desktop window.
+ *
+ * ── QA-023 audit: this file carries no specimen of the phase-sampling class ───
+ * The class's two mobile-side candidates were checked by name and by `--grep`
+ * (`-g "A-5"`, `-g "B6"`, `-g "B13"`, `-g "panel"`): the desktop file's A-5
+ * arrival-transient row and its B13 panel-onset row are **desktop-only**, because
+ * both of them are statements about the *canvas* beat and the *DOM* panel, neither
+ * of which is pitch-dependent. What runs here instead is deliberately
+ * phase-invariant by construction: A-2's mobile row presses once and reads a
+ * **settled** census (`await settle(page)` then `cellCensus`), with no window pin
+ * and no capture tail to drift under load, and A-8's mobile row rides QA-020's
+ * three-sample 800 ms proof (`helpers/pulse-schedule.ts`), which is the same
+ * phase-invariant schedule the desk row uses. Nothing was converted here because
+ * nothing here samples a beat at a wall-clock offset.
  */
 
 import { expect, test } from "@playwright/test";

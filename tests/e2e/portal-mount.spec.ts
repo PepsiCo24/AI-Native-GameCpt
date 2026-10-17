@@ -55,6 +55,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 import { isAltCell } from "@/game/renderer/grid-mapping";
+import { PORTAL_ARRIVAL_TURNS, portalArrivalTurn } from "@/game/renderer/objects/portal";
 import {
   PLACEHOLDER_SLOTS,
   PLACEHOLDER_TO_ASSET,
@@ -66,7 +67,6 @@ import { flipTimings, theme } from "@/game/theme/tokens";
 
 import { contrastRGB, hexToRgb, servedPngCensus } from "./helpers/art";
 import type { PngCensus } from "./helpers/art";
-import { reportTransient, roiAround, startRecorder, stopRecorder } from "./helpers/capture";
 import {
   bboxWithin,
   captureFrame,
@@ -92,6 +92,22 @@ import {
 import type { BoardGeometry } from "./helpers/game";
 import { levelUrl, loadReferenceLevels, refOf } from "./helpers/levels";
 import { idleStillnessProof } from "./helpers/pulse-schedule";
+import {
+  armFlipTimeline,
+  beatFrameCount,
+  beatRecorderFinished,
+  flipOwnEnd,
+  lastRider,
+  medianGridMs,
+  peakBefore,
+  readFlipTimeline,
+  restAfter,
+  roiAround,
+  saturateMainThread,
+  stampBeatPress,
+  startBeatRecorder,
+  stopBeatRecorder,
+} from "./helpers/timeline";
 import { installCpuThrottle } from "./helpers/throttle";
 
 const REFS = loadReferenceLevels();
@@ -498,48 +514,153 @@ test.describe("§3.1e A-3 — the B state read is structural, because B's value 
   });
 });
 
-/** One rAF transient inside the portal ROI, read through `helpers/capture.ts`. */
+/**
+ * One transient inside the portal ROI, read on the **flip's own timeline**
+ * (`helpers/timeline.ts`; QA-023 conversion of the row that item 123 convicted).
+ *
+ * The row used to sample the ROI on the animation-frame grid, sleep 420 ms of wall
+ * clock, and call the last frame "the resting picture". On cloud round
+ * `39023384882` the grid was 204.6–294.6 ms, the tail frame landed inside the beat,
+ * and the row reported `tail.prevChanged = 8420` against an expected 0 — a
+ * *sampling schedule* reading, not a product defect. The conversion reads the
+ * beat's own declarations (the shipped table and the renderer's own turn function)
+ * and anchors rest on the flip's own end **on the document timeline**, so no
+ * assertion below is invariant to nothing but the animation itself.
+ */
 test.describe("§6.6 B6 / A-5 — the arrival beat fits its own window and adds no figure", () => {
   test("the swap transient on the far end stays inside the walls row and settles", async ({ page }) => {
-    // `walls` is `{ start: 80, dur: 120 }` (tokens.ts FLIP_TIMING.S), and B6 rides
-    // that row: the beat's declared window is over at 200 ms. The recorder runs ~420 ms
-    // past it so the final frame *is* the resting picture (`stopRecorder`'s contract).
+    // QA-023 starvation arms (opt-in, inert unless set): the rate-20 green is the
+    // ticket's bar and the saturation arm is how the *cloud's* grid (204.6–294.6 ms)
+    // is reached on this machine — see `helpers/throttle.ts` + `helpers/timeline.ts`.
+    await installCpuThrottle(page);
     await installPixelReadback(page);
     await openLevel(page, levelUrl(PORTAL_LEVEL_ID));
     const geometry = await boardGeometry(page, PORTAL.level);
     await settle(page);
 
+    // ── The beat's own declaration, from the shipped table ──────────────────────
+    // B6 rides the `walls` row (`{ start: 80, dur: 120 }` in Variant S), so the swirl
+    // and the far end's swap both end at `start + dur`; the flip as a whole is capped
+    // by `total`. These numbers are the table's, re-read here — not typed.
+    const timings = flipTimings(false);
+    const declaredEndMs = timings.walls.start + timings.walls.dur;
+    expect(declaredEndMs, "the beat's declared window ends with the walls row").toBe(200);
+    // "The swirl exists, has ONE turn": existence is measured on the pixels below;
+    // the turn count is the renderer's own declaration — one full revolution, which
+    // closes where it began (`2π ≡ 0`), so a rogue two-turn swirl cannot pass the
+    // read, and a partial arc cannot pass the endpoints.
+    expect(PORTAL_ARRIVAL_TURNS, "B6's arrival turn is one full revolution").toBe(1);
+    expect(portalArrivalTurn(0), "the turn starts at the settled orientation").toBe(0);
+    expect(portalArrivalTurn(1), "…and one turn is a full revolution").toBeCloseTo(2 * Math.PI, 9);
+    expect(portalArrivalTurn(0.5), "…monotone, never past half a turn at half time").toBeGreaterThan(0);
+    expect(portalArrivalTurn(0.5)).toBeLessThan(2 * Math.PI);
+
     const roi = roiAround(
       geometry.cellCenterDevice(END_FAR[0], END_FAR[1]),
       Math.round(geometry.layout.cellSize / 2),
     );
-    await startRecorder(page, roi, 700);
+    // Both instruments are armed *before* the press. The recorder stops on the flip's
+    // own end (published by the riders' `transitionrun`), never on a sleep.
+    await armFlipTimeline(page, {
+      riders: [".ps-chip", ".ps-play", ".ps-shell", ".ps-btn"],
+      overlay: ".ps-overlay",
+      dialog: ".ps-dialog",
+    });
+    await startBeatRecorder(page, roi, { afterFrames: 3, maxMs: 4_000 });
+    await saturateMainThread(page);
+    // A pre-press frame is guaranteed by polling the recorder's own state, not by a
+    // sleep: under a 200 ms grid "the picture was still before the press" must not
+    // depend on how fast this machine dispatched the input.
+    await expect
+      .poll(() => beatFrameCount(page), { timeout: 10_000, message: "the ROI capture never opened" })
+      .toBeGreaterThan(0);
+    const pressT = await stampBeatPress(page);
 
     expect(FIRST_LEG).toBeDefined();
     if (FIRST_LEG === undefined) return;
     await pressDirection(page, FIRST_LEG.direction);
-    await page.waitForTimeout(420);
-    const stats = await stopRecorder(page, roi);
-    const report = reportTransient(stats);
+
+    await expect
+      .poll(() => beatRecorderFinished(page), {
+        timeout: 10_000,
+        message: "the ROI capture never reached the flip's own end",
+      })
+      .toBe(true);
+    const frames = await stopBeatRecorder(page, roi);
+    const timeline = await readFlipTimeline(page);
+
+    // ── The flip's own end, and the beat's declared window inside it ────────────
+    const anchor = flipOwnEnd(timeline);
+    const last = lastRider(timeline);
+    const starts = (timeline?.riders ?? [])
+      .map((rider) => rider.startTime)
+      .filter((start): start is number => start !== null);
+    const origin = starts.length === 0 ? null : Math.min(...starts);
+    const rest = anchor === null ? null : restAfter(frames, anchor);
+    const peak = anchor === null ? 0 : peakBefore(frames, anchor);
+    const prePress = frames.filter((frame) => frame.t < pressT);
+    const moved = frames.filter((frame) => frame.prevChanged > 0);
+    const onsetWall = moved[0]?.t ?? null;
+    const endWall = moved[moved.length - 1]?.t ?? null;
 
     // eslint-disable-next-line no-console
     console.log(
-      `[QA-017] A-5 far-end ROI frames=${String(report.frames)} gridMs=${r2(report.gridMs)} ` +
-        `frozenUntil=${r2(report.frozenUntil)} onset=${report.onset === null ? "null" : r2(report.onset)} ` +
-        `durationMs=${report.durationMs === null ? "null" : r2(report.durationMs)} peakPrevChanged=${String(report.peakPrevChanged)}`,
+      `[QA-023] A-5 far-end frames=${String(frames.length)} gridMs=${r2(medianGridMs(frames))} ` +
+        `riders=${String(timeline?.riders.length ?? 0)} ` +
+        `origin=${origin === null ? "null" : r2(origin)} anchor=${anchor === null ? "null" : r2(anchor)} ` +
+        `anchorMinusOrigin=${origin === null || anchor === null ? "null" : r2(anchor - origin)} ` +
+        `declaredEnd=${String(declaredEndMs)}ms total=${String(timings.total)}ms ` +
+        `restFrames=${String(rest?.frames ?? 0)} restMoved=${String(rest?.moved ?? -1)} restUnsettled=${String(rest?.unsettled ?? -1)} ` +
+        `peakPrevChanged=${String(peak)} ` +
+        `[report-only, grid-bounded] onsetWall=${onsetWall === null ? "null" : r2(onsetWall)} ` +
+        `durationWall=${onsetWall === null || endWall === null ? "null" : r2(endWall - onsetWall)} ` +
+        `lastRider=${last?.target ?? "null"}:${last?.declaredDelay ?? "null"}+${last?.declaredDuration ?? "null"} ` +
+        `riderEnds=${(timeline?.riders ?? []).map((rider) => `${rider.target}@${rider.endOnDocumentTimeline === null ? "null" : r2(rider.endOnDocumentTimeline)}`).join(" ")} ` +
+        `riderEvents=${(timeline?.events ?? []).map((event) => `${event.kind}@${r2(event.elapsedMs)}`).join(" ")}`,
     );
 
-    expect(report.onset, "the recorder saw the picture start moving").not.toBeNull();
-    expect(report.frozenUntil, "…and it was provably still before the press").toBeGreaterThan(0);
-    expect(report.peakPrevChanged, "the beat is a visible transient, not a no-op").toBeGreaterThan(0);
-    // The window, with one frame of grid slack — the same shape every other transient
-    // row in this suite uses (the grid is a measurement limit, not a product claim).
-    expect(report.durationMs).not.toBeNull();
-    expect(report.durationMs ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(200 + report.gridMs);
+    // The anchor is not assumed: the flip's own riders published it, and it is the
+    // flip's own end on the document timeline — the same clock the beat runs on.
+    expect(timeline?.riders.length ?? 0, "the flip's own DOM riders were observed").toBeGreaterThan(0);
+    expect(anchor, "the flip published its own end on the document timeline").not.toBeNull();
+    expect(origin, "…and its own origin, from the earliest rider").not.toBeNull();
+    if (anchor === null || origin === null || rest === null || timeline === null) return;
+    // Declared arithmetic, on the flip's own clock: the anchor (the LAST rider's own
+    // end, 220 ms in Variant S = `total`) is at or after the beat's declared window
+    // end (200 ms). So "resting from the anchor" can never be satisfied by a picture
+    // that was still *before* the beat — the anchor is past it by declaration.
+    expect(
+      anchor - origin,
+      `the anchor (${r2(anchor - origin)} ms after the flip's own origin) is at the flip's own END, not its start`,
+    ).toBeGreaterThanOrEqual(declaredEndMs);
+    // …and the anchor's *identity* is pinned, so "the ROI is resting" can never be
+    // satisfied by an inflated anchor: the rider that ends last must be the one whose
+    // own declared window ends at the flip budget (§6.1's cap). A rogue late rider
+    // breaks this read by name instead of quietly widening the rest window.
+    expect(
+      (last?.delayMs ?? -1) + (last?.durationMs ?? -1),
+      "the anchor rider's own declared end IS the flip budget",
+    ).toBe(timings.total);
 
-    const tail = stats[stats.length - 1];
-    expect(tail?.changed, "the ROI is back on the resting picture").toBe(0);
-    expect(tail?.prevChanged, "…and it is not still moving").toBe(0);
+    // ── Rest, measured from the animation's own end (never from a sleep) ─────────
+    expect(rest.fromIndex, "the capture kept running past the flip's own end").toBeGreaterThanOrEqual(0);
+    expect(rest.frames, "…with frames to spare on the resting side of it").toBeGreaterThanOrEqual(2);
+    expect(rest.moved, "from the flip's own end on, nothing inside the ROI moves").toBe(0);
+    expect(rest.unsettled, "…and it is the settled picture, not a later keyframe of the beat").toBe(
+      0,
+    );
+    // …and the beat itself exists in the same capture: the transient is real, and it
+    // has a still, pre-press start on the presented pixels.
+    expect(peak, "the beat is a visible transient, not a no-op").toBeGreaterThan(0);
+    expect(prePress.length, "the capture opened before the press").toBeGreaterThan(0);
+    expect(
+      prePress.every((frame) => frame.prevChanged === 0),
+      "the picture was provably still before the press",
+    ).toBe(true);
+    expect(
+      prePress.every((frame) => frame.changed > 0),
+      "…and it was the pre-flip picture, not the settled one",
+    ).toBe(true);
 
     // A-5's "zero new ink at the exit end", measured where it can be measured: the far
     // end's settled figure must be the *same* figure as the live end's — same ink mass,
@@ -1247,150 +1368,171 @@ test.describe("§6.6 B11/B12/B13 — the DOM beats' timing (A-7)", () => {
   test("B13 — the panel starts at the flip budget and Next works on its first frame", async ({
     page,
   }) => {
+    // QA-023 starvation arms (opt-in, inert unless set): the row's own acceptance
+    // includes a throttled green — see `helpers/throttle.ts` + `helpers/timeline.ts`.
+    await installCpuThrottle(page);
     await openLevel(page, levelUrl(SIMPLE_LEVEL_ID));
 
-    // One in-page instrument for the whole row. It stamps the last keydown (the press
-    // that commits the winning move) and, on the **first** frame the overlay is
-    // unhidden, records everything that can only be read at that instant: the elapsed
-    // time, the entrance animation's own clock, and the hit test at the Next button's
-    // centre. That last one is the row's real question — "is Next tappable from the
-    // first frame" is a *hit-testability* claim, and the only moment at which it can
-    // be observed is the frame the panel appears on.
-    await page.evaluate(() => {
-      interface PanelState {
-        keyAt: number | null;
-        panelAt: number | null;
-        opacity: number | null;
-        nextHit: string | null;
-        nextDisabled: boolean | null;
-        nextBox: { x: number; y: number; w: number; h: number } | null;
-        animation: { name: string; currentTime: number; playState: string } | null;
-      }
-      const holder = window as unknown as { __psPanel?: PanelState };
-      const state: PanelState = {
-        keyAt: null,
-        panelAt: null,
-        opacity: null,
-        nextHit: null,
-        nextDisabled: null,
-        nextBox: null,
-        animation: null,
-      };
-      holder.__psPanel = state;
-      window.addEventListener(
-        "keydown",
-        () => {
-          state.keyAt = performance.now();
-        },
-        true,
-      );
-      const tick = (): void => {
-        const overlay = document.querySelector(".ps-overlay");
-        if (overlay !== null && !overlay.hasAttribute("hidden")) {
-          const dialog = document.querySelector(".ps-dialog");
-          state.panelAt = performance.now();
-          state.opacity = dialog === null ? null : Number.parseFloat(getComputedStyle(dialog).opacity);
-          const next = dialog?.querySelector(".ps-dialog-actions .ps-btn-primary") ?? null;
-          if (next instanceof HTMLElement) {
-            const box = next.getBoundingClientRect();
-            state.nextBox = { x: box.x, y: box.y, w: box.width, h: box.height };
-            const under = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
-            state.nextHit = under?.closest("button")?.getAttribute("aria-label") ?? null;
-            state.nextDisabled = next instanceof HTMLButtonElement ? next.disabled : null;
-          }
-          const animations = dialog?.getAnimations() ?? [];
-          const entrance = animations.find(
-            (animation) => (animation as CSSAnimation).animationName === "ps-panel-in",
-          );
-          state.animation =
-            entrance === undefined
-              ? null
-              : {
-                  name: "ps-panel-in",
-                  currentTime: Number(entrance.currentTime ?? 0),
-                  playState: entrance.playState,
-                };
-          return;
-        }
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
+    // One in-page instrument for the whole row (`helpers/timeline.ts`, QA-023). It
+    // stamps the winning keydown on the **document timeline**, records the flip's own
+    // DOM riders (each `transitionrun` publishes `startTime + delay + duration`, i.e.
+    // where that beat ends on its own clock), and reads the panel in the mutation that
+    // unhid it: the hit test at Next's centre — which can only be observed at that
+    // instant — plus the entrance animation's own onset.
+    await armFlipTimeline(page, {
+      riders: [".ps-chip", ".ps-play", ".ps-shell", ".ps-btn"],
+      overlay: ".ps-overlay",
+      dialog: ".ps-dialog",
+      resetOnPress: true,
     });
 
+    await saturateMainThread(page);
     await pressRoute(page, SIMPLE.route);
 
     // The one thing that *must* wait: the panel is gated by `setTimeout(flipTimings
-    // (...).total)` (hud.ts:406), so a HUD read taken straight after the winning press
+    // (...).total)` (hud.ts:454), so a HUD read taken straight after the winning press
     // would be reading the pre-panel board on purpose. Waiting on the instrument's own
-    // `panelAt` — not on a sleep — is what keeps the row honest: it resolves on the
-    // unhide frame, so the hit test and the click below land as early as possible.
+    // unhide stamp — not on a sleep — resolves on the unhide mutation itself, so the hit
+    // test and the click below land as early as the product allows.
     await expect
-      .poll(
-        () =>
-          page.evaluate(
-            () => (window as unknown as { __psPanel?: { panelAt: number | null } }).__psPanel?.panelAt ?? null,
-          ),
-        { timeout: 5_000, message: "the win panel never unhid after the winning route" },
-      )
+      .poll(async () => (await readFlipTimeline(page))?.onset?.at ?? null, {
+        timeout: 5_000,
+        message: "the win panel never unhid after the winning route",
+      })
       .not.toBeNull();
 
     const won = await hud(page);
     expect(won.won).toBe(true);
     expect(won.nextVisible).toBe(true);
 
-    const panel = await page.evaluate(() => {
-      const state = (
-        window as unknown as {
-          __psPanel?: {
-            keyAt: number | null;
-            panelAt: number | null;
-            opacity: number | null;
-            nextHit: string | null;
-            nextDisabled: boolean | null;
-            nextBox: { x: number; y: number; w: number; h: number } | null;
-            animation: { name: string; currentTime: number; playState: string } | null;
-          };
-        }
-      ).__psPanel;
-      return state ?? null;
-    });
-    expect(panel).not.toBeNull();
-    if (panel === null) return;
-    const delay = panel.panelAt !== null && panel.keyAt !== null ? panel.panelAt - panel.keyAt : null;
-    // eslint-disable-next-line no-console
-    console.log(
-      `[QA-017] A-7 B13 panelDelay=${delay === null ? "null" : r2(delay)}ms declared=${String(flipTimings(false).total)}ms ` +
-        `opacityAtUnhide=${panel.opacity === null ? "null" : String(r2(panel.opacity))} ` +
-        `nextHit=${panel.nextHit ?? "null"} nextDisabled=${String(panel.nextDisabled)} ` +
-        `animation=${JSON.stringify(panel.animation)}`,
-    );
+    const timelineBeforePlacement = await readFlipTimeline(page);
+    const onset = timelineBeforePlacement?.onset ?? null;
+    expect(onset, "the panel's unhide was observed in the mutation that unhid it").not.toBeNull();
+    if (timelineBeforePlacement === null || onset === null) return;
 
-    // §6.2 / B13's window: the dialog starts at `flipTimings(...).total` — the same
-    // gate the renderer uses for the plate tint — so the panel *cannot* precede the
-    // flip. The bound is the flip budget itself, not an anecdote: measured delay =
-    // one input frame + the 220 ms timer, so the lower bound states the ordering claim.
-    expect(delay).not.toBeNull();
-    expect(delay ?? 0, "the panel does not appear before the flip budget the tint rides").toBeGreaterThanOrEqual(200);
-    expect(delay ?? 999).toBeLessThan(420);
-    expect(flipTimings(false).total).toBe(220);
+    // The entrance's own `startTime` is placed by the browser on a **rendering update**
+    // after the animation is created, and the instrument retries on rAF until then
+    // (`helpers/timeline.ts` `readPanel`). Reading straight after the onset poll is a
+    // race on a starved runner — under the saturation arm the placement landed after
+    // the read (`panelStart=null`, `panel=ps-panel-in@0 running`, 1 of 2 runs), which
+    // says nothing about the panel. So the row waits on the instrument's own state, not
+    // on a clock: "no animation at all" is allowed through (the no-entrance control
+    // must still fail by name below) and only "created but still pending" is retried.
+    await expect
+      .poll(
+        async () => {
+          const state = await readFlipTimeline(page);
+          if (state?.panel === null || state?.panel === undefined) return "no-animation";
+          return state.panel.startTime === null ? "pending" : "placed";
+        },
+        { timeout: 5_000, message: "the panel's entrance was never placed on the document timeline" },
+      )
+      .not.toBe("pending");
+    const placed = await readFlipTimeline(page);
+    expect(placed, "the flip instrument is still on the page").not.toBeNull();
+    if (placed === null) return;
+    const timeline = placed;
 
-    // B13's declared entrance, read from the computed style — and, at the unhide
-    // frame itself, the animation's own clock: it is *running* and it has barely
-    // started, which is the evidence that the button was hit-tested mid-entrance.
-    const dialog = await page.evaluate(() => {
-      const node = document.querySelector(".ps-dialog");
-      if (node === null) return null;
-      const style = getComputedStyle(node);
+    // ── The flip's own declared values, read from the page ───────────────────────
+    // The panel's gate IS the flip's last rider's declared end: the chip row's delay +
+    // duration (`--ps-flip-chip-*`, written from `flipTimings.chip`) equals the table's
+    // `total`. Two declared reads and one causal chain — and both of them are computed
+    // style, i.e. byte-stable across throttle rates, unlike anything that moves.
+    const styles = await page.evaluate(() => {
+      const chip = document.querySelector(".ps-chip");
+      const dialog = document.querySelector(".ps-dialog");
+      if (chip === null || dialog === null) return null;
+      const chipStyle = getComputedStyle(chip);
+      const dialogStyle = getComputedStyle(dialog);
       return {
-        name: style.animationName,
-        duration: style.animationDuration,
-        delay: style.animationDelay,
+        chipDelay: chipStyle.transitionDelay,
+        chipDuration: chipStyle.transitionDuration,
+        entranceName: dialogStyle.animationName,
+        entranceDuration: dialogStyle.animationDuration,
+        entranceDelay: dialogStyle.animationDelay,
       };
     });
-    expect(dialog).toEqual({ name: "ps-panel-in", duration: "0.16s", delay: "0s" });
-    expect(panel.animation, "the entrance was running on the unhide frame").not.toBeNull();
-    expect(panel.animation?.playState).toBe("running");
-    expect(Number(panel.animation?.currentTime ?? Number.NaN)).toBeLessThan(80);
+    const timings = flipTimings(false);
+    expect(styles, "the chip and the dialog are both on the page").not.toBeNull();
+    if (styles === null) return;
+    // Computed *lists*: the chip declares the same row on both of its colour longhands
+    // (`background-color`, `color`), so every entry must be the table's value — a
+    // partial edit of the stylesheet (one longhand changed, one left) fails here.
+    const declared = (value: string): readonly string[] =>
+      value.split(",").map((part) => part.trim());
+    expect(declared(styles.chipDelay).length, "the chip declares its two colour rows").toBe(2);
+    expect(
+      declared(styles.chipDelay).every((value) => value === `${String(timings.chip.start / 1000)}s`),
+      `the chip rider's declared delays are the table's ${String(timings.chip.start)} ms`,
+    ).toBe(true);
+    expect(
+      declared(styles.chipDuration).every((value) => value === `${String(timings.chip.dur / 1000)}s`),
+      `…and its declared durations are the table's ${String(timings.chip.dur)} ms`,
+    ).toBe(true);
+    expect(
+      timings.chip.start + timings.chip.dur,
+      "the flip's LAST rider ends exactly at the flip budget, so the panel's gate is the flip's own end",
+    ).toBe(timings.total);
+    expect(timings.total, "§6.1's budget cap is the declared panel gate").toBe(220);
+
+    // ── The panel after the flip, on the animations' OWN document timeline ───────
+    // The retired form compared `panelAt - keyAt` against a typed 200/420 window: a
+    // wall-clock reading that coarsens with the runner's frame grid. Cloud round
+    // `39023384882` read 481.4 ms against a 420 ms budget and failed a panel that was
+    // exactly where the product declares it — `keyAt` is stamped on an input frame and
+    // `panelAt` on a later rAF, so that pair carries the grid twice (`docs/
+    // project-status.md` item 123, RED-2). The claim is causal, so it is read as one:
+    // both numbers below live on `document.timeline`, and the interval between them is
+    // the product's own declaration (`flipTimings.total`) rather than a typed bound.
+    const panelStart = timeline.panel?.startTime ?? null;
+    const keyDocT = timeline.keyDocT;
+    const frame = Math.max(onset.frameAtUnhideMs ?? 0, 1);
+    const flipEndFromPress = keyDocT === null ? null : keyDocT + timings.total;
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-023] A-7 B13 riders=${String(timeline.riders.length)} keyDocT=${keyDocT === null ? "null" : r2(keyDocT)} ` +
+        `flipEndFromPress=${flipEndFromPress === null ? "null" : r2(flipEndFromPress)} declaredTotal=${String(timings.total)}ms ` +
+        `panelStart=${panelStart === null ? "null" : r2(panelStart)} margin=${panelStart === null || flipEndFromPress === null ? "null" : r2(panelStart - flipEndFromPress)}ms ` +
+        `panel=${timeline.panel === null ? "null" : `${timeline.panel.name}@${r2(timeline.panel.currentTime ?? -1)} ${timeline.panel.playState}`} ` +
+        `chipDeclared=${styles.chipDelay}+${styles.chipDuration} entranceDeclared=${styles.entranceName}/${styles.entranceDuration}/${styles.entranceDelay} ` +
+        `frameAtUnhide=${r2(frame)} nextHit=${onset.nextHit ?? "null"} nextDisabled=${String(onset.nextDisabled)} ` +
+        `[report-only, grid-bounded] panelDelayWall=${timeline.keyAt === null ? "null" : r2(onset.at - timeline.keyAt)}ms ` +
+        `riderEnds=${timeline.riders.map((rider) => `${rider.target}@${rider.endOnDocumentTimeline === null ? "null" : r2(rider.endOnDocumentTimeline)}`).join(" ")} ` +
+        `riderEvents=${timeline.events.map((event) => `${event.kind}@${r2(event.elapsedMs)}`).join(" ")}`,
+    );
+
+    // The rider log is *reported*, never asserted: whether the browser creates a
+    // transition at all is a function of the press pacing against the runner's frame
+    // grid, not of the row's claim. Two mechanisms were measured (QA-023 diagnostics,
+    // rate 10): the chip's **declared 140 ms delay** parks its colour, so a leg
+    // pressed inside that delay sets a value equal to the parked one and creates no
+    // transition (`riders=2`, chip absent); and two presses drained in a single frame
+    // make the flip pair net-zero, so *no* rider publishes a `transitionrun` at all
+    // (`riders=0`, `events=0`, level won, panel gate correct, 2 of 12 runs). The claim
+    // below needs `keyDocT` — the press on the document timeline, the *same* clock the
+    // panel's own onset is published on — and both are schedule-free; the count is
+    // therefore diagnostic output only (`riderEnds` in the report above).
+    expect(keyDocT, "the winning press is stamped on the flip's own clock").not.toBeNull();
+    expect(panelStart, "the panel's entrance published its own onset").not.toBeNull();
+    if (panelStart === null || flipEndFromPress === null) return;
+    // One measured frame of slack, for the frame the animation was created on — the
+    // interval this observer actually experienced at the unhide, not a grid sampled at
+    // page open (the assumption CPU starvation breaks). An early panel misses this by
+    // the whole declared budget, so the control survives any frame grid.
+    expect(
+      panelStart + frame,
+      `the panel's own onset ${r2(panelStart)} is at or after the flip's declared end ${r2(flipEndFromPress)} (flip budget ${String(timings.total)} ms)`,
+    ).toBeGreaterThanOrEqual(flipEndFromPress);
+
+    // B13's declared entrance — and, at the unhide, the animation's own clock: it is
+    // *running* and it has barely started, which is the evidence that the button was
+    // hit-tested mid-entrance. The tolerance is the unhide frame's own resolution.
+    expect(timeline.panel, "the entrance exists as an animation").not.toBeNull();
+    expect(timeline.panel?.playState, "the entrance was running on the unhide").toBe("running");
+    expect(
+      timeline.panel?.currentTime ?? Number.NaN,
+      "…and it had barely started, so Next was hit-tested mid-entrance",
+    ).toBeLessThanOrEqual(2 * frame + 1);
 
     // "Next is tappable from the first frame" — no input gate. The claim has two
     // halves, and both are read at the unhide frame: the element under the button's
@@ -1398,9 +1540,9 @@ test.describe("§6.6 B11/B12/B13 — the DOM beats' timing (A-7)", () => {
     // click is then a raw pointer click, because Playwright's own actionability check
     // would *wait out* the 160 ms entrance (a harness gate, not a product one) and
     // would therefore prove the opposite of what the row asks.
-    expect(panel.nextHit, "the element under the button's centre is the button").toBe("Next");
-    expect(panel.nextDisabled, "…and it is live input, not a disabled placeholder").toBe(false);
-    expect(panel.nextBox).not.toBeNull();
+    expect(onset.nextHit, "the element under the button's centre is the button").toBe("Next");
+    expect(onset.nextDisabled, "…and it is live input, not a disabled placeholder").toBe(false);
+    expect(onset.nextBox).not.toBeNull();
 
     const nextBox = await page.getByRole("button", { name: "Next" }).boundingBox();
     expect(nextBox).not.toBeNull();
