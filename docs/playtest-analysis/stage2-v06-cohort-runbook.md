@@ -9,6 +9,17 @@
 > Evidence label (ui-ux R-P7): the round build is program-drawn vector tokens = **`placeholder art`**.
 > Freeze provenance: `stage2-v06-freeze-note.md` + `stage2-v06-manifest.sha256` — **editing this file
 > before session 1 = a re-freeze event (§11.0); after session 1 it is frozen absolutely (T6 semantics).**
+>
+> **⚠ AMENDMENT — RF-3 (2026-10-17, PA-004).** One factual correction, grounded and declared: **the
+> round's URL is no longer live.** `https://pepsico24.github.io/AI-Native-GameCpt/` is **OFFLINE** —
+> workflow `385460470` `disabled_manually` by the **user freeze order** (`docs/project-status.md` item 89)
+> and the Pages site taken down on the user's instruction (**ITER-0021**: `GET /pages` → **404**, edge →
+> **404**; nothing is served). §2.1 below is corrected to: **repo-document path + "live URL restored
+> post-unfreeze"** as the precondition, the ITER-0021 three-command restore path, and the **booked
+> post-deploy step** (items 102c / 104c — the live-lane re-baseline runs **ONLY AFTER deploy**). **No
+> threshold, probe string, table, administration line or code in this runbook moves**; §6's bars, Tables
+> B2/C2 and the §7 privacy rules are byte-unchanged. The normative instrument remains
+> `docs/playtest-log.md` §11 (see its §11.1 Entry row and its V0.8 banner for the same correction).
 
 ---
 
@@ -54,9 +65,35 @@ Recruitment rules (frozen, §9.4 carried verbatim):
 ## 2. Round setup (once, before session 1)
 
 1. **Fill the round BUT row** (§11.1) in a fresh Table F instance: the `main` commit whose GitHub Pages
-   deploy is live (from the Actions deploy run: sha + run URL) serving
-   `https://pepsico24.github.io/AI-Native-GameCpt/`. Art status: `placeholder art`. **All 10 sessions run
-   on this one commit** — if a new deploy lands mid-round, stop (§11.1 same-BUT rule).
+   deploy is live (from the Actions deploy run: sha + run URL). Art status: `placeholder art`. **All 10
+   sessions run on this one commit** — if a new deploy lands mid-round, stop (§11.1 same-BUT rule).
+
+   **⚠ RF-3 (2026-10-17): there is NO live URL today, so this step cannot be completed yet — the round
+   does not start.**
+   - **Standing state:** `https://pepsico24.github.io/AI-Native-GameCpt/` is **OFFLINE** — workflow
+     `385460470` is `disabled_manually` by the **user freeze order** (`docs/project-status.md` item 89) and
+     the site was taken down on the user's instruction (**ITER-0021**: `GET /pages` → **404**, edge →
+     **404** after the cache; nothing is served). The last-served artifact was the **train-3 15-level**
+     set, which predates **GAME-004 stars** — so it could not support the star-era rows either.
+   - **Precondition to opening the round: "live URL restored post-unfreeze."** Restore is the
+     Orchestrator's call and is three commands, verbatim (ITER-0021):
+     ```sh
+     gh api -X POST repos/PepsiCo24/AI-Native-GameCpt/pages -f build_type=workflow
+     gh workflow enable "Deploy to GitHub Pages"
+     gh workflow run deploy-pages.yml
+     ```
+   - **Booked post-deploy step (items 102c / 104c) — do it in this order, or the check lies:** after the
+     deploy, confirm the deployed bundle hash **≠ `index-r6pZvEiE.js`**, and only **then** run the
+     **live-lane re-baseline**. That lane's expectations derive from the *checked-out* dataset while Pages
+     may still serve an older artifact, so **running it before the deploy goes RED by design** — a
+     false alarm, not a defect.
+   - **Repo-document path (readable offline, always current):** this runbook · `docs/playtest-log.md` §11
+     (normative instrument; §11.1 Entry row carries the same correction) · `stage2-v06-freeze-note.md` ·
+     `stage2-v06-manifest.sha256` (hash **stale for RF-2/RF-3** — see the V0.8 banner; a fresh manifest is
+     a blocking precondition of session 1).
+   - **If the unfreeze has not happened at round start:** record the round as **`NOT TESTABLE ON THIS
+     BUILD`** (§9.10.4 — a legal, reportable outcome) and stop. Never run a scored session on a dev
+     server: the BUT must be a deployed, single, frozen commit (§11.1).
 2. **Verification pass** (unrecorded, once per round + once per device):
    - `?level=1` … `?level=10`: each renders a playable board (✓/✗ per level in the BUT row).
    - Win **L10** (setup play): transcribe the win panel's **title + body verbatim** (BD-2 baseline —
