@@ -387,7 +387,8 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
   // blocks above: the *batch* is the proofing unit (§7.2 "5 levels sharing one plan shape and
   // one lattice family, proven as a set before any of them is registered"), so the rungs are a
   // property of the registered ladder (`ACT_II_B1_LADDER`), the band membership is a property
-  // of the act (§7.2's par 16–24 / `D_exec` [19.75, 29.06]), and the across-act obligation is
+  // of the act (§7.2's par 16–24 / `D_exec` [19.75, 29.0625], printed [19.75, 29.06] — §7.9's
+  // notation law: derived-exact is the value, the printed form is display), and the across-act obligation is
   // a property of the act's measured **maximum** (§7.3's `act-peak` clause), never of every
   // interior member. `act2Batch1Gates` therefore reads `ACT_II_B1_LADDER` by member index and
   // is the single implementation behind all five rows.
@@ -406,7 +407,7 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
     obligation: "act-2-batch-1",
     switchRequired: "required",
     evidence:
-      "docs/level-design.md §7.2 (Act II = portal orchestration, par 16–24, D_exec [19.75, 29.06]) + §7.4 stage G + §7.7 item 3 (the batch's rung/band pin) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.16 (LV-012 authoring) + §8.17 (R-004a registration) · measured on the ROOT bytes: par 17 (solver-stamped), D_exec 21.581395, B 1.5271 (in band), coverage 42/42, T ≡ R ≡ 0, all-OFF UNSATISFIABLE, parRoutes 12/12 press-then-cross, refusedThenEnteredTiles 17 · docs/level-difficulty.md §5.2 · src/levels/README.md §2f",
+      "docs/level-design.md §7.2 (Act II = portal orchestration, par 16–24, D_exec [19.75, 29.0625], printed [19.75, 29.06] per §7.9's notation law) + §7.4 stage G + §7.7 item 3 (the batch's rung/band pin) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.16 (LV-012 authoring) + §8.17 (R-004a registration) · measured on the ROOT bytes: par 17 (solver-stamped), D_exec 21.581395, B 1.5271 (in band), coverage 42/42, T ≡ R ≡ 0, all-OFF UNSATISFIABLE, parRoutes 12/12 press-then-cross, refusedThenEnteredTiles 17 · docs/level-difficulty.md §5.2 · src/levels/README.md §2f",
   },
   {
     levelId: 22,
@@ -1281,23 +1282,69 @@ export const LAW_PRECISION = 5e-7;
  * The constants below are therefore of two kinds and are kept apart:
  *
  * - **bands** ({@link ACT_II_PAR_BAND}, {@link ACT_II_EXEC_BAND}) — §7.2's published ranges,
- *   "and the range is the law: a candidate outside its act band is **rejected**, not
- *   re-banded";
+ *   read as **derived-exact values, inclusive at both ends** (§7.9 / ADR-design-0007, binding on
+ *   every act and gate; LV-016 aligned both stored constants with their own formula, so no
+ *   printed rounding is a value or an operand here — see {@link ACT_II_EXEC_BAND}), "and the
+ *   range is the law: a candidate outside its act band is **rejected**, not re-banded";
  * - **measurements** ({@link ACT_II_B1_LADDER}, the act-scale tail constants) — the Solver's
  *   read-outs of the **registered** bytes. They are pins, exactly like
  *   `BLOCK_L1619_TAIL_PAR` / `BLOCK_L1619_TAIL_EXEC_CEILING`: a re-registration moves them
  *   in the commit that re-measures, never silently.
  */
 
-/** §7.2 — Act II's par band (a *plateau*, not a ladder): 16–24. */
-export const ACT_II_PAR_BAND: readonly [number, number] = [16, 24];
+/**
+ * §7.2 / §7.9 — Act II's `par` band (a *plateau*, not a ladder): **16–24, inclusive at both
+ * ends**. It is an integer range, so no rounding exists anywhere in it — that is why §7.9's
+ * `par` half needs no formula. The endpoints are named (not typed into the band) so the
+ * `D_exec` derivation below reads the same two constants the band itself is built from, and a
+ * future par-band edit cannot leave one of the two derivations behind.
+ */
+export const ACT_II_PAR_FLOOR = 16;
+export const ACT_II_PAR_CEILING = 24;
+export const ACT_II_PAR_BAND: readonly [number, number] = [
+  ACT_II_PAR_FLOOR,
+  ACT_II_PAR_CEILING,
+];
 
 /**
- * §7.2 — Act II's `D_exec` band, **derived** (`[16 + 3·1.2500, 24 + 3·1.6875]`) from the
- * measured `B` band, never invented. LV-012 measured the accepted pool inside it (`B`
- * 1.5271 … 1.6008) and §7.5 item 1 asks every registered member to sit inside it.
+ * The **measured `B` band** Act II's `D_exec` band is derived from (§7.0: the `D_exec` band is
+ * derived *from the measured `B` band*; §7.9: **derive-from-formula**). Named here as the act's
+ * own formula input rather than re-typed as a literal — the measurement itself is the one the
+ * shipped L1–L15 block publishes ({@link BLOCK_L1619_B_BAND}), so an Act II band and a block
+ * band can never disagree about the `B` basis without this line failing to compile.
  */
-export const ACT_II_EXEC_BAND: readonly [number, number] = [19.75, 29.06];
+export const ACT_II_B_BAND: readonly [number, number] = BLOCK_L1619_B_BAND;
+
+/**
+ * §7.2 / §7.9 — Act II's `D_exec` band, **computed from its formula**:
+ *
+ * ```text
+ * [par_min + 3·B_lo, par_max + 3·B_hi] = [16 + 3·1.2500, 24 + 3·1.6875] = [19.75, 29.0625]
+ * ```
+ *
+ * Both endpoints are **dyadic rationals** (`16 + 3·5/4 = 19.75 = 79/4`; `24 + 3·27/16 = 29.0625
+ * = 465/16`), so this arithmetic is exact in IEEE-754 double — the stored constant *is* the
+ * derived-exact value, bit for bit, and the inclusive comparison at the top admits
+ * `D_exec = 29.0625` (`par 24`, `B = 1.6875`) exactly as §7.9 requires. `[19.75, 29.06]` is the
+ * **printed** form of this range, produced at the printing sites by `.toFixed(2)`; it is display
+ * text and is **never** a comparison operand (§7.9).
+ *
+ * **GD-011's named corollary, discharged here (LV-016).** This constant used to be the literal
+ * `29.06` — the printed rounding — which is a *latent endpoint defect*: it left the
+ * `(29.06, 29.0625]` sliver unbuildable, so §7.8 item 2's own `par 24` mandate could not be
+ * satisfied at its top (`24 + 3·1.6875 = 29.0625`, the band's own ceiling). No rounded literal
+ * survives in this module: every Act II band value below is either an integer law endpoint or a
+ * formula over {@link ACT_II_B_BAND}.
+ *
+ * LV-012 measured the accepted pool inside this band (`B` 1.5271 … 1.6008) and §7.5 item 1 asks
+ * every registered member to sit inside it; every Act II row published to date sits at
+ * `D_exec ≤ 28.771084`, strictly inside under **either** reading — so aligning the constant moves
+ * **no** verdict (the flip audit is on the LV-016 record).
+ */
+export const ACT_II_EXEC_BAND: readonly [number, number] = [
+  ACT_II_PAR_FLOOR + 3 * ACT_II_B_BAND[0],
+  ACT_II_PAR_CEILING + 3 * ACT_II_B_BAND[1],
+];
 
 /** Act II batch 1's members, in registered order (`docs/level-design.md` §7.2/§7.7). */
 export const ACT_II_B1_IDS: readonly number[] = [21, 22, 23, 24, 25];
@@ -1660,7 +1707,8 @@ export function actPeakOf(
  *      exact, authored *and* solver-stamped) and strictly inside §7.2's par band [16, 24].
  *      §7.5 item 1's "`par` ∈ act band" is discharged here in its stronger form: the band is a
  *      range, the registered rung is a measurement, and this level is both.
- *   2. `act2-exec-band` — `D_exec` inside §7.2's derived band [19.75, 29.06] **and** equal to
+ *   2. `act2-exec-band` — `D_exec` inside §7.2's derived band [19.75, 29.0625] (printed
+ *      [19.75, 29.06]; §7.9's notation law) **and** equal to
  *      the registered row's value at {@link LAW_PRECISION}. The band half is §7.5 item 1 ("a
  *      candidate outside its act band is rejected, not re-banded"); the equality half is the
  *      anti-restamp pin.
