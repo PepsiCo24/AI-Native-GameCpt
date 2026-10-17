@@ -170,6 +170,121 @@
  *    judged tuple is accounted for (the par census prints the out-of-band members too,
  *    e.g. the 1178 `par-out-of-band` refusals).
  *
+ * ── LV-015 · THE 4-POCKET SUB-LATTICE (`--pockets=4`, Act II batch 3 = L31–L35) ──
+ *
+ * Law this pass implements, quoted not paraphrased:
+ *
+ * - `docs/level-design.md` **§7.8 item 4** (the **anti-mirror clause**, GD-010 /
+ *   `docs/decisions/design-0006-act-close-peak-and-relief-label-form.md`): *"Batch 3 must
+ *   not mirror batch 1's ladder again, and must not copy batch 2's device. The mirror was a
+ *   one-off measurement instrument … repeating it converts a measurement into a formula and
+ *   yields a third indistinct rung set. Batch 3 publishes its own par set inside 16–24 (the
+ *   census's own pool supports 19 and 22, neither yet used) and a device distinct in the
+ *   stricter §6.1.4 seal-inclusive key. The named open axes available to it: the 4-pocket
+ *   member (§7.4's pocket count 1–4; LV-014 states it unenumerated, no completeness claim)
+ *   and the deferred `--pocketsize ≥ 11` probe."* This pass enumerates the **first** named
+ *   axis — the **4-pocket** member (`P → R2 → R3 → R4` plus the goal's own seal = **5 doors
+ *   / 5 presses**) — and leaves the second **deferred**: `--pocketsize ≥ 11` stays
+ *   **unmeasured**, with no ceiling wording in either direction (item 114's law).
+ * - **§7.8 item 1** + **§7.3.2** (the **`act-close` clause**): *"Act II's registered maximum
+ *   must be carried by batch 3 or 4 and must strictly exceed `27.604651`."* The constants
+ *   are **read, never typed**: `ACT_II_B1_REGISTERED_PEAK_EXEC` = 27.604651,
+ *   `ACT_I_REGISTERED_PEAK_EXEC` = 24.729412, `ACT_II_B1_LADDER` pars 17/18/20/21/23.
+ * - **§7.8 item 2** (the **derived route — no new number**): at `par 24`,
+ *   `D_exec = par + 3·B` (§7.5 item 1's measured theorem `T ≡ R ≡ 0`) with `B` inside the
+ *   measured band `[1.2500, 1.6875]` forces `D_exec ∈ [27.7500, 29.0625]`, i.e. **≥
+ *   +0.145349** over the registered peak, the window's top *being* Act II's derived ceiling.
+ *   Both numbers are citations; this file invents no threshold.
+ * - **§7.8 item 3** (the **named census obligation**): LV-014's accept pool by par
+ *   *"tops at `par 23`, so `par 24` is in-band but unmeasured in the `G` lattice"*. The
+ *   published fallback, if `par 24` yields no accept, is the par-23 class reach
+ *   **`27.746988`** (`+0.142337` over the registered peak) — which must pass §7.5 in full
+ *   and travels the **§7.3.3 C path with its own ADR**, because it re-keys the registered
+ *   maximum. That is a **Game Designer decision this tool may not take**, and it is never a
+ *   silent par substitution.
+ * - **§7.8 item 5** (**label before the bytes**): if batch 3's opening rung sits below L30
+ *   (`27.566265`), that seam is a `ΔM = 0` interior relaxation and takes a **§7.3.1-form
+ *   relief label published before the batch is authored**.
+ * - **§7.2 / §7.4 / §7.5**: Act II's band (`par` 16–24, `D_exec` [19.75, 29.06], batch = 5);
+ *   stage `G` = *"multi-pocket: pocket count 1–4 × portal pairs 1–2 × door arity 2–5 ×
+ *   landing position, on 7×6 → 7×7"*; and the per-batch proof obligations, unchanged.
+ * - **§6.2.3**, the sealed-landing lattice law, read against a **5-door** device: exactly one
+ *   opposite-colour portal pair; the landing pocket not on-foot reachable in the needed
+ *   phase; **every** blocker an *openable door* (never a phase wall — F-L19-2); a forced
+ *   ordered chain one press per door; `T ≡ R ≡ 0` and coverage `42/42`; `switchRequired`
+ *   **measured**, never decreed. `par(L20) = 20` is cited, not inherited (no batch-3 id is 20).
+ *
+ * THE DEVICE (the named plan shape, written before the search):
+ *
+ * ```
+ *   P   landing pocket   exit d1 (its whole boundary)        press s1 ∈ P
+ *   F   free band        press s2 ∈ F  → drives d2            [reachable once d1 opens]
+ *   R2  second pocket    exit/entrance = d2 (whole boundary)  press s3 ∈ R2 → drives d3
+ *   R3  third pocket     exit/entrance = d3 (whole boundary)  press s4 ∈ R3 → drives d4
+ *   R4  fourth pocket    exit/entrance = d4 (whole boundary)  press s5 ∈ R4 → drives d5
+ *   G   the goal         every walk-neighbour is a d5 tile
+ * ```
+ *
+ * The forced order `p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4 < p4 < d5` is a property of the
+ * board — each press lies **inside** the room whose predecessor door seals it, and `d5` is
+ * the goal's only entrance — and it is re-measured on **every** par route (`g3` requires
+ * `minPresses ≥ presses` and `chain = n/n`), never on one witness. Relative to batch 2 the
+ * device is one room deeper (4 presses → **5**) on the same `7 × 6` frame at `CX = 2`: the
+ * §7.4 axis, not a re-parameterisation of batch 2's board, and each rung's §6.1.4 key is
+ * censused against **all 30 existing files** (25 root + 5 shelf) and against its siblings.
+ *
+ * BATCH 3'S SELECTION RULE — **published here before any census or any byte**:
+ *
+ * 1. **Own par set (anti-mirror, §7.8 item 4).** `UNUSED := ([16, 24] ∩ ℤ) \ {par of each
+ *    `ACT_II_B1_LADDER` row}` — read from the law constant, never typed — ⇒ **{16, 19, 22,
+ *    24}**. Batch 1/2's pars (17/18/20/21/23) are excluded **by construction**; no batch-3
+ *    rung may carry one.
+ * 2. **Five rungs over that set (§7.2 batch size 5).** Only four in-band pars are unused, so
+ *    **exactly one par repeats**: `CLOSE := max{p ∈ UNUSED : the census's accept pool at p
+ *    is non-empty}`, used at the batch's **last two** rungs. §7.3.2 asks the act's maximum
+ *    to be carried by the closing batch, so the tail ends on the batch's own band-ceiling
+ *    par. (If a par's pool is empty, that par is simply absent from the ladder — the
+ *    remaining members keep their own pars and `CLOSE` is chosen from what the pool
+ *    supports; pars are never substituted from batch 1/2's set.)
+ * 3. **Order:** ascending par; the two `CLOSE` rungs ordered by ascending `D_exec`.
+ * 4. **Within-par tie-break:** minimal `D_exec`, then enumeration order (batch 1's and batch
+ *    2's rule), with **one published departure** — the batch's **last** rung takes the
+ *    within-par **maximum** `D_exec`, so that the act's maximum is carried by the batch's
+ *    *last rung* rather than its interior (§7.3.2 read as a selection rule). Every departure
+ *    is printed beside the ladder.
+ * 5. **Bands and gates are filters, never preferences** (§7.5 item 1): `par ∈ [16, 24]`,
+ *    `D_exec ∈ [19.75, 29.06]`, `B ∈ [1.2500, 1.6875]`, `T ≡ R ≡ 0`, coverage `42/42`,
+ *    `switchRequired` measured as the all-OFF world, the `g0`–`g6` family gates by name.
+ * 6. **§6.1.4 clone filter:** each rung's seal-inclusive key must be free of the 30 existing
+ *    keys **and** of its siblings'; collisions are counted and printed, never hidden.
+ * 7. **`act-close` refusal (no padding, no substitution):** if the batch's **measured
+ *    maximum** is `≤ ACT_II_B1_REGISTERED_PEAK_EXEC` (27.604651) — i.e. the 4-pocket class
+ *    cannot reach `par 24`, or the pool cannot carry it — the batch is **not written**. The
+ *    census is reported as a **named act limitation** with the class ceiling beside it
+ *    (§7.3.2's escape hatch) and the fallback is briefed to the Game Designer as the
+ *    **C path** (§7.8 item 3). A padded par or a borrowed par is not a remedy.
+ * 8. **Relief label (§7.8 item 5):** the `L30 → L31` seam is labelled in **§7.3.1's form**
+ *    in the census dossier, **before `--write` runs**; if L31's `D_exec ≥ 27.566265` there is
+ *    no relief and the label is recorded as **not fired**.
+ *
+ * The census commands, also published before the run (they are what the dossier quotes):
+ *
+ * ```
+ *   STEP 1 — the par-24 obligation (§7.8 item 3), both fenced families:
+ *     npx tsx scripts/author-l21.ts --stage=g --batch=2 --pockets=3 --cx=2 --pocketsize=4 \
+ *       --qmax=4 --paircap=40 --budget=8000 --cap=400 --parmin=24 --parmax=24
+ *     npx tsx scripts/author-l21.ts --stage=g --batch=3 --pockets=4 --cx=2 --pocketsize=4 \
+ *       --qmax=4 --paircap=40 --budget=8000 --cap=400 --parmin=24 --parmax=24
+ *   STEP 2 — the batch's own pool (full act band, the 4-pocket family):
+ *     npx tsx scripts/author-l21.ts --stage=g --batch=3 --pockets=4 --cx=2 --pocketsize=4 \
+ *       --qmax=4 --paircap=40 --budget=8000 --cap=400 --parmin=16 --parmax=24
+ * ```
+ *
+ * Enumeration **sizes** may be orbit-predicted in the dossier and are then labelled
+ * PREDICTED; no measured result ever inherits from a prediction, and a capped run reports
+ * its `--paircap` / `--budget` counters as a **prefix**, never as a completed class
+ * (`docs/architecture.md` §15.5).
+ *
  * Stages:
  *
  *   0.  **preflight law** — the parity/judging-phase rule re-derived from the shipped
@@ -216,6 +331,7 @@ import {
   ACT_II_B1_IDS,
   ACT_II_B1_LADDER,
   ACT_II_B1_REGISTERED_PEAK_EXEC,
+  ACT_II_PAR_BAND,
   ACT_I_REGISTERED_PEAK_EXEC,
   BLOCK_L1619_B_BAND,
   BLOCK_L1619_IDS,
@@ -273,7 +389,7 @@ const PAR_MIN = Number(argOf("parmin") ?? "17");
  * batch 2 = **L26–L30** (this ticket, shelf candidates only — registration is a later
  * train, so nothing here widens a registered ceiling).
  */
-const BATCH_FIRST_ID = BATCH === 2 ? 26 : 21;
+const BATCH_FIRST_ID = BATCH === 3 ? 31 : BATCH === 2 ? 26 : 21;
 const RUNG_COUNT = 5;
 const PAR_MAX = Number(argOf("parmax") ?? "23");
 /** The Act II `D_exec` band (§7.2, derived from the measured `B` band). */
@@ -1844,6 +1960,391 @@ function stageLattice3(cut: { floor: number; actI: number; l15Par: number }, onl
   return accepts;
 }
 
+/**
+ * **Stage `G`, the 4-pocket sub-lattice** (`--pockets=4`, Act II batch 3 = L31–L35).
+ *
+ * §7.8 item 4's **first named open axis** — §7.4's `pocket count 1–4`, the member LV-014
+ * left *unenumerated with no completeness claim*. The same frame (`7 × 6`, `--cx=2`), the
+ * same device pool, band and gate chain as {@link stageLattice3}, **one room deeper**:
+ * `P → R2 → R3 → R4` plus the goal's own seal, i.e. **5 doors and 5 presses** in the forced
+ * order `p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4 < p4 < d5` (the header's plan figure). The
+ * plan is forced by construction — each press lies inside the room the previous door seals,
+ * and `d5` is the goal's only entrance — and the construction is checked by the same
+ * readers (`g3` requires the whole chain on **every** par route, `g1`/`g2`/`g6` re-derive
+ * the seal geometry from the bytes).
+ *
+ * What the run prints, and what it may never hide (unchanged discipline, batch 2's):
+ *
+ * - the **accept count is a floor** if `--paircap` / `--budget` truncate (both counters are
+ *   printed), and the refusal census is complete *within the prefix*;
+ * - the **par census over every judged tuple**, in band and out — the band is a filter, not
+ *   a truncation, and this run exists to measure whether `par 24` (§7.8 item 3) is
+ *   reachable in this family;
+ * - the **shape-filter counters** of the published restrictions: no `R3` tile adjacent to an
+ *   `R2` tile (batch 2's filter #1, 0 by the seal law) and no `R4` tile adjacent to an `R2`
+ *   or `R3` tile (filter #2, the same argument one level down: every neighbour of a sealed
+ *   room from outside is one of its own door tiles, and door tiles are excluded from the next
+ *   pool before it is drawn). A non-zero reading would mean the seal law is broken, and the
+ *   run says so rather than quietly narrowing.
+ *
+ * No ceiling claim in either direction: this is the enumerated class (one portal pair,
+ * `--pocketsize`/`--qmax` bounds, this frame), and nothing outside it is claimed.
+ */
+function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onlyLanding: string | null): Accept[] {
+  const devs = devices(onlyLanding);
+  console.log(
+    `\nstage G 4-pocket sub-lattice (4-pocket, ${String(POCKETS)} pockets): ${String(devs.length)} leak-free landing device(s) ` +
+      `(landing × near × pocket ≤ ${String(POCKET_MAX)}${onlyLanding === null ? "" : `, filtered to landing ${onlyLanding}`}) · ` +
+      `R2, R3, R4 ≤ ${String(QMAX)} tile(s) · ${String(PAIR_CAP)} (R2,R3,R4) group(s)/device cap · ${String(CAP)} tuple(s)/group cap · ` +
+      `${String(BUDGET)} judged tuple(s) budget · par band [${String(PAR_MIN)}, ${String(PAR_MAX)}] · ` +
+      `D_exec band [${ACT2_EXEC_BAND[0].toFixed(2)}, ${ACT2_EXEC_BAND[1].toFixed(2)}]`,
+  );
+  const histogram = new Map<string, number>();
+  const parHist = new Map<number, number>();
+  const accepts: Accept[] = [];
+  const skip = {
+    devicesShort: 0,
+    room2Unsealable: 0,
+    room2BoundaryOutside: 0,
+    pairsShort: 0,
+    room3Unsealable: 0,
+    room3BoundaryOutside: 0,
+    rooms23Adjacent: 0,
+    triplesShort: 0,
+    room4Unsealable: 0,
+    room4BoundaryOutside: 0,
+    rooms34Adjacent: 0,
+    noGoal: 0,
+    s2OnSeal: 0,
+  };
+  const misses: { reason: string; note: string; par: number; dexec: number; b: number; failing?: readonly Gate[] }[] = [];
+  const room2Fail = new Map<string, number>();
+  const room3Fail = new Map<string, number>();
+  const room4Fail = new Map<string, number>();
+  const firstChanged = (before: ReadonlyMap<string, number>): string => {
+    for (const [k, v] of ROOM_FAIL) if ((before.get(k) ?? 0) !== v) return k;
+    return "unknown";
+  };
+  let room2Sealed = 0;
+  let room3Sealed = 0;
+  let room4Sealed = 0;
+  let maxR3Pool = 0;
+  let maxR4Pool = 0;
+  let maxFPoolOverGoal = 0;
+  let total = 0;
+  let groups = 0;
+  let groupCapHits = 0;
+  let budgetHit = false;
+  let devicesDone = 0;
+  const t0 = Date.now();
+  for (const dev of devs) {
+    if (total >= BUDGET) break;
+    devicesDone += 1;
+    const d1: DoorDef = { id: "d1", color: closedIn(dev.pocket.entryPhase), tiles: dev.pocket.boundary };
+    const k1 = new Set([...dev.pocket.tiles, ...dev.pocket.boundary].map(coordKey));
+    const qPool = FAR_TILES.filter((t) => !k1.has(coordKey(t)));
+    const s1Tiles = dev.pocket.tiles.filter((t) => coordKey(t) !== coordKey(dev.landing));
+    if (qPool.length < 4) {
+      skip.devicesShort += 1;
+      continue;
+    }
+    let groupsThisDev = 0;
+    for (const room2Tiles of chainRoomCandidates(qPool, QMAX)) {
+      if (total >= BUDGET) break;
+      if (groupsThisDev >= PAIR_CAP) {
+        groupCapHits += 1;
+        break;
+      }
+      const before2 = new Map(ROOM_FAIL);
+      const room2 = roomFrom(room2Tiles, dev.arrivalPhase, dev.landing);
+      if (room2 === null) {
+        const r = firstChanged(before2);
+        room2Fail.set(r, (room2Fail.get(r) ?? 0) + 1);
+        skip.room2Unsealable += 1;
+        continue;
+      }
+      room2Sealed += 1;
+      if (room2.boundary.some((b) => !qPool.some((t) => coordKey(t) === coordKey(b)))) {
+        skip.room2BoundaryOutside += 1;
+        continue;
+      }
+      const d2: DoorDef = { id: "d2", color: closedIn(room2.entryPhase), tiles: room2.boundary };
+      const k2 = new Set([...k1, ...room2.tiles.map(coordKey), ...room2.boundary.map(coordKey)]);
+      const pPool = FAR_TILES.filter((t) => !k2.has(coordKey(t)));
+      const room2Keys = new Set(room2.tiles.map(coordKey));
+      if (pPool.length > maxR3Pool) maxR3Pool = pPool.length;
+      if (pPool.length < 4) {
+        skip.pairsShort += 1;
+        continue;
+      }
+      for (const room3Tiles of chainRoomCandidates(pPool, QMAX)) {
+        if (total >= BUDGET) break;
+        const before3 = new Map(ROOM_FAIL);
+        const room3 = roomFrom(room3Tiles, dev.arrivalPhase, dev.landing);
+        if (room3 === null) {
+          const r = firstChanged(before3);
+          room3Fail.set(r, (room3Fail.get(r) ?? 0) + 1);
+          skip.room3Unsealable += 1;
+          continue;
+        }
+        room3Sealed += 1;
+        if (room3.boundary.some((b) => !pPool.some((t) => coordKey(t) === coordKey(b)))) {
+          skip.room3BoundaryOutside += 1;
+          continue;
+        }
+        // published shape restriction #1 (batch 2's, kept): no R3 tile adjacent to an R2 tile
+        if (room3.tiles.some((t) => gridNeighbours(t).some((n) => room2Keys.has(coordKey(n))))) {
+          skip.rooms23Adjacent += 1;
+          continue;
+        }
+        const d3: DoorDef = { id: "d3", color: closedIn(room3.entryPhase), tiles: room3.boundary };
+        const k3 = new Set([...k2, ...room3.tiles.map(coordKey), ...room3.boundary.map(coordKey)]);
+        const r4Pool = FAR_TILES.filter((t) => !k3.has(coordKey(t)));
+        const room23Keys = new Set([...room2Keys, ...room3.tiles.map(coordKey)]);
+        if (r4Pool.length > maxR4Pool) maxR4Pool = r4Pool.length;
+        if (r4Pool.length < 4) {
+          skip.triplesShort += 1;
+          continue;
+        }
+        for (const room4Tiles of chainRoomCandidates(r4Pool, QMAX)) {
+          if (total >= BUDGET) break;
+          const before4 = new Map(ROOM_FAIL);
+          const room4 = roomFrom(room4Tiles, dev.arrivalPhase, dev.landing);
+          if (room4 === null) {
+            const r = firstChanged(before4);
+            room4Fail.set(r, (room4Fail.get(r) ?? 0) + 1);
+            skip.room4Unsealable += 1;
+            continue;
+          }
+          room4Sealed += 1;
+          if (room4.boundary.some((b) => !r4Pool.some((t) => coordKey(t) === coordKey(b)))) {
+            skip.room4BoundaryOutside += 1;
+            continue;
+          }
+          // published shape restriction #2: no R4 tile adjacent to an R2 or R3 tile
+          if (room4.tiles.some((t) => gridNeighbours(t).some((n) => room23Keys.has(coordKey(n))))) {
+            skip.rooms34Adjacent += 1;
+            continue;
+          }
+          const d4: DoorDef = { id: "d4", color: closedIn(room4.entryPhase), tiles: room4.boundary };
+          const k4 = new Set([...k3, ...room4.tiles.map(coordKey), ...room4.boundary.map(coordKey)]);
+          const fPool = FAR_TILES.filter((t) => !k4.has(coordKey(t)));
+          const goalPool = fPool.filter(
+            (g) =>
+              x(g) >= CX + 2 && // no column neighbour: else the goal is enterable from the corridor, which can hold no door
+              walkNeighbours(g).length > 0 &&
+              walkNeighbours(g).every((n) => fPool.some((t) => coordKey(t) === coordKey(n))),
+          );
+          if (goalPool.length === 0) {
+            skip.noGoal += 1;
+            continue;
+          }
+          if (fPool.length > maxFPoolOverGoal) maxFPoolOverGoal = fPool.length;
+          groupsThisDev += 1;
+          groups += 1;
+          const s2Tiles = fPool;
+          const s3Tiles = room2.tiles;
+          const s4Tiles = room3.tiles;
+          const s5Tiles = room4.tiles;
+          let tried = 0;
+          for (const s1Tile of s1Tiles) {
+            if (tried >= CAP || total >= BUDGET) break;
+            const s1: SwitchDef = {
+              id: "s1",
+              tile: s1Tile,
+              activePhase: farEntryPhase(dev.landing, dev.arrivalPhase, s1Tile),
+              targets: ["d1"],
+            };
+            for (const s2Tile of s2Tiles) {
+              if (tried >= CAP || total >= BUDGET) break;
+              const s2: SwitchDef = {
+                id: "s2",
+                tile: s2Tile,
+                activePhase: farEntryPhase(dev.landing, dev.arrivalPhase, s2Tile),
+                targets: ["d2"],
+              };
+              for (const s3Tile of s3Tiles) {
+                if (tried >= CAP || total >= BUDGET) break;
+                const s3: SwitchDef = {
+                  id: "s3",
+                  tile: s3Tile,
+                  activePhase: farEntryPhase(dev.landing, dev.arrivalPhase, s3Tile),
+                  targets: ["d3"],
+                };
+                for (const s4Tile of s4Tiles) {
+                  if (tried >= CAP || total >= BUDGET) break;
+                  const s4: SwitchDef = {
+                    id: "s4",
+                    tile: s4Tile,
+                    activePhase: farEntryPhase(dev.landing, dev.arrivalPhase, s4Tile),
+                    targets: ["d4"],
+                  };
+                  for (const s5Tile of s5Tiles) {
+                    if (tried >= CAP || total >= BUDGET) break;
+                    const s5: SwitchDef = {
+                      id: "s5",
+                      tile: s5Tile,
+                      activePhase: farEntryPhase(dev.landing, dev.arrivalPhase, s5Tile),
+                      targets: ["d5"],
+                    };
+                    for (const goal of goalPool) {
+                      if (tried >= CAP || total >= BUDGET) break;
+                      const sealTiles = walkNeighbours(goal);
+                      if (
+                        sealTiles.some((t) => coordKey(t) === coordKey(s2Tile)) ||
+                        coordKey(goal) === coordKey(s2Tile)
+                      ) {
+                        skip.s2OnSeal += 1;
+                        continue;
+                      }
+                      tried += 1;
+                      total += 1;
+                      const d5: DoorDef = {
+                        id: "d5",
+                        color: closedIn(standPhase(dev.landing, dev.arrivalPhase, goal)),
+                        tiles: sealTiles,
+                      };
+                      const draft = {
+                        id: BATCH_FIRST_ID,
+                        width: W,
+                        height: H,
+                        startPhase: START_PHASE,
+                        player: PLAYER,
+                        goal,
+                        phaseAWalls: COLUMN.a,
+                        phaseBWalls: COLUMN.b,
+                        doors: [d1, d2, d3, d4, d5],
+                        switches: [s1, s2, s3, s4, s5],
+                        portals: [{ id: "p1", pair: [dev.near, dev.landing] as const, activePhase: dev.nearPhase }],
+                      };
+                      const ctx: Context = {
+                        cut,
+                        device: dev,
+                        rooms: [dev.pocket, room2, room3, room4],
+                        doors: [d1, d2, d3, d4, d5],
+                        presses: [s1, s2, s3, s4, s5],
+                        goalRoom: {
+                          tiles: [goal],
+                          boundary: sealTiles,
+                          entryPhase: standPhase(dev.landing, dev.arrivalPhase, goal),
+                        },
+                      };
+                      const note =
+                        `landing=${coordKey(dev.landing)} near=${coordKey(dev.near)}/${dev.nearPhase} ` +
+                        `P=[${dev.pocket.tiles.map(coordKey).join(" ")}] d1=[${dev.pocket.boundary.map(coordKey).join(" ")}]/${d1.color} ` +
+                        `s1=${coordKey(s1Tile)}/${s1.activePhase} ` +
+                        `R2=[${room2.tiles.map(coordKey).join(" ")}] d2=[${room2.boundary.map(coordKey).join(" ")}]/${d2.color} s2=${coordKey(s2Tile)}/${s2.activePhase} ` +
+                        `R3=[${room3.tiles.map(coordKey).join(" ")}] d3=[${room3.boundary.map(coordKey).join(" ")}]/${d3.color} s3=${coordKey(s3Tile)}/${s3.activePhase} ` +
+                        `R4=[${room4.tiles.map(coordKey).join(" ")}] d4=[${room4.boundary.map(coordKey).join(" ")}]/${d4.color} s4=${coordKey(s4Tile)}/${s4.activePhase} ` +
+                        `s5=${coordKey(s5Tile)}/${s5.activePhase} goal=${coordKey(goal)} d5=[${sealTiles.map(coordKey).join(" ")}]/${d5.color}`;
+                      // the par band is the FILTER (the probe), the gates run on in-band boards only
+                      const probe = probePar(draft);
+                      if (probe.par < PAR_MIN || probe.par > PAR_MAX) {
+                        const reason = probe.reason === "ok" ? "par-out-of-band" : probe.reason;
+                        histogram.set(reason, (histogram.get(reason) ?? 0) + 1);
+                        if (probe.par > 0) parHist.set(probe.par, (parHist.get(probe.par) ?? 0) + 1);
+                        continue;
+                      }
+                      const { outcome, level } = judge(draft, ctx);
+                      if (!outcome.accepted || level === null) {
+                        histogram.set(outcome.reason, (histogram.get(outcome.reason) ?? 0) + 1);
+                        if (outcome.par !== undefined)
+                          misses.push({
+                            reason: outcome.reason,
+                            note,
+                            par: outcome.par,
+                            dexec: outcome.dexec ?? Number.NaN,
+                            b: outcome.b ?? Number.NaN,
+                            failing: (outcome.gates ?? []).filter((g) => !g.ok),
+                          });
+                        continue;
+                      }
+                      accepts.push({
+                        par: outcome.par as number,
+                        dexec: outcome.dexec ?? Number.NaN,
+                        b: outcome.b ?? Number.NaN,
+                        coverage: outcome.coverage ?? "?",
+                        routes: outcome.routes ?? 0,
+                        pressThenCross: outcome.pressThenCross ?? 0,
+                        note,
+                        level,
+                      });
+                      if (accepts.length <= 40)
+                        console.log(
+                          `  ACCEPT par=${String(outcome.par)} D_exec=${(outcome.dexec ?? 0).toFixed(6)} B=${(outcome.b ?? 0).toFixed(4)} ` +
+                            `coverage=${String(outcome.coverage)} routes=${String(outcome.routes)} chain=${String(outcome.pressThenCross)}/${String(outcome.routes)}\n          ${note}`,
+                        );
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      if (total >= BUDGET) {
+        budgetHit = true;
+        break;
+      }
+    }
+  }
+  if (total >= BUDGET) budgetHit = true;
+  console.log(
+    `\ncensus: ${String(accepts.length)} accept(s) of ${String(total)} judged candidate(s) over ${String(groups)} (R2,R3,R4) group(s) ` +
+      `in ${((Date.now() - t0) / 1000).toFixed(1)} s · devices walked ${String(devicesDone)}/${String(devs.length)} · ` +
+      `${String(PAIR_CAP)}-group cap hit on ${String(groupCapHits)} device(s) · global budget ${String(BUDGET)} ${budgetHit ? "HIT (the run is a deterministic PREFIX: the accept count is a floor, the refusal census is complete only within the prefix)" : "not reached (every device was walked to its own group cap)"}`,
+  );
+  console.log(
+    `upstream skips: R2 sets not sealable ${String(skip.room2Unsealable)} ${[...room2Fail.entries()].map(([k, v]) => `(${k} ${String(v)})`).join(" ")} · ` +
+      `R2 boundary outside the pool ${String(skip.room2BoundaryOutside)} · ${String(room2Sealed)} sealed R2 set(s) · ` +
+      `devices with < 4 free tiles for R2 ${String(skip.devicesShort)} · (R2,R3) pairs with < 4 free tiles for R3 ${String(skip.pairsShort)} · ` +
+      `R3 sets not sealable ${String(skip.room3Unsealable)} ${[...room3Fail.entries()].map(([k, v]) => `(${k} ${String(v)})`).join(" ")} · ` +
+      `R3 boundary outside the pool ${String(skip.room3BoundaryOutside)} · ${String(room3Sealed)} sealed R3 set(s) · ` +
+      `SHAPE FILTER #1 (an R3 tile adjacent to an R2 tile) ${String(skip.rooms23Adjacent)} (0 expected by the seal law) · ` +
+      `(R2,R3,R4) groups with < 4 free tiles for R4 ${String(skip.triplesShort)} · ` +
+      `R4 sets not sealable ${String(skip.room4Unsealable)} ${[...room4Fail.entries()].map(([k, v]) => `(${k} ${String(v)})`).join(" ")} · ` +
+      `R4 boundary outside the pool ${String(skip.room4BoundaryOutside)} · ${String(room4Sealed)} sealed R4 set(s) · ` +
+      `SHAPE FILTER #2 (an R4 tile adjacent to an R2 or R3 tile) ${String(skip.rooms34Adjacent)} (0 expected by the seal law) · ` +
+      `no goal candidate ${String(skip.noGoal)} · s2 tile on the goal's seal or the goal itself ${String(skip.s2OnSeal)}`,
+  );
+  console.log(
+    `tile accounting: largest R3 pool seen ${String(maxR3Pool)} tile(s) · largest R4 pool seen ${String(maxR4Pool)} tile(s) · ` +
+      `largest free pool seen after a sealed R4 ${String(maxFPoolOverGoal)} tile(s) (that pool must hold the goal + its whole seal (≥ 2) + the s2 tile)`,
+  );
+  if (ROOM_FAIL.size > 0)
+    console.log(`room rejections: ${[...ROOM_FAIL.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}: ${String(v)}`).join(" · ")}`);
+  console.log("rejection histogram:");
+  for (const [k, v] of [...histogram.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${k}: ${String(v)}`);
+  console.log(
+    `par census over every judged candidate (in band and out): ` +
+      `${[...parHist.entries()].sort((a, b) => a[0] - b[0]).map(([k, v]) => `${String(k)}:${String(v)}`).join(" ")}`,
+  );
+  console.log("accepts by par:");
+  const byPar = new Map<number, Accept[]>();
+  for (const a of accepts) {
+    const list = byPar.get(a.par) ?? [];
+    list.push(a);
+    byPar.set(a.par, list);
+  }
+  for (const [p, list] of [...byPar.entries()].sort((a, b) => a[0] - b[0])) {
+    const lo = Math.min(...list.map((a) => a.dexec));
+    const hi = Math.max(...list.map((a) => a.dexec));
+    console.log(
+      `  par ${String(p)}: ${String(list.length)} accept(s), D_exec ${lo.toFixed(6)} … ${hi.toFixed(6)} ` +
+        `(B ${Math.min(...list.map((a) => a.b)).toFixed(4)} … ${Math.max(...list.map((a) => a.b)).toFixed(4)})`,
+    );
+  }
+  const atBand = misses.filter((m) => m.par >= PAR_MIN && m.par <= PAR_MAX);
+  console.log(`in-band candidates refused by a gate: ${String(atBand.length)}`);
+  for (const m of atBand.sort((a, b) => b.dexec - a.dexec).slice(0, 6)) {
+    console.log(`  par=${String(m.par)} D_exec=${m.dexec.toFixed(6)} B=${m.b.toFixed(4)} [${m.reason}]\n    ${m.note}`);
+    for (const g of m.failing ?? []) console.log(`      ${g.id}: ${g.detail}`);
+  }
+  writeFileSync(ACCEPTS, `${JSON.stringify(accepts)}\n`);
+  console.log(`wrote ${String(accepts.length)} accept(s) to ${ACCEPTS}`);
+  return accepts;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 0d. The frame's ROOM CAPACITY — how many walk-sealed rooms a frame can host
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1994,6 +2495,50 @@ function stageRoomCap(): void {
  * 23`, so at most two steps can be 2 (spread ≤ 6 over four steps). The violated step is
  * reported beside the ladder, never hidden.
  */
+/**
+ * **Batch 3's own par multiset** — the published rule (header, selection rule 1–3), executed
+ * as a *derivation*, never a search:
+ *
+ * 1. `UNUSED := [ACT_II_PAR_BAND] \ {par of every ACT_II_B1_LADDER row}` — read from the
+ *    law constants, so batch 1/2's 17/18/20/21/23 can never appear here.
+ * 2. Restrict `UNUSED` to the pars **this census's accept pool actually supports**; a par
+ *    with an empty pool is **absent**, and it is never substituted from batch 1's set (the
+ *    anti-mirror clause forbids exactly that substitution).
+ * 3. The batch is five rungs (§7.2), so the supported set is padded to five by repeating the
+ *    **highest** supported pars in descending order — the act's ceiling first, because
+ *    §7.3.2 asks Act II's maximum to be carried by the closing batch. Every repeat is
+ *    printed with its reason; nothing is silent.
+ */
+function batch3ParMultiset(byPar: ReadonlyMap<number, readonly Accept[]>): number[] {
+  const used = new Set(ACT_II_B1_LADDER.map((r) => r.par));
+  const unused: number[] = [];
+  for (let p = ACT_II_PAR_BAND[0]; p <= ACT_II_PAR_BAND[1]; p += 1) if (!used.has(p)) unused.push(p);
+  const supported = unused.filter((p) => (byPar.get(p) ?? []).length > 0);
+  const absent = unused.filter((p) => !supported.includes(p));
+  console.log(
+    `selection: batch 3 OWN par set (anti-mirror, §7.8 item 4) — in-band pars batch 1's registered ladder does not use: ` +
+      `[${unused.join(", ")}] (derived: Act II band ${String(ACT_II_PAR_BAND[0])}..${String(ACT_II_PAR_BAND[1])} minus ` +
+      `ACT_II_B1_LADDER=[${ACT_II_B1_LADDER.map((r) => String(r.par)).join(", ")}]) · supported by this census's pool: ` +
+      `[${supported.join(", ")}]${absent.length > 0 ? ` · ABSENT (empty pool, never substituted): [${absent.join(", ")}]` : ""}`,
+  );
+  if (supported.length === 0) return [];
+  const out = [...supported];
+  const pool = [...supported].sort((a, b) => b - a);
+  let i = 0;
+  while (out.length < RUNG_COUNT) {
+    const p = pool[i % pool.length] as number;
+    out.push(p);
+    console.log(
+      `selection: repeat #${String(out.length - supported.length)} — par ${String(p)} used again (the supported set holds ` +
+        `${String(supported.length)} of the ${String(RUNG_COUNT)} rungs §7.2 asks for; repeats run down from the act's ceiling, §7.3.2)`,
+    );
+    i += 1;
+  }
+  // header rule 3: ascending par, so the ladder rises to its ceiling; within a repeated par the
+  // ladder construction orders the two rungs by ascending D_exec (rule 3/4).
+  return out.sort((a, b) => a - b);
+}
+
 function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept }[] {
   const requireRise = BATCH === 1;
   /**
@@ -2038,9 +2583,9 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
       acc.pop();
     }
   };
-  if (mirror === null) {
+  if (mirror === null && BATCH !== 3) {
     pick(0, []);
-  } else {
+  } else if (mirror !== null) {
     // The published mirror: exactly ONE combo, and it is the law's par list — never a search.
     const absent = mirror.filter((p) => !byPar.has(p));
     if (absent.length > 0) {
@@ -2057,6 +2602,24 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
         `and the only rule inside it is the within-par tie-break (minimal D_exec, then enumeration order)`,
     );
     combos.push(mirror);
+  } else {
+    // Batch 3's OWN par set (published rule 1–3): derived, then executed as ONE combo.
+    const own = batch3ParMultiset(byPar);
+    if (own.length !== RUNG_COUNT) {
+      console.log(
+        `selection: batch 3's own par set is [${own.join(", ")}] — the census supports no usable par at all, so no rung is ` +
+          `fabricated and NO par is substituted from batch 1's set (§7.8 item 4's anti-mirror clause). The census is reported ` +
+          `as a NAMED ACT LIMITATION and the §7.8 item 3 fallback (the par-23 class reach 27.746988, C path with its own ADR) ` +
+          `is briefed to the Game Designer — this tool does not decide it.`,
+      );
+      return [];
+    }
+    console.log(
+      `selection: batch 3 par multiset [${own.join(", ")}] · ascending par, the two closing-par rungs ordered by ascending ` +
+        `D_exec; the batch's LAST rung takes the within-par MAXIMUM D_exec (published departure, header rule 4, so §7.3.2's ` +
+        `act-close maximum lands on the batch's own last rung); no equal-par comparator exists by construction (anti-mirror)`,
+    );
+    combos.push(own);
   }
   interface Ladder {
     levels: { level: Level; accept: Accept }[];
@@ -2076,12 +2639,21 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
     /** `--batch=2` only: rows a par's pool offered *below* the one taken, and why they were skipped. */
     const keySkips: string[] = [];
     let ok = true;
-    for (const p of combo) {
+    for (let rungIndex = 0; rungIndex < combo.length; rungIndex += 1) {
+      const p = combo[rungIndex] as number;
       const all = byPar.get(p) ?? [];
       const pool = requireRise ? all.filter((a) => a.dexec > prev) : all;
+      /**
+       * Batch 3's published tie-break **departure** (header rule 4): the batch's LAST rung
+       * takes the within-par **maximum** `D_exec` (every other rung keeps batch 1/2's
+       * minimal-`D_exec` rule), so §7.3.2's `act-close` maximum is carried by the batch's
+       * last rung rather than by its interior. Printed per rung, never silent.
+       */
+      const takeMax = BATCH === 3 && rungIndex === combo.length - 1;
+      const ordered = takeMax ? [...pool].reverse() : pool;
       let candidate: Accept | undefined;
       let skippedByKey = 0;
-      for (const a of pool) {
+      for (const a of ordered) {
         if (usedKeys.has(cloneKeyOf(a.level))) {
           skippedByKey += 1;
           continue;
@@ -2091,8 +2663,15 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
       }
       if (candidate !== undefined && skippedByKey > 0) {
         keySkips.push(
-          `par ${String(p)}: ${String(skippedByKey)} lower-D_exec row(s) refused by the rung-key-wide distinct clause ` +
-            `(the rung already keyed the batch) → took ${candidate.dexec.toFixed(6)}`,
+          `par ${String(p)}: ${String(skippedByKey)} ${takeMax ? "higher" : "lower"}-D_exec row(s) refused by the rung-key-wide ` +
+            `distinct clause (the rung already keyed the batch) → took ${candidate.dexec.toFixed(6)}`,
+        );
+      }
+      if (candidate !== undefined && takeMax) {
+        keySkips.push(
+          `par ${String(p)} (L${String(BATCH_FIRST_ID + rungIndex)}): the closing rung took the within-par MAXIMUM D_exec ` +
+            `${candidate.dexec.toFixed(6)} (published departure, header rule 4 — §7.3.2 asks the act's maximum to be carried ` +
+            `late); the par's minimum is ${(pool[0] as Accept).dexec.toFixed(6)}`,
         );
       }
       if (candidate === undefined) {
@@ -2182,6 +2761,40 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
         `a shelf file moves neither constant; the census rows ABOVE ${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} are reported in the dossier as measurements, not selected`,
     );
   }
+  if (BATCH === 3) {
+    if (best.keySkips.length > 0) {
+      console.log(
+        "\nbatch-3 note — every departure from batch 1/2's within-par tie-break, printed (a filter is never silent):",
+      );
+      for (const s of best.keySkips) console.log(`  ${s}`);
+    }
+    const peak = best.levels[best.levels.length - 1] as { level: Level; accept: Accept };
+    const maxRung = best.levels.reduce(
+      (acc, c) => (c.accept.dexec > acc.accept.dexec ? c : acc),
+      best.levels[0] as { level: Level; accept: Accept },
+    );
+    console.log(
+      `\nact-close reading (§7.3.2 / §7.8 items 1–2) — batch 3's measured MAXIMUM is L${String(BATCH_FIRST_ID + best.levels.indexOf(maxRung))} ` +
+        `at D_exec ${maxRung.accept.dexec.toFixed(6)} (par ${String(maxRung.accept.par)}): vs the registered Act II peak ` +
+        `${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} → Δ ${(maxRung.accept.dexec - ACT_II_B1_REGISTERED_PEAK_EXEC).toFixed(6)} ` +
+        `${maxRung.accept.dexec > ACT_II_B1_REGISTERED_PEAK_EXEC ? "STRICTLY ABOVE — the clause is DISCHARGED by measurement" : "NOT above — the clause FAILS and the batch must not be written"}; ` +
+        `vs Act I's measured peak ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} → Δ ${(maxRung.accept.dexec - ACT_I_REGISTERED_PEAK_EXEC).toFixed(6)} (act-peak, §7.3)`,
+    );
+    console.log(
+      `  last rung L${String(BATCH_FIRST_ID + best.levels.length - 1)} par=${String(peak.accept.par)} D_exec=${peak.accept.dexec.toFixed(6)} ` +
+        `(the pre-published rule put the batch's maximum on the closing rung: ${peak.accept.dexec === maxRung.accept.dexec ? "holding" : "NOT holding — the pool's other rows carry it, printed as a measurement"})`,
+    );
+    const l30 = 27.566265;
+    const l31 = best.levels[0] as { level: Level; accept: Accept };
+    console.log(
+      `  §7.8 item 5 relief check: L31 D_exec ${l31.accept.dexec.toFixed(6)} vs shelf L30 ${l30.toFixed(6)} → Δ ` +
+        `${(l31.accept.dexec - l30).toFixed(6)} ${l31.accept.dexec < l30 ? "(BELOW — the §7.3.1 label must be published in the dossier BEFORE --write)" : "(at or above — no relief seam exists, the label is recorded as not fired)"}`,
+    );
+    const equalPar = best.levels.filter((c) => ACT_II_B1_LADDER.some((r) => r.par === c.accept.par));
+    console.log(
+      `  anti-mirror check: ${equalPar.length === 0 ? "0 rungs share a par with the registered batch-1 ladder — the batch carries its OWN par set (§7.8 item 4), so no equal-par comparator exists on purpose" : `${String(equalPar.length)} rung(s) DO share a batch-1 par — the anti-mirror clause is violated`}`,
+    );
+  }
   return best.levels;
 }
 
@@ -2190,6 +2803,19 @@ function stageSelect(): void {
   console.log(`read ${String(accepts.length)} accept(s) from ${ACCEPTS}`);
   const chosen = selectBatch(accepts);
   if (chosen.length === 0) return;
+  if (BATCH === 3) {
+    // published rule 7: the act-close clause is a REFUSAL, never a padding prompt.
+    const peak = Math.max(...chosen.map((c) => c.accept.dexec));
+    if (peak <= ACT_II_B1_REGISTERED_PEAK_EXEC) {
+      console.log(
+        `\nSTOP — act-close (§7.3.2 / §7.8 item 1): the batch's measured maximum ${peak.toFixed(6)} does NOT strictly exceed the ` +
+          `registered Act II peak ${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)}. Nothing is written: the census is reported as a ` +
+          `NAMED ACT LIMITATION and the §7.8 item 3 fallback (the published par-23 class reach 27.746988, C path with its own ADR) ` +
+          `is briefed to the Game Designer. A padded par or a substituted par is not a remedy.`,
+      );
+      return;
+    }
+  }
   if (!WRITE) {
     console.log(`(dry run — pass --write to land the ${String(RUNG_COUNT)} candidates)`);
     return;
@@ -2197,6 +2823,10 @@ function stageSelect(): void {
   mkdirSync(OUT_DIR, { recursive: true });
   for (let i = 0; i < chosen.length; i += 1) {
     const level: Level = { ...(chosen[i] as { level: Level }).level, id: BATCH_FIRST_ID + i };
+    if (BATCH === 3 && (level.id < 31 || level.id > 35)) {
+      console.log(`REFUSED to write l${String(level.id)}: batch 3's ids are L31–L35 only (nothing outside its own slot is touched)`);
+      continue;
+    }
     const file = join(OUT_DIR, `l${String(level.id).padStart(3, "0")}.json`);
     writeFileSync(file, `${JSON.stringify(level, null, 2)}\n`);
     console.log(`wrote ${file} (par ${String(level.par)})`);
@@ -2209,7 +2839,13 @@ function stageSelect(): void {
 
 const cut = measureCut();
 console.log(
-  `author-l21 (G lattice, Act II batch ${String(BATCH)}${BATCH === 2 ? " — the 3-pocket chained sub-lattice, L26–L30" : " — L21–L25"}) — ` +
+  `author-l21 (G lattice, Act II batch ${String(BATCH)}${
+    BATCH === 3
+      ? " — the 4-pocket sub-lattice, L31–L35"
+      : BATCH === 2
+        ? " — the 3-pocket chained sub-lattice, L26–L30"
+        : " — L21–L25"
+  }) — ` +
     `CUT re-measured from the shipped set: D_exec max over the L1–L15 basis = ${cut.floor.toFixed(6)} · ` +
     `Act I measured peak (ids 1–20) = ${cut.actI.toFixed(6)} · par(L15) = ${String(cut.l15Par)} · ` +
     `B band [${cut.bBand[0].toFixed(4)}, ${cut.bBand[1].toFixed(4)}] · basis ids [${cut.basis.join(", ")}]`,
@@ -2225,7 +2861,8 @@ console.log(`clone guard (§6.1.4, seal-inclusive key): ${String(guard.size)} ge
 if (STAGE === "frame") frameCensus();
 else if (STAGE === "roomcap") stageRoomCap();
 else if (STAGE === "g") {
-  if (POCKETS >= 3) stageLattice3(cut, argOf("only"));
+  if (POCKETS >= 4) stageLattice4(cut, argOf("only"));
+  else if (POCKETS >= 3) stageLattice3(cut, argOf("only"));
   else stageLattice(cut, argOf("only"));
 } else if (STAGE === "s") stageSelect();
 else console.log(`unknown stage "${STAGE}" — use frame | g | s`);
