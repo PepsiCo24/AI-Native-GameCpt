@@ -42,6 +42,26 @@ import { cssVars, flipTimings, HUD_FLAGS, LAYOUT, theme } from "@/game/theme/tok
 /** R-P3's badge copy — one string, so the label cannot drift from its spec line. */
 const DEV_BADGE_TEXT = "DEV PLACEHOLDER ART — NOT FINAL";
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * §6.6 DOM beats (GAME-003) — B12's press + B13's panel entrance, as data.
+ *
+ * These numbers are not rows of `flipTimings` (they are DOM-only beats, §6.6's
+ * table), so they live with their one consumer and reach the stylesheet as `--ps-*`
+ * variables: a data flip, never a branch (R-M4). The *reduced* forms are the
+ * variables `--ps-press-scale` (1) and `--ps-panel-offset` (0px), set by
+ * {@link Hud.setReducedMotion}.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** B12 — press in / out durations (§6.6: 90 ms in, 140 ms out). */
+const PRESS_IN_MS = 90;
+const PRESS_OUT_MS = 140;
+/** B12 — the visual press scale; the scale *dies* under reduced motion. */
+const PRESS_SCALE = 0.97;
+/** B13 — the win panel entrance duration; it starts at `flipTimings.total`. */
+const PANEL_MS = 160;
+/** B13 — the fixed entrance offset; 0 under reduced motion leaves the alpha fade. */
+const PANEL_OFFSET_PX = 8;
+
 /** The three actions the DOM can dispatch, plus two flow queries. */
 export interface HudHooks extends AppIntents {
   /** `false` on the last prototype level ⇒ the dialog shows the end panel. */
@@ -274,6 +294,13 @@ export class Hud {
     this.shell.style.setProperty("--ps-flip-tokens-delay-ms", `${String(timings.tokens.start)}ms`);
     this.shell.style.setProperty("--ps-flip-chip-ms", `${String(timings.chip.dur)}ms`);
     this.shell.style.setProperty("--ps-flip-chip-delay-ms", `${String(timings.chip.start)}ms`);
+    // §6.6 MV-4 — the reduced forms of B12/B13 as **data**: the press scale dies
+    // (1) and the panel offset dies (0px) while the panel's alpha fade survives.
+    this.shell.style.setProperty("--ps-press-scale", reducedMotion ? "1" : String(PRESS_SCALE));
+    this.shell.style.setProperty(
+      "--ps-panel-offset",
+      reducedMotion ? "0px" : `${String(PANEL_OFFSET_PX)}px`,
+    );
   }
 
   destroy(): void {
@@ -297,6 +324,10 @@ export class Hud {
     style.setProperty("--ps-pad", `${String(LAYOUT.margin)}px`);
     style.setProperty("--ps-control", `${String(LAYOUT.minControl)}px`);
     style.setProperty("--ps-control-gap", `${String(LAYOUT.controlGap)}px`);
+    // §6.6 B12/B13 — the DOM beats' own numbers (see the constants above).
+    style.setProperty("--ps-press-in-ms", `${String(PRESS_IN_MS)}ms`);
+    style.setProperty("--ps-press-out-ms", `${String(PRESS_OUT_MS)}ms`);
+    style.setProperty("--ps-panel-ms", `${String(PANEL_MS)}ms`);
   }
 
   /** One attribute + the token map: the whole §5.4 flip on the DOM side. */

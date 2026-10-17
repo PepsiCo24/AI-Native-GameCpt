@@ -68,6 +68,7 @@ import {
   doorIsOpenNow,
   doorTilesOf,
   portalIsActive,
+  portalLivePhase,
   portalTilesOf,
   switchDefAt,
   switchIsOn,
@@ -78,8 +79,9 @@ import { easeOutQuad } from "@/game/renderer/objects/actor";
 import { doorLook, paintDoor } from "@/game/renderer/objects/door";
 import { goalPulseScale, paintGoal } from "@/game/renderer/objects/goal";
 import type { Graphics2D } from "@/game/renderer/objects/graphics2d";
-import { paintPortal, portalLook } from "@/game/renderer/objects/portal";
+import { paintPortal, portalArrivalTurn, portalLook } from "@/game/renderer/objects/portal";
 import { paintSwitch, switchLook, switchPressEmphasis } from "@/game/renderer/objects/switch";
+import { portalSlotFor } from "@/game/theme/assets";
 import type { ThemeTokens } from "@/game/theme/tokens";
 
 export type TileObjectKind = "goal" | "door" | "switch" | "portal";
@@ -132,6 +134,17 @@ export interface TileObjectTransition {
   readonly objectMix: number;
   /** §6.2 `occupied` row (140–220 ms, 80 ms), **raw** progress 0→1. */
   readonly occupied: number;
+  /**
+   * **B6 (§6.6)** — the `walls` row's own scalar, re-published for the portal's one
+   * arrival turn: `objectMix` while a flip runs and motion is allowed, else `0`.
+   *
+   * A separate field rather than the portal reading `objectMix` directly, because
+   * the turn is a *reduced-motion* "dies" beat (MV-4): under `prefers-reduced-motion`
+   * the state swap must survive inside B3's alpha/value swap while the turn is
+   * suppressed. Optional so a test literal that predates B6 still compiles; absent is
+   * read as `0`, i.e. no turn.
+   */
+  readonly swirlTurn?: number;
 }
 
 export interface TileObjectPaintContext {
@@ -157,6 +170,20 @@ export interface TileObjectPaintContext {
    * vector placeholder. See {@link TileObjectArtPort}.
    */
   readonly art?: TileObjectArtPort;
+  /**
+   * §6.4 — the live reduced-motion preference. Only the goal reads it: R-C8's 2.4 s
+   * idle pulse is the one idle animation, and §6.4/§6.6 MV-4 make suppressing it a
+   * **data flip** (`pulseScale = 1` when reduced), not a branch at the draw site.
+   * Optional; absent is read as "motion allowed".
+   */
+  readonly reducedMotion?: boolean;
+  /**
+   * **B7 (§6.6)** — the goal attract's one-shot value in `[0, 0.02]`, added to the
+   * R-C8 envelope's scale. A per-frame scalar the view owns (the goal's
+   * neighbourhood state + hysteresis, B10); every other class ignores it. Optional;
+   * absent is read as `0`.
+   */
+  readonly goalAttract?: number;
 }
 
 /**
@@ -173,14 +200,40 @@ export interface TileObjectPaintContext {
  * where the bytes live.
  */
 export interface TileObjectArtPort {
-  /** `true` when the delivered texture for this key is mounted and can be drawn. */
+  /**
+   * `true` when the delivered texture for this key is mounted and can be drawn.
+   *
+   * Reads the **mount measurement** (`theme/art.ts` `isArtMounted`), not "is there
+   * an image object": the portal pair needs one image *per end* ({@link ArtDrawOptions}
+   * `instance`), so the map is keyed by instance and a plain key lookup would answer
+   * "no art" for a portal whose texture is perfectly mounted.
+   */
   has(textureKey: string): boolean;
   /**
    * Place the mounted texture for `textureKey` with its form centred on (`cx`,
    * `cy`) and `w × h` device px. A no-op for a key that is not mounted, so a
    * painter may call it after `has` without a second branch.
    */
-  draw(textureKey: string, cx: number, cy: number, w: number, h: number): void;
+  draw(textureKey: string, cx: number, cy: number, w: number, h: number, opts?: ArtDrawOptions): void;
+}
+
+/**
+ * Per-frame presentation for a delivered form — the **transform-only** half of the
+ * §6.6 beats (R-M2): alpha, rotation and (for a shared key) which instance. None of
+ * these is a colour or a redraw, so a painter can animate a signed raster without
+ * violating R-PM2/R-PM4.
+ */
+export interface ArtDrawOptions {
+  /** Alpha of the delivered form — the §6.2 cross-fade; never a dimmed live figure. */
+  readonly alpha?: number;
+  /** Rotation in radians — B6's one arrival turn of the portal's baked swirl. */
+  readonly rotation?: number;
+  /**
+   * Display-object instance key when **two ends share one texture key** (the portal
+   * pair, §3.1e): the view registers one image per end under `${textureKey}@${x},${y}`
+   * and this selects which. Absent ⇒ the slot's single image (the goal).
+   */
+  readonly instance?: string;
 }
 
 export interface TileObjectSpec {
@@ -256,7 +309,13 @@ const GOAL: TileObjectSpec = {
       rect: ctx.rect,
       cssScale: ctx.cssScale,
       theme: ctx.theme,
-      pulseScale: goalPulseScale(ctx.timeMs),
+      // R-C8's 2.4 s idle pulse, gated by §6.4/MV-4 (data flip: scale 1 when reduced)
+      // and reinforced by B7's one-shot attract on approach (`goalAttract`, additive
+      // so the hard ceiling stays exactly 1 + 6 % + 2 % = 8 %).
+      pulseScale:
+        ctx.reducedMotion === true
+          ? 1
+          : goalPulseScale(ctx.timeMs) + (ctx.goalAttract ?? 0),
       // R-005a — the delivered annulus draws through the view's art port when it is
       // mounted; absent (a caller with no art registry, e.g. a unit test) means the
       // vector ring + dot, which is exactly the degrade path.
@@ -357,11 +416,12 @@ const SWITCH: TileObjectSpec = {
 };
 
 /**
- * Portals (M2 / L36) — no shipped level carries one yet (`L6–L10 portals: []`).
- * Registered anyway so the class has **one** place it is enumerated (§3.1c's
- * reserved row, and the completeness test's reason to fail if a painter is
- * missing). §3.1c's primary channel is swirl presence/absence, which is why the
- * mix feeds the swirl's alpha and not just the token.
+ * Portals (M2 / L36) — §3.1c's state channel, plus §3.1e's live raster mount
+ * (GAME-003): the live figure is the signed A-06 raster, the dormant figure the
+ * §3.1c vector outline. §3.1c's primary channel is swirl presence/absence, so the
+ * mix feeds the live raster's alpha (which bakes the swirl) and the vector's own
+ * alpha (the dormant half), and the vector's swirl arc is suppressed whenever the
+ * raster is drawing.
  */
 const PORTAL: TileObjectSpec = {
   kind: "portal",
@@ -371,6 +431,17 @@ const PORTAL: TileObjectSpec = {
     const prev = ctx.transition.prev;
     const activeNow = portalIsActive(ctx.level, ctx.gs, ctx.tile);
     const activeBefore = prev !== null && portalIsActive(ctx.level, prev, ctx.tile);
+
+    // §3.1e R-PM1 — the live raster's key is this end's **own** `activePhase` mapped
+    // through the measured table (`portalSlotFor`), never the `_a`/`_b` suffix of the
+    // board phase. `undefined` when the tile has no portal or the row is absent.
+    const livePhase = portalLivePhase(ctx.level, ctx.tile);
+    const liveKey = livePhase === undefined ? undefined : portalSlotFor(livePhase)?.assetName;
+
+    // B6 — the one arrival turn fires only on the end that turns *live* and only when
+    // motion is allowed (`swirlTurn` is 0 under reduced motion / on a settled board).
+    const turningLive = prev !== null && activeNow && !activeBefore;
+
     paintPortal({
       g: ctx.g,
       rect: ctx.rect,
@@ -380,6 +451,13 @@ const PORTAL: TileObjectSpec = {
         ctx.theme,
         mix(activeBefore ? 1 : 0, activeNow ? 1 : 0, ctx.transition.objectMix),
       ),
+      art: ctx.art,
+      liveKey,
+      // The pair shares one texture key per phase, so each end needs its own instance
+      // key (`${key}@${x},${y}`) — the same string `board-view.ts` registers the image
+      // under. Never a per-end marker graphic (R-PM4): an instance key is data.
+      instance: liveKey === undefined ? undefined : `${liveKey}@${ctx.tile.x},${ctx.tile.y}`,
+      turn: turningLive ? portalArrivalTurn(ctx.transition.swirlTurn ?? 0) : 0,
     });
   },
 };
