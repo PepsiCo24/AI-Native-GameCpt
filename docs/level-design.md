@@ -1,10 +1,10 @@
 # Level Design — Phase Shift: Echo Grid / 双相棋盘：昼夜回响
 
 > Owner: **Agent 1 — Game Designer**
-> Version: **V0.9**
-> Date: 2026-10-16
-> Status: **Draft for Stage 2 prototype** (all level content requires Solver verification per ADR-0004; mechanic schedule per GATE D / ADR-0009)
-> Governing docs: `docs/game-design.md` (core rule §3, mechanics §5, rhythm §8, difficulty §11), ADR-0002, ADR-0004, **ADR-0008 rules 1–7** (entry-only solidity; clause 8 withdrawn), **ADR-0009** (checkerboard invariant; GATE D mechanics-forward), **ADR-design-0001** (dip law on the execution axis `D_exec`), **ADR-design-0003** (GD-011: the L12–L15 block law — par obligation, two-beat dip, latch grade), ADR-architecture-0002 (metric #7 canonicality; gate (iii) ordered reader)
+> Version: **V1.1** *(header had lagged the change log at V0.9 through the V1.0/GD-007 row; corrected here, no content moved)*
+> Date: 2026-10-17
+> Status: **Draft for Stage 2 prototype** (all level content requires Solver verification per ADR-0004; mechanic schedule per GATE D / ADR-0009; **100-level act architecture per GD-009 / ADR-design-0005, §7**)
+> Governing docs: `docs/game-design.md` (core rule §3, mechanics §5, rhythm §8, difficulty §11, move-depth ruling §14.2), ADR-0002, ADR-0004, **ADR-0008 rules 1–7** (entry-only solidity; clause 8 withdrawn), **ADR-0009** (checkerboard invariant; GATE D mechanics-forward), **ADR-design-0001** (dip law on the execution axis `D_exec`), **ADR-design-0003** (GD-011: the L12–L15 block law — par obligation, two-beat dip, latch grade), **ADR-design-0004** (L20 sealed landing), **ADR-design-0005** (GD-008 stars-not-cap + GD-009 act architecture), ADR-architecture-0002 (metric #7 canonicality; gate (iii) ordered reader)
 
 ---
 
@@ -499,7 +499,171 @@ L20 is the family's **first member at grade** — it must show the ordering befo
 - **Existing gates:** the six block gates stay (`-rung`, `-grid-coverage`, `-device-existence`, `-escalation-cut`, `-b-band`, `-tail-ceiling`), 6/6 negative controls caught by name.
 - **New sealed-landing gates:** **(g1)** pocket not on-foot reachable in the needed phase; **(g2)** the pocket's only exit is a door (no phase wall exit); **(g3)** an ordered ≥ 2-press shortest plan exists, second switch gated behind the first door; **(g4)** `switchRequired` measured (all-OFF unsatisfiable); **(g5)** the census identity is *broken* (≥ 1 seal tile not adjacent to the free far region). One negative control per new gate, under the §8.12 F-L16-3 discipline: expectations corrected **to measured names**, never widened to pass — a mutation that is ACCEPTED still fails the battery.
 
-## 7. Change log
+## 7. GD-009 published law — the 100-LEVEL ACT ARCHITECTURE (acts, families, bands, batches)
+
+> Owner: **Agent 1 — Game Designer** · Tasks **GD-008 (RULING A)** + **GD-009 (RULING B)** · Date **2026-10-17**
+> Status: **PUBLISHED LAW** (the architecture; every act beyond Act I still requires its own batch proof)
+> Full record (both rulings, `Original Hypothesis → Problem → Change → Evidence → Result`): `docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md`
+> Trigger: **USER U-001 order (3)** — "关卡开发到100关" (`docs/project-status.md` item 106).
+
+### 7.0 What this section does and does not publish (integrity statement, read first)
+
+`docs/level-difficulty.md` §3.5 deliberately publishes **no numeric `D`/`D_exec` target above the last
+measured row**, and §6/§6.1 of this file keep that prohibition. §7 does not break it:
+
+| Quantity | Published here? | Why |
+|---|---|---|
+| **par bands** per act | **YES — as law** | `par` is weightless, schema-enforced (`par == shortestSolution`), and already law at §6 / §6.1.1 (P1–P3) and in `policy.ts`. A band is a range, not a target number. |
+| **`D_exec` bands** per act | **YES — but derived, not invented** | Each band is `[par_min + 3·1.2500, par_max + 3·1.6875]`: the measured `B` band (`docs/level-difficulty.md` §5.2, re-derived from L1–L15 every run, never widened) inside the **measured theorem** `T ≡ R ≡ 0 ⇒ D_exec = par + 3·B` (20/20). No new weight, no new metric, no new arithmetic. |
+| Absolute `D` bands above L20 | **NO** | §3.5's silence is untouched; §3.1 withdrew exactly this mistake by name. |
+| A promise that par 36 / ≥ 9-pocket landings / Act IV mazes are authorable | **NO** | Each is a **named census obligation** on the level lane (§7.4, §7.7). A claim without a census is not architecture, it is hope. |
+
+Reused laws, unchanged: the checkerboard invariant (ADR-0009); entry-only solidity and never-crushed
+(ADR-0008 rules 1–7); opposite-colour portals only; one switch per door below the XOR allowance; `T ≡ R
+≡ 0`, no dead states (§4); the dip law on `D_exec` at `ΔM > 0` seams (§6); P1–P4 (§6.1.1); the
+sealed-landing lattice (§6.2).
+
+### 7.1 Move depth — `par`'s role after GD-008 (RULING A, pointer)
+
+`par` stays exactly what §1 says it is: a Solver/difficulty field, the "perfect clear" reference,
+**never** a fail condition. **RULING A adds a post-win STAR RATING** (`3★ ≤ par + k1`, `2★ ≤ par + k2`,
+`1★` any finish, best run persisted locally; `k1 = 2·⌈par/10⌉`, `k2 = 2·k1`) and **refuses the hard
+move cap** — a cap would create `R > 0` states, contradicting §4 and repricing every published
+`D_exec` row. The star is a **read-only consumer** of `par`: no level data changes, no gate reads it,
+the in-play HUD is unchanged (`moves N` only; GD-OQ1's live-HUD refusal stands — the star is post-win).
+Thresholds, HUD render, persistence row and the Playtest protocol live in `docs/game-design.md` §14.2
+and **ADR-design-0005**; they are not duplicated here.
+
+### 7.2 The acts (100 levels = 5 acts × 20; batches of 5 within an act)
+
+Mechanism families use **locked vocabulary only** — phase walls, doors, switches, portals, under entry-only
+solidity, determinism and never-crushed. No family may introduce a new rule; a family is *furniture on
+the same physics*.
+
+| Act | Levels | Mechanism family (variety, **not** depth) | par band | `D_exec` band (derived) | batch size |
+|---|---|---|---|---|---|
+| **I** | **L1–L20** *(SHIPPED — the tutorial spine)* | M0 walls → M1+M3 latch unit → M2 portals → M4 **composition** (sealed landing, §6.2) | **4–20** (the rung ladder, measured) | **9.00–24.73** (measured, 20/20) | done (4 × 5) |
+| **II** | L21–L40 | **Portal orchestration**: multi-pocket sealed landings (2–4 pockets), ordered multi-switch chains, portal-repriced latches; the walk-only world deleted from the outset | 16–24 (plateau) | [19.75, 29.06] | 5 |
+| **III** | L41–L60 | **Both-pair objects**: two opposite-colour portal pairs live in one plan (opposite-colour law per pair), doors re-priced by both, approach-side asymmetry deepened (Aha #2 at scale); the rare review-flagged **XOR multi-switch door** may appear (moved here from §8's L36–L45 allowance) | 20–28 | [23.75, 33.06] | 5 |
+| **IV** | L61–L80 | **Phase-maze**: M0 wall-echo mazes where the same tile answers by approach side, both-pair objects inside larger geometry; **gauntlet-shaped boards (≥ 6-door rings) are permitted here as FLAVOUR only** — GD-007 rejected the gauntlet as a *rung* because extra ring doors are terms in the census `min` (they cannot raise par at equal area: saturation 16→18→18), but "cannot escalate" is not "cannot vary" | 24–32 | [27.75, 37.06] | 5 |
+| **V** | L81–L100 | **Synthesis & density**: recombine the censused families at their proven arity ceilings; zero new mechanics; **L100 = FINAL EXAM** (Act V peak on both axes; §8's `L50` role re-mapped to a `Midterm` gate at the Act III midpoint — ADR-design-0005) | 28–36 | [31.75, 41.06] | 5 |
+
+Batch = the level lane's **proofing unit**: 5 levels sharing one plan shape and one lattice family,
+proven as a set before any of them is registered (a batch split across an act boundary is invalid).
+Board caps are §1's (≤ 7×7; `8×8` only with Orchestrator approval, R-L2 conditions).
+
+### 7.3 The act-scale tail law (the one law this architecture changes)
+
+**Within an act, nothing changes.** No dip without `ΔM > 0` (§6); `Δpar ≥ 2` between consecutive
+members (P2, §6.1.1); no padded pars — par stays ≤ the board's tile count and every teaching-span-grade
+route keeps P4 coverage (§6.1.1); the block-end clause still binds when a block's tail is claimed.
+
+**Across acts, the obligation moves from the rung to the act** — the previous "every block-open must
+clear the previous peak" reading cannot be satisfied 20 times over without padding, which the gates
+forbid (Evidence: item 86(a) census saturation; P3(a)+P4 par-is-bounded-by-the-board; the measured
+accept-share cliff 0.5 % → 0.03 % by par 10; `docs/level-difficulty.md` §3.5).
+
+- **`act-peak` clause (new, machine-checkable):** act *n*'s **measured maximum** `D_exec` strictly
+  exceeds act *n−1*'s measured maximum. Act I's registered peak is **24.729412** (L20) until a batch
+  measures higher inside Act II.
+- **Interior freedom:** a member of an act sits anywhere inside the act's `D_exec` band, in any order
+  (variety). An act may therefore open **below** the previous act's peak. That is a **plateau
+  relaxation at a `ΔM = 0` boundary**, honestly labelled — it is **never** presented as a dip (a dip is
+  a `D_exec` event at a mechanic introduction, §6), and it is never an excuse to drop a level out of
+  its band.
+- **Bands are ranges, and the range is the law:** a candidate outside its act band is **rejected**, not
+  re-banded. Moving a band is a design change (this file + an ADR), never a generation outcome.
+- **No new seam without a ruling:** any future `ΔM > 0` (a genuinely new mechanic) re-activates §6's
+  full dip law and needs a Game Designer ruling + ADR before authoring — it cannot be smuggled in as
+  "Act VI".
+
+### 7.4 Generator lattice families (what the level lane censuses to build)
+
+Each act is fed by a **named, bounded, enumerable** lattice stage, extending the shipped stage-P/stage-SL
+tooling (`scripts/author-l20.ts`; `docs/ai-native-pipeline.md` §8.14). None is a search over "good
+levels": each enumerates a construction class and filters by stated gates, so an accept is a
+**measurement**, never a taste call.
+
+| Stage | Act | Lattice (enumerated axes) | Builds |
+|---|---|---|---|
+| `P` / `SL` (shipped) + `--pocketsize ≥ 9` | II | pocket class × portal entry × pocket switch × goal × seal-switch tuple | Act II batches 1–2; **the ≥ 9-pocket class is F-L20-3's OPEN boundary** |
+| `G` *(new)* | II | **multi-pocket**: pocket count 1–4 × portal pairs 1–2 × door arity 2–5 × landing position, on 7×6 → 7×7 | Act II batches 3–4 |
+| `H` *(new)* | III | **both-pair**: two opposite-colour pairs (independently validated) × door re-pricing graph × seal arity; XOR-door variants flagged for review | Act III |
+| `I` *(new)* | IV | **phase-maze**: wall-echo maze skeletons (M0) × both-pair objects × approach-side asymmetry | Act IV |
+| `J` *(new)* | IV | **gauntlet-flavour** (≥ 6-door ring), bounded: census only, to *place* the device inside a band | Act IV flavour slots (never a rung) |
+| *(no new stage)* | V | recombine `G`/`H`/`I` at their **proven** ceilings | Act V, incl. L100 |
+
+**Clone guard (§6.1.4) is law on every stage:** the reusable unit is the plan shape, never the board —
+a new member must differ in the stricter seal-inclusive geometry key
+(`player|goal|portal-pair|seal-door-tiles`), and "perturb a shipped board" is not a lattice.
+
+### 7.5 Proof obligations per batch (100/100 — no exceptions)
+
+Before any member of a batch is registered, on the batch's landed bytes:
+
+1. **Per level (Solver, program-of-record only):** validator `ok`, `errors 0`; `par == shortestSolution`;
+   `T ≡ R ≡ 0`; `deadStates 0`; `noUnrecoverableOk true`; coverage clause satisfied where the grade
+   requires it; **par ∈ act band**; **`D_exec` ∈ act band**; `B` inside the measured band `[1.2500,
+   1.6875]` **or** a named excursion in the F-L16-2 form (named, recorded, never smoothed); the
+   family's own gates (g1–g5 for landings, the seal battery for seal rungs, §6.1.3's G1–G4 for
+   latch-bearing boards, the multi-switch-door warning where the XOR allowance is used);
+   `switchRequired` read as a **measurement**, never an assertion.
+2. **Per batch:** the plan shape is named; the `act-peak` clause is evaluated once the batch's measured
+   peak exists; clone-guard pass; rejection histogram published with the accepts (an accept count with
+   no refusal census is not evidence).
+3. **Negative controls:** one per new gate, with its refusal name **measured before** the control's
+   `expect` list is written (§8.12 F-L16-3 discipline: expectations corrected to measured names, never
+   widened; a mutation that is ACCEPTED still fails the battery).
+4. **Consumer sync, last:** dataset bytes → sidecar (`--report` against **shipped** levels only) →
+   hand-typed `PINS` → `EXPECTED_LEVEL_COUNT` → registry → the batch's own test rows. **A level that
+   fails any clause is rejected; there is no "registered with a caveat" path.**
+5. **Registry is R-003-gated** (Gameplay Engineer + UI/Art legibility round), exactly as L12–L20 were:
+   a batch that is solver-proven but not legible is not playable and does not ship.
+
+### 7.6 CI and the P10 sampling policy (one paragraph — QA owns the mechanics)
+
+The **full-census Solver gate stays full and cheap**: `npm run levels`, `solve-levels.ts --report`, the
+sidecar/PINS/difficulty rows and the route audit cover **100/100 on every round in seconds**, so
+solvability is never sampled. What does not scale is the **browser** lane: the unlock-chain e2e is one
+serial walk whose cost is level-count × per-level settle, measured at **60.3 s of a held 360 s ceiling
+at 20 levels** (`docs/project-status.md` item 92(b)) — at 100 levels it is hours by extrapolation and
+cannot be the per-push gate (the same item 90(b) finding as `route-budget.test.ts:152`, where the
+unpruned walk demand explodes 1.36M → 17.8M → 98.7M → **> 5×10⁸** against pruned 2162+7386). The
+policy shape is therefore: **(a)** every new batch runs its **full** spec before merge — new content is
+never sampled; **(b)** **boundary levels are always in** — L1 (cold start), every act boundary
+(L20/L21, L40/L41, L60/L61, L80/L81), the newest rung and L100; **(c)** the interior is a **seeded,
+deterministic stratification** by act × mechanism family × par band, sized to keep the chain row inside
+its derived envelope and rotating so that **every level is walked within a bounded coverage horizon** of
+rounds (a schedule, not a random draw); **(d)** the live lane (`tests/e2e-live/**`) samples the same
+strata against the deployed artifact rather than walking the ladder; **(e)** the **full 100-level chain
+runs at release/milestone certification**, not per push, and that gap is stated wherever the sampled
+rounds are cited. The `route-budget.test.ts:152` prune decision (raise the derived budget vs. extend the
+n-11 prune above L15) is this policy's first concrete case and belongs to QA.
+
+### 7.7 Handoff — first batch (Act II, L21–L25): what to census next
+
+**The level lane authors; GD writes no JSON and no scripts.** In order:
+
+1. **Re-run stage P past the open boundary.** `--stage=p --pocketsize=10` (the pass F-L20-3 recorded as
+   killed after 25 lines because an accept already existed at ≤ 8): measure the leak-free size histogram
+   and the per-landing pocket counts (`5,1` went 12 → 40, `6,0` 12 → 40, `5,0` 3 → 13 in the aborted
+   pass). **F-L20-3 closes or stays open by measurement — never by assumption**, and no ceiling claim
+   about the landing device may be published either way.
+2. **Only then the new `G` lattice** (multi-pocket, 2–3 pockets first) under the §6.2.3 lattice
+   constraints verbatim: one opposite-colour pair per teleport (independently validated), the landing
+   pocket **not on-foot reachable** in the needed phase, **every** blocker an openable door (no
+   phase-wall exit — the F-L19-2 doctrine that protects P4 coverage), an ordered **≥ 2-press** plan,
+   `T ≡ R ≡ 0`, and a **named plan shape** before the skeleton is searched.
+3. **Rung/band pin for the batch:** par inside **16–24**; `D_exec` inside **[19.75, 29.06]**; the batch
+   is graded against the act band, and **Act II's `act-peak` obligation** (strictly above Act I's
+   measured 24.729412) is discharged by the act's measured maximum, reported per batch.
+4. **Do not re-stamp L20.** The sealed landing's shipped geometry is a one-off fit (§6.1.4's
+   `l12TemplateFamily` lesson: 512 enumerated candidates on a shipped debut's own skeleton, **0
+   accepts**). Act II's first two batches must come from **new** skeletons under the same plan shape.
+5. **Report the refusal census with the accepts**, and hand the batch to QA for the §7.6 stratum
+   assignment before registry.
+
+## 8. Change log
 
 | Date | Version | Change | Author |
 |---|---|---|---|
@@ -512,3 +676,4 @@ L20 is the family's **first member at grade** — it must show the ordering befo
 | 2026-10-15 | V0.8 | **GD-010 — outcome recording + staleness pass; no rule, threshold, gate or lesson changes.** §6: the frozen L11 prediction (byte-preserved — the paragraph itself shows zero diff) gains an appended **OUTCOME ANNOTATION**: LV-008's clause-by-clause verdict (merge `aaab35d`, `docs/project-status.md` item 52) — `D_exec 8.5732 < 13.64` ✓, par 4 ✓, one opposite-colour pair ✓ (`errors=0`), `T=0` ✓, below-OFFERED ✓; the L11–L15 **block-end clause stays PENDING** (L12–L15 unauthored, LV-009); law stands for L12+ with GD-008's withdrawn-not-refit ban unchanged. §3 gate (iii): the stale "until the policy-code reader lands" tail is replaced by the **landed** reality — LV-007C (merge `9dd92ce`) gates the ordered `refusedBeforeEnteredTiles ≥ 1` with the trapped-refusal flip control live, no shipped verdict moved. §3 gains the dated **L11+ block ruling** pointer: the §8.5 promotion trigger was tested at the first L11+ candidate and did **not** fire (`[5,0]` on both readers) — ADR-architecture-0002 A3's unordered legs stand; full record: `docs/decisions/design-0002-ordered-reader-block-ruling.md`. | Agent 1 (GD-010) |
 | 2026-10-16 | V0.9 | **GD-011 — new §6.1: the L12–L15 block law published BEFORE integration (three design-owned gaps closed).** LV-009-A returned four solver-proven L12–L15 candidates and correctly stopped at its own OQ-1/OQ-2/OQ-3; §6.1 answers all three as law so the boards are **measured** against it, never fitted to it. **§6.1.0** states the integrity boundary: `par` is published as law (weightless, schema-enforced, already law at §6 / `policy.ts:599`) while **no new `D`/`D_exec` target is published** — `docs/level-difficulty.md` §3.5's deliberate silence above L11 is untouched, and the only numeric `D_exec` obligation remains §6's frozen block-end clause. **§6.1.1 (Q1)** publishes the par obligation as **floor ∩ step ∩ ceiling ∩ coverage** with derivation pointers: **P1** `par(L12) = 4` by intersection (§6 successor slot `≤ 4` ∧ the game's measured par floor `4`); **P2** `Δpar ≥ 2` from `B`'s measured band [1.2500, 1.6875] on 11/11 shipped levels (`3·B` spread 1.3125 < 2) — the minimal integer that makes §3.4's within-block ramp a *guarantee*; **P3** ceiling `par ≤ 10` from the measured **coverage** invariant (`distinctPositions == width × height` on 4/4), §1's hard 7-cap, the measured searchability cliff (0.5 %→0.03 % accept share, 315 566 tried / 484 accepted) and shipped precedent (max par 9); **P4** the coverage clause itself. **Uniqueness proved**: 4 members (`game-design.md` §8) ∧ P1 ∧ P2 ∧ P3 ⇒ `4, 6, 8, 10` is the only admissible ramp — adopted as **derived**, not approved by taste. Stable shape for L16+ published, incl. the already-forced consequence `par(L16) ≥ 10` (labelled conditional on the V0.1 weights) and a self-correcting guard if `B` leaves its band. **§6.1.2 (Q2)** rules **two-beat** post-debut (L12 owns §6's successor slot; single-beat REJECTED, no re-author) on five comprehension-first reasons — the text's plain reading, the invariant-break needs a consolidation beat before the **mandatory-channel** step (`portalFree false` from L13, measured), and single-beat buys nothing the block-end clause requires; the L6 and L11 blocks are shown **isomorphic** on `D_exec`; the second beat is honestly labelled a **consolidation plateau** (par flat at 4, the −0.342402 carried entirely by `B` 1.5244→1.4103), and the felt half stays a PA hypothesis. **§6.1.3 (Q3)** accepts **option (a)** as doctrine with the quotable sentence — *"the switch buys you speed, the sealed channel buys you existence; from L13 the portal IS the solvability-load"* — on the measured 0/484 `switchRequired` universality, the locked core's entry-only refusal semantics, one-existence-gate-per-block, Aha #2 not Aha #1 being this block's lesson, and gate (iii) still firing 4/4 (3/5/5/6) so the witnessable beat survives; the exemption is **hardened** into falsifiable obligations **G1** `allOffShortest − par ≥ 1` (measured 2 on 4/4), **G2** switch-pressed-and-door-crossed on every par route, **G3** ordered reader, **G4** `"exempt"` not `null` in `DOCUMENTED_LESSONS`; option (b) rejected as invalidating 0/484 ⇒ full restart, and as *lengthening* the puzzle rather than deepening it. **§6.1.4** confirms `[multi-switch-door]` DORMANT (required by §6's single-concept floor, not merely permitted) and records the `l12TemplateFamily` 0/512 read — a shipped debut board is a **one-off fit, not a template**; author plan shapes, search skeletons, never clone-and-perturb. **§6.1.5** records §6's frozen block-end clause as **DISCHARGED** (`D_exec(L15) = 14.969697 > 13.64` and `> 13.642857`), the first **positive/escalation-direction** firing, filtered not fitted (122 `block-floor` rejections). **§6.1.6** is the LV-009-B handoff: exact numbers to encode, in order, plus the pre-registered acceptance law and a STOP-and-route clause on reader divergence. Per-board clause-by-clause ACCEPT verdicts (L12/L13/L14/L15 + the block as a set) live in `docs/decisions/design-0003-l1215-block-law.md`. **No code, gate, threshold, weight or lesson outside this section changed; no candidate JSON was edited.** | Agent 1 (GD-011) |
 | 2026-10-16 | V1.0 | **GD-007 — new §6.2: the L20 mechanism is RULED: the SEALED LANDING (Aha #3, ordered landing); the GAUNTLET is REJECTED on census measurement.** The L16+ census (LV-010f, `docs/project-status.md` item 86) closed the goal-gated full-seal device at `par 18` / `D_exec 22.885157` on `7×6` at **every** arity (arity 4: 17 160 tuples enumerated completely, `12:10230 14:6450 16:446 18:34`), and `7×7` reaches `par 22` only by re-stamping L19's exact seal — refused as a re-lengthened walk; `block-l1619-tail-ceiling` forbids widening the terminal instead of building a mechanism. Of the two named candidates, **ADOPT (B) SEALED LANDING / REJECT (A) GAUNTLET**, argued in priority-law order: **(1 Fun)** the census identity `par = min_i(d(start→s_i)+1+d(s_i→goal))` makes a gauntlet's extra doors terms in a **minimum** — more reading, no decision (measured saturation 16→18→18) — while the landing forces the mandatory second press the census proved the seal cannot; **(2 Comprehension)** one visible portal→pocket→door story vs. ≥ 12 objects inferred from clutter at the 44 px floor; **(3 Depth)** ORDER is a new dimension, COUNT is the saturated one, and the gauntlet's only defensible verb (the key is itself gated) is the same verb delivered worse; **(4 Scalability)** the sealed landing's lattice is bounded/enumerable, the ≥ 6-door nested ring is outside the census and unmeasured. **§6.2.2** rules `ΔM(L20) = 0` (new **verb**, existing mechanics ⇒ no dip fires, rung law stands). **§6.2.3** publishes the lattice (one opposite-colour pair; pocket not on-foot reachable; exit MUST be an openable door per F-L19-2; ≥ 2 ordered presses breaking the census identity; `par 20`; P4 42/42). **§6.2.4** teaching beat (zero text, Aha #3). **§6.2.5** fail conditions + two named comprehension risks (PA measures M5/M6 L20 vs L19). **§6.2.6** obligations (`par = 20` exact; `D_exec > 22.885157` automatic at `par 20` + in-band `B`, margin ≥ +0.864843; block becomes L16–L20 and the tail-ceiling moves **only after** the mechanism is proven; five new named gates g1–g5). No core-rule, weight, gate-widening or shipped-board change. Full record: `docs/decisions/design-0004-l20-mechanism-sealed-landing.md`. | Agent 1 (GD-007) |
+| 2026-10-17 | V1.1 | **GD-008 + GD-009 (one ticket, two user-ordered rulings — `docs/project-status.md` item 106) — new §7: the 100-level ACT ARCHITECTURE; and the move-depth ruling's `par`-side restatement (§7.1).** **RULING A:** `par` stays a Solver/difficulty field and **never** a fail condition; the ordered shape is a **post-win star rating** (`k1 = 2·⌈par/10⌉`, `k2 = 2·k1`; factors = ADR-0009's detour quantum 2 and P3's published par unit 10), and the **hard move cap is REFUSED** (a cap creates `R > 0` states, contradicting §4 and repricing every published `D_exec` row — it would need the AGENTS §2 triad + ADR). The dispatch's "pars 3..20" is **corrected by measurement**: the shipped ladder is 4,5,6,6,6,4,4,6,8,9,4,4,6,8,10,12,14,16,18,20 and the measured par floor is **4** (ADR-design-0003 P1) — no level measures par 3. **RULING B:** §7.0 integrity statement (par bands = law; `D_exec` bands = **derived** from the measured `B` band via `D_exec = par + 3·B`, no new math; no absolute `D` band, no promise of unproven authorability); **§7.2** five acts × 20 (Act I = the shipped L1–L20 spine; Act II portal orchestration; Act III both-pair objects + the XOR allowance moved off §8's L36–L45; Act IV phase-maze + gauntlet-as-FLAVOUR-only per GD-007's census identity; Act V synthesis/density with **L100 = Final Exam**, §8's `L50` role re-mapped to the Act III `Midterm`), each with a par band, a derived `D_exec` band and a batch size of 5; **§7.3** the act-scale tail law — the one changed law: within an act unchanged, across acts the obligation moves to the measured **`act-peak`** (strictly above the previous act's measured max), with interior members free inside the band and any below-peak act-open labelled a **plateau relaxation at `ΔM = 0`, never a dip**; **§7.4** named generator lattice families (`P`/`SL` extended past F-L20-3's open ≥ 9-pocket boundary, then new `G` multi-pocket, `H` both-pair, `I` phase-maze, `J` gauntlet-flavour census; Act V recombines only proven ceilings; §6.1.4 clone guard on every stage); **§7.5** per-batch proof obligations (Solver PASS 100/100, band containment, measured `B` in band or a named F-L16-2 excursion, family gates, one negative control per new gate named by its measured refusal, sidecar/PINS/`EXPECTED_LEVEL_COUNT` last; **no "registered with a caveat" path**); **§7.6** the P10 sampling policy shape (full-census Solver stays full/cheap on 100/100 every round; e2e = new-batch-full + boundaries always-in + seeded rotating interior strata with a bounded coverage horizon + sampled live lane; the full 100-level chain runs at release/milestone certification — forced by the measured unlock chain 60.3 s of a 360 s ceiling at 20 levels and `route-budget.test.ts:152`'s 1.36M → 17.8M → 98.7M → > 5×10⁸ explosion); **§7.7** first-batch handoff (Act II L21–L25: re-run stage P at `--pocketsize=10` to close or keep open F-L20-3 **by measurement**, then the multi-pocket `G` lattice under §6.2.3 verbatim, **never re-stamping L20** per the `l12TemplateFamily` 0/512 lesson). Header version corrected V0.9 → V1.1 (it had lagged the change log through the V1.0/GD-007 row). **No core rule, mechanic, weight, gate threshold, shipped board or published number moved** — the locked loop is byte-identical; full record: `docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md`. | Agent 1 (GD-008 / GD-009) |

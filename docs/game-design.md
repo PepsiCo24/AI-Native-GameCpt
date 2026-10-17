@@ -1,8 +1,8 @@
 # Game Design — Phase Shift: Echo Grid / 双相棋盘：昼夜回响
 
 > Owner: **Agent 1 — Game Designer**
-> Version: **V0.7**
-> Date: 2026-10-15
+> Version: **V0.9**
+> Date: 2026-10-17
 > Status: **LOCKED for prototype** (changes require Product Lead + Game Designer double confirmation)
 
 ---
@@ -165,6 +165,8 @@ Mechanic schedule per **GATE D / ADR-0009 (mechanics forward; core rule unchange
 
 The curve is intentionally **non-monotonic**: every new-mechanic block starts with a small dip. Difficulty must never feel like a mechanical staircase. **The dip lives on the execution axis `D_exec = D − w5·M`** (level-design.md §6, ADR-design-0001): raw `D` steps **up** at a debut by the comprehension tax `w5·ΔM` — measured **+8.53** at L5→L6 — and that step is admitted openly, not defined away; what dips is what the player's hands must do (`D_exec` −1.47 at L5→L6).
 
+> **Pointer row — the 100-level act architecture (GD-009, ADR-design-0005).** The table above is the **measured** mechanics schedule for the shipped spine (**L1–L20**, whose rungs are proven level-by-level); it is not extended by adding rungs, because the census closed the seal device at par 18 and the sealed landing's class is open at ≥ 9 pockets while par is bounded by the board (coverage + no-padding laws). From L21 the dataset is planned as **five acts of 20**, each act a **mechanism family × a bounded par/`D_exec` band** — Act II portal orchestration, Act III both-pair objects (the XOR-door allowance moves off the L36–L45 row), Act IV phase-maze (gauntlet geometry allowed as *flavour only* — it cannot escalate, GD-007), Act V synthesis. In that architecture **L50's "Final Exam" role becomes the Act III `Midterm` gate and the Final Exam moves to L100** (no new mechanics either way). Authority and the full law — acts table, derived bands, the `act-peak` clause, lattice stages, per-batch proof obligations and the P10 sampling policy — live in `docs/level-design.md` §7; the record is `docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md`. Rows L26–L50 above keep their *intent* as mechanism families, not as rungs.
+
 ## 9. Teaching plan (Show, don't tell)
 
 - **L1–L3:** no walls, or a single clearly-relevant wall. The player learns `tap → move → world flips` purely from watching; L3's refusal teaches "a wall of the *current* phase says no" — and that this wall will say no **forever** (ADR-0009: M0 walls are permanent geometry, never timing gates). ≤ 1 short hint line total.
@@ -240,9 +242,10 @@ Priority: **Fun > Readable > Expandable > Pretty.**
 |---|---|---|---|
 | A1 | "Flip on every move" is understandable within 30s | Player feels punished/random | Understand Time in Stage 3 |
 | A2 | **Latch state (switch → door) and opposite-colour portals create planning depth, not chaos** (replaces the falsified "two-phase walls create depth" — disproven for M0 by the checkerboard invariant, ADR-0009) | Feels like a memory test | Mistake Rate + Retry Rate |
-| A3 | 50 levels can be generated & solver-verified automatically | Manual bottleneck | Solver accept-rate in Stage 4 |
+| A3 | 50 levels can be generated & solver-verified automatically (now **100**, act-banded — `docs/level-design.md` §7, ADR-design-0005) | Manual bottleneck | Solver accept-rate in Stage 4 |
 | A4 | Readability holds across both worlds on mobile | Board unreadable on small screens | Mobile test + screenshot review |
 | A5 | The M0-only opening (L1–L5: literacy, refusal, phantom walk) retains players to L6 **without a mechanical Aha** | Slow open; early churn before the first real decision at L6 | Stage 2: L1–L5 completion + "wants L6" rate (ADR-0009 hypothesis d′) |
+| A6 | A **post-win** star rating drives replay ("do it again, better") **without reading as punishment** (GD-OQ2) | 1★ reads as failure; star-chase pauses flow | Stage 2/3: replay rate, star distribution, best−par median, 1★-vs-quit correlation, time-to-next-level vs a no-star arm (§14.2; thresholds frozen before the cohort) |
 
 ## 14. Open questions ledger (design-owned)
 
@@ -251,6 +254,7 @@ Design rulings on open questions raised in other lanes' files. One row per quest
 | # | Source | Question | Status | Ruling |
 |---|---|---|---|---|
 | **GD-OQ1** | `docs/ui-ux.md` §12 OQ1 / §5.3 (M-5b) | Should `par` display in the HUD (`moves 4 / par 6`)? | **RETIRED 2026-10-15 (GD-010) — REFUSED** | §14.1 |
+| **GD-OQ2** | **USER U-001 order (2)** (2026-10-17, `docs/project-status.md` item 106); touched GD-OQ1's evidence-only re-opener | "步数没有限制" — should move depth be enforced: **soft star thresholds** or a **hard move cap**? | **RULED 2026-10-17 (GD-008) — STARS ADOPTED, HARD CAP REFUSED** | §14.2 |
 
 ### 14.1 GD-OQ1 — par in the HUD: REFUSED (2026-10-15, GD-010)
 
@@ -268,6 +272,82 @@ Design rulings on open questions raised in other lanes' files. One row per quest
 
 **Re-opener (evidence-only, pre-specified):** Stage 2/3 playtest data showing players seek an efficiency target — e.g. win-dialog move-count comparisons measurably driving Replay sessions, or testers spontaneously asking "was that good?" at rates the Playtest Analyst's protocol scores — may re-open this question for the **post-teaching span (L16+)** or for the **win dialog**, with thresholds frozen before the cohort runs (T6 discipline). Playtest data outranks this ruling; taste — mine included — does not.
 
+### 14.2 GD-OQ2 — move depth: STARS ADOPTED (soft), HARD MOVE CAP REFUSED (2026-10-17, GD-008)
+
+**Ruling.** Move depth becomes a **rating, never a wall**. The player's run is rated **after the level is
+already won**: **3★** at `moves ≤ par + k1`, **2★** at `moves ≤ par + k2`, **1★ for any finish**; the
+best run is kept locally. The **hard move cap is REFUSED** in writing, and the hybrid (a cap as an
+optional challenge mode later) is **parked** with a named trigger. Full record, evidence and the
+`Original Hypothesis → Problem → Change → Evidence → Result` chain:
+`docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md`.
+
+**Why not the cap (the short form, all of it from shipped law).** A cap creates states from which the
+run cannot continue, i.e. `R > 0` — while `docs/level-design.md` §4 forbids exactly those states
+("no death, no crush, no timer, **no move limit**"; the only real failure is player confusion) and the
+measured theorem `T ≡ R ≡ 0` on 20/20 is what makes the published curve collapse to
+`D_exec = par + 3·B` (`docs/level-difficulty.md` §2b/§5.2). So a cap **reprices every published
+number** and disables the no-dead-state gate, in exchange for a fail texture that no measured data
+requests (U-001 reports missing *depth*, not a wanted *cap*). It would also be a core-loop change:
+AGENTS §2 triad (Game Designer + Playtest Analyst + Orchestrator) + an ADR. None of that is spent here.
+
+**Thresholds — derived from two already-published quanta, no new math.**
+`k1 = 2·⌈par / 10⌉`, `k2 = 2·k1`:
+the **2** is ADR-0009's checkerboard law ("a detour adds 2 moves, never 1"), so every threshold is a
+count a player can actually land on and a slack below 2 is no slack at all; the **10** is P3's published
+teaching-span par ceiling (`docs/level-design.md` §6.1.1) — the game's own par unit, so allowance grows
+one step per par unit of board. Over the shipped ladder (par 4…20, measured 20/20):
+
+| par | 4–10 | 11–20 | 21–30 | 31–40 |
+|---|---|---|---|---|
+| 3★ ≤ | par+2 | par+4 | par+6 | par+8 |
+| 2★ ≤ | par+4 | par+8 | par+12 | par+16 |
+
+1★ is always reachable. The pair (2, 10) is **falsifiable**: playtest star distribution replaces it by
+regression without touching the core. *(Dispatch said "pars 3..20" — corrected by measurement: no
+shipped level measures par 3; the game's measured par floor is 4, ADR-design-0003 P1.)*
+
+**HUD presentation.** *In play, the HUD does not change* — it stays the existing `moves N` field, with
+no par and no stars: GD-OQ1 (§14.1) refused a live evaluation channel because a number the player can
+exceed **during** play is a fail condition by position, and the debut levels deliberately spend their
+whole budget on comprehension. The star render appears **only on the existing win dialog / end panel**,
+as one added field beside the frozen `moves {M}` shape (`docs/ui-ux.md` N-2):
+`L8 cleared · moves 6 · ★★★`. Three slots, filled = earned; **no par number, no threshold explanation,
+no new screen** (ui-ux §0 non-negotiable 5; AGENTS §10). Static glyphs — no idle animation, no VFX rank
+consumed (R-C8), reduced-motion safe by construction. The **pixel spec is UI/Art's** (handoff UA-003);
+this ruling fixes semantics, thresholds and where the field may appear.
+
+**Persistence row (YAGNI: no accounts, no server, no sync).** One versioned localStorage key family —
+`ps.echoGrid/stars@1` → `{"schema":1,"best":{"8":{"moves":6}}}` — written **only on win**, monotone (a
+worse run never downgrades a stored best), tolerant (absent / corrupt / unknown level id read as empty,
+never throws), and cleared only through the browser's own storage surface. A future second consumer
+takes its **own version suffix**, never an in-place schema bump. It lives in the **game/HUD layer only**:
+`src/core/**` never reads it, so determinism, Undo/Restart and the Solver are untouched by
+construction. **Unlock stays completion-based, never star-based** — a star gate at 100 levels would be a
+progression wall (§12, AGENTS §10).
+
+**Why this is the "play one more" hook and not punishment.** The chase is *"do it again, better"*, offered
+after the win, with unlimited Undo and instant Restart already in place (§6; level-design §4): the
+player can always finish at 1★ and still be told they finished. The cap would invert that sentence into
+*"you failed"* — priority order (AGENTS §1) prices Fun and Comprehension above Depth, and depth is
+available for free here (an efficiency target), with no new mechanic.
+
+**What Playtest must measure (protocol owed; thresholds frozen before the cohort runs — T6).**
+1. **Replay rate** — Replay presses per win, and second-run rate per level (the hook's direct measure).
+2. **Star distribution** — first-win 3★/2★/1★ shares and the best-run distribution; the median
+   `(best − par)` is the **empirical k1/k2 calibration** (if median is ~+1 the thresholds are tighter
+   than players can see; if ~+6 they are decoration).
+3. **Star-chase behaviour** — re-wins within the same session and time-to-next-level, against a
+   no-star control arm, to test that the panel *adds* pull instead of pausing flow.
+4. **Punishment counter-check** — M5 restarts / M6 undos, and **1★-vs-quit correlation**: if 1★
+   measurably increases quit rate, the 1★ presentation (not the mechanic) is redesigned — never the
+   fail-condition law.
+5. **Comprehension guard** — L1–L5 understand time / first-win time must not regress: the star field
+   ships post-win only, so any regression there is a presentation bug, not a mechanic trade.
+
+**What this ruling is not:** not a schema change (`par` stays; never a fail condition); not a HUD live
+readout (GD-OQ1 stands); not a new screen, currency, progression or leaderboard (AGENTS §10); not an
+edit to `docs/ui-ux.md` (UA's file) or to the renderer (Gameplay Engineer's).
+
 ## 15. Change log
 
 | Date | Version | Change | Author |
@@ -280,3 +360,4 @@ Design rulings on open questions raised in other lanes' files. One row per quest
 | 2026-10-15 | V0.6 | **GD-008 — dip law re-axed (ADR-design-0001).** §8/§11: the block-opening dip moves to the execution axis `D_exec = D − w5·M`; raw `D` steps **up** at debuts by the comprehension tax `w5·ΔM` (measured +8.53 at L5→L6), admitted openly — what dips is execution (−1.47). The falsified "2–3 points on `D`" clause is withdrawn **unfitted**: no weight re-tuned to reach a target number. Core rule untouched. | Agent 1 (GD-008) |
 | 2026-10-15 | V0.7 | **GD-010 — design-owned OQ ledger opened (new §14); ui-ux.md OQ1 retired: par-in-HUD REFUSED.** HUD stays plain move count only; `par` remains a Solver/difficulty schema field, never a player-facing number in the prototype — argued from locked doctrine alone (§9 show-don't-tell, board-is-the-teacher, refusal-as-tutorial, §12 no-punishment, no-new-screens/YAGNI) plus the comprehension-ladder cost, with an evidence-only re-opener (Stage 2/3 playtest, T6-frozen thresholds; L16+/win-dialog scope). Change log renumbered §14 → §15. Also recorded this round (in `docs/level-design.md` V0.8 + ADR-design-0002): the L11 seam-law OUTCOME, the LV-007C landed gate-(iii) reader, and the L11+ block ruling (promotion trigger tested, did not fire). **No core-rule, mechanic, schedule or difficulty-law change.** | Agent 1 (GD-010) |
 | 2026-10-16 | V0.8 | **GD-007 — the L20 mechanism is RULED: the SEALED LANDING (Aha #3); the GAUNTLET is REJECTED on census measurement.** The L16+ goal-gated full seal is censused to a ceiling of `par 18` on `7×6` at every arity (arity 4: 17 160 tuples enumerated completely) and `7×7` reaches `par 22` only by re-stamping L19's exact seal — so the fifth rung needs a new mechanism, and `block-l1619-tail-ceiling` forbids padding the number. Of the two named candidates, **ADOPT (B) / REJECT (A)**: the census identity `par = min_i(d(start→s_i)+1+d(s_i→goal))` makes a gauntlet's extra ring doors terms in a **minimum** (more reading, no decision; measured saturation 16→18→18), whereas the sealed landing forces the **mandatory second press** the census proved the seal cannot. §5 gains the **M4 composition law**; §8's L16–L25 row names L20 as the delivery of the promised 2-step lookahead; §9 gains **Aha #3** — *"传送门没有抄近路，它给我换了一个起点。"* `ΔM(L20) = 0` (new **verb**, shipped mechanics ⇒ no dip, rung law stands). Full spec + gates + obligations: `docs/level-design.md` §6.2; record: `docs/decisions/design-0004-l20-mechanism-sealed-landing.md`. No core-rule, weight or shipped-board change. | Agent 1 (GD-007) |
+| 2026-10-17 | V0.9 | **GD-008 + GD-009 (one ticket; both ordered by USER U-001, `docs/project-status.md` item 106) — move depth ruled, and the 100-level architecture published.** **GD-OQ2 (§14.2):** move depth = **post-win STAR RATING** (`k1 = 2·⌈par/10⌉`, `k2 = 2·k1`, 1★ any finish, best run persisted in `ps.echoGrid/stars@1`, win-only writes, game/HUD layer only, unlock stays completion-based); the **HARD MOVE CAP is REFUSED** — it creates `R > 0` states against §4 and the measured `T ≡ R ≡ 0`/`D_exec = par + 3·B` theorem, reprices every published row, and needs the AGENTS §2 triad + ADR for zero measured demand; hybrid parked. GD-OQ1's live-HUD refusal **stands** (the star is post-win only), and the ruling operates inside GD-OQ1's own pre-registered re-opener scope (win dialog). Threshold factors are already-published quanta (ADR-0009's detour-2; P3's par-unit 10); the constant pair is falsifiable by playtest regression. Dispatch's "pars 3..20" corrected by measurement (floor is **4**). §8 gains a **pointer row** to `docs/level-design.md` §7 — five acts × 20 (Act II portal orchestration; Act III both-pair objects + the XOR allowance moved off the L36–L45 row; Act IV phase-maze with gauntlet geometry as **flavour only**; Act V synthesis), **L50's Final Exam re-mapped to the Act III `Midterm`, Final Exam at L100** — with the act-scale tail law (`act-peak`), generator lattice stages, per-batch proof obligations and the P10 sampling policy all owned by the level-design section. §13 gains **A6** (the star hypothesis + its measurement). **No core-rule, mechanic, weight, gate or shipped-board change**; full record: `docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md`. | Agent 1 (GD-008 / GD-009) |
