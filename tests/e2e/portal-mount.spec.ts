@@ -92,6 +92,7 @@ import {
 import type { BoardGeometry } from "./helpers/game";
 import { levelUrl, loadReferenceLevels, refOf } from "./helpers/levels";
 import { idleStillnessProof } from "./helpers/pulse-schedule";
+import { installCpuThrottle } from "./helpers/throttle";
 
 const REFS = loadReferenceLevels();
 /** L11 is the dataset's portal debut (M2) and the board every §3.1e row was audited on. */
@@ -784,10 +785,174 @@ async function holdAndSample(
   };
 }
 
+/**
+ * ── QA-021: the ramp, driven on the transition's own clock ───────────────────
+ *
+ * The fractions the drive seeks to, as positions on whatever window the captured
+ * transition declares. Five states, each strictly inside the window.
+ */
+const RAMP_FRACTIONS = [0.1, 0.25, 0.5, 0.75, 0.9] as const;
+
+/** One in-flight state of the press ramp, read on the transition's own clock. */
+interface RampFractionSample {
+  /** Position on the captured transition's own window, in `(0, 1)`. */
+  readonly fraction: number;
+  /** `CSSTransition.currentTime` after the seek — the abscissa, in ms. */
+  readonly transitionMs: number;
+  /** The computed `scale()` at that position. */
+  readonly scaleX: number;
+  readonly playState: string;
+}
+
+/** What {@link armRampDrive} / {@link readRampDrive} observed. */
+interface RampDrive {
+  readonly samples: readonly RampFractionSample[];
+  /**
+   * The captured transition's **own** duration (`getComputedTiming().duration`),
+   * in ms — the denominator of every fraction below. Reading it from the
+   * transition itself (never from a wall-clock span) is what makes the abscissa
+   * independent of the sampling grid.
+   */
+  readonly ownDurationMs: number | null;
+  readonly property: string | null;
+  /** True when the capture happened while the pointer was still down. */
+  readonly held: boolean;
+  /** How many `transform` `transitionrun`s were seen (press leg + release leg). */
+  readonly transitionRuns: number;
+  readonly capturedAt: number | null;
+  readonly ctAtCapture: number | null;
+  readonly pausedDuringReads: boolean;
+}
+
+/**
+ * Arm the ramp drive on `label`'s button — call this **before** the press.
+ *
+ * On the transition's own `transitionrun`, the captured `CSSTransition` is paused,
+ * seeked to each of `fractions` of its **own** duration, and the computed transform
+ * is read synchronously at each one; then the transition is put back where it was
+ * captured and resumed. Because the whole drive runs inside one task (the
+ * `transitionrun` dispatch), **no frame can elapse between two samples**, so the
+ * states are exact positions on the shipped curve instead of rAF sightings of it.
+ *
+ * That is the QA-021 rewrite of cloud round `39018968002`'s failure: the row used
+ * to read the ramp as `ms since the press` on the frame grid, and a starved runner
+ * (36.0 m vs 11.3 m) delivered 1 in-flight sample where the row demanded more than
+ * one — a clock reading, not a product defect (`docs/project-status.md` item 120).
+ *
+ * Two guards keep the instrument honest, both of them measured, not asserted:
+ * the pointer state at capture (a rogue press snap leaves only the *release*
+ * transition to capture — the probe caught exactly that), and the captured
+ * transition's own duration (90 ms in vs 140 ms out).
+ */
+async function armRampDrive(
+  page: Page,
+  label: string,
+  fractions: readonly number[],
+): Promise<void> {
+  await page.evaluate(
+    (input: { name: string; fractions: number[] }) => {
+      interface Rec {
+        samples: RampFractionSample[];
+        ownDurationMs: number | null;
+        property: string | null;
+        held: boolean;
+        transitionRuns: number;
+        capturedAt: number | null;
+        ctAtCapture: number | null;
+        pausedDuringReads: boolean;
+        down: boolean;
+        driven: boolean;
+      }
+      const holder = window as unknown as { __psRamp?: Rec };
+      const rec: Rec = {
+        samples: [],
+        ownDurationMs: null,
+        property: null,
+        held: false,
+        transitionRuns: 0,
+        capturedAt: null,
+        ctAtCapture: null,
+        pausedDuringReads: false,
+        down: false,
+        driven: false,
+      };
+      holder.__psRamp = rec;
+      const el = document.querySelector(`button[aria-label="${input.name}"]`);
+      if (el === null) throw new Error(`[ramp] no button labelled ${input.name}`);
+      // The pointer's own window, stamped in-page — the capture must happen inside
+      // it, so the release leg can never be mistaken for the press leg.
+      window.addEventListener("pointerdown", () => { rec.down = true; }, true);
+      window.addEventListener("mousedown", () => { rec.down = true; }, true);
+      window.addEventListener("pointerup", () => { rec.down = false; }, true);
+      window.addEventListener("mouseup", () => { rec.down = false; }, true);
+
+      const drive = (): void => {
+        if (rec.driven) return;
+        const anim = el
+          .getAnimations()
+          .find((a) => (a as Partial<CSSTransition>).transitionProperty === "transform");
+        if (anim === undefined) return;
+        const timing = (anim.effect as KeyframeEffect | null)?.getComputedTiming();
+        const own = timing?.duration;
+        rec.driven = true;
+        rec.ownDurationMs = typeof own === "number" ? own : null;
+        rec.property = (anim as Partial<CSSTransition>).transitionProperty ?? null;
+        rec.held = rec.down;
+        rec.capturedAt = performance.now();
+        rec.ctAtCapture = Number(anim.currentTime ?? -1);
+        const denominator = rec.ownDurationMs ?? 0;
+        anim.pause();
+        for (const fraction of input.fractions) {
+          anim.currentTime = fraction * denominator;
+          const transform = getComputedStyle(el).transform;
+          rec.samples.push({
+            fraction,
+            transitionMs: Number(anim.currentTime ?? -1),
+            scaleX: transform === "none" ? 1 : new DOMMatrixReadOnly(transform).a,
+            playState: anim.playState,
+          });
+        }
+        rec.pausedDuringReads = rec.samples.every((sample) => sample.playState === "paused");
+        // Put it back where it was captured and let it run out: the press beat's own
+        // wall span (transitionstart → transitionend) must stay the shipped one.
+        anim.currentTime = rec.ctAtCapture >= 0 ? rec.ctAtCapture : 0;
+        anim.play();
+      };
+
+      window.addEventListener(
+        "transitionrun",
+        (event) => {
+          const transition = event as TransitionEvent;
+          if (transition.propertyName !== "transform") return;
+          rec.transitionRuns += 1;
+          if (rec.driven) return;
+          // Same frame first; one rAF retry only if the style flush had not yet
+          // produced the transition (a scheduling artefact, never a missed beat:
+          // the transition is 90 ms long and this is its own start event).
+          drive();
+          if (!rec.driven) requestAnimationFrame(drive);
+        },
+        true,
+      );
+    },
+    { name: label, fractions: [...fractions] },
+  );
+}
+
+/** Read what {@link armRampDrive} recorded for the press that just happened. */
+async function readRampDrive(page: Page): Promise<RampDrive | null> {
+  return page.evaluate(
+    () => (window as unknown as { __psRamp?: RampDrive }).__psRamp ?? null,
+  );
+}
+
 test.describe("§6.6 B11/B12/B13 — the DOM beats' timing (A-7)", () => {
   test("B12 — the press transform is the declared 90 ms ease-out to 0.97, on the layout box", async ({
     page,
   }) => {
+    // QA-021 starvation arm (opt-in, inert unless set): the row's own acceptance
+    // includes a throttled green — see `helpers/throttle.ts`.
+    await installCpuThrottle(page);
     await openLevel(page, levelUrl(SIMPLE_LEVEL_ID));
     await settle(page);
 
@@ -812,7 +977,11 @@ test.describe("§6.6 B11/B12/B13 — the DOM beats' timing (A-7)", () => {
     });
     expect(vars).toEqual({ scale: "0.97", inMs: "90ms", outMs: "140ms" });
 
+    // The ramp drive is armed *before* the press: it hooks the transition's own
+    // start event, so it cannot be late by construction.
+    await armRampDrive(page, "Restart", RAMP_FRACTIONS);
     const { samples, hit, active, downAt, upAt, transitions } = await holdAndSample(page, "Restart");
+    const drive = await readRampDrive(page);
     expect(samples.length, "the sampler ran").toBeGreaterThan(3);
 
     // The press's own *declaration*, read from the pressed element while it is
@@ -875,10 +1044,10 @@ test.describe("§6.6 B11/B12/B13 — the DOM beats' timing (A-7)", () => {
 
     const after = samples.filter((sample) => sample.t >= holdStart && sample.t <= holdEnd);
     const settled = after.filter((sample) => sample.scaleX > 0.968 && sample.scaleX < 0.9719);
-    const insideRamp = after.filter((sample) => sample.scaleX > 0.97 && sample.scaleX < 0.9999);
-    // The frame grid — the resolution of a running transition's computed value, and
-    // therefore the resolution of this entire row. Every grid-bounded bound below
-    // carries it, so the row can never claim more precision than it measured.
+    // The frame grid — the resolution of a running transition's computed value. The
+    // ramp itself is no longer read on this grid (QA-021 moved it to the transition's
+    // own clock); it survives only as the tolerance of the two *event* stamps below,
+    // which the browser dispatches on frame boundaries.
     const deltas = after
       .slice(1)
       .map((sample, index) => sample.t - (after[index]?.t ?? sample.t))
@@ -903,71 +1072,94 @@ test.describe("§6.6 B11/B12/B13 — the DOM beats' timing (A-7)", () => {
     const endEvent = inTransitions.find((entry) => entry.phase === "end");
     const wallSpan = startEvent !== undefined && endEvent !== undefined ? endEvent.at - startEvent.at : null;
 
-    // The ramp's extent, in the sampler's wall clock: the first sample that has left 1
-    // and the last that has not yet reached 0.97 bound the window from inside, their
-    // neighbours from outside. The declared 90 ms must sit inside that bracket.
-    const lastBefore = [...samples].reverse().find((sample) => sample.t < (insideRamp[0]?.t ?? 0));
-    const firstRamp = insideRamp[0];
-    const lastRamp = insideRamp[insideRamp.length - 1];
-    const firstSettled = samples.find((sample) => lastRamp !== undefined && sample.t > lastRamp.t && sample.scaleX <= 0.9705);
-    const spanLo = (lastRamp?.t ?? 0) - (firstRamp?.t ?? 0);
-    const spanHi = (firstSettled?.t ?? lastRamp?.t ?? 0) - (lastBefore?.t ?? firstRamp?.t ?? 0);
-
-    // ── The curve, anchored on the transition's own clock ──────────────────────
-    // The ramp's origin is **not** "the first sample that moved": that sample is a
-    // frame late by construction, which is why anchoring on it produced a negative
-    // crossing time. The origin the browser uses is the transition's own start, and
-    // `CSSTransition.currentTime` measures exactly that. Every sample carrying a
-    // running transform transition therefore yields a `(time, value)` pair whose
-    // **abscissa does not depend on the sampling grid at all** — `x = currentTime /
-    // declaredDuration` — so the check below tests the shipped easing rather than my
-    // clock. (This is the resolution of the row: one pair per frame, and each pair's
-    // position on the curve is exact.)
-    const rampPairs = after
-      .filter((sample): sample is PressSample & { transitionMs: number } => sample.transitionMs !== null)
-      .map((sample) => ({ x: sample.transitionMs / (declaredMs ?? 90), scaleX: sample.scaleX, transitionMs: sample.transitionMs }));
-    const curvePoints = rampPairs.filter((pair) => pair.x > 0 && pair.x < 1);
-    const midPairs = curvePoints.filter((pair) => pair.x >= 0.25 && pair.x <= 0.75);
+    // ── The ramp, driven on the transition's own clock (QA-021) ────────────────
+    // Every state below was produced *inside* the captured transition's own
+    // `transitionrun` task — paused, seeked to each fraction of its own duration,
+    // read synchronously — so no frame can elapse between two samples and no sample
+    // can land outside the window. The abscissa is therefore exact, and the row no
+    // longer contains a single `ms since the press`.
+    const driven = drive?.samples ?? [];
     const midScale = (1 + 0.97) / 2;
-    const midIndex = rampPairs.findIndex((pair) => pair.scaleX <= midScale);
-    const beforeMid = rampPairs[midIndex - 1];
-    const atMid = rampPairs[midIndex];
-    const crossFraction =
-      midIndex > 0 && beforeMid !== undefined && atMid !== undefined && atMid.scaleX !== beforeMid.scaleX
-        ? beforeMid.x + ((beforeMid.scaleX - midScale) / (beforeMid.scaleX - atMid.scaleX)) * (atMid.x - beforeMid.x)
-        : (atMid?.x ?? 1);
-    const crossT = crossFraction * (declaredMs ?? 90);
     const analyticCrossMs = bezierTimeAt(0.5, points) * (declaredMs ?? 90);
-    // The measured reading nearest the 45 ms mark, on the same clock — A-7's own
-    // readout, reported with its offset so it can never be quoted as if it were taken
-    // *at* 45 ms.
-    const near45 = curvePoints.reduce<(typeof curvePoints)[number] | undefined>((best, pair) => {
-      if (best === undefined) return pair;
-      return Math.abs(pair.transitionMs - 45) < Math.abs(best.transitionMs - 45) ? pair : best;
-    }, undefined);
+    const drivenCross = driven.find((sample) => sample.scaleX <= midScale);
+    const beforeCross = driven[driven.indexOf(drivenCross as RampFractionSample) - 1];
+    const crossFraction =
+      drivenCross !== undefined &&
+      beforeCross !== undefined &&
+      drivenCross.scaleX !== beforeCross.scaleX
+        ? beforeCross.fraction +
+          ((beforeCross.scaleX - midScale) / (beforeCross.scaleX - drivenCross.scaleX)) *
+            (drivenCross.fraction - beforeCross.fraction)
+        : (drivenCross?.fraction ?? 1);
+    const crossT = crossFraction * (declaredMs ?? 90);
+    // The A-7 reading *at* 45 ms — now a real reading rather than the nearest frame:
+    // `RAMP_FRACTIONS` contains 0.5, so there is a sample at exactly half the window.
+    const midFractionSample = driven.find((sample) => sample.fraction === 0.5);
+    const near45 = midFractionSample;
     const settledScale = settled[settled.length - 1]?.scaleX ?? 1;
     // eslint-disable-next-line no-console
     console.log(
-      `[QA-017] A-7 B12 samples=${String(samples.length)} gridMs=${r2(gridMs)} rampSamples=${String(insideRamp.length)} ` +
-        `rampSpan=[${r2(spanLo)},${r2(spanHi)}]ms declared=${String(declaredMs)}ms ` +
+      `[QA-021] A-7 B12 samples=${String(samples.length)} gridMs=${r2(gridMs)} declared=${String(declaredMs)}ms ` +
+        `driven=${String(driven.length)} drivenOwn=${String(drive?.ownDurationMs)}ms held=${String(drive?.held)} ` +
         `transitionElapsed=${endEvent === undefined ? "null" : r2(endEvent.elapsedMs)}ms ` +
         `transitionWall=${wallSpan === null ? "null" : r2(wallSpan)}ms ` +
         `crossT=${r2(crossT)}ms analyticCross=${r2(analyticCrossMs)}ms linearCross=45ms ` +
-        `t45offset=${r2((near45?.transitionMs ?? 0) - 45)}ms scale@45measured=${(near45?.scaleX ?? 1).toFixed(4)} ` +
+        `scale@45measured=${(near45?.scaleX ?? 1).toFixed(4)} ` +
         `scale@45analytic=${at45.toFixed(4)} scale@90analytic=${atEnd.toFixed(4)} settledScale=${settledScale.toFixed(4)} ` +
         `hold=[${r2(holdStart)},${r2(holdEnd)}]`,
     );
     // eslint-disable-next-line no-console
     console.log(
-      `[QA-017] A-7 B12 curve x:scale = ${curvePoints
-        .map((pair) => `${pair.x.toFixed(3)}:${pair.scaleX.toFixed(4)}`)
+      `[QA-021] A-7 B12 driven curve x:scale = ${driven
+        .map((sample) => `${sample.fraction.toFixed(3)}:${sample.scaleX.toFixed(4)}@${r2(sample.transitionMs)}ms`)
         .join(" ")}`,
     );
 
-    expect(insideRamp.length, "the transform is a ramp, not an instant snap").toBeGreaterThan(1);
+    // ── The ramp, on the transition's own clock (the cloud row's rewrite) ──────
+    // Positive control, named: a rogue *instant snap* on the press leg (`transition:
+    // none` / a 0 ms transform leg) leaves no `:active` transform transition at all —
+    // the only transform transition left is the release's 140 ms out leg, which this
+    // instrument rejects on **three** independent readings (it was not captured while
+    // held, its own duration is 140 not 90, and its samples run 0.97 → 1 instead of
+    // 1 → 0.97). Measured on a page-injected rogue sheet: captured `held=false`,
+    // `ownDurationMs=140`, scales rising 0.9731 → 0.9929. A rogue step-easing
+    // (`steps(1, jump-end)` over the same 90 ms) keeps the duration and the events but
+    // reads the from-value at every fraction — measured 5/5 states at exactly 1.0000 —
+    // which the "strictly between the two declarations" loop below rejects.
+    expect(
+      driven.length,
+      "the press's own transform transition was captured and drove one state per fraction",
+    ).toBe(RAMP_FRACTIONS.length);
+    expect(drive?.held, "…while the pointer was still down (never the release leg)").toBe(true);
+    expect(drive?.property, "…on the transform leg").toBe("transform");
+    expect(
+      drive?.ownDurationMs,
+      "…whose own declared duration is the :active 90 ms in",
+    ).toBe(90);
+    expect(drive?.pausedDuringReads, "every fraction was read with the transition frozen").toBe(true);
+    expect(
+      driven.length,
+      "the transform is a ramp, not an instant snap",
+    ).toBeGreaterThanOrEqual(3);
+    for (const sample of driven) {
+      expect(sample.fraction, "the abscissa is strictly inside the window").toBeGreaterThan(0);
+      expect(sample.fraction).toBeLessThan(1);
+      // Strictly between the two endpoints of the declaration: the press is a ramp,
+      // never a snap and never an overshoot.
+      expect(sample.scaleX, `at x=${sample.fraction.toFixed(3)}`).toBeGreaterThan(0.97);
+      expect(sample.scaleX, `at x=${sample.fraction.toFixed(3)}`).toBeLessThan(1);
+    }
+    // …and it runs the declared direction, 1 → 0.97. A captured release leg (what a
+    // rogue press snap leaves behind) is increasing, and fails here.
+    for (let index = 1; index < driven.length; index += 1) {
+      const earlier = driven[index - 1];
+      const later = driven[index];
+      expect(
+        later?.scaleX,
+        `x=${String(later?.fraction)} is further along the travel than x=${String(earlier?.fraction)}`,
+      ).toBeLessThan(earlier?.scaleX ?? 1);
+    }
     expect(settled.length, "the press was held long enough to settle").toBeGreaterThan(0);
-    expect(spanLo, "the measured ramp is at least this long").toBeLessThanOrEqual(90);
-    expect(spanHi, "…and no longer than this").toBeGreaterThanOrEqual(90);
     // The browser's own record, independent of the sampling grid: the transform
     // transition really ran, and it ran for the declared 90 ms (`elapsedTime` is the
     // transition machinery's own report, in seconds, of how long the ramp took).
@@ -986,57 +1178,52 @@ test.describe("§6.6 B11/B12/B13 — the DOM beats' timing (A-7)", () => {
     expect(at45, "the analytic 45 ms value, from the declaration").toBeGreaterThan(0.975);
     expect(at45).toBeLessThan(0.99);
     expect(atEnd).toBeCloseTo(0.97, 6);
-    // ── The measured curve, sample by sample ───────────────────────────────────
-    // Each pair sits at a known position on the declared curve, so the shipped easing
+    // ── The measured curve, fraction by fraction ───────────────────────────────
+    // Each state sits at a known position on the declared curve, so the shipped easing
     // is checked directly: the measured value must track the model, and must sit
     // *twice as close* to `ease-out` as to a linear ramp wherever the two differ
     // enough to distinguish (the middle of the window, where the two models are
-    // ~0.005 apart on a travel of 0.03 — above the frame grid's noise floor and below
-    // nothing the row could otherwise resolve).
-    expect(curvePoints.length, "the ramp produced curve points").toBeGreaterThan(1);
-    expect(midPairs.length, "…including points that can separate ease-out from linear").toBeGreaterThan(0);
-    for (const pair of curvePoints) {
-      const model = 1 + bezierFraction(pair.x, points) * (0.97 - 1);
+    // ~0.005 apart on a travel of 0.03).
+    for (const sample of driven) {
+      const model = 1 + bezierFraction(sample.fraction, points) * (0.97 - 1);
       expect(
-        Math.abs(pair.scaleX - model),
-        `at x=${pair.x.toFixed(3)} (${r2(pair.transitionMs)} ms) measured ${pair.scaleX.toFixed(4)} vs model ${model.toFixed(4)}`,
+        Math.abs(sample.scaleX - model),
+        `at x=${sample.fraction.toFixed(3)} (${r2(sample.transitionMs)} ms) measured ${sample.scaleX.toFixed(4)} vs model ${model.toFixed(4)}`,
       ).toBeLessThanOrEqual(0.003);
     }
-    for (const pair of midPairs) {
-      const model = 1 + bezierFraction(pair.x, points) * (0.97 - 1);
-      const linear = 1 + pair.x * (0.97 - 1);
+    for (const sample of driven.filter(
+      (state) => state.fraction >= 0.25 && state.fraction <= 0.75,
+    )) {
+      const model = 1 + bezierFraction(sample.fraction, points) * (0.97 - 1);
+      const linear = 1 + sample.fraction * (0.97 - 1);
       expect(
-        Math.abs(pair.scaleX - model),
-        `at x=${pair.x.toFixed(3)} measured ${pair.scaleX.toFixed(4)}: ease-out ${model.toFixed(4)} vs linear ${linear.toFixed(4)}`,
-      ).toBeLessThan(Math.abs(pair.scaleX - linear) / 2);
+        Math.abs(sample.scaleX - model),
+        `at x=${sample.fraction.toFixed(3)} measured ${sample.scaleX.toFixed(4)}: ease-out ${model.toFixed(4)} vs linear ${linear.toFixed(4)}`,
+      ).toBeLessThan(Math.abs(sample.scaleX - linear) / 2);
     }
     // The crossing, on the transition's own clock: `ease-out` reaches half its travel
-    // at 30.8 ms of a 90 ms window, a linear ramp at exactly 45 ms. The measured
-    // crossing must be inside one frame of the model and under the linear mark.
+    // at 30.8 ms of a 90 ms window, a linear ramp at exactly 45 ms. The driven
+    // abscissae are exact, so the tolerance is the *curve's own* resolution between two
+    // adjacent fractions — no frame grid enters this number.
     expect(
       Math.abs(crossT - analyticCrossMs),
-      `measured crossing ${r2(crossT)} ms vs analytic ${r2(analyticCrossMs)} ms (grid ${r2(gridMs)} ms)`,
-    ).toBeLessThanOrEqual(gridMs + 2);
+      `measured crossing ${r2(crossT)} ms vs analytic ${r2(analyticCrossMs)} ms`,
+    ).toBeLessThanOrEqual(3);
     expect(
       crossT,
       `the press crosses mid-scale at ${r2(crossT)} ms; a linear 45 ms read would not have crossed yet`,
     ).toBeLessThan(45);
-    // The settled hold is the declared scale, and the *midpoint* of the declared window
-    // is measurably above it — A-7's literal "0.97 at 45 ms" is falsified by its own
-    // declaration, not by an interpretation: `ease-out` is not linear.
-    expect(settledScale, "the settled hold is the declared scale").toBeGreaterThan(0.968);
-    expect(settledScale).toBeLessThan(0.972);
-    expect(at45, "the analytic 45 ms value, from the declaration").toBeGreaterThan(0.975);
-    expect(at45).toBeLessThan(0.99);
-    expect(atEnd).toBeCloseTo(0.97, 6);
+    // A-7's own readout, at *exactly* the window's midpoint: the measured value there
+    // must be the model's value, and it is measurably not the settled 0.97.
+    expect(near45, "there is a driven state at the window's 0.5 fraction").toBeDefined();
+    expect(near45?.transitionMs, "…which is the 45 ms mark, not near it").toBe(45);
+    expect(
+      Math.abs((near45?.scaleX ?? 1) - at45),
+      `at 45 ms measured ${(near45?.scaleX ?? 1).toFixed(4)} vs analytic ${at45.toFixed(4)}`,
+    ).toBeLessThanOrEqual(0.003);
+    expect(near45?.scaleX ?? 0, "…and it is not the settled 0.97").toBeGreaterThan(0.972);
     expect(analyticCrossMs, "ease-out crosses the half-way value at 0.3425 of the window").toBeGreaterThan(29);
     expect(analyticCrossMs).toBeLessThan(32);
-    // …and every mid-ramp sample sits strictly between the two endpoints of the
-    // declaration: the press is a ramp, never a snap and never an overshoot.
-    for (const sample of insideRamp) {
-      expect(sample.scaleX).toBeGreaterThan(0.97);
-      expect(sample.scaleX).toBeLessThan(1);
-    }
 
     // The hit box is the layout box: `offsetWidth/Height` never move, `elementFromPoint`
     // at the layout centre still resolves to the same button, and the *painted* box is
