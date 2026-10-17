@@ -170,6 +170,121 @@
  *    judged tuple is accounted for (the par census prints the out-of-band members too,
  *    e.g. the 1178 `par-out-of-band` refusals).
  *
+ * ── LV-015 · THE 4-POCKET SUB-LATTICE (`--pockets=4`, Act II batch 3 = L31–L35) ──
+ *
+ * Law this pass implements, quoted not paraphrased:
+ *
+ * - `docs/level-design.md` **§7.8 item 4** (the **anti-mirror clause**, GD-010 /
+ *   `docs/decisions/design-0006-act-close-peak-and-relief-label-form.md`): *"Batch 3 must
+ *   not mirror batch 1's ladder again, and must not copy batch 2's device. The mirror was a
+ *   one-off measurement instrument … repeating it converts a measurement into a formula and
+ *   yields a third indistinct rung set. Batch 3 publishes its own par set inside 16–24 (the
+ *   census's own pool supports 19 and 22, neither yet used) and a device distinct in the
+ *   stricter §6.1.4 seal-inclusive key. The named open axes available to it: the 4-pocket
+ *   member (§7.4's pocket count 1–4; LV-014 states it unenumerated, no completeness claim)
+ *   and the deferred `--pocketsize ≥ 11` probe."* This pass enumerates the **first** named
+ *   axis — the **4-pocket** member (`P → R2 → R3 → R4` plus the goal's own seal = **5 doors
+ *   / 5 presses**) — and leaves the second **deferred**: `--pocketsize ≥ 11` stays
+ *   **unmeasured**, with no ceiling wording in either direction (item 114's law).
+ * - **§7.8 item 1** + **§7.3.2** (the **`act-close` clause**): *"Act II's registered maximum
+ *   must be carried by batch 3 or 4 and must strictly exceed `27.604651`."* The constants
+ *   are **read, never typed**: `ACT_II_B1_REGISTERED_PEAK_EXEC` = 27.604651,
+ *   `ACT_I_REGISTERED_PEAK_EXEC` = 24.729412, `ACT_II_B1_LADDER` pars 17/18/20/21/23.
+ * - **§7.8 item 2** (the **derived route — no new number**): at `par 24`,
+ *   `D_exec = par + 3·B` (§7.5 item 1's measured theorem `T ≡ R ≡ 0`) with `B` inside the
+ *   measured band `[1.2500, 1.6875]` forces `D_exec ∈ [27.7500, 29.0625]`, i.e. **≥
+ *   +0.145349** over the registered peak, the window's top *being* Act II's derived ceiling.
+ *   Both numbers are citations; this file invents no threshold.
+ * - **§7.8 item 3** (the **named census obligation**): LV-014's accept pool by par
+ *   *"tops at `par 23`, so `par 24` is in-band but unmeasured in the `G` lattice"*. The
+ *   published fallback, if `par 24` yields no accept, is the par-23 class reach
+ *   **`27.746988`** (`+0.142337` over the registered peak) — which must pass §7.5 in full
+ *   and travels the **§7.3.3 C path with its own ADR**, because it re-keys the registered
+ *   maximum. That is a **Game Designer decision this tool may not take**, and it is never a
+ *   silent par substitution.
+ * - **§7.8 item 5** (**label before the bytes**): if batch 3's opening rung sits below L30
+ *   (`27.566265`), that seam is a `ΔM = 0` interior relaxation and takes a **§7.3.1-form
+ *   relief label published before the batch is authored**.
+ * - **§7.2 / §7.4 / §7.5**: Act II's band (`par` 16–24, `D_exec` [19.75, 29.06], batch = 5);
+ *   stage `G` = *"multi-pocket: pocket count 1–4 × portal pairs 1–2 × door arity 2–5 ×
+ *   landing position, on 7×6 → 7×7"*; and the per-batch proof obligations, unchanged.
+ * - **§6.2.3**, the sealed-landing lattice law, read against a **5-door** device: exactly one
+ *   opposite-colour portal pair; the landing pocket not on-foot reachable in the needed
+ *   phase; **every** blocker an *openable door* (never a phase wall — F-L19-2); a forced
+ *   ordered chain one press per door; `T ≡ R ≡ 0` and coverage `42/42`; `switchRequired`
+ *   **measured**, never decreed. `par(L20) = 20` is cited, not inherited (no batch-3 id is 20).
+ *
+ * THE DEVICE (the named plan shape, written before the search):
+ *
+ * ```
+ *   P   landing pocket   exit d1 (its whole boundary)        press s1 ∈ P
+ *   F   free band        press s2 ∈ F  → drives d2            [reachable once d1 opens]
+ *   R2  second pocket    exit/entrance = d2 (whole boundary)  press s3 ∈ R2 → drives d3
+ *   R3  third pocket     exit/entrance = d3 (whole boundary)  press s4 ∈ R3 → drives d4
+ *   R4  fourth pocket    exit/entrance = d4 (whole boundary)  press s5 ∈ R4 → drives d5
+ *   G   the goal         every walk-neighbour is a d5 tile
+ * ```
+ *
+ * The forced order `p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4 < p4 < d5` is a property of the
+ * board — each press lies **inside** the room whose predecessor door seals it, and `d5` is
+ * the goal's only entrance — and it is re-measured on **every** par route (`g3` requires
+ * `minPresses ≥ presses` and `chain = n/n`), never on one witness. Relative to batch 2 the
+ * device is one room deeper (4 presses → **5**) on the same `7 × 6` frame at `CX = 2`: the
+ * §7.4 axis, not a re-parameterisation of batch 2's board, and each rung's §6.1.4 key is
+ * censused against **all 30 existing files** (25 root + 5 shelf) and against its siblings.
+ *
+ * BATCH 3'S SELECTION RULE — **published here before any census or any byte**:
+ *
+ * 1. **Own par set (anti-mirror, §7.8 item 4).** `UNUSED := ([16, 24] ∩ ℤ) \ {par of each
+ *    `ACT_II_B1_LADDER` row}` — read from the law constant, never typed — ⇒ **{16, 19, 22,
+ *    24}**. Batch 1/2's pars (17/18/20/21/23) are excluded **by construction**; no batch-3
+ *    rung may carry one.
+ * 2. **Five rungs over that set (§7.2 batch size 5).** Only four in-band pars are unused, so
+ *    **exactly one par repeats**: `CLOSE := max{p ∈ UNUSED : the census's accept pool at p
+ *    is non-empty}`, used at the batch's **last two** rungs. §7.3.2 asks the act's maximum
+ *    to be carried by the closing batch, so the tail ends on the batch's own band-ceiling
+ *    par. (If a par's pool is empty, that par is simply absent from the ladder — the
+ *    remaining members keep their own pars and `CLOSE` is chosen from what the pool
+ *    supports; pars are never substituted from batch 1/2's set.)
+ * 3. **Order:** ascending par; the two `CLOSE` rungs ordered by ascending `D_exec`.
+ * 4. **Within-par tie-break:** minimal `D_exec`, then enumeration order (batch 1's and batch
+ *    2's rule), with **one published departure** — the batch's **last** rung takes the
+ *    within-par **maximum** `D_exec`, so that the act's maximum is carried by the batch's
+ *    *last rung* rather than its interior (§7.3.2 read as a selection rule). Every departure
+ *    is printed beside the ladder.
+ * 5. **Bands and gates are filters, never preferences** (§7.5 item 1): `par ∈ [16, 24]`,
+ *    `D_exec ∈ [19.75, 29.06]`, `B ∈ [1.2500, 1.6875]`, `T ≡ R ≡ 0`, coverage `42/42`,
+ *    `switchRequired` measured as the all-OFF world, the `g0`–`g6` family gates by name.
+ * 6. **§6.1.4 clone filter:** each rung's seal-inclusive key must be free of the 30 existing
+ *    keys **and** of its siblings'; collisions are counted and printed, never hidden.
+ * 7. **`act-close` refusal (no padding, no substitution):** if the batch's **measured
+ *    maximum** is `≤ ACT_II_B1_REGISTERED_PEAK_EXEC` (27.604651) — i.e. the 4-pocket class
+ *    cannot reach `par 24`, or the pool cannot carry it — the batch is **not written**. The
+ *    census is reported as a **named act limitation** with the class ceiling beside it
+ *    (§7.3.2's escape hatch) and the fallback is briefed to the Game Designer as the
+ *    **C path** (§7.8 item 3). A padded par or a borrowed par is not a remedy.
+ * 8. **Relief label (§7.8 item 5):** the `L30 → L31` seam is labelled in **§7.3.1's form**
+ *    in the census dossier, **before `--write` runs**; if L31's `D_exec ≥ 27.566265` there is
+ *    no relief and the label is recorded as **not fired**.
+ *
+ * The census commands, also published before the run (they are what the dossier quotes):
+ *
+ * ```
+ *   STEP 1 — the par-24 obligation (§7.8 item 3), both fenced families:
+ *     npx tsx scripts/author-l21.ts --stage=g --batch=2 --pockets=3 --cx=2 --pocketsize=4 \
+ *       --qmax=4 --paircap=40 --budget=8000 --cap=400 --parmin=24 --parmax=24
+ *     npx tsx scripts/author-l21.ts --stage=g --batch=3 --pockets=4 --cx=2 --pocketsize=4 \
+ *       --qmax=4 --paircap=40 --budget=8000 --cap=400 --parmin=24 --parmax=24
+ *   STEP 2 — the batch's own pool (full act band, the 4-pocket family):
+ *     npx tsx scripts/author-l21.ts --stage=g --batch=3 --pockets=4 --cx=2 --pocketsize=4 \
+ *       --qmax=4 --paircap=40 --budget=8000 --cap=400 --parmin=16 --parmax=24
+ * ```
+ *
+ * Enumeration **sizes** may be orbit-predicted in the dossier and are then labelled
+ * PREDICTED; no measured result ever inherits from a prediction, and a capped run reports
+ * its `--paircap` / `--budget` counters as a **prefix**, never as a completed class
+ * (`docs/architecture.md` §15.5).
+ *
  * Stages:
  *
  *   0.  **preflight law** — the parity/judging-phase rule re-derived from the shipped
