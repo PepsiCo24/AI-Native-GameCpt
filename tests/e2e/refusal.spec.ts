@@ -29,7 +29,22 @@
 
 import { expect, test } from "@playwright/test";
 
-import { loadReferenceLevels, levelUrl, refusalRouteEnvelopeMs } from "./helpers/levels";
+import { portalAt } from "@/core/rules";
+import { ACT_II_B1_IDS, ACT_II_B1_LADDER } from "@/core/solver/policy";
+import { flipPhase } from "@/core/state/phase";
+import { step } from "@/core/state/move";
+import type { Vec } from "@/core/state/types";
+
+import {
+  cheapestPortalFixtures,
+  cheapestRefusalFixtures,
+  loadReferenceLevels,
+  levelUrl,
+  manhattan,
+  refusalCensus,
+  refusalRouteEnvelopeMs,
+} from "./helpers/levels";
+import type { RefusalClass } from "./helpers/levels";
 import {
   expectActorAt,
   boardGeometry,
@@ -37,9 +52,9 @@ import {
   installPixelReadback,
   openLevel,
   pressDirection,
+  pressRoute,
   settle,
 } from "./helpers/game";
-import type { Vec } from "@/core/state/types";
 
 const REFS = loadReferenceLevels();
 
@@ -108,13 +123,22 @@ test.describe("illegal move ⇒ no move, no flip, no position change", () => {
             after.movesText,
             `L${String(ref.id)}: a refused ${refused} at move ${String(leg.moveCount - 1)} must not move the player`,
           ).toBe(before.movesText);
-          expect(after.moves, `refused ${refused}: move counter`).toBe(before.moves);
-          expect(after.phase, `refused ${refused}: phase must not flip`).toBe(before.phase);
-          expect(after.glyph, `refused ${refused}: the glyph is the non-colour phase channel`).toBe(
-            before.glyph,
+          expect(after.moves, `refused ${refused}: move counter`).toBe(
+            before.moves,
           );
-          expect(after.phaseLabel, `refused ${refused}: chip label`).toBe(before.phaseLabel);
-          expect(after.won, `refused ${refused}: a refusal can never win`).toBe(false);
+          expect(after.phase, `refused ${refused}: phase must not flip`).toBe(
+            before.phase,
+          );
+          expect(
+            after.glyph,
+            `refused ${refused}: the glyph is the non-colour phase channel`,
+          ).toBe(before.glyph);
+          expect(after.phaseLabel, `refused ${refused}: chip label`).toBe(
+            before.phaseLabel,
+          );
+          expect(after.won, `refused ${refused}: a refusal can never win`).toBe(
+            false,
+          );
           // History: a refusal is not an action, so the undo stack is untouched.
           expect(
             after.undoDisabled,
@@ -130,9 +154,10 @@ test.describe("illegal move ⇒ no move, no flip, no position change", () => {
 
       // The walk is only meaningful if it met refusals; a level with none is a
       // dataset change, not a silent pass.
-      expect(refusals, `L${String(ref.id)} par route exercises at least one refusal`).toBeGreaterThan(
-        0,
-      );
+      expect(
+        refusals,
+        `L${String(ref.id)} par route exercises at least one refusal`,
+      ).toBeGreaterThan(0);
 
       await expect(page.locator(".ps-overlay")).toBeVisible();
       await settle(page);
@@ -143,7 +168,9 @@ test.describe("illegal move ⇒ no move, no flip, no position change", () => {
     });
   }
 
-  for (const ref of REFS.filter((candidate) => candidate.refusedAtStart.length > 0)) {
+  for (const ref of REFS.filter(
+    (candidate) => candidate.refusedAtStart.length > 0,
+  )) {
     test(`L${String(ref.id)} — an opening refusal costs nothing: no move, no undo step, no dialog`, async ({
       page,
     }) => {
@@ -163,7 +190,10 @@ test.describe("illegal move ⇒ no move, no flip, no position change", () => {
       expect(after.moves).toBe(0);
       expect(after.phase).toBe(ref.level.startPhase);
       expect(after.undoDisabled, "nothing to undo after N refusals").toBe(true);
-      expect(after.restartDisabled, "restart stays enabled as the way back").toBe(false);
+      expect(
+        after.restartDisabled,
+        "restart stays enabled as the way back",
+      ).toBe(false);
       expect(after.won).toBe(false);
       await expectActorAt(page, geometry, ref.level, start);
 
@@ -172,6 +202,320 @@ test.describe("illegal move ⇒ no move, no flip, no position change", () => {
       const moved = await hud(page);
       expect(moved.moves).toBe(1);
       expect(moved.phase).not.toBe(ref.level.startPhase);
+    });
+  }
+});
+
+/* ───────── Act II batch 1 — the G-family refusal surface (R-004d) ───────────── */
+
+/**
+ * **What the five Act II rungs add to this file, and what they do not.**
+ *
+ * `src/levels/l021.json … l025.json` (registered by R-004a, §8.18) are the dataset's
+ * first **multi-pocket sealed landings**: §8.16's device law gives each board the
+ * forced plan `s1 → d1 → s2 → d2 → sg → d3` — a portal-only landing pocket, a free
+ * far region behind a door, a second sealed pocket, and a goal whose every in-region
+ * neighbour is a door. The generic rows above already walk each of these par routes
+ * and freeze on *every* refusal they pass, so "an illegal move is identity" is
+ * already asserted on L21–L25. What was **not** asserted anywhere in-browser is
+ * *which kind of blocker* refuses, on the boards where two kinds coexist by
+ * construction.
+ *
+ * | class | this board | the row that drives it |
+ * |---|---|---|
+ * | `phase-wall` | the `x = 2` checkerboard column | {@link cheapestRefusalFixtures} — cheapest reachable |
+ * | `door-without-switch` | a seal door met **before** its switch (F-L20-2's class) | …the same helper |
+ * | `out-of-bounds` | the board edge | already covered on L21–L25 by the opening-refusal rows above |
+ *
+ * ── The off-phase portal press is NOT a refusal, and this row says so ─────────
+ * The ticket that booked this row expected the third surface to be an off-phase
+ * press *at a portal* freezing the triple state. Measured on the landed bytes, that
+ * surface **does not exist**, and the reason is the locked rule itself rather than a
+ * gap in the data: legality reads the destination in the **current** phase only
+ * (`src/core/rules/applyMove.ts:63-68` — in bounds + solid now), and `portalAt`
+ * filters on `activePhase` (`src/core/rules/solid.ts:204`), so clicking an
+ * *inactive* end is an ordinary legal step. The census counts the honest zero —
+ * `refusedAtPortalEnds = 0` on 5/5 — and the row drives the press the other way: the
+ * same click that crosses in one phase must be a plain single step in the other
+ * (`portal.spec.ts:162` makes the same claim for L11, in-core). Asserting "no move,
+ * no flip" here would have been a test asserting something false about the shipped
+ * core, so it is not written; the measurement replaces it.
+ */
+
+/** The registered rungs, named by the law's own id block, never by a typed ladder. */
+const ACT_II_RUNGS = REFS.filter((ref) => ACT_II_B1_IDS.includes(ref.id));
+
+/**
+ * The published per-rung `refusedThenEnteredTiles` count — **17 on 5/5**, with the
+ * ordered companion equal (`T ≡ R ≡ 0`). Quoted, not re-derived: §8.16's ladder and
+ * §8.18's root re-measure (`scripts/prove-candidate-l2125.transcript.md`, the
+ * `refused-beat` gate line on every rung; `scripts/attest-r004a-act2.transcript.md`).
+ * The **tile lists themselves** stay pinned once, in
+ * `tests/solver/ordered-companion.test.ts`'s `ORDERED_PINS` (R-004c) — this file
+ * asserts the number and the ordered/unordered equality on the same bytes the
+ * browser loads, and does not keep a second copy of the list.
+ */
+const ACT_II_REFUSED_THEN_ENTERED_TILES = 17;
+
+/**
+ * **This ticket's own measurement** — the class partition of *every* refused press
+ * over each rung's reachable set (`refusalCensus`, from the shipped rules). The
+ * level lane publishes the tile census, not this partition: the split is derived here
+ * so "the refusal surface is made of these blockers, and nothing else" is an
+ * assertion instead of a description. `door-latch-on = 0` on all five is the
+ * measured form of §8.16's device law (the plan meets every door *closed*, before its
+ * switch); `out-of-bounds` is the board edge and is identical on all five; the two
+ * skeletons show as `door-without-switch` 52 (L21/L24/L25) vs 50 (L22/L23).
+ */
+const ACT_II_REFUSAL_CLASSES: Readonly<
+  Record<number, Readonly<Record<RefusalClass, number>>>
+> = {
+  21: {
+    "out-of-bounds": 188,
+    "phase-wall": 48,
+    "door-without-switch": 52,
+    "door-latch-on": 0,
+  },
+  22: {
+    "out-of-bounds": 188,
+    "phase-wall": 48,
+    "door-without-switch": 50,
+    "door-latch-on": 0,
+  },
+  23: {
+    "out-of-bounds": 188,
+    "phase-wall": 48,
+    "door-without-switch": 50,
+    "door-latch-on": 0,
+  },
+  24: {
+    "out-of-bounds": 188,
+    "phase-wall": 48,
+    "door-without-switch": 52,
+    "door-latch-on": 0,
+  },
+  25: {
+    "out-of-bounds": 188,
+    "phase-wall": 48,
+    "door-without-switch": 52,
+    "door-latch-on": 0,
+  },
+};
+
+test.describe("Act II batch 1 — the refusal census of the sealed-landing rungs (R-004d)", () => {
+  test("L21–L25 — the published refused-then-entered census, and the class partition of the whole surface", () => {
+    expect(
+      ACT_II_RUNGS.map((ref) => ref.id),
+      "the registered Act II id block",
+    ).toEqual([...ACT_II_B1_IDS]);
+
+    for (const ref of ACT_II_RUNGS) {
+      const id = ref.id;
+      const published = ACT_II_B1_LADDER.find((row) => row.id === id);
+      expect(
+        published,
+        `L${String(id)} is a registered ladder row`,
+      ).toBeDefined();
+      expect(ref.par, `L${String(id)}: par is the solver's own value`).toBe(
+        published?.par,
+      );
+
+      const census = refusalCensus(ref);
+      expect(
+        census.refusedThenEntered.length,
+        `L${String(id)}: the published refusedThenEnteredTiles census (§8.16/§8.18: 17 on 5/5)`,
+      ).toBe(ACT_II_REFUSED_THEN_ENTERED_TILES);
+      expect(
+        census.refusedBeforeEntered,
+        `L${String(id)}: T ≡ R ≡ 0 — the ordered companion equals the unordered one`,
+      ).toEqual(census.refusedThenEntered);
+
+      const classes = ACT_II_REFUSAL_CLASSES[id];
+      expect(
+        classes,
+        `L${String(id)}: a measured class row exists`,
+      ).toBeDefined();
+      expect(
+        census.byClass,
+        `L${String(id)}: every refused press, by class`,
+      ).toEqual(classes);
+      expect(
+        census.refusedPresses,
+        `L${String(id)}: the four classes cover the surface — no refused press is unclassified`,
+      ).toBe(
+        Object.values(classes ?? {}).reduce((sum, count) => sum + count, 0),
+      );
+      expect(
+        census.refusedAtPortalEnds,
+        `L${String(id)}: no refused press lands on a portal end (the off-phase press is a legal step)`,
+      ).toBe(0);
+    }
+  });
+
+  for (const ref of ACT_II_RUNGS) {
+    test(`L${String(ref.id)} — a phase-wall refusal and a door-without-switch refusal freeze the triple state; the off-phase portal press is an ordinary step`, async ({
+      page,
+    }) => {
+      // The same derived envelope as every other refusal row (QA-013 / item 77(d)):
+      // a function of the level's **par**, never of its id. L25 (par 23) is the first
+      // rung whose uncapped envelope exceeds the 240 s cap, so it rides the cap — the
+      // migration R-004c registered, quoted rather than re-derived here.
+      test.setTimeout(refusalRouteEnvelopeMs(ref.par));
+
+      const fixtures = cheapestRefusalFixtures(ref);
+      const portals = cheapestPortalFixtures(ref);
+
+      /* ── the two refusal classes the board really reaches ─────────────────── */
+      for (const kind of ["phase-wall", "door-without-switch"] as const) {
+        const fixture = fixtures[kind];
+        expect(
+          fixture,
+          `L${String(ref.id)} reaches a ${kind} refusal`,
+        ).not.toBeNull();
+        if (fixture === null) continue;
+        expect(
+          fixture.resume.direction,
+          `L${String(ref.id)}: the due move is not the refused one`,
+        ).not.toBe(fixture.direction);
+
+        // A fresh session per fixture: each fixture's route is the shortest legal
+        // walk from the level's start, so the state it pins is reached exactly.
+        await installPixelReadback(page);
+        await openLevel(page, levelUrl(ref.id));
+        const geometry = await boardGeometry(page, ref.level);
+
+        await pressRoute(page, fixture.route);
+        const before = await hud(page);
+        expect(
+          before.moves,
+          `${kind}: the route is ${String(fixture.route.length)} moves`,
+        ).toBe(fixture.route.length);
+        expect(before.phase, `${kind}: the fixture's phase`).toBe(
+          fixture.phase,
+        );
+        await expectActorAt(page, geometry, ref.level, fixture.player);
+
+        await pressDirection(page, fixture.direction);
+        const after = await hud(page);
+
+        // The triple state, exactly as the generic rows above assert it: no move, no
+        // flip, no history entry — and the tile read back from the canvas, because the
+        // HUD owns no board state.
+        expect(
+          after.movesText,
+          `L${String(ref.id)}: a refused ${fixture.direction} onto ${fixture.blockedBy} (${kind}) must not move the player`,
+        ).toBe(before.movesText);
+        expect(after.moves, `${kind}: move counter`).toBe(before.moves);
+        expect(after.phase, `${kind}: phase must not flip`).toBe(before.phase);
+        expect(after.glyph, `${kind}: the non-colour phase channel`).toBe(
+          before.glyph,
+        );
+        expect(after.phaseLabel, `${kind}: chip label`).toBe(before.phaseLabel);
+        expect(after.won, `${kind}: a refusal can never win`).toBe(false);
+        expect(after.undoDisabled, `${kind}: no history entry was pushed`).toBe(
+          before.undoDisabled,
+        );
+        await expectActorAt(page, geometry, ref.level, fixture.player);
+
+        // …and the state's *continuation* is undisturbed: the move that was due is the
+        // fixture state's own first legal press, and it is one move and one flip.
+        await settle(page);
+        await pressDirection(page, fixture.resume.direction);
+        const resumed = await hud(page);
+        expect(
+          resumed.moves,
+          `${kind}: the refusal left no residue in the counter`,
+        ).toBe(before.moves + 1);
+        expect(
+          resumed.phase,
+          `${kind}: exactly one flip after the due move`,
+        ).toBe(flipPhase(fixture.phase));
+        await settle(page);
+        await expectActorAt(page, geometry, ref.level, fixture.resume.arrival);
+      }
+
+      /* ── the portal press: the gate, not a refusal ───────────────────────── */
+      const inactive = portals.inactive;
+      expect(
+        inactive,
+        `L${String(ref.id)} reaches an off-phase portal press`,
+      ).not.toBeNull();
+      if (inactive === null) return;
+
+      // In-core first: the gate alone decides the two landings, and on these boards
+      // the same click really does cross in the other phase (`pair`, measured). The
+      // pair is asserted over **its own** members: the cheapest off-phase fixture
+      // driven below is a different press on some rungs, and nothing here claims it is
+      // the pair's mirror.
+      const pair = portals.pair;
+      expect(
+        pair,
+        `L${String(ref.id)}: the same click crosses in the other phase`,
+      ).not.toBeNull();
+      if (pair !== null) {
+        expect(
+          pair.teleport.clicked,
+          "the discriminating pair is the same click",
+        ).toEqual(pair.inactive.clicked);
+        expect(pair.teleport.direction, "…the same direction").toBe(
+          pair.inactive.direction,
+        );
+        expect(pair.teleport.portalId).toBe(pair.inactive.portalId);
+        expect(pair.teleport.phase, "…in the two phases").not.toBe(
+          pair.inactive.phase,
+        );
+        expect(
+          pair.teleport.arrival,
+          "the active phase lands on the far end",
+        ).toEqual(pair.teleport.exit);
+        expect(
+          pair.inactive.arrival,
+          "the off phase lands where it stepped",
+        ).toEqual(step(pair.inactive.player, pair.inactive.direction));
+        expect(
+          manhattan(pair.teleport.player, pair.teleport.arrival),
+        ).toBeGreaterThan(1);
+      }
+      expect(
+        portalAt(ref.level, inactive.phase, inactive.clicked),
+        "the off phase: the clicked end is not a portal for entry",
+      ).toBeUndefined();
+      expect(
+        inactive.arrival,
+        "the off phase: the landing is the tile that was stepped onto",
+      ).toEqual(step(inactive.player, inactive.direction));
+      expect(
+        inactive.arrival,
+        "the far end is not where a step lands",
+      ).not.toEqual(inactive.exit);
+
+      await installPixelReadback(page);
+      await openLevel(page, levelUrl(ref.id));
+      const geometry = await boardGeometry(page, ref.level);
+
+      await pressRoute(page, inactive.route);
+      const stepping = await hud(page);
+      expect(stepping.moves).toBe(inactive.route.length);
+      expect(stepping.phase).toBe(inactive.phase);
+      await expectActorAt(page, geometry, ref.level, inactive.player);
+
+      await pressDirection(page, inactive.direction);
+      const stepped = await hud(page);
+      // Legal: one move, one flip — the refusal contract of this file is *not* the
+      // claim being made here (see the block docstring), and asserting it would be
+      // asserting something false about the shipped core.
+      expect(stepped.moves, "an off-phase portal press is one move").toBe(
+        stepping.moves + 1,
+      );
+      expect(stepped.phase, "…and exactly one flip").toBe(
+        flipPhase(inactive.phase),
+      );
+      await settle(page);
+      await expectActorAt(page, geometry, ref.level, inactive.arrival);
+      expect(
+        manhattan(inactive.arrival, inactive.exit),
+        "the far end is a non-adjacent tile the actor never reached",
+      ).toBeGreaterThan(1);
     });
   }
 });
