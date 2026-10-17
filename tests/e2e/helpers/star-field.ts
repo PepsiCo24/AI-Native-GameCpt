@@ -272,6 +272,53 @@ export async function starAnimations(page: Page): Promise<readonly LiveStarAnima
   );
 }
 
+/**
+ * One CSS animation's record **on the document timeline** (QA-021).
+ *
+ * `startTime` and `duration` are the animation's own values on the document
+ * timeline — not a wall-clock reading taken from the test — so a difference
+ * between two of these records is a **causal relation between two animations**,
+ * quantised only by the frame the animation started on. That is what makes
+ * {@link animationsOn} the right instrument for "this beat ends inside that beat":
+ * a rAF observer can only report *when it noticed* each beat end (one frame late,
+ * per beat, on a grid that coarsens under load — the cloud row's failure), while
+ * these two numbers compose exactly.
+ */
+export interface DocumentTimelineAnimation {
+  readonly name: string;
+  readonly playState: string;
+  readonly currentTime: number;
+  /** When the animation started on the document timeline, in ms, or `null`. */
+  readonly startTime: number | null;
+  /** Its own computed duration, in ms (`getComputedTiming().duration`). */
+  readonly durationMs: number | null;
+  /** The used `animation-duration` longhand, as declared. */
+  readonly declaredDuration: string;
+}
+
+/** Every animation on `selector`'s first match, read on the document timeline. */
+export async function animationsOn(
+  page: Page,
+  selector: string,
+): Promise<readonly DocumentTimelineAnimation[]> {
+  return page.evaluate((css: string) => {
+    const node = document.querySelector(css);
+    if (node === null) return [];
+    return node.getAnimations().map((animation) => {
+      const timing = (animation.effect as KeyframeEffect | null)?.getComputedTiming();
+      const declared = timing?.duration ?? null;
+      return {
+        name: (animation as Animation & { readonly animationName?: string }).animationName ?? "",
+        playState: animation.playState,
+        currentTime: Number(animation.currentTime ?? -1),
+        startTime: animation.startTime === null ? null : Number(animation.startTime),
+        durationMs: typeof declared === "number" ? declared : null,
+        declaredDuration: getComputedStyle(node).animationDuration,
+      };
+    });
+  }, selector);
+}
+
 /* ────────────────────── the A-11 census, per phase ─────────────────────── */
 
 export interface CensusRow {

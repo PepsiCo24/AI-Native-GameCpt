@@ -58,6 +58,7 @@ import {
   A_LADDER,
   A_REF,
   B_REF,
+  animationsOn,
   censusAllThreeStates,
   censusTokens,
   detoursFor,
@@ -82,6 +83,7 @@ import {
   gridDiff,
   rowIsThreeSlots,
 } from "./helpers/star-pixels";
+import { installCpuThrottle } from "./helpers/throttle";
 
 /* ──────────────────────────── the frame probe ──────────────────────────── */
 
@@ -112,6 +114,14 @@ interface StarProbe {
   panelSeenRunning: boolean;
   starSettledAt: number | null;
   panelSettledAt: number | null;
+  /**
+   * The observer's previous tick, at the frame it first saw the overlay (QA-021):
+   * `unhideAt - tickAt` is the interval *this observer actually experienced* at the
+   * detection frame, so a bound on how stale the unhide snapshot can be is measured
+   * on the same page at the same moment instead of assumed from a grid sampled at
+   * page open (the assumption that broke under CDP CPU throttling).
+   */
+  tickAt: number | null;
 }
 
 /**
@@ -152,6 +162,7 @@ async function installStarProbe(page: Page): Promise<void> {
       panelSeenRunning: boolean;
       starSettledAt: number | null;
       panelSettledAt: number | null;
+      tickAt: number | null;
     }
     const holder = window as unknown as { __psStarProbe?: Probe };
     const probe: Probe = {
@@ -168,6 +179,7 @@ async function installStarProbe(page: Page): Promise<void> {
       panelSeenRunning: false,
       starSettledAt: null,
       panelSettledAt: null,
+      tickAt: null,
     };
     holder.__psStarProbe = probe;
     window.addEventListener(
@@ -201,12 +213,19 @@ async function installStarProbe(page: Page): Promise<void> {
     const isRunning = (node: Element): boolean =>
       node.getAnimations().some((animation) => animation.playState === "running");
 
+    // QA-021: the observer's own previous tick, so the unhide snapshot under it can
+    // be bounded by the interval this page actually experienced at that frame.
+    let lastTick: number | null = null;
     const tick = (): void => {
       const overlay = document.querySelector(".ps-overlay");
       const visible = overlay !== null && !overlay.hasAttribute("hidden");
       const now = performance.now();
       if (visible && probe.unhideAt === null) {
         probe.unhideAt = now;
+        // QA-021: the interval this observer actually experienced at the detection
+        // frame — the measured resolution of the snapshot below, not a grid sampled
+        // at page open.
+        probe.tickAt = lastTick;
         const dialog = document.querySelector(".ps-dialog");
         probe.panelOpacity =
           dialog === null ? null : Number.parseFloat(getComputedStyle(dialog).opacity);
@@ -241,6 +260,7 @@ async function installStarProbe(page: Page): Promise<void> {
         }
       }
       if (probe.starSettledAt !== null && probe.panelSettledAt !== null) return;
+      lastTick = now;
       requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
@@ -521,6 +541,9 @@ test.describe("§6.6 B13 / §5.5 SF-6 A-12 — the field's one motion", () => {
     page,
   }) => {
     test.setTimeout(120_000);
+    // QA-021 starvation arm (opt-in, inert unless set): the row's own acceptance
+    // includes a throttled green — see `helpers/throttle.ts`.
+    await installCpuThrottle(page);
     await openLevel(page, levelUrl(A_REF.id));
     await settle(page);
     const grid = await measureFrameGrid(page);
@@ -553,6 +576,13 @@ test.describe("§6.6 B13 / §5.5 SF-6 A-12 — the field's one motion", () => {
     const settled = await readProbe(page);
     expect(settled).not.toBeNull();
     if (settled === null) return;
+    // The observer's resolution *at the unhide frame* (self-measured, QA-021): the
+    // interval this page actually experienced when it detected the overlay, instead of
+    // a grid sampled at page open — the assumption CDP CPU throttling broke.
+    const frameAtUnhide =
+      settled.unhideAt !== null && settled.tickAt !== null
+        ? settled.unhideAt - settled.tickAt
+        : grid.gridMs;
     const earned = settled.slots.filter((slot) => slot.state === "earned");
     expect(earned.length, "the boundary run is 3★").toBe(3);
     // The probe is the witness that the fill-in *happened*: it watched the earned
@@ -560,9 +590,11 @@ test.describe("§6.6 B13 / §5.5 SF-6 A-12 — the field's one motion", () => {
     expect(settled.starSeenRunning, "the fill-in was observed running").toBe(true);
     expect(settled.starSettledAt, "…and observed to finish").not.toBeNull();
     // On the unhide frame the fill-in is at its very start (the `both` fill holds the
-    // 0.86 from-state while the animation is still pending), not part-way through.
+    // 0.86 from-state while the animation is still pending), not part-way through. The
+    // tolerance is the detection frame's own interval — the one frame the observer can
+    // be late by — not a wall-clock offset from the win.
     for (const slot of earned) {
-      expect(slot.animation?.currentTime ?? 99, "the fill-in is at its start on the unhide frame").toBeLessThanOrEqual(2 * grid.gridMs);
+      expect(slot.animation?.currentTime ?? 99, "the fill-in is at its start on the unhide frame").toBeLessThanOrEqual(2 * frameAtUnhide);
     }
 
     // …and the record read back **after** settling: one 120 ms one-shot per mark.
@@ -589,31 +621,117 @@ test.describe("§6.6 B13 / §5.5 SF-6 A-12 — the field's one motion", () => {
     expect(settledScale, "…and lands at exactly 1").toBeCloseTo(1, 2);
     expect(await runningStarAnimations(page), "a finished fill-in leaves nothing running").toBe(0);
 
-    // The observed window, banded on *this* machine's frame grid — the same shape the
-    // standing B13 row (portal-mount.spec.ts) uses: the exact 120 ms is pinned as data
-    // and in the animation record above, while a rAF observer can only see the settle
-    // on a later frame. The declared window cannot pass unobserved (it cannot settle
-    // before 120 ms), and the observer's own edge adds at most a frame at each end.
+    // ── The two beats, compared on the animations' own document timelines ───────
+    // QA-021 rewrite (cloud round 39018968002): this comparison used to be
+    // `starSettledAt - unhideAt < panelSettledAt - unhideAt` — two *separate* rAF
+    // observations, each one frame late on a grid that coarsens with load, so the
+    // panel's own late onset and the observer's per-beat edge slop could flip it.
+    // The claim is causal, so it is now read from the animations themselves:
+    // `startTime + duration` on the document timeline. Both beats are created in the
+    // win pipeline's single style recalc, so their `startTime`s are the same instant
+    // (measured identical to the sub-microsecond at CDP rates 4/10/20) and the
+    // difference below is exact — 160 - 120 = 40 ms of margin, no frame grid in it.
+    const panelTimelines = await animationsOn(page, ".ps-dialog");
+    const starTimelines = await animationsOn(page, '.ps-star[data-state="earned"]');
+    const panelEntrance = panelTimelines.find((entry) => entry.name === "ps-panel-in");
+    const starFill = starTimelines[0];
+    const starEnds =
+      starFill?.startTime === null || starFill?.startTime === undefined || starFill.durationMs === null
+        ? null
+        : starFill.startTime + starFill.durationMs;
+    const panelEnds =
+      panelEntrance?.startTime === null ||
+      panelEntrance?.startTime === undefined ||
+      panelEntrance.durationMs === null
+        ? null
+        : panelEntrance.startTime + panelEntrance.durationMs;
+    // Where the panel's own entrance stands when the fill-in ends, as a fraction of
+    // that entrance — 0.75 by declaration, and strictly inside it.
+    const panelFractionAtStarEnd =
+      panelEntrance?.startTime === null ||
+      panelEntrance?.startTime === undefined ||
+      panelEntrance.durationMs === null ||
+      starEnds === null
+        ? null
+        : (starEnds - panelEntrance.startTime) / panelEntrance.durationMs;
+    // The observer's resolution at the unhide frame is computed above, from the
+    // probe's own recorded interval (never a grid sampled at page open).
+    const startSkewMs =
+      starFill?.startTime === null ||
+      starFill?.startTime === undefined ||
+      panelEntrance?.startTime === null ||
+      panelEntrance?.startTime === undefined
+        ? null
+        : Math.abs(starFill.startTime - panelEntrance.startTime);
+
     const fillMs = settled.starSettledAt === null || settled.unhideAt === null ? Number.NaN : settled.starSettledAt - settled.unhideAt;
     const panelMs = settled.panelSettledAt === null || settled.unhideAt === null ? Number.NaN : settled.panelSettledAt - settled.unhideAt;
     const delay = settled.keyAt === null || settled.unhideAt === null ? Number.NaN : settled.unhideAt - settled.keyAt;
     // eslint-disable-next-line no-console
     console.log(
-      `[QA-019] A-12 timing grid=${r2(grid.gridMs)}ms panelDelay=${r2(delay)}ms fillMs=${r2(fillMs)}ms ` +
-        `panelMs=${r2(panelMs)}ms fillExcess=${r2(fillMs - 120)}ms (3 frames = ${r2(3 * grid.gridMs)}ms) ` +
+      `[QA-021] A-12 timing grid=${r2(grid.gridMs)}ms frameAtUnhide=${r2(frameAtUnhide)}ms panelDelay=${r2(delay)}ms ` +
+        `fillMs=${r2(fillMs)}ms panelMs=${r2(panelMs)}ms fillExcess=${r2(fillMs - 120)}ms ` +
+        `starTimeline=[start=${r2(starFill?.startTime ?? Number.NaN)},dur=${String(starFill?.durationMs)},end=${r2(starEnds ?? Number.NaN)},state=${starFill?.playState ?? "none"}] ` +
+        `panelTimeline=[start=${r2(panelEntrance?.startTime ?? Number.NaN)},dur=${String(panelEntrance?.durationMs)},end=${r2(panelEnds ?? Number.NaN)},state=${panelEntrance?.playState ?? "none"}] ` +
+        `startSkew=${r2(startSkewMs ?? Number.NaN)}ms margin=${r2((panelEnds ?? Number.NaN) - (starEnds ?? Number.NaN))}ms ` +
+        `panelFracAtStarEnd=${panelFractionAtStarEnd === null ? "null" : panelFractionAtStarEnd.toFixed(4)} ` +
         `firstFrameScale=${r2(firstFrameScale)} settledScale=${r2(settledScale)} ` +
         `keyTimes={${earned.map((slot) => `${slot.animation?.playState ?? "none"}@${r2(slot.animation?.currentTime ?? -1)}`).join("|")}} ` +
         `opacityAtUnhide=${String(settled.panelOpacity)} ` +
         `nextHit=${settled.nextHit ?? "null"} nextUnder=${settled.nextUnder ?? "null"} nextBox=${JSON.stringify(settled.nextBox)} viewport=${JSON.stringify(settled.viewport)} nextDisabled=${String(settled.nextDisabled)} startTimes=${[...startTimes].join(",")}`,
     );
+    // The observer's lower bound is still a real, causal statement: the fill-in
+    // cannot settle before its own 120 ms window has elapsed. Its *upper* bound is
+    // deliberately NOT asserted any more: `starSettledAt` is the frame the observer
+    // *noticed* the end, one grid-length late, and that grid is exactly the quantity
+    // CDP throttling moves — measured 74.5 ms of "excess" against a 3-frame envelope
+    // of 71.7 ms at rate 4, a red that says nothing about the shipped animation. The
+    // end of the window is now pinned where it cannot move: the animation's own
+    // `duration` and `currentTime` (asserted above and below).
     expect(fillMs, "the fill-in cannot settle before its own 120 ms window ends").toBeGreaterThanOrEqual(120);
-    expect(fillMs - 120, "…and no more than three of this machine's frames after it").toBeLessThanOrEqual(3 * grid.gridMs);
-    // …and it is done *inside* the panel's own entrance (the structural half — the
-    // declared 120 ms is shorter than the declared 160 ms entrance — is asserted above
-    // on the computed style), so the field rides B13 rather than outliving it.
-    expect(fillMs, "the fill-in ends inside the panel's own entrance").toBeLessThan(panelMs);
-    expect(panelMs, "the entrance is its declared 160 ms, within frames").toBeGreaterThanOrEqual(160);
-    expect(panelMs, "…and not longer").toBeLessThanOrEqual(160 + 3 * grid.gridMs);
+    expect(panelMs, "the entrance cannot settle before its own 160 ms window ends").toBeGreaterThanOrEqual(160);
+    // ── The observed half: both beats on the animations' own timelines ─────────
+    expect(panelEntrance, "the panel's entrance animation is present after the win").toBeDefined();
+    expect(starFill, "the earned mark's fill-in is present after the win").toBeDefined();
+    expect(
+      starFill?.name,
+      "the fill-in is the one-shot `ps-star-in`",
+    ).toBe("ps-star-in");
+    expect(panelEntrance?.name, "…and the entrance is `ps-panel-in`").toBe("ps-panel-in");
+    expect(vars.panelDuration, "the entrance's declared duration, as data").toBe("0.16s");
+    // Exact durations, read from the animations themselves — no observer edge in them.
+    // A rogue *slow* fill (the post-panel-fading star) or a rogue slow entrance shows
+    // up here at once, and both beats are `finished` at their own end values.
+    expect(starFill?.durationMs, "the fill-in's own computed duration").toBe(120);
+    expect(panelEntrance?.durationMs, "the entrance's own computed duration").toBe(160);
+    expect(starFill?.playState, "the fill-in is finished, not looping").toBe("finished");
+    expect(panelEntrance?.playState, "…and so is the entrance").toBe("finished");
+    expect(starFill?.currentTime, "the fill-in sits at the end of its own window").toBe(120);
+    expect(panelEntrance?.currentTime, "…and the entrance at the end of its").toBe(160);
+    // …and the causal order SF-6 asserts: the fill-in ends **inside** the panel's own
+    // entrance. Positive control, named: a fill-in that outlives the flourish (a
+    // 400 ms `ps-star-in`, or a per-star delay) pushes `panelEnds - starEnds` negative
+    // / the fraction past 1 and fails here; a fill that never runs fails the
+    // `finished`/`currentTime` pair above; the release-leg style rogue cannot appear
+    // at all because these are the animations of the elements themselves.
+    expect(starEnds, "the fill-in's end on the document timeline").not.toBeNull();
+    expect(panelEnds, "…and the entrance's").not.toBeNull();
+    expect(
+      (panelEnds ?? 0) - (starEnds ?? 0),
+      "the fill-in ends inside the panel's own entrance",
+    ).toBeGreaterThan(0);
+    expect(
+      startSkewMs,
+      "both beats start on the same document-timeline instant (one style recalc)",
+    ).toBeLessThanOrEqual(frameAtUnhide);
+    expect(
+      panelFractionAtStarEnd,
+      "the entrance is still running when the fill-in ends (< 1 of its own window)",
+    ).toBeLessThan(1);
+    expect(
+      panelFractionAtStarEnd,
+      "…and the fill-in really does ride it (the entrance is not nearly over yet)",
+    ).toBeGreaterThan(0.5);
 
     // B13's law, unchanged by the added row: Next is tappable on the first frame.
     expect(settled.nextHit, "the element under Next's centre is Next, on the unhide frame").toBe("Next");
