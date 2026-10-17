@@ -48,6 +48,8 @@ import {
   hud,
   installPixelReadback,
   openLevel,
+  phaseOf,
+  pressRestartKey,
   pressRoute,
   settle,
 } from "./helpers/game";
@@ -73,7 +75,13 @@ import {
   starAnimations,
   storedBytes,
 } from "./helpers/star-field";
-import { captureClip, fieldCensus, gridDiff, rowIsThreeSlots } from "./helpers/star-pixels";
+import {
+  canvasInkProximity,
+  captureClip,
+  fieldCensus,
+  gridDiff,
+  rowIsThreeSlots,
+} from "./helpers/star-pixels";
 
 /* ──────────────────────────── the frame probe ──────────────────────────── */
 
@@ -270,7 +278,13 @@ test.describe("§5.5 A-11 — the field is post-win only, and the frozen strings
   test("absent while the board is live, and a win's title/body are character-identical", async ({
     page,
   }) => {
+    // QA-020's canvas channel below reads presented pixels, so the read-back has to be
+    // armed **before navigation** (`preserveDrawingBuffer: true`; without it the copy is
+    // the cleared buffer and every probe reads one flat colour — which the goal-cell
+    // control in this row would then refuse, not hide).
+    await installPixelReadback(page);
     await openLevel(page, levelUrl(A_REF.id));
+    const geometry = await boardGeometry(page, A_REF.level);
 
     // ── the negative half: NOTHING of the field exists during play (SF-5's "never")
     const live = await page.evaluate(() => ({
@@ -299,6 +313,67 @@ test.describe("§5.5 A-11 — the field is post-win only, and the frozen strings
       `[QA-019] A-11 first clear L${String(A_REF.id)} par=${String(A_REF.par)} moves=${String(moves)} ` +
         `title="${strings.title}" body="${strings.body}"`,
     );
+
+    // ── the canvas half of "never during play" (QA-020's named gap, closed) ──────
+    // The five DOM clauses above are blind to a star painted *into the board canvas*:
+    // nothing in this suite read those pixels for star ink. The field's own ink is the
+    // `--ps-goal` token (`hud-styles.ts:319`), so the same colour reference classifies
+    // both channels. The verdict is stated on the **closest pixel**, and the threshold
+    // comes from this canvas's own bytes: the board's goal figure is drawn in the same
+    // gold family, so its cell is the positive control that proves the reference is
+    // reachable here (measured 26.50 device px away on the desk pitch — a `>= 24`
+    // tolerance that counted nothing anywhere would be a dead instrument, not a pass).
+    const fieldRect = await page.evaluate(() => {
+      const dialog = document.querySelector(".ps-dialog")?.getBoundingClientRect();
+      const stars = document.querySelector(".ps-stars")?.getBoundingClientRect();
+      const box = (r: DOMRect | undefined) => (r === undefined ? null : { x: r.x, y: r.y, w: r.width, h: r.height });
+      return { dialog: box(dialog), stars: box(stars) };
+    });
+    expect(fieldRect.dialog, "the field's own location was on screen at the win").not.toBeNull();
+    if (fieldRect.dialog === null) return;
+
+    // Back to a live board: the claim is about *play*, and the panel's box is the same
+    // one it will occupy at the next win (the card is a fixed 320 CSS px wide).
+    await pressRestartKey(page);
+    await settle(page);
+    await settle(page);
+    expect((await hud(page)).won).toBe(false);
+
+    const phase = phaseOf(await hud(page));
+    const ink = hexToRgb(theme(phase).obj.goal);
+    const goalCell = {
+      x: Math.round(geometry.layout.grid.x + A_REF.level.goal[0] * geometry.layout.cellSize),
+      y: Math.round(geometry.layout.grid.y + A_REF.level.goal[1] * geometry.layout.cellSize),
+      width: Math.round(geometry.layout.cellSize),
+      height: Math.round(geometry.layout.cellSize),
+    };
+    const goalProbe = await canvasInkProximity(page, { rect: goalCell, ink, tolerance: 24 });
+    // The reference's real composite distance on this canvas, clamped into the suite's
+    // own colour slack [24, 48]: looser than 24 is allowed (the goal is a *raster*, and
+    // antialiasing composites it), but the threshold may never grow to "everything near"
+    // — that is exactly how a dead channel would masquerade as a pass.
+    const tolerance = Math.min(48, Math.max(24, Math.round(goalProbe.minDistance * 1.5)));
+    const control = await canvasInkProximity(page, { rect: goalCell, ink, tolerance });
+    const fieldProbe = await canvasInkProximity(page, {
+      rect: {
+        x: fieldRect.dialog.x,
+        y: fieldRect.dialog.y,
+        width: fieldRect.dialog.w,
+        height: fieldRect.dialog.h,
+      },
+      ink,
+      tolerance,
+    });
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-020] A-11 canvas channel phase=${phase} ink=${String(ink)} goalCell=${[goalCell.x, goalCell.y, goalCell.width, goalCell.height].join(",")} ` +
+        `goalMinDistance=${goalProbe.minDistance.toFixed(2)} tolerance=${String(tolerance)} controlNear=${String(control.near)} ` +
+        `field=${[Math.round(fieldRect.dialog.x), Math.round(fieldRect.dialog.y), Math.round(fieldRect.dialog.w), Math.round(fieldRect.dialog.h)].join(",")} ` +
+        `fieldNear=${String(fieldProbe.near)} fieldMinDistance=${fieldProbe.minDistance.toFixed(2)} fieldPx=${String(fieldProbe.total)}`,
+    );
+    expect(control.near, "the goal's own gold is on this canvas — the detector is live").toBeGreaterThan(0);
+    expect(fieldProbe.near, "no star ink is painted where the field will be").toBe(0);
+    expect(fieldProbe.minDistance, "…and the closest pixel is far outside the mark's own gold").toBeGreaterThan(tolerance);
   });
 
   test("the field is one aria-hidden row of three slots, 3 × 20 px + 2 gaps", async ({ page }) => {

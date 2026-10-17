@@ -27,18 +27,20 @@ import { isAltCell } from "@/game/renderer/grid-mapping";
 import { LAYOUT, theme } from "@/game/theme/tokens";
 
 import { contrastRGB, hexToRgb, servedPngCensus } from "./helpers/art";
-import { bboxWithin, captureFrame, cellCensus, frameDiffAfter, profileDelta } from "./helpers/frames";
+import { bboxWithin, cellCensus, profileDelta } from "./helpers/frames";
 import type { CellCensus, RgbBytes } from "./helpers/frames";
 import {
   boardGeometry,
   hud,
   installPixelReadback,
   openLevel,
+  phaseOf,
   pressDirection,
   settle,
 } from "./helpers/game";
 import type { BoardGeometry } from "./helpers/game";
 import { levelUrl, loadReferenceLevels, refOf } from "./helpers/levels";
+import { idleStillnessProof } from "./helpers/pulse-schedule";
 
 const REFS = loadReferenceLevels();
 const PORTAL_LEVEL_ID = 11;
@@ -149,24 +151,39 @@ test.describe("§3.1e A-2 (mobile pitch) — the signed colour is what the board
 });
 
 test.describe("§6.6 R-M1 / A-8 (mobile pitch) — the idle board moves only inside the goal", () => {
-  test("two frames 2 s apart differ only inside the goal's own cell", async ({ page }) => {
+  test("three frames across one goal-pulse period differ only inside the goal's own cell", async ({ page }) => {
     await installPixelReadback(page);
     await openLevel(page, levelUrl(PORTAL_LEVEL_ID));
     const geometry = await boardGeometry(page, PORTAL.level);
     await settle(page);
     await settle(page);
 
-    await captureFrame(page);
-    const diff = await frameDiffAfter(page, 2000);
+    // QA-020 — the same phase-invariance as the desk row (`helpers/pulse-schedule.ts`
+    // carries the derivation and the measurements): the old single 2 s difference was
+    // `A·|cos(θ + 150°)|` in the *capture* phase θ, so it read `changed=0` on some
+    // schedules and ~1600 on others. Three samples 800 ms apart span a whole period,
+    // and the best of three phases 120° apart always carries ≥ 0.866 of the pulse.
+    const phase = phaseOf(await hud(page));
+    const still = await idleStillnessProof(page, {
+      centre: geometry.cellCenterDevice(PORTAL.level.goal[0], PORTAL.level.goal[1]),
+      sampleRadius: Math.round(geometry.layout.cellSize * 0.45),
+      ground: hexToRgb(groundOf(phase, PORTAL.level.goal[0], PORTAL.level.goal[1])),
+    });
     const rect = cellRect(geometry, PORTAL.level.goal);
     // eslint-disable-next-line no-console
     console.log(
-      `[QA-017] A-8 mobile idle changed=${String(diff.changed)} maxDelta=${String(diff.maxDelta)} ` +
-        `bbox=${diff.bbox === null ? "null" : [diff.bbox.x0, diff.bbox.y0, diff.bbox.x1, diff.bbox.y1].join(",")} ` +
-        `goalCell=${[rect.x, rect.y, rect.w, rect.h].join(",")}`,
+      `[QA-020] A-8 mobile idle samples=${still.samples.map((d) => String(d.changed)).join("/")} ` +
+        `peak=${String(still.peak)} floor=${String(still.floor)} goalRadius=${still.goalRadius.toFixed(2)} ` +
+        `cell=${[rect.x, rect.y, rect.w, rect.h].join(",")} spanMs=${still.spanMs.toFixed(2)}`,
     );
 
-    expect(diff.changed).toBeGreaterThan(0);
-    expect(bboxWithin(diff.bbox, rect, 2), "every moved pixel is inside the goal's cell").toBe(true);
+    expect(still.goalRadius, "the goal's figure is painted, so the floor is measured not typed").toBeGreaterThan(0);
+    expect(still.peak, "the goal's own pulse keeps the board alive").toBeGreaterThanOrEqual(still.floor);
+    still.samples.forEach((diff, index) => {
+      expect(
+        bboxWithin(diff.bbox, rect, 2),
+        `sample ${String(index + 1)} of ${String(still.samples.length)}: every moved pixel is inside the goal's cell`,
+      ).toBe(true);
+    });
   });
 });

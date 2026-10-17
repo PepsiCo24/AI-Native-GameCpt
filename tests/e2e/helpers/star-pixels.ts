@@ -414,3 +414,102 @@ export function rowIsThreeSlots(
     )
   );
 }
+
+/* ────────────── the canvas channel: is a star painted on the board? ───────── */
+
+/**
+ * **The half of A-11's "never during play" that the DOM cannot see** (QA-020).
+ *
+ * The field is a DOM row, so every existing row reads it through the DOM (and, for
+ * its marks, through a screenshot of its own box). That leaves one named gap: a
+ * renderer that painted a star **into the canvas** — the channel `helpers/frames.ts`
+ * reads — would sail past all of them. This is the cheap probe the ticket asked for:
+ * read the live board canvas and answer "how close does any pixel under a given rect
+ * come to the mark's own ink reference".
+ *
+ * ── Why a *distance*, not a count of "star pixels" ───────────────────────────
+ * A count needs a threshold, and a threshold typed into a test is a made-up number.
+ * So the verdict is stated on the **closest pixel**, and the caller supplies the
+ * threshold from the page's own bytes: the board's own goal figure is drawn in the
+ * same `obj.goal` family, so measuring its cell gives the reference's real composite
+ * distance on this canvas (measured 26.50 px at the desk pitch) — the positive control
+ * that proves the reference is *reachable* here, so "no pixel is near the ink" cannot
+ * be vacuous.
+ *
+ * ── Why the rect is page CSS px ──────────────────────────────────────────────
+ * The caller knows the field's location in the DOM's own coordinates (a
+ * `getBoundingClientRect` while the panel is up). The canvas is not at the page origin
+ * (the HUD bars sit above it, measured y = 56 at 1280×900), so the rect is mapped
+ * through the canvas's own box and backing store — the offset is a measured fact here
+ * rather than an assumption in the caller.
+ *
+ * ── What this channel still cannot say ───────────────────────────────────────
+ * The mark's *knock-out* is `ground.plate`, a token that legitimately covers board
+ * areas, so "no knock-out colour" is not a falsifier at all; and a shape test (the
+ * 5-fold silhouette) would need a detector whose specificity against the board's own
+ * gold annulus is unverified — an instrument that could never fire is worse than an
+ * honest colour channel. Both are recorded in `tests/e2e/README.md` §1.14 rather than
+ * papered over.
+ */
+export interface CanvasProximity {
+  /** The sampled rect in canvas **device** px. */
+  readonly device: { readonly x0: number; readonly y0: number; readonly width: number; readonly height: number };
+  /** Pixels sampled. */
+  readonly total: number;
+  /** Pixels within `tolerance` of `ink` (Euclidean over the gamma-encoded bytes). */
+  readonly near: number;
+  /** The closest pixel's distance to `ink` — the number the verdict rides. */
+  readonly minDistance: number;
+}
+
+export interface CanvasProximitySpec {
+  /** Region in **page CSS px** (a `getBoundingClientRect`). */
+  readonly rect: Clip;
+  /** The mark's ink reference, from `theme(phase)` — never a typed hex. */
+  readonly ink: Rgb;
+  /** Counts pixels within this distance. */
+  readonly tolerance: number;
+}
+
+/** Read the board canvas under `rect` and measure its proximity to one ink reference. */
+export async function canvasInkProximity(page: Page, spec: CanvasProximitySpec): Promise<CanvasProximity> {
+  return page.evaluate(
+    (input: { rect: Clip; ink: Rgb; tolerance: number }): CanvasProximity => {
+      const canvas = document.querySelector("canvas");
+      if (canvas === null) throw new Error("[star-pixels] no canvas to read");
+      const box = canvas.getBoundingClientRect();
+      const sx = canvas.width / box.width;
+      const sy = canvas.height / box.height;
+      const copy = document.createElement("canvas");
+      copy.width = canvas.width;
+      copy.height = canvas.height;
+      const ctx = copy.getContext("2d", { willReadFrequently: true });
+      if (ctx === null) throw new Error("[star-pixels] no 2d context to read the canvas with");
+      ctx.drawImage(canvas, 0, 0);
+
+      const x0 = Math.max(0, Math.round((input.rect.x - box.x) * sx));
+      const y0 = Math.max(0, Math.round((input.rect.y - box.y) * sy));
+      const width = Math.max(1, Math.min(Math.round(input.rect.width * sx), copy.width - x0));
+      const height = Math.max(1, Math.min(Math.round(input.rect.height * sy), copy.height - y0));
+      const data = ctx.getImageData(x0, y0, width, height).data;
+      let near = 0;
+      let minDistance = Number.POSITIVE_INFINITY;
+      for (let i = 0; i < data.length; i += 4) {
+        const distance = Math.hypot(
+          (data[i] ?? 0) - input.ink[0],
+          (data[i + 1] ?? 0) - input.ink[1],
+          (data[i + 2] ?? 0) - input.ink[2],
+        );
+        if (distance < minDistance) minDistance = distance;
+        if (distance <= input.tolerance) near += 1;
+      }
+      return {
+        device: { x0, y0, width, height },
+        total: data.length / 4,
+        near,
+        minDistance: Number.isFinite(minDistance) ? minDistance : Number.NaN,
+      };
+    },
+    spec,
+  );
+}

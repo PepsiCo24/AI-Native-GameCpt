@@ -46,7 +46,7 @@
  * | A-4 | unit tier (box 0.888 / centre pivot / slot order) — the painted *size* is re-measured here in A-1's bbox agreement |
  * | A-5 | rAF transient capture on the far end + the pair's settled figure agreement |
  * | A-7 | the pressed button's own transform samples + the panel's onset, animation and first-frame input |
- * | A-8 | two presented frames 2 s apart, union bbox vs the goal's own cell rect |
+ * | A-8 | three presented frames across one goal-pulse period, union bbox vs the goal's own cell rect (phase-invariant since QA-020) |
  * | A-9 | the same rows under `emulateMedia(reducedMotion: reduce)` |
  * | A-10 | idle on a board carrying walls/echoes/doors/switches/portals + entry/Undo/Restart + the DOM's own stillness |
  */
@@ -81,6 +81,7 @@ import {
   hud,
   installPixelReadback,
   openLevel,
+  phaseOf,
   pressDirection,
   pressRestartKey,
   pressRoute,
@@ -90,6 +91,7 @@ import {
 } from "./helpers/game";
 import type { BoardGeometry } from "./helpers/game";
 import { levelUrl, loadReferenceLevels, refOf } from "./helpers/levels";
+import { idleStillnessProof } from "./helpers/pulse-schedule";
 
 const REFS = loadReferenceLevels();
 /** L11 is the dataset's portal debut (M2) and the board every §3.1e row was audited on. */
@@ -1266,7 +1268,7 @@ async function domSnapshot(page: Page): Promise<Record<string, unknown>> {
 }
 
 test.describe("§6.6 R-M1 / A-8 + A-10 — one magnet, and nothing else moves", () => {
-  test("two frames 2 s apart differ only inside the goal's own cell (L11: portals, switch, door, walls)", async ({
+  test("three frames across one goal-pulse period differ only inside the goal's own cell (L11: portals, switch, door, walls)", async ({
     page,
   }) => {
     await installPixelReadback(page);
@@ -1277,21 +1279,53 @@ test.describe("§6.6 R-M1 / A-8 + A-10 — one magnet, and nothing else moves", 
     await settle(page);
     await settle(page);
 
-    await captureFrame(page);
-    const diff = await frameDiffAfter(page, 2000);
+    // ── QA-020: the sample schedule is phase-invariant, the row's meaning is not
+    //    changed. The old row read ONE 2 s difference and required `changed > 0`;
+    //    the goal's idle pulse (`board-view.ts:973` feeds `scene.time.now` into
+    //    R-C8's wall-clock `1 + A·sin(2πt/2400)` — `objects/goal.ts:32-33,59-61`)
+    //    makes that difference `A·|cos(θ + 150°)|`, a function of the *capture*
+    //    phase θ the runner does not control, so the row read `changed=0
+    //    maxDelta=0` whenever the start landed near θ = −60°/120° (QA-019 saw it in
+    //    1 of 5 runs; QA-020's phase sweep reproduced it on the frozen bytes at
+    //    page-clock residues 713 ms and 716 ms). Three samples 800 ms apart span a
+    //    whole period, and over any θ the best of three phases 120° apart carries
+    //    ≥ 0.866 of the pulse amplitude — the derivation, and the measured
+    //    `changed=1688/1347/0` that puts the assertion on the peak, live in
+    //    `helpers/pulse-schedule.ts`.
+    const phase = phaseOf(await hud(page));
+    const still = await idleStillnessProof(page, {
+      centre: geometry.cellCenterDevice(PORTAL.level.goal[0], PORTAL.level.goal[1]),
+      sampleRadius: Math.round(geometry.layout.cellSize * 0.45),
+      ground: hexToRgb(groundOf(phase, PORTAL.level.goal[0], PORTAL.level.goal[1])),
+    });
     const rect = goalRect(geometry, PORTAL.level.goal);
     // eslint-disable-next-line no-console
     console.log(
-      `[QA-017] A-8 idle diff changed=${String(diff.changed)} total=${String(diff.total)} maxDelta=${String(diff.maxDelta)} ` +
-        `bbox=${diff.bbox === null ? "null" : [diff.bbox.x0, diff.bbox.y0, diff.bbox.x1, diff.bbox.y1].join(",")} ` +
-        `goalCell=${[rect.x, rect.y, rect.w, rect.h].join(",")} elapsedMs=${r2(diff.elapsedMs)}`,
+      `[QA-020] A-8 idle samples=${still.samples.map((d) => String(d.changed)).join("/")} ` +
+        `peak=${String(still.peak)} spread=${String(still.spread)} floor=${String(still.floor)} ` +
+        `goalRadius=${still.goalRadius.toFixed(2)} guaranteedΔscale=${(still.guaranteedDeltaScale * 100).toFixed(2)}% ` +
+        `bboxes=${still.samples.map((d) => (d.bbox === null ? "null" : [d.bbox.x0, d.bbox.y0, d.bbox.x1, d.bbox.y1].join(","))).join("|")} ` +
+        `goalCell=${[rect.x, rect.y, rect.w, rect.h].join(",")} spanMs=${r2(still.spanMs)}`,
     );
 
-    expect(diff.changed, "the goal's own pulse keeps the board alive").toBeGreaterThan(0);
-    expect(diff.bbox, "the union bbox is reported, never assumed").not.toBeNull();
+    // The goal's own figure is on the board — the floor below is *measured* from the
+    // painted radius, so this is also the census's own positive control.
+    expect(still.goalRadius, "the goal's figure is painted, so the floor is measured not typed").toBeGreaterThan(0);
+    // The goal's pulse keeps the board alive: at least one sample of the trio must
+    // clear the derated analytic band, at *every* phase (see the helper's header).
+    expect(still.peak, "the goal's own pulse keeps the board alive").toBeGreaterThanOrEqual(still.floor);
+    // …and the union bbox is still reported, never assumed: the peak's own sample
+    // carries one (a `null` here with a peak above the floor would be a contradiction).
+    expect(still.samples.filter((d) => d.bbox !== null).length, "the union bbox is reported, never assumed").toBeGreaterThan(0);
     // R-M1, as a falsifier: a portal breathing, a grid line shimmering, an echo fading
-    // or a HUD beat on the canvas would each land outside this rect.
-    expect(bboxWithin(diff.bbox, rect, 2), "every moved pixel is inside the goal's cell").toBe(true);
+    // or a HUD beat on the canvas would each land outside this rect — and on **every**
+    // sample, not on one lucky one.
+    still.samples.forEach((diff, index) => {
+      expect(
+        bboxWithin(diff.bbox, rect, 2),
+        `sample ${String(index + 1)} of ${String(still.samples.length)}: every moved pixel is inside the goal's cell`,
+      ).toBe(true);
+    });
   });
 
   test("A-10 — entry, Undo and Restart are not events: the board is still after the state lands", async ({

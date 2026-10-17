@@ -1417,15 +1417,138 @@ non-zero delta), or keep `≥ 0` and assert the pulse's presence as a *range* ov
 samples. **No `src/**` byte was touched, and nothing in QA-019's own 14 rows depends on
 it** (the star field's stillness rows are a DOM row, not the canvas pulse).
 
+> **Fix note (QA-020, 2026-10-17):** the flake above is closed — not by QA-019's
+> first-listed option, which the measurement in §1.14 shows keeps its own null phase
+> (`sin(θ+π) = −sin θ`), but by the three-sample form: a trio 800 ms apart with the
+> assertion on the **peak** and a *derived* floor as the positive control. §1.13's
+> `changed=0` reproduce line is left as it stands (historical snapshot); the row it
+> describes no longer exists in that shape.
+
 **What this ticket does not claim.** (a) The "never during play" clause is asserted on the
 **DOM** (no `.ps-stars`, no `data-state`, nothing in `.ps-top`, and the frozen strings
 carry no star glyph) — the canvas is not scanned for a star-shaped ink cloud, so a
-renderer that *drew* one would not fail these rows; named as a gap. (b) No verdict on how
+renderer that *drew* one would not fail these rows; named as a gap. **That gap's colour
+half was closed by QA-020 (§1.14): A-11's row now also reads the board canvas under the
+field's own box and measures the closest pixel to the mark's ink, with the goal's own gold
+as the detector's live positive control — the *shape* half remains a reported gap.**
+(b) No verdict on how
 the field *looks* (Asset Gate + UI/Art authority), and no claim that stars make the game
 more fun. (c) No full-suite round was taken for this ticket — the dispatch asked for
 targeted runs; the 14 new rows ran green in **1.0 m / 0 retries** (`PS_E2E_PORT=5251
 npx playwright test tests/e2e/star-field.spec.ts tests/e2e/star-field.mobile.spec.ts
 --retries=0` → `14 passed`).
+
+---
+
+### 1.14 QA-020 — A-8's idle row was phase-dependent, and the canvas star gap it closed
+
+**Reproduce.** The booked symptom (QA-019, §1.13): `portal-mount.spec.ts`'s A-8 row read
+`changed=0` in one schedule and `513…909` in another. It was reproduced on the frozen
+bytes by a phase-indexed probe — the capture's pulse phase is tracked as the residue of
+the page's own `performance.now()`, and the diff was swept across the cycle:
+
+```
+S=2000 (the row as shipped)   changed 1037 1052 816 542 1024 1011 348 [0] 277 985 1050 644 706 914
+   …aimed walk through the null: residue 687→127, 716→[0] maxDelta=0 bbox=null, 754→135, 806→309, 851→560
+S=1200 (QA-019's option (a))  changed 1521 950 1641 1637 1208 1165 1521 1757 481 1796 1326 706 716 1255
+   …aimed walk: 2302→102 maxDelta=80, 2315→88 maxDelta=40   (two orders below the row's own ~1600)
+trio 800+800+800, 12 phases    peaks 1554 1668 1688 1641 1684 1673 1670 1611 1541 1481 1457 1673
+   …individual samples DO reach 0 (`1688/1347/0`, `1400/126/1457`); every bbox inside the goal cell (36/36)
+```
+
+**Root cause — arithmetic, not a rendering accident.** The pulse is
+`1 + A·sin(2πt/2400)` (`src/game/renderer/objects/goal.ts:32-33,59-61`), fed the wall
+clock at `board-view.ts:973`, so two samples a spacing `S` apart differ by
+`A·|sin(θ+2πS/P) − sin θ| = A·2|cos(θ + πS/P)|·|sin(πS/P)|`: an **amplitude that is a
+cosine of the capture phase θ**, which the runner picks, not the test. At `S = 2000`
+that is `A·|cos(θ+150°)|` — exactly the form the ticket booked — and it is 0 at
+θ = −60°/120°: the two frames are then pixel-identical (`maxDelta=0`). The premise behind
+option (a) does not hold either: half a period returns the sine to its **negative**
+(`sin(θ+π) = −sin θ`), so `S = 1200` keeps its own null phase (measured 88 above).
+*No* two-sample schedule not a whole multiple of the period escapes this.
+
+**Fix form: (b), the trio — chosen by measurement, not by preference.** Three samples
+`800 ms` apart span one whole period (real steps 827–866 ms because the wait is
+`setTimeout` + one rAF + read-back, so the span is 2495–2545 ms ≥ 2400, never less) and
+over any θ the best of three phases 120° apart has `max|cos| ≥ 0.866` — computed in
+`minOfMaxAbsCos`, not typed. The assertion moves to that **peak**, and the positive
+control is a **derived floor**: the analytic moved band `2πR·ΔR` (ΔR guaranteed ≥ 8.3 % of
+R at the real step), derated 4×, with `R` read from the page's own goal census. The
+census is also the pulse's own receipt: `outer` walked 28.50…32.00 device px over the
+cycle against the law's predicted 28.44…32.07 — the 6 % amplitude and the 2.4 s period
+measured from the board, not quoted.
+
+**Three consecutive rounds, zero retries, on the frozen bytes of this branch**
+(`PS_E2E_PORT=5249 npx playwright test tests/e2e/portal-mount.spec.ts
+tests/e2e/portal-mount.mobile.spec.ts --retries=0`, `12 passed` each, 47.8 / 48.0 /
+48.0 s). Counts are per-file; the *numbers differ* run-to-run exactly as the ticket asked
+them to — the assertion never does:
+
+| round | desktop A-8 samples (peak / floor) | mobile A-8 samples (peak / floor) |
+|---|---|---|
+| 1 | 1704 / 1457 / **126** → peak **1704** / 115 | 1982 / 1110 / 1502 → peak **1982** / 145 |
+| 2 | 1687 / 1501 / 429 → peak **1687** / 115 | 1982 / 1110 / 1521 → peak **1982** / 145 |
+| 3 | 1673 / 1638 / 965 → peak **1673** / 115 | 1982 / 1168 / 1418 → peak **1982** / 145 |
+
+Round 1 is the point: the third sample reads **126** — 7 % of the peak, the phase window
+where the *old* row's single difference is exactly 0 (the sweep above reads a literal
+`changed=0` two residues away) — while the peak stays at ~15× the floor. The margin is the
+phase-invariance, visible in the data.
+
+**Meaning: preserved, and enlarged.** The row still fails if any rogue idle animation
+exists — a portal breathing, a grid line shimmering, an echo fading or a HUD beat on the
+canvas leaves the goal cell and the union bbox of that sample fails `bboxWithin` — and it
+now does so on **three** samples covering 2400 ms of wall clock (≈120° of pulse phase per
+step) instead of one pair covering 300°, so the deny-list's coverage is *larger*, not
+smaller. What replaced `changed > 0` is a *derived* floor with a live **positive
+control**: the goal's own census radius must be > 0 (or the floor is 0 and the row would
+be a tautology), and the peak must clear the band. A suppressed or halved pulse now fails,
+where `changed > 0` would have passed a halved one.
+
+**The named gap, half-closed (second commit).** "Stars never appear during play" was
+DOM-only. The canvas now gets a channel (`canvasInkProximity` in `helpers/star-pixels.ts`)
+inside A-11's existing row, mid-level, at the **panel's own box**, on the mark's own
+reference (`--ps-goal` = `theme(phase).obj.goal`, exactly the token the DOM clip-path
+fills with):
+
+```
+[QA-020] A-11 canvas channel phase=A ink=168,117,42 goalCell=832,194,128,128
+         goalMinDistance=0.00 tolerance=24 controlNear=181
+         field=480,363,320,175 fieldNear=0 fieldMinDistance=132.88 fieldPx=56000
+```
+
+`controlNear=181` is the **positive control** (the goal figure is painted in the same gold
+family, so "the reference is reachable on this canvas" is measured, not assumed);
+`fieldNear=0` with the closest pixel at 132.88 px — 5.5× the tolerance — is the claim.
+Two self-inflicted defects were caught by that control while building it, both recorded
+rather than hidden: the channel initially read a **cleared** buffer (this row never armed
+`installPixelReadback`, and every pixel then sat an exact 208.99 away from black — the
+control's own complaint), and the first threshold formula was unbounded (`1.5 × 209` = 313
+made *every* pixel "near"), so it is clamped to `[24, 48]`. **Still not covered:** the
+knock-out *shape* (its colour is `ground.plate`, which legitimately covers board areas, so
+"no knock-out colour" is not a falsifier) and the 5-fold silhouette test — a detector whose
+specificity against the board's own gold annulus is unverified would be an instrument that
+can never fire, which is worse than an honest colour channel. That residual needs either
+the star's clip-path geometry re-derived in the test (a second truth source) or a
+`src/**` hook exposing the painted star boxes — the DOM row already owns that claim, so it
+stays a **reported gap**, not a weakened row.
+
+**Gates.** `npx vitest run` → **809 passed | 3 skipped (812)** against QA-019's `803 | 3`:
+**+6 only-up**, exactly the new `tests/unit/idle-pulse-schedule.test.ts` (the schedule law
+— the two-sample null phases, the trio's 0.866, the floor's monotonicity and `bboxWithin`'s
+own negative controls — proven where it is exactly provable, so the browser row only has to
+measure). `npx tsc --noEmit` → **0**. Targeted rounds: the two portal-mount files **3 × 12
+passed / 0 failed / 0 flaky**, and both star-field files **14 passed** on the changed A-11
+row. No `src/**` byte was touched, no test deleted, no assertion relaxed, no retry, no
+budget re-derived.
+
+**What this ticket does not claim.** (a) It does not prove the *knock-out shape* is absent
+from the canvas (above). (b) It does not re-derive the pulse's own constants in the e2e
+tier — `objects/goal.ts` cannot be imported there (its `theme/art.ts` `?url` PNG imports
+are not transformed by Playwright's loader), so the numbers are quoted with the unit tier's
+pin and *re-measured* from the painted radius; the amplitude/period agreement is evidence,
+not a substitute for that pin. (c) No full-suite round: the dispatch asked for targeted
+runs, and the A-8 pair plus the changed A-11 row are the rows whose bytes moved.
 
 ---
 
@@ -1535,6 +1658,30 @@ rows plus the unit battery**, not a suite round. No slow-row sum, no envelope an
 constant was re-derived: the star field's own rows are sub-second and none of them is a
 route-length row, so nothing in the 144-case timing record moves.
 
+**Update (2026-10-17, QA-020 — A-8's phase-invariant trio, 158 → 158 cases, +6 unit).**
+§1.14 changed **one** row's *schedule* in each portal-mount file (the A-8 stillness row:
+`two frames 2 s apart` → `three frames across one goal-pulse period`) and extended A-11's
+existing star-field row with the canvas channel, so the `--list` arithmetic is
+**unchanged**: `24 + 32 + 39 + 6 + 8 + 4 + 7 + 12 + 10 + 2 + 12 + 2 = 158 tests in 12 files`
+(144 desktop + 14 mobile), and `npx vitest run` reads **809 passed | 3 skipped (812)**
+against QA-019's `803 | 3` — a **+6 only-up** delta that is exactly the new
+`tests/unit/idle-pulse-schedule.test.ts`, with no skip added, no case removed and no
+row deleted. `npx tsc --noEmit` → **0**.
+
+**The rounds, and what they are evidence for.** The A-8 pair ran **three consecutive
+times on the final bytes** (`PS_E2E_PORT=5249 npx playwright test
+tests/e2e/portal-mount.spec.ts tests/e2e/portal-mount.mobile.spec.ts --retries=0` →
+**12 passed** each, 47.8 / 48.0 / 48.0 s, no retries) with per-run sample counts
+**1704/1457/126**, **1687/1501/429** and **1673/1638/965** on the desk pitch (peaks
+1704 / 1687 / 1673 against a floor of 115) and **1982/1110/1502**, **1982/1110/1521**,
+**1982/1168/1418** at the mobile pitch (peak 1982, floor 145): the numbers move
+run-to-run — one round puts a sample at 7 % of the peak, the phase window where the
+*old* single difference is exactly 0 — and the assertion holds in all three. The changed
+A-11 row's file ran green alongside (`star-field.spec.ts + star-field.mobile.spec.ts`
+→ **14 passed**). **No envelope, budget or constant was re-derived**: both rows are
+sub-second, neither is a route-length row, and the trio adds ~1.6 s per round to a suite
+whose slow rows are the ladder walks.
+
 | file | cases | project | what it pins |
 |---|---:|---|---|
 | `playthrough.spec.ts` | 24 | desktop | L1–L20 par route → win dialog (one row per shipped level, from the dataset); the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the **L1→L20** unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L20` and never a stale `L1–L5` |
@@ -1545,9 +1692,9 @@ route-length row, so nothing in the 144-case timing record moves.
 | `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
 | `transient.spec.ts` | 7 | desktop | the resampling channel is live; **P1** the 90 ms refusal arc with a **post-hoc** arbiter (QA-005e) whose trigger step comes from the observer's **execution order** (QA-005f: `frameIndex` + `ranAt`, never stamp arithmetic) — the full pixel claim whenever a beat is observed, or a named `RESOLVE-LIMIT` when the recording's own log proves no step could run inside the arc's window, or a loud `BEAT-REQUIRED-ABSENT` when one did and the beat is missing; **P1b** that limit fabricated with a 140 ms/frame stretcher (where the prediction is exact by construction); **P2** the press beat's occlusion proof (timing inequality + pixel-measured geometry) and the bounded arrival transient |
 | `mobile.mobile.spec.ts` | 12 | mobile | 56/72 px bars and the board filling the play area between them; whole-CSS-px square cells above the 40 px floor; ≥ 44×44 buttons with ≥ 8 px gaps; tap = move; distant tap = non-input; swipe ≥ 24 px = move on the dominant axis, with the gesture's **delivery and game-clock span asserted before the HUD read** (QA-005f: the span is the difference of the events' recorded frame indices, and their attribution is asserted); the R-T4 delivery shape pinned on a fabricated coarse grid; R-T6 ring never under touch; R-T5 hint at a 280×600 viewport and the swipe fallback; a touch-only win + dialog `Next`; touch undo |
-| `portal-mount.spec.ts` | 10 | desktop | §3.1e/§6.6 **A-1…A-10** read off the running page: the manifest the loader read (the A-06 pair, `unresolvedAssetIds() === []`, the strip's own `hidden`), the **served PNGs'** mapped contrast in both directions and both phases (the swap is load-bearing — the suffix convention measures under 3:1 on every ground), the live-vs-dormant figure census (value channel 1.03:1, ink 384 → 1885), B6's arrival transient on the far end, the **real** press transform on the transition's own clock, the win panel's onset/entrance/first-frame hit test, 2 s idle stillness inside the goal's own cell, the reduced-motion data flip, and the deny-list negatives |
-| `portal-mount.mobile.spec.ts` | 2 | mobile | the same A-2 painted-core read and A-8 stillness at the Pixel-5 DPR-2 pitch, where the **served raster's** own ink is the only honest reference (`cellCss 51.5`, painted core 68,184,207 vs served 69,186,209) |
-| `star-field.spec.ts` | 12 | desktop | §5.5/§6.6 **A-11/A-12** read off the running page: the `.ps-stars` row is absent (and the frozen panel strings carry no star glyph) on every pre-win frame and appears only at the win; exactly three `data-state` slots, with `earned`/`held`/`empty` drawn as the `(run, best)` matrix dictates including the live-line **extension** case; the painted census per phase on the sub-pixel channel against the analytic knockout; the fill-in's data, computed animation, identical start times and observed 120 ms bound with `Next` hit-tested on frame 1; 2 s idle = 0 px; the reduced-motion `--ps-star-scale-from` data flip; SF-1's DOM-vs-canvas claim |
+| `portal-mount.spec.ts` | 10 | desktop | §3.1e/§6.6 **A-1…A-10** read off the running page: the manifest the loader read (the A-06 pair, `unresolvedAssetIds() === []`, the strip's own `hidden`), the **served PNGs'** mapped contrast in both directions and both phases (the swap is load-bearing — the suffix convention measures under 3:1 on every ground), the live-vs-dormant figure census (value channel 1.03:1, ink 384 → 1885), B6's arrival transient on the far end, the **real** press transform on the transition's own clock, the win panel's onset/entrance/first-frame hit test, **three samples across one goal-pulse period** of idle stillness inside the goal's own cell (phase-invariant since QA-020, §1.14), the reduced-motion data flip, and the deny-list negatives |
+| `portal-mount.mobile.spec.ts` | 2 | mobile | the same A-2 painted-core read and the same phase-invariant A-8 trio at the Pixel-5 DPR-2 pitch, where the **served raster's** own ink is the only honest reference (`cellCss 51.5`, painted core 68,184,207 vs served 69,186,209) |
+| `star-field.spec.ts` | 12 | desktop | §5.5/§6.6 **A-11/A-12** read off the running page: the `.ps-stars` row is absent (and the frozen panel strings carry no star glyph) on every pre-win frame and appears only at the win — **and, since QA-020, the board canvas under the field's own box is scanned mid-level for the mark's own ink (`0` of 56000 px within tolerance, closest pixel 132.88 vs a live goal-cell control of 181 gold px)**; exactly three `data-state` slots, with `earned`/`held`/`empty` drawn as the `(run, best)` matrix dictates including the live-line **extension** case; the painted census per phase on the sub-pixel channel against the analytic knockout; the fill-in's data, computed animation, identical start times and observed 120 ms bound with `Next` hit-tested on frame 1; 2 s idle = 0 px; the reduced-motion `--ps-star-scale-from` data flip; SF-1's DOM-vs-canvas claim — whose canvas half is now measured, not named (QA-020) |
 | `star-field.mobile.spec.ts` | 2 | mobile | the same field at the Pixel-5 DPR-2.75 raster — declared **76.00 × 20.00 CSS px** with three 20.00 × 20.00 slots, all three states, idle 0 of 11495 px, a real touch tap on `Next`, and the both-phase census on the 2.75× raster (dot reads 4.91 px because its bbox is measured there) |
 
 **Every expectation is derived from production.** Routes, phases, refused
