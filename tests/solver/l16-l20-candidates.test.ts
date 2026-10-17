@@ -2,7 +2,8 @@
  * `tests/solver/l16-l20-candidates.test.ts` — the durable pin on the L16–L20
  * registered root block (QA-011, retargeted from the pre-registration candidate
  * shelf; QA-014 extended to the registered terminal rung; QA-018 re-booked the shelf
- * to the Act II batch-1 ids and QA-025 re-booked it to the Act II batch-2 ids).
+ * to the Act II batch-1 ids, QA-025 to the Act II batch-2 ids and QA-026 to the ten-name
+ * Act II batch-2 + batch-3 shelf).
  *
  * Why this file exists: `scripts/author-l16-candidates.ts` proposes and
  * `scripts/prove-candidate.ts` proves, but both are *runs* — their output lives in
@@ -19,14 +20,15 @@
  * root set and derives `BLOCK_IDS` from `documentedLesson(id)?.obligation` — never from
  * a typed 16–20.
  * The candidate shelf (`src/levels/candidates/`) is asserted to hold **exactly the
- * booked pre-registration set** — the five Act II batch-2 ids `l026`–`l030` since
- * QA-025 (LV-014 wrote them fresh and unregistered; QA-018's batch-1 booking
+ * booked pre-registration set** — the ten Act II ids `l026`–`l035` since QA-026
+ * (LV-014 wrote `l026`–`l030` fresh and unregistered and LV-015 posted `l031`–`l035`
+ * beside them, merged at `afeb5262d`; QA-018's batch-1 booking
  * `l021`–`l025` graduated to the root by R-004a, and QA-014's was `[]` after R-003d
  * registered the last entry) — and
  * only rungs *derived strictly above the registered root max*: the shelf's role is to
  * hold a proven candidate *while its rung is above the registered dataset* (QA-012;
  * R-003c moved l016–l019 off it, LV-011 → R-003d moved the landing rung off it last,
- * LV-012 posted the Act II batch, LV-014 batch 2). That is a **derived rung relation, never a ceiling
+ * LV-012 posted the Act II batch, LV-014 batch 2, LV-015 batch 3). That is a **derived rung relation, never a ceiling
  * claim about any device** — `docs/project-status.md` item 114: the pocket census is
  * unmeasured at ≥ 11, so no ceiling may be published in either direction, and the law
  * binds test prose too. A shelf file at or below the registered root max is a root row
@@ -145,23 +147,30 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
    * The booked shelf, **named once**: the candidates that a pre-registration
    * transcript measured and proved while their rung sat above the registered root max
    * (`l016`–`l019` on the R-003c lineage, `l020` on LV-011's, `l021`–`l025` on the
-   * Act II batch-1 lineage, `l026`–`l030` on LV-014's batch-2 lineage — the first three
+   * Act II batch-1 lineage, `l026`–`l030` on LV-014's batch-2 lineage and `l031`–`l035`
+   * on LV-015's batch-3 lineage — the first three
    * registered at the root since, which is why every booking since QA-014 was `[]` until
    * QA-025). Registering a candidate moves it to
    * `src/levels/` *and* off this list, in the same commit — so this pin cannot
    * silently absorb a new shelf file, and a *missing* booked file fails too.
    *
-   * **QA-025: the booking is the five LV-014 ids.** R-004c's booking was `[]` (R-004a had
+   * **QA-025 booked the five LV-014 ids.** R-004c's booking was `[]` (R-004a had
    * registered `l021`–`l025` — proof in `scripts/prove-candidate-l2125.transcript.md` —
    * leaving the shelf empty), and LV-014 then occupied the shelf with Act II batch 2:
-   * `l026.json`–`l030.json`, written fresh, proven on the shelf and **unregistered**
-   * (`src/levels/candidates/README.md` names this exact booking set). Occupied shelf plus
-   * an `[]` literal was the one red this suite carried, so the literal is re-booked to the
-   * set the shelf actually holds. The list stays a **live guard rather than a count**: the
-   * assertion below is *set equality*, so an unregistered extra (`l031.json`) and a
-   * vanished member (`l030.json` gone) both fail by name. QA-012 and QA-018 proved the
+   * `l026.json`–`l030.json`, written fresh, proven on the shelf and **unregistered**.
+   * **QA-026 books the ten Act II ids `l026`–`l035`**, because LV-015 posted batch 3
+   * beside batch 2 — `l031.json`–`l035.json`, proven on the shelf and **unregistered**
+   * (`scripts/prove-candidate-l3135.transcript.md` §5 measures the shelf as ten files,
+   * `10/10 PASS`) — and the merge `afeb5262d` landed all ten at once: a five-name literal
+   * over a ten-file shelf was the one red this suite carried (byte-shape
+   * `expected [ 'l026.json', 'l027.json', …(8) ] to deeply equal [ 'l026.json', 'l027.json', …(3) ]`),
+   * so the literal is re-booked to the set the shelf actually holds. The list stays a
+   * **live guard rather than a count**: the
+   * assertion below is *set equality*, so an unregistered extra (`l036.json`) and a
+   * vanished member (`l035.json` gone) both fail by name. QA-012 and QA-018 proved the
    * populated direction non-vacuously and QA-014 the empty one (`cp`-in / `mv`-out probes,
-   * `tests/e2e/README.md` §1.12).
+   * `tests/e2e/README.md` §1.12); QA-026 re-proved the populated direction on these ten
+   * bytes (`mv l035.json` out → this row reddens by name).
    */
   const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = [
     "l026.json",
@@ -169,9 +178,14 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     "l028.json",
     "l029.json",
     "l030.json",
+    "l031.json",
+    "l032.json",
+    "l033.json",
+    "l034.json",
+    "l035.json",
   ];
 
-  it("the shelf holds only the booked pre-registration candidates (l026–l030, LV-014 batch 2), every rung derived strictly above the registered root max", () => {
+  it("the shelf holds only the booked pre-registration candidates (l026–l035, LV-014 batch 2 + LV-015 batch 3), every rung derived strictly above the registered root max", () => {
     const rootMax = Math.max(...shipped.map((level) => level.id));
     const shelf = existsSync(CANDIDATES_DIR)
       ? readdirSync(CANDIDATES_DIR)
