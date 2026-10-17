@@ -1639,7 +1639,93 @@ deliberately-handed re-word (the L20-terminal row) gained assertions rather than
 
 ---
 
-## 2. Inventory — 183 cases in 12 files (measured)
+### 1.16 R-004d — the Act II refusal **classes**, the census the browser lane could not see, and the off-phase portal press that is not a refusal
+
+**What was missing.** R-004c took the pins to 25 and booked this ticket: the generic
+refusal rows above already walked every Act II par route and froze on every refused
+direction, so *"an illegal move is identity"* was **already asserted in-browser on
+L21–L25** (re-measured here: the five generic rows pass at 23.5 / 23.3 / 29.9 / 27.9 /
+30.1 s). What the suite could not see is *which kind of blocker* refuses, on the
+dataset's first **multi-pocket sealed landings** — boards where §8.16's device law puts
+two different blocker kinds side by side by construction.
+
+**Two new rows per rung family — one census row, five browser rows.** The census row is
+solver-side and has no page (`portal.spec.ts:89`'s precedent); the browser rows drive
+`cheapestRefusalFixtures()` — the classes are *found* in the level's own reachable set
+(`explore()` + `isLegalMove`), never typed:
+
+| rung | par | published `refusedThenEnteredTiles` | `out-of-bounds` | `phase-wall` | `door-without-switch` | `door-latch-on` | refused at a portal end |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| L21 | 17 | **17** (`T ≡ R ≡ 0`) | 188 | 48 | 52 | **0** | **0** |
+| L22 | 18 | **17** (`T ≡ R ≡ 0`) | 188 | 48 | 50 | **0** | **0** |
+| L23 | 20 | **17** (`T ≡ R ≡ 0`) | 188 | 48 | 50 | **0** | **0** |
+| L24 | 21 | **17** (`T ≡ R ≡ 0`) | 188 | 48 | 52 | **0** | **0** |
+| L25 | 23 | **17** (`T ≡ R ≡ 0`) | 188 | 48 | 52 | **0** | **0** |
+
+The **17** and the ordered-equals-unordered reading are the level lane's published
+numbers (§8.16's ladder, §8.18's root re-measure, `prove-candidate-l2125.transcript.md`'s
+`refused-beat` line on every rung, `attest-r004a-act2.transcript.md`); the tile lists stay
+pinned **once**, in `tests/solver/ordered-companion.test.ts`'s `ORDERED_PINS`. The **class
+partition is this ticket's own measurement** and is asserted as a *partition*: the four
+classes cover every refused press on the board (`refusedPresses === Σ byClass`, 288 on
+L21/L24/L25 and 286 on L22/L23), so no refusal is uncounted. `door-latch-on = 0` is the
+measured form of §8.16's device law — every seal door is met **closed, before** its switch.
+
+**The ticket's third surface does not exist, and the row says so instead of inventing it.**
+The dispatch expected an *off-phase press at a portal* to freeze the triple state. Measured
+on the landed bytes, the honest answer is **zero**: `refusedAtPortalEnds = 0` on 5/5, and
+the reason is the locked rule rather than a data gap — legality reads the destination in the
+**current** phase only (`src/core/rules/applyMove.ts:63-68`: in bounds + solid now) and
+`portalAt` filters on `activePhase` (`src/core/rules/solid.ts:204`), so clicking an *inactive*
+end is an ordinary **legal** step. The row therefore drives the press the other way and
+asserts the true claim in both lanes: the same click that crosses in one phase (the
+discriminating `pair`, whose active arrival is the non-adjacent far end) is a **single step
+with one flip** in the other, landing on the tile that was stepped onto. Writing "no move, no
+flip" here would have been a test asserting something false about the shipped core, so it was
+**not written** — a ticket premise contradicted by measurement, reported rather than patched
+into the suite.
+
+**Wall clock (both rounds, `--retries=0`, one worker, `PS_E2E_PORT` 5252–5255).**
+
+| row | round 1 | round 2 | envelope (par-derived) | used |
+|---|---:|---:|---:|---:|
+| census row (no browser) | 9 ms | 9 ms | — | — |
+| L21 (par 17) | 17.0 s | **17.2 s** | 192 s | 9.0 % |
+| L22 (par 18) | 16.8 s | **18.5 s** | 202 s | 9.2 % |
+| L23 (par 20) | 17.1 s | **19.0 s** | 223 s | 8.5 % |
+| L24 (par 21) | 17.3 s | **17.1 s** | 233 s | 7.4 % |
+| L25 (par 23) | 18.4 s | **18.1 s** | **240 s (capped)** | 7.5 % |
+
+Every new row rides the **same** `refusalRouteEnvelopeMs(par)` as the family (never a
+re-derived or widened constant): `192_000 / 202_000 / 223_000 / 233_000 / 240_000` ms.
+
+**The cap-binding watch — the second data point family.** Par 23 (L25) is the first rung whose
+*uncapped* envelope (254 s) exceeds the cap, so the family's par-23 row is the row the watch
+is about, and the **full-route** rows measured this round bind the cap by 12.5 % of budget,
+not by 100 %:
+
+| refusals row (whole par route) | par | measured (this round) | envelope | used |
+|---|---:|---:|---:|---:|
+| L21 | 17 | 23.5 s | 192 s | 12.2 % |
+| L22 | 18 | 23.3 s | 202 s | 11.5 % |
+| L23 | 20 | 29.9 s | 223 s | 13.4 % |
+| L24 | 21 | 27.9 s | 233 s | 12.0 % |
+| **L25** | **23** | **30.1 s** | **240 s (cap)** | **12.5 %** |
+
+So the five Act II rungs land in the **same 12–13.5 % band** as QA-014's par-20 observation
+(28.1 s of 223 s = 12.6 %), and the *derived* envelope absorbed five new rungs with **zero
+re-migration**. On QA-013's conservative cloud factor (5.9×) the par-23 row projects to
+**≈178 s inside the 240 s cap** — while the formula's own worst-case uncapped reading (254 s)
+says the cap *will* bind: that disagreement is exactly the watch, and it is **quoted, not
+resolved** (no constant moved; the named re-derivation stays R-004c's row with the Orchestrator).
+
+**File-level evidence.** The whole `refusal.spec.ts` ran **55 passed / 0 failed in 8.5 m**
+(`--retries=0`, one worker), the suite's slowest file by design. No `src/**` byte was touched:
+`git status --porcelain` lists `tests/**` only.
+
+---
+
+## 2. Inventory — 189 cases in 12 files (measured)
 
 **Dated note (2026-10-16, QA-005h).** The per-ticket blocks in §1 are **historical
 snapshots**: the `88/0` rounds, the `88 tests in 8 files` `--list` lines and the per-file
@@ -1770,6 +1856,21 @@ dependency — §1.15), and `npx tsc --noEmit` → **0**. Targeted rounds: `play
 **29 passed / 0 failed in 4.3 m**, and its chain row **2 × green** (`--retries=0`) at
 **1.6–1.8 m of its 360 s** budget, which is **held**, not raised (§1.15).
 
+**Update (2026-10-17, R-004d — the Act II refusal *classes*, 183 → 189).** The five new
+rungs' refusal *surface* is now classified as well as counted: **one** census row (no page —
+solver-side) asserting the published `refusedThenEnteredTiles = 17` per rung with
+`ordered ≡ unordered` (`T ≡ R ≡ 0`), plus the **class partition of every refused press** and
+`refusedAtPortalEnds = 0`; and **five** browser rows driving the cheapest reachable
+`phase-wall` and `door-without-switch` (F-L20-2) refusals — each freezing the triple state and
+then proving the due move still counts — before driving the off-phase portal press, which is a
+**legal single step**, not a refusal. The `--list` arithmetic is therefore
+`29 + 42 + 55 + 6 + 8 + 4 + 7 + 12 + 10 + 2 + 12 + 2 = 189 tests in 12 files`
+(173 desktop + 16 mobile): **refusal 49 → 55** and nothing else moves. Evidence: the whole
+`refusal.spec.ts` **55 passed / 0 failed in 8.5 m** (`--retries=0`, one worker) and
+`npx vitest run` **860 passed | 3 skipped (863)** — the base, only-up, zero red — with
+`npx tsc --noEmit` → **0**. §1.16 carries the class table, both timing rounds and the
+cap-binding watch.
+
 **The rounds, and what they are evidence for.** The A-8 pair ran **three consecutive
 times on the final bytes** (`PS_E2E_PORT=5249 npx playwright test
 tests/e2e/portal-mount.spec.ts tests/e2e/portal-mount.mobile.spec.ts --retries=0` →
@@ -1787,7 +1888,7 @@ whose slow rows are the ladder walks.
 | file | cases | project | what it pins |
 |---|---:|---|---|
 | `playthrough.spec.ts` | 29 | desktop | L1–L25 par route → win dialog (one row per shipped level, from the dataset); the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the **L1→L25** unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L25` and never a stale `L1–L5` |
-| `refusal.spec.ts` | 49 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one (now including L16–L25) — each row's wall-clock budget is the par-derived `refusalRouteEnvelopeMs(ref.par)`, so L21–L25 arrived with their own envelopes (par 23 reads the **240 s cap**, a named cap-binding row since R-004c, §1.15) and no test edit |
+| `refusal.spec.ts` | 55 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one (now including L16–L25) — each row's wall-clock budget is the par-derived `refusalRouteEnvelopeMs(ref.par)`, so L21–L25 arrived with their own envelopes (par 23 reads the **240 s cap**, a named cap-binding row since R-004c, §1.15) and no test edit; **plus (R-004d, §1.16)** the Act II refusal **classes** — one census row (published `refusedThenEnteredTiles = 17` per rung, `T ≡ R ≡ 0`, the class partition of every refused press, `refusedAtPortalEnds = 0`) and one browser row per new rung freezing a `phase-wall` and a `door-without-switch` refusal (then proving the due move still counts) and driving the off-phase portal press, which is an ordinary step |
 | `latch-door.spec.ts` | 42 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all **twenty** latch levels (L6–L25, the dataset's derived contiguous tail — the rule, not a typed list), in-core and through the UI |
 | `portal.spec.ts` | 6 | desktop | the **portal column is every level from L11's debut to the tail** (the rule; QA-011 retired the typed `[11…15]` literal); M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
