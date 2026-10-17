@@ -1145,7 +1145,122 @@ lists `tests/**` only.
 
 ---
 
-## 2. Inventory — 132 cases in 8 files (measured)
+### 1.11 QA-017 — GAME-003's art+motion acceptance surface (A-1…A-10), and the four things the spec's own wording cannot reach
+
+GAME-003 mounted the signed A-06 portal pair **swapped** (`portalSlotFor("A") ⇒
+portal_b`, `"B" ⇒ portal_a`) and added the §6.6 beats B6/B7/B10/B12/B13 as per-frame
+scalars. QA-017 is the acceptance battery for `docs/ui-ux.md` §3.1e R-PM5/A-1…A-10,
+split by *what can be measured where*:
+
+| tier | file | cases | what it decides |
+|---|---|---:|---|
+| unit | `tests/unit/portal-mount-acceptance.test.ts` | 22 | the mapping/box/turn/ceiling/deny-list claims as **draw calls and data** (no pixels, no canvas) |
+| e2e | `tests/e2e/portal-mount.spec.ts` | 10 | everything that must come off the **running page**: the bytes its loader fetched, the pixels it presented, the styles it applied |
+| e2e | `tests/e2e/portal-mount.mobile.spec.ts` | 2 | A-2's painted core and A-8's stillness at the R-L6 mobile pitch |
+| helpers | `tests/e2e/helpers/frames.ts`, `helpers/art.ts` | — | in-page frame census/diff (`cellCensus` with a luma-only disc, `profileDelta`) and served-PNG decode + WCAG maths |
+
+**The measured numbers, all from the shipped build.** Every figure below was read in
+this round and reproduces `docs/assets/evidence-2026-10-17-portal-mount/portal_probe.py`
+where the two overlap; nothing in either tier is typed from the probe.
+
+```
+A-1  manifest: 7 resolved rows, portal_a/portal_b under A-06; both rasters 512×512, ink 74 713 px
+     pair agreement  phase A live/far ink 384/384 inner 0/0   |  phase B 1885/1888 inner 87/88
+A-2  swapped  A 6.51/5.54  B 6.24/5.48   (as-named A 2.25/1.91  B 2.16/1.89 → all < 3: the swap is load-bearing)
+     mobile pitch (cellCss 51.5, renderScale 2): painted core 68,184,207 vs served 69,186,209; ink 2403, inner 90
+A-3  B value backup (live raster vs obj.portalEcho) = 1.03:1; luma census dormant ink 384 / inner 0 → live 1885 / inner 87 (ratio 4.91)
+A-5  far-end ROI frames 28, grid 26.1 ms, frozenUntil 116.5, onset 138.9, duration 183.2 ≤ 200 + grid
+     exit-end ink live 1885 / far 1888, inner 87 / 88
+A-7  B12 samples 47, grid 23.7 ms, rampSamples 4, rampSpan [70.7, 118.6] ms, declared 90 ms
+     transition's own record: elapsedTime = 90 ms, event wall span 141.5 ms
+     curve x:scale = 0.185:0.9914 0.556:0.9777 0.740:0.9730 0.926:0.9703   (model within 0.0002)
+     crossing 32.26 ms (analytic 30.82, linear 45); scale@45ms measured 0.9777 / analytic 0.9795; settled 0.9700
+     B13 panelDelay 260.9 ms (declared 220), opacity at unhide 0, hit-test at the Next centre = Next, disabled false,
+     entrance running at currentTime 0 → raw pointer click advanced the level with moves 0
+A-8  desktop idle 2 s: changed 348 / 988 160 px, maxDelta 158, union bbox 882,83,941,142 ⊂ goal cell 867,67,91,91
+     mobile  idle 2 s: changed 1150, maxDelta 184, bbox 666,254,736,325 ⊂ goal cell 650,238,103,103
+A-9  reduced idle changed 0 / maxDelta 0; press scales {1.000}; panel ps-panel-in / 0.16 s / translateY 0; legibility identical
+A-10 entry 1554 px and Undo 1627 px of diff both ⊆ the goal cell; DOM snapshot byte-equal over 2 s; runningAnimations []
+```
+
+**A-1's dev-strip sentence is unreachable by construction, and is proved at the level
+the strip reads from.** A-1 asks the dev strip to list `A-06 portal_a` / `portal_b`.
+The strip's whole purpose is to name **unresolved** slots (R-P3/R-P6); since
+R-005b/UA-0013 every one of the seven `PLACEHOLDER_SLOTS` rows is `resolved: true`, so
+`activePlaceholderSlots()` is `[]`, `unmountedResolvedSlots()` is `[]` and the strip
+renders `hidden`. Printing it to satisfy the sentence would be theatre. The claim the
+sentence carries — *the pair is mounted under A-06* — is asserted on the same table
+(R-P5's single source) in both tiers, and the wording conflict is recorded **here**
+rather than edited into the spec. Related: A-1's second clause ("both ends
+pixel-identical in every frame") is measured as **figure agreement**, not byte equality:
+the pair's two ends sit on opposite `(x+y)` chequerboard parity, so they are drawn on
+*different ground tokens* by R-C4 and can never be byte-identical. The measured
+substitute — ink mass within 8 %, bbox size within 2 px, radial-profile bin share
+< 0.1, swirl presence equal — is what actually catches a per-end marker or a second
+graphic at the exit end (E3-3), and it is the same shape A-5 uses for "zero new ink at
+the exit end".
+
+**A-2's pass shape binds one ground, not two.** The row's named bar is "≥ 6.2:1 on the
+mount order's own ground" and its parenthetical quotes two numbers per phase
+(6.50 / 5.53 A, 6.25 / 5.49 B). Only the **first** is ≥ 6.2; the second is the
+*alternate* ground (`isAltCell`), and it is below the named bar. The measured pair
+above (6.51 / 5.54 · 6.24 / 5.48) therefore binds `.cell` at the named 6.2 and `.cellAlt`
+at the pre-registered **5.4** — the parenthetical's own value, quoted as the row's
+second ground rather than re-specified. The falsifier is on the same bytes: the
+**as-named** (suffix-convention) mapping measures 2.25 / 1.91 · 2.16 / 1.89, i.e. under
+3:1 on both grounds of both phases, so a renderer regression to the suffix convention
+turns this row red on the *files*, not on a screenshot.
+
+**A-6 — the testability finding (reported, never patched around).** B7's attract is
+`≤ +2 %` additive on the R-C8 envelope (`±6 %`, 2.4 s) and B10's hysteresis is a state
+rule with no motion. Neither is observable from the presented pixels at this pitch: a
++2 % attract on a ±6 % pulse that is itself composited over a cross-fade is inside the
+noise of the first beat's own alpha. The constants (`GOAL_ATTRACT_MS`,
+`GOAL_ATTRACT_PEAK` at `src/game/renderer/board-view.ts:132-133`), the predicate
+(`isInGoalNeighbourhood`, `:136`), its two call sites — the per-state re-read (`:578-580`)
+and the `false → true` firing gate (`:619-624`) — and the scalar channel
+(`attractAt` `:335`, `attractValue` `:755-766`) are **private** with no page hook,
+and `src/**` is DO_NOT_TOUCH for QA. So the *contract* is proven in the unit tier
+(additive ceiling exactly `1 + 6 % + 2 % = 8 %`; the channel absent == 0; a settled board
+carries no attract) and the observability gap is filed here, with file and line, as a
+**finding** — not worked around by inferring a private number from a screenshot.
+
+**A-7's "computed transform at 45 ms = 0.97" is unreachable inside its own window.**
+The press is `transform: scale(var(--ps-press-scale))` with `transition: transform
+90 ms ease-out` on `:active` (hud-styles.ts:160-169), and `ease-out` is
+`cubic-bezier(0, 0, 0.58, 1)` — not linear. At `x = 0.5` (45 ms of 90) the curve is at
+`y ≈ 0.686`, so the transform is `1 + 0.686 · (0.97 - 1) = 0.9794`, and it reaches
+0.97 only at the window's **end**. Measured on the running page: the press crosses
+mid-scale (`0.985`) at **32.26 ms**, the value nearest the 45 ms mark is 0.9777
+(analytic 0.9795), and the settled hold is 0.9700 — three readouts where the spec has
+one that cannot be true. The instrument is anchored on the **transition's own clock**
+(`CSSTransition.currentTime`), which is why the curve points above agree with the
+declared easing to ≈0.0002 and can separate `ease-out` from a linear ramp (the check
+requires each mid-window point to be twice as close to the model as to a linear read).
+Two instrument facts are recorded because they bound every number in the row: the
+sampling grid is the **frame** grid (~24 ms here — a running transition's computed value
+is recomputed once per frame), and the in-page `setTimeout(…, 4)` grid that was the
+first design is *worse* on this stack (~52 ms under a SwiftShader WebGL renderer at
+load), so the timer grid was dropped rather than quoted.
+
+**The K-4 supersession is a record, not a deletion — and these are the files that
+carry it.** §3.1e R-PM5 supersedes §3.3b **Entry-3's K-4 negative** (`portalMentioned:
+false`, the `l11_dev_channel` / `l5_no_portal_strip` rows). Nothing from that probe was
+deleted; the re-pointing is pinned positively in
+`tests/unit/portal-mount-acceptance.test.ts` ("K-4 supersession, recorded as its
+positive" → `PLACEHOLDER_TO_ASSET["portal_a" | "portal_b"] === "A-06"`, plus the
+derivation that the two rows can only exist because the manifest rows do) and in
+`tests/e2e/portal-mount.spec.ts`'s manifest row (same two entries, plus
+`unresolvedAssetIds() === []` and `assertNoPlaceholders()` not throwing). A search for
+the old negative's literal flag in `tests/**` finds only those two positive
+counterparts.
+
+**No production byte was touched.** `git status --porcelain` on this dispatch's worktree
+lists `tests/**` only.
+
+---
+
+## 2. Inventory — 144 cases in 10 files (measured)
 
 **Dated note (2026-10-16, QA-005h).** The per-ticket blocks in §1 are **historical
 snapshots**: the `88/0` rounds, the `88 tests in 8 files` `--list` lines and the per-file
@@ -1206,6 +1321,29 @@ projection models disagree by 2.5× (suite-level 2.7–3.2× ⇒ 154–183 s ✓
 a fitted observation — the next cloud round is the crossing observation item 77(d)
 requires. No default was touched and no constant was silently widened.
 
+**Update (2026-10-17, QA-017 — GAME-003's art+motion acceptance, 132 → 144).** §1.11
+added **twelve** e2e cases (`portal-mount.spec.ts` 10 desktop, `portal-mount.mobile.spec.ts`
+2 mobile at the R-L6 pitch) and **22** unit cases, so the `--list` arithmetic is now
+`24 + 32 + 39 + 6 + 8 + 4 + 7 + 12 + 10 + 2 = 144 tests in 10 files` (132 desktop + 12
+mobile), and `npx vitest run` reads **780 passed | 3 skipped (783)** against QA-014's
+`758 | 3` — a **+22 only-up** delta that is exactly the new unit file, with no skip added
+and no case removed. The round on the shipped bytes is
+`PS_E2E_PORT=5246 npx playwright test --retries=0` → **144 passed / 0 failed / 0 flaky in
+678 s = 11.3 m**, `EXIT=0`, inside the same band as the three 132-case rounds (636–666 s).
+Slow-row sums in the QA-005g shape: refusal 231.2 s, playthrough 160.2 s, latch-door
+128.8 s, portal-mount 39.3 s, transient 34.0 s, mobile 31.9 s, controls 24.1 s, portal
+13.4 s, portal-mount.mobile 6.2 s, input-replay 4.5 s (Σ 673.6 s); the heaviest single
+rows are the unlock chain **55.4 s of its 360 s** and L20 refusal **26.7 s of
+`refusalRouteEnvelopeMs(20)` = 223 s**, both *below* QA-014's worst legs — this round ran
+on a quieter machine, which is the only reason its 11.3 m reads as like-for-like.
+
+**The load caveat that belongs on the record.** The first full round of this same 144-case
+tree took **22.6 m** with **zero reds**, in a window where the solver lane's `tsx` jobs held
+load average at 24–26; every file finished and `test-results/` was empty at every poll, so
+the overrun was CPU starvation, **not a regression**. The row that degraded most —
+`transient.spec.ts`'s P1 — still printed `verdict=resolvable` at `gridMs 41.6`, i.e. shrunk
+headroom, no red. **No budget, ceiling, envelope or constant was touched by QA-017.**
+
 | file | cases | project | what it pins |
 |---|---:|---|---|
 | `playthrough.spec.ts` | 24 | desktop | L1–L20 par route → win dialog (one row per shipped level, from the dataset); the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the **L1→L20** unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L20` and never a stale `L1–L5` |
@@ -1216,6 +1354,8 @@ requires. No default was touched and no constant was silently widened.
 | `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
 | `transient.spec.ts` | 7 | desktop | the resampling channel is live; **P1** the 90 ms refusal arc with a **post-hoc** arbiter (QA-005e) whose trigger step comes from the observer's **execution order** (QA-005f: `frameIndex` + `ranAt`, never stamp arithmetic) — the full pixel claim whenever a beat is observed, or a named `RESOLVE-LIMIT` when the recording's own log proves no step could run inside the arc's window, or a loud `BEAT-REQUIRED-ABSENT` when one did and the beat is missing; **P1b** that limit fabricated with a 140 ms/frame stretcher (where the prediction is exact by construction); **P2** the press beat's occlusion proof (timing inequality + pixel-measured geometry) and the bounded arrival transient |
 | `mobile.mobile.spec.ts` | 12 | mobile | 56/72 px bars and the board filling the play area between them; whole-CSS-px square cells above the 40 px floor; ≥ 44×44 buttons with ≥ 8 px gaps; tap = move; distant tap = non-input; swipe ≥ 24 px = move on the dominant axis, with the gesture's **delivery and game-clock span asserted before the HUD read** (QA-005f: the span is the difference of the events' recorded frame indices, and their attribution is asserted); the R-T4 delivery shape pinned on a fabricated coarse grid; R-T6 ring never under touch; R-T5 hint at a 280×600 viewport and the swipe fallback; a touch-only win + dialog `Next`; touch undo |
+| `portal-mount.spec.ts` | 10 | desktop | §3.1e/§6.6 **A-1…A-10** read off the running page: the manifest the loader read (the A-06 pair, `unresolvedAssetIds() === []`, the strip's own `hidden`), the **served PNGs'** mapped contrast in both directions and both phases (the swap is load-bearing — the suffix convention measures under 3:1 on every ground), the live-vs-dormant figure census (value channel 1.03:1, ink 384 → 1885), B6's arrival transient on the far end, the **real** press transform on the transition's own clock, the win panel's onset/entrance/first-frame hit test, 2 s idle stillness inside the goal's own cell, the reduced-motion data flip, and the deny-list negatives |
+| `portal-mount.mobile.spec.ts` | 2 | mobile | the same A-2 painted-core read and A-8 stillness at the Pixel-5 DPR-2 pitch, where the **served raster's** own ink is the only honest reference (`cellCss 51.5`, painted core 68,184,207 vs served 69,186,209) |
 
 **Every expectation is derived from production.** Routes, phases, refused
 directions, door states, latch fixtures and portal crossings come from `solve()` /
@@ -1223,7 +1363,12 @@ directions, door states, latch fixtures and portal crossings come from `solve()`
 `portalFixtures()` (`helpers/levels.ts`), the geometry from the renderer's own
 `computeLayout`, and colours from `theme(phase)` tokens. No route, tile, colour or
 pixel count is typed into a spec; a level edit that removes a behaviour fails the run
-instead of leaving a stale fixture behind. The **dataset inventories** are derived
+instead of leaving a stale fixture behind. **QA-017's rows obey the same law on the art
+side**: the mount facts come from `PLACEHOLDER_SLOTS` / `PLACEHOLDER_TO_ASSET` /
+`portalSlotFor` (`theme/assets.ts`) and from the *served bytes* the page's own loader
+fetched, the grounds from `theme(phase)` + `isAltCell` (`grid-mapping.ts`), and the
+motion numbers from the transition's own `CSSTransition.currentTime` — never from a
+typed hex or a screenshot average. The **dataset inventories** are derived
 too (`datasetIds` / `doorLevelIds` / `discoveredFileIds` / `inventoryViolation`), with
 exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3). **QA-011 retired the
 last hand-typed literal beside it**: `portal.spec.ts:91` used to re-baseline the
