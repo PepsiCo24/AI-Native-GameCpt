@@ -56,6 +56,12 @@ EXIT=0
   `(per-line count × line count)` over the twelve class-bearing landings gives **13 163 780** exactly,
   i.e. the six `x = 4` landings contribute **0** single-phase members at ≤8. That arithmetic is what
   licenses the `x = 4` reading later in this file.
+  > ⚠ **LV-013 corrigendum:** this cross-check is a **tautology, not a confirmation** — the summed
+  > printed lines and the counter it "confirms" were produced by the **same** `if (hereSealed > 0)`
+  > gate, so they agree by construction. The six `x=4` landings lost their single-phase mass *inside*
+  > that gate; their absence is the gate, and the missing mass is exactly their `tested` sum
+  > (**131 399 222** at ≤10, **3 267 315** at ≤8). It licenses **nothing** about `x=4`; the `x=4 → 0`
+  > leak-free reading is licensed by **law** instead (ADR `architecture-0004` Ruling 2). See **§10**.
 
 ## 2. The monolithic ≤10 attempt, and why it is on the record
 
@@ -183,6 +189,15 @@ The pass the LV-011 record killed after 25 lines was re-run to completion as the
   34 size-3 · 204 size-4 · 510 size-6 · 2040 size-7 · 14688 size-9      (34+204+510+2040+14688 = 17476)
 ```
 
+> ⚠ **LV-013 CORRIGENDUM (ADR `architecture-0004`, `docs/architecture.md` §15) — the `single-phase
+> boundary` column of this block is an INSTRUMENT ARTIFACT, not a measurement.** It is
+> **`≡ tested` by construction** (the screen cannot reject a connected pocket), and on the six `x=4`
+> landings both the per-landing line and its accumulation were **suppressed by the `hereSealed > 0`
+> gate**, so their `0` is the gate, not a reading, while their `tested` mass is missing from the
+> `592804433` total. Correct reading: the column is information-free, `≡ tested` — **724 203 655** at
+> ≤10. **`tested`, `17476 leak-free` and the whole histogram above are untouched** (they never
+> consulted it). See **§10**.
+
 Per-landing split of the class, which is what makes the verdict of §6 checkable rather than
 summarised away — `≤7` is the membership inherited from the ≤8 pass (whose largest member measures
 7), `size-9` is the class the ≤8 cap could not have built:
@@ -231,6 +246,14 @@ summation below is exact and not an approximation.
 | single-phase boundary | 13 163 780 | **592 804 433** | **45.03×** |
 | leak-free (the accept class) | 2 788 | **17 476** | **6.27×** |
 | histogram | `3:34 4:204 6:510 7:2040` | `3:34 4:204 6:510 7:2040 9:14688` | one new row |
+
+> ⚠ **LV-013 corrigendum — the `single-phase boundary` row is a TAUTOLOGY, not a measurement, and its
+> ≤8 cell was a gate-suppressed partial.** Correct value: `≡ tested`, i.e. **724 203 655** at ≤10 and
+> **16 431 095** at ≤8 (the ≤8 cell `13 163 780` is the *class-bearing* sum only; the difference
+> `16 431 095 − 13 163 780 = 3 267 315` is exactly the six `x=4` landings' `tested` sum, missing because
+> the accumulation sat inside `if (hereSealed > 0)`). Both digits were quoted faithfully from what the
+> instrument printed; what it printed was never a boundary count. **The other three rows stand
+> unchanged.** See **§10**.
 
 Two things in that table carry the verdict:
 
@@ -289,6 +312,10 @@ returns its **entire** `tested` count as single-phase and all **15 113** of its 
 So the enumeration is mirror-symmetric in those two columns while the parity check is not.
 **The mechanism is not established by this census.** It is named for the architect as an open
 lattice question and is *not* asserted as a law, and nothing downstream depends on it.
+**→ SUPERSEDED (LV-013):** the mechanism is now established — the identity is a `D2`-orbit law
+(`tested = N(parity) × K(orbit)`) and the `x=4` zeros are the **first-column death law**, both proven
+in ADR `architecture-0004` Rulings 1–2; the `0` single-phase readings this paragraph cites were
+gate-suppressed counters. See **§10**.
 
 **(ii) The parity pattern of the empty sizes.** Sizes 5, 8 and 10 are empty while 3, 4, 6, 7 and 9
 are populated, over 724M candidates. The measurement is solid; no structural argument is offered
@@ -344,13 +371,26 @@ sh "$T/l20-p10-slices-resume.sh"
 
 # the instrument equivalence proof (lazy generator vs the eager builder)
 node_modules/.bin/tsx scripts/author-l20.ts --stage=p --pocketsize=8
+#   BEFORE LV-013 (the instrument as this census ran it):
 #   ⇒ census: 16431095 pocket(s) tested · 13163780 single-phase boundary · 2788 leak-free
 #     histogram 3:34 4:204 6:510 7:2040      (identical to the committed ≤8 run, exit 0)
+#   AFTER LV-013 (the fixed instrument, §10; measured, 2 min 33 s, exit 0): tested/leak-free IDENTICAL
+#   ⇒ census: 16431095 pocket(s) tested · 16431095 single-phase boundary (TAUTOLOGY ≡ tested — ADR
+#     architecture-0004 Ruling 3) · 2788 leak-free (the census's accept class)
+#     histogram 3:34 4:204 6:510 7:2040
+#
+# LV-013's probes (§10.1/§10.2), both cheap:
+node_modules/.bin/tsx scripts/author-l20.ts --stage=p --pocketsize=4 \
+  --only=4,0 --only=6,0 --only=4,1 --only=6,1 --only=4,2 --only=6,2 \
+  --only=4,3 --only=6,3 --only=4,4 --only=6,4 --only=4,5 --only=6,5   # PROBE A: gate-removed orbit pairs
+node_modules/.bin/tsx scripts/author-l20.ts --stage=p --pocketsize=8 \
+  --only=4,2 --only=6,2 --only=4,3 --only=6,3                          # PROBE B: the v = 117 587 retro-test
 ```
 
 **Summary of the pass, one paragraph.** Stage P at `--pocketsize=10`, run as 18 disjoint landing
 slices and cross-checked against the aborted monolithic pass, measures **724 203 655 pockets tested ·
-592 804 433 single-phase boundary · 17 476 leak-free** over **18/18** landings with **0 errors** in
+592 804 433 single-phase boundary** *(a tautological accumulation, **≡ tested** — LV-013 corrigendum
+§10)* **· 17 476 leak-free** over **18/18** landings with **0 errors** in
 **45 min 37 s**. The leak-free size histogram is **`3:34 4:204 6:510 7:2040 9:14688`**; its size-≤7
 rows reproduce the committed ≤8 census exactly (digit for digit in aggregate **and** per landing),
 and the new size-9 row adds a **14 688-member** class while **size-8 and size-10 members do not exist
@@ -360,3 +400,152 @@ sizes ≥ 11 named as the unmeasured residual, **no ceiling claim published in e
 without promotion (the `x=4`/`x=6` mirrored enumeration, handed to the architect as a question; the
 parity pattern of the empty sizes), and the lever for the next pass — a distinct-set enumerator that
 would re-baseline the sequence counts — is named rather than taken.
+---
+
+## 10. Corrigendum — LV-013: the `single-phase` column was a tautology, the first-column zeros are a law, every accept-class number stands
+
+**Authority:** ADR **`docs/decisions/architecture-0004-lattice-census-mirror-and-cost-law.md`** (Rulings 1–4),
+normative text **`docs/architecture.md` §15**, dispatched as **LV-013** (project-status item 117).
+**Style:** the **46/2000 precedent** (`docs/architecture.md` §8.1 依据 (iii) / ADR-`architecture-0003`
+Ruling 1) — the wrong number is *labelled* wrong **in place** (see the ⚠ markers in §1a, §4, §5, §6a(i)),
+never silently replaced. **This file's prose corrections are the three marker blocks and this section; no
+output line was edited.**
+
+### 10.1 What is withdrawn
+
+1. **`592 804 433 single-phase boundary` (≤10) and `13 163 780 single-phase boundary` (≤8) were
+   tautological accumulations, not measurements.** `sealedPocket` (`author-l20.ts:268`) rejects a pocket
+   iff a boundary tile touches pocket tiles of both BFS-distance parities; on a bipartite grid that test
+   can never fire for a **connected** pocket (every neighbour of a boundary tile has one `(x+y)` parity
+   and `dist(t) mod 2 ≡ parity(t) ⊕ parity(landing)`), and `pocketCandidates` only yields connected sets.
+   So the screen's outcome count is **identically the `tested` count**. **Correct value: that column
+   `≡ tested` — 724 203 655 at ≤10, 16 431 095 at ≤8.** It carries **no information** and must never be
+   read as a boundary measurement.
+2. **The published `x=4 → 0 single-phase` was a gate-suppressed counter.** `single`/`sealed` accumulated
+   **inside** `if (hereSealed > 0)` (`:925–932`), so every `(landing, near)` with no leak-free pocket lost
+   both its line and its mass — and by the first-column law that is exactly the six `x=4` landings. The
+   deficits this file quoted as *evidence* are therefore the `x=4` `tested` sums, digit for digit:
+   **`724 203 655 − 592 804 433 = 131 399 222`** (≤10) and **`16 431 095 − 13 163 780 = 3 267 315`** (≤8).
+   §1a's "licenses the `x=4` reading" sentence is a **tautology**: the summed printed lines and the
+   counter were produced by the same gate.
+3. **`x=4 → 0 leak-free` is a LAW, not a measurement.** ADR `architecture-0004` Ruling 2: a landing at
+   `(CX+1, y)` always has a free-leak neighbour in the sealed column that `boundaryOf` can never door, so
+   **no first-column landing is leak-free in any frame** (the same law is what the `G` batch's
+   `column-leak` refusals count in the `--cx=2` frame). The six `x=4` rows are reclassified from
+   *measurement* to *law-agreement*.
+
+### 10.2 What stands, unchanged
+
+**`724 203 655` tested · `17 476` leak-free · the histogram `3:34 4:204 6:510 7:2040 9:14688` · the
+`2 788` ≤8 sub-histogram · every per-landing anchor · the ≤8/≤10 per-landing reproductions.** None of them
+ever consulted the tautological counter (a leak-free total is a count of accepted pockets; the suppression
+only ever removed mass from a column that could not be rejected in the first place), and the first column
+loses nothing by Ruling 2. **Blast radius on accepts: zero.** No `par`, `B` or `D_exec`, no band, no gate,
+no shipped row, no registered ceiling moves.
+
+### 10.3 The two ARCH-mandated probes (measured 2026-10-17, worktree `agent/level/lv-013-instrument`)
+
+The tool's print gate is **removed** by LV-013 (accumulation is now unconditional, the per-pair line prints
+`tested`, the `single-phase` field is labelled `TAUTOLOGY ≡ tested`, and first-column landings carry the
+law's label). Every figure below is a fresh run of `scripts/author-l20.ts` at the fixed instrument.
+
+**(A) PROBE A — gate removed, one full orbit-pair set at `--pocketsize=4`** (12 landings, 255 lines, exit 0):
+
+| landing | pair `σ_x` | lines | tested | single-phase | leak-free | `single == tested` |
+|---|---|---|---|---|---|---|
+| `4,0` | `6,0` | 9 | 261 | 261 | **0** | ✓ |
+| `4,1` | `6,1` | 8 | 568 | 568 | **0** | ✓ |
+| `4,2` | `6,2` | 9 | 747 | 747 | **0** | ✓ |
+| `4,3` | `6,3` | 8 | 664 | 664 | **0** | ✓ |
+| `4,4` | `6,4` | 9 | 639 | 639 | **0** | ✓ |
+| `4,5` | `6,5` | 8 | 232 | 232 | **0** | ✓ |
+| **orbit sum** | | 51 | 3 111 | 3 111 | **0** | ✓ 6/6 |
+
+* **ALL SIX `x=4` landings have EMPTY leak-free sets — 0 of 0 at every one of their 51 per-near lines**
+  (the previously invisible rows, now printed and labelled `FIRST-COLUMN LAW: leak-free ≡ 0`).
+* **`single-phase(4,y) == tested(4,y)` on all six** — and now visibly so: the two fields are printed side
+  by side and are equal on all 51 lines. Honest, and information-free, exactly as Ruling 3 says.
+* **`σ_x` equivariance of `tested` HOLDS while equivariance of `leak-free` FAILS:** `tested(4,y) ==
+  tested(6,y)` on **6/6** pairs (261/261 · 568/568 · 747/747 · 664/664 · 639/639 · 232/232 — the mirrored
+  `tested` identity reproduced at a cap where it had never been walked), while the `x=6` members carry
+  **153** leak-free line-instances against the `x=4` group's **0**. The falsifiable expectation stated in
+  `docs/architecture.md` §15.6 is **confirmed**: sizes mirror, verdicts do not.
+* Side read-out of the `D2` orbit law at this cap: `K` per orbit = **29, 71, 83, 83, 71, 29** for
+  `y = 0…5`, with `tested` = `N(parity) × K` (`N` = 9/8) — and the `σ_y` half visible as the same `K`
+  with the `9 ↔ 8` factor swapped (`4,0` 261 = 9 × 29 vs `4,5` 232 = 8 × 29; `4,1` 568 = 8 × 71 vs
+  `4,4` 639 = 9 × 71). Panel total **6 222 tested · 6 222 single-phase · 153 leak-free**.
+
+**(B) PROBE B — the ≤8 retro-test of `v = K(6,2)|≤8 = 117 587`** (ARCH's derivation: the committed ≤8
+deficit `3 267 315` decomposes as `9·11 608 + 8·11 608 + 8·63 000 + 9·63 000 + 17·v` ⇒ `v = 117 587`
+per near). Four landings measured at `--pocketsize=8` (`--only=4,2 --only=6,2 --only=4,3 --only=6,3`),
+**35.5 s**, exit 0:
+
+| landing | parity | `N` | per-near count (measured) | `tested` (measured) | prediction | leak-free |
+|---|---|---|---|---|---|---|
+| `4,2` | even | 9 | **117 587** | 1 058 283 | 9 × 117 587 = 1 058 283 | **0** (law) |
+| `6,2` | even | 9 | **117 587** | 1 058 283 | 9 × 117 587 = 1 058 283 | 792 (88/near) |
+| `4,3` | odd | 8 | **117 587** | 940 696 | 8 × 117 587 = 940 696 | **0** (law) |
+| `6,3` | odd | 8 | **117 587** | 940 696 | 8 × 117 587 = 940 696 | 704 (88/near) |
+
+* **`v = 117 587` CONFIRMED — by measurement, on both sides of the orbit** (`x=4` and `x=6`), at four
+  landings. Slice total **3 997 958 tested · 1 496 leak-free**, and the four per-landing figures are
+  exactly the four prediction values.
+* **The deficit identity closes exactly:** `17 × (11 608 + 63 000 + 117 587) = 17 × 192 195 = 3 267 315`,
+  which is the committed ≤8 deficit, and `16 431 095 − 3 267 315 = 13 163 780` — the committed "≤8
+  single-phase" cell, now identified as **the class-bearing `tested` sum**, not a boundary count.
+* **The ≤8 `x=4` rows had never been measured before.** This probe is their first reading, and it also
+  reproduces the mirrored `tested` identity at ≤8 (`4,2` ≡ `6,2`, `4,3` ≡ `6,3`).
+
+**(C) What the committed record could NOT answer (named, not reconstructed).** The prediction `v = 117 587`
+is **not recoverable from the committed ≤8 artifacts alone**, and the missing data is named:
+1. **Every `x=4` per-near line at ≤8** — suppressed at source by the gate (Ruling 3) and therefore absent
+   from `author-l20.transcript.md` §4 for all six landings, at every cap. The ≤8 `x=4` slice was never
+   committed in any artifact (its numbers exist only as sums inside the deficit).
+2. **Every class-`{2,3}` per-near line at ≤8** — `author-l20.transcript.md` §4 quotes `5,0`/`6,0`/`6,1`
+   in full and `5,1`/`5,2` partially, then elides the rest ("the remaining per-(landing, near-end) count
+   lines elided"); no committed ≤8 line carries `4,2`/`4,3`/`6,2`/`6,3`. The ≤8 slice files lived in a
+   session temp dir and were **not** committed (the p10 ≤10 slices were; the ≤8 ones were not).
+   ⇒ From the committed record, `v` could only be *derived* (deficit + orbit law) — never *read*. **This
+   probe is the measurement that settles it**, which is why it was run rather than argued.
+
+### 10.4 The instrument fix (LV-013, `scripts/author-l20.ts`, +52 −9)
+
+* Accumulation of `single`/`sealed` **moved out** of the `if (hereSealed > 0)` guard; the per-pair line is
+  printed **unconditionally** and now shows `N tested · N single-phase boundary (TAUTOLOGY ≡ tested · ADR
+  architecture-0004 R3 …) · M leak-free`, with first-column landings labelled `FIRST-COLUMN LAW:
+  leak-free ≡ 0 (ADR architecture-0004 R2)`. The census line labels the column too, so **no future reader
+  can treat it as a measurement**.
+* `sealedPocket`'s doc-comment records the tautology (the function is kept, not deleted, so the historical
+  screen stays readable and the tautology stays visible; deleting the channel outright is a **named,
+  deferred row**, `docs/ai-native-pipeline.md` §8.17 — it moves no number either way).
+* A comment block on `--only`/`SLICED` records the **census-cost ruling** (ADR Ruling 4 / §15.5):
+  `PREDICTED` sizes are allowed per `D2` orbit, **results never inherit except the first-column law**,
+  and **no prediction is implemented** in the tool (deferred row, §8.17).
+* **Pre/post receipt (one small slice, `--pocketsize=4 --only=4,2 --only=6,2`, identical command):**
+
+  | | pre-LV-013 instrument | post-LV-013 instrument |
+  |---|---|---|
+  | `census:` line | `1494 tested · 747 single-phase boundary · 36 leak-free` | `1494 tested · 1494 single-phase boundary (TAUTOLOGY ≡ tested …) · 36 leak-free` |
+  | per-pair lines | 9 (only `6,2`) | 18 (`6,2` identical + the 9 previously suppressed `4,2` lines) |
+  | the 9 shared `(landing, near)` pairs | `83 single-phase boundary, 4 leak-free` | `83 tested · 83 single-phase · 4 leak-free` — **`tested` and `leak-free` digits identical, 9/9** |
+  | leak-free listing block | 36 lines | 36 lines, **byte-identical** (`diff` = 0) |
+
+  So: **`tested` 1 494 → 1 494, `leak-free` 36 → 36 (and the listing byte-identical); the only line that
+  changed is the tautological one, which is now labelled honest.** Post-fix runs of §10.3 were taken with
+  this instrument.
+* **Full ≤8 pass at the fixed instrument** (`--stage=p --pocketsize=8`, no `--only`, **2 min 33 s**, exit 0) —
+  the strongest receipt available, because it re-measures the whole committed ≤8 census:
+
+  | | committed ≤8 run (LV-011) | fixed instrument |
+  |---|---|---|
+  | `tested` | 16 431 095 | **16 431 095** (identical) |
+  | leak-free | 2 788 | **2 788** (identical, listing totals agree) |
+  | histogram | `3:34 4:204 6:510 7:2040` | **`3:34 4:204 6:510 7:2040`** (identical) |
+  | `single-phase` | 13 163 780 *(gate-suppressed)* | **16 431 095 = `tested`** (honest) |
+  | per-pair count lines | 102 (the twelve class-bearing landings only) | **153** (all 18 landings; the 51 new ones are the `x=4` group, each labelled `FIRST-COLUMN LAW`) |
+  | anchors | `5,0` 8 × 36 829 · `6,0` 9 × 11 608 · `6,1` 8 × 63 000 | reproduced exactly (`294 632` · `104 472` · `504 000`) |
+
+  And the **gate-suppressed mass is now a direct measurement instead of an identity**: the six `x=4`
+  landings' printed `tested` values are `104 472 · 504 000 · 1 058 283 · 940 696 · 567 000 · 92 864`,
+  summing to **3 267 315** — the committed deficit, digit for digit, measured line by line. (This run
+  independently reproduces PROBE B's `1 058 283` / `940 696` for `4,2` / `4,3`.)
