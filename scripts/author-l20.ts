@@ -323,26 +323,24 @@ function boundaryOf(tiles: readonly Coord[]): readonly Coord[] {
 }
 
 /** Every connected far-region tile set of size 2..`maxSize` containing `landing`. */
-function pocketCandidates(landing: Coord, maxSize: number): Pocket[] {
+function* pocketCandidates(landing: Coord, maxSize: number): Generator<Pocket> {
   const pool = FAR_TILES.filter((f) => coordKey(f) !== coordKey(landing));
-  const out: Pocket[] = [];
-  const grow = (tiles: Coord[]): void => {
+  function* grow(tiles: Coord[]): Generator<Pocket> {
     if (tiles.length >= 2) {
       const boundary = boundaryOf(tiles);
       if (boundary.length > 0)
-        out.push({ landing, tiles: [...tiles].sort((a, b) => coordKey(a).localeCompare(coordKey(b))), boundary });
+        yield { landing, tiles: [...tiles].sort((a, b) => coordKey(a).localeCompare(coordKey(b))), boundary };
     }
     if (tiles.length >= maxSize) return;
     for (const p of pool) {
       if (tiles.some((t) => coordKey(t) === coordKey(p))) continue;
       if (!tiles.some((t) => adjacent(t, p))) continue;
       tiles.push(p);
-      grow(tiles);
+      yield* grow(tiles);
       tiles.pop();
     }
-  };
-  grow([landing]);
-  return out;
+  }
+  yield* grow([landing]);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -878,16 +876,31 @@ function judge(
 
 const POCKET_MAX = Number(argOf("pocketsize") ?? "5");
 
+/**
+ * `--only=x,y` (repeatable) — **slice filter**, stage P only. Added by LV-012 for
+ * tractability, never for tuning: the pocket enumeration is exponential in
+ * `--pocketsize`, so the ≤10 census is measured in landing slices. With no `--only`
+ * the loop is exactly the shipped one (every far tile) and no measurement changes;
+ * a slice is verified by re-measuring a landing whose full-run line is already
+ * committed (`5,0` → 13, `6,0` → 40 at ≤10, `author-l20.transcript.md` §4).
+ */
+const ONLY_LANDINGS: ReadonlySet<string> = new Set(
+  process.argv.filter((a) => a.startsWith("--only=")).map((a) => a.slice("--only=".length)),
+);
+const SLICED: readonly Coord[] =
+  ONLY_LANDINGS.size === 0 ? FAR_TILES : FAR_TILES.filter((t) => ONLY_LANDINGS.has(coordKey(t)));
+
 function stagePockets(): void {
   console.log(
     `\nstage P pocket census — grid ${String(W)}×${String(H)} · sealed column x=${String(CX)} · ` +
-      `pocket size ≤ ${String(POCKET_MAX)} · far tiles = ${String(FAR_TILES.length)}`,
+      `pocket size ≤ ${String(POCKET_MAX)} · far tiles = ${String(FAR_TILES.length)}` +
+      (ONLY_LANDINGS.size === 0 ? "" : ` · SLICE --only=${[...ONLY_LANDINGS].join(" --only=")} (${String(SLICED.length)} landing(s))`),
   );
   let tested = 0;
   let single = 0;
   let sealed = 0;
   const kept: string[] = [];
-  for (const landing of FAR_TILES) {
+  for (const landing of SLICED) {
     for (const near of LEFT_TILES) {
       if (coordKey(near) === coordKey(PLAYER)) continue;
       if (parity(near) === parity(landing)) continue; // ADR-0009: opposite parity only

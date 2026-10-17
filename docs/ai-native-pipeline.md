@@ -1,7 +1,7 @@
 # AI Native Pipeline — Phase Shift: Echo Grid
 
 > Owner: **Level AI + Solver** with **Orchestrator** (formatting maintenance by Docs + GitHub; content belongs to the owners)
-> Version: V1.7 · Date: 2026-10-16
+> Version: V1.10 · Date: 2026-10-17
 
 ---
 
@@ -1118,6 +1118,165 @@ rebuild.
 
 **(Cross-lane, named not taken)** `tests/**` is QA-014's (`l16-l20-candidates.test.ts`'s shelf rule flips to a booked-empty shelf, `EXPECTED_LEVEL_COUNT` 19->20, and the derived pin tables burn — the verbatim list is in `src/levels/README.md` §7b), and the registry row (`src/game/levels/level-registry.ts`) is GAME-002's.
 
+### 8.16 LV-012 — Act II batch 1: five `G`-lattice rungs on the shelf, and the ≤10 pocket census (2026-10-17)
+
+**The one-line result.** `docs/level-design.md` §7.2/§7.4/§7.7 (GD-009 / ADR-`design-0005`) turned into a
+search: a new lattice family — **stage `G`, multi-pocket sealed landings with an ordered multi-press
+chain** — was named, censused, and used to author **five rungs L21–L25** on the unregistered candidate
+shelf (`src/levels/candidates/l021.json` … `l025.json`), each with a **program-stamped** `par` and a
+**program-proved** gate chain. Root rows untouched; **L19/L20 not re-stamped** (§7.7 item 4).
+
+**The law it implements, quoted not paraphrased** (`docs/level-design.md` §6.2.3, the sealed-landing
+lattice): exactly one opposite-colour portal pair; the landing pocket **not on-foot reachable** in the
+needed phase; **every** blocker an openable door (no phase-wall exit — the F-L19-2 doctrine that protects
+P4 coverage); an ordered **≥ 2-press** plan whose second switch is reachable only after the first door
+opens; `T ≡ R ≡ 0`; coverage **42/42**; and `switchRequired` read as a **measurement**, never an
+assertion.
+
+**Plan shape before skeleton (`§7.7` item 2).** The tool's header publishes the device *before* the
+search runs: `P` (landing pocket, portal-only, exit = door `d1`, press = `s1 ∈ P`) → `F` (free far
+region, entered only by crossing `d1`, press = `s2 ∈ F`) → `Q` (second walk-sealed pocket, `d2` its only
+entrance *and* exit, press = `sg ∈ Q`) → `G` (goal, every in-region neighbour a `d3` tile). The forced
+order `s1 → d1 → s2 → d2 → sg → d3` is a **property of the board**: `s2` lies outside `P`, `sg` inside
+`Q`, `d3` is the goal's only entrance, and §1's one-switch-per-door rule closes every shortcut. The
+prover then re-derives the device **from the landed bytes** and additionally *stages the worlds* to check
+the chain is **forced**, not merely present.
+
+**The frame is measured, not assumed.** `--stage=frame` checks the derived far-frame phase law against a
+BFS of the bare board: **2754/2754 far-tile (phase, once-reached) readings agree, 0 mismatches.** This
+matters because the batch runs at **`--cx=2`** (the sealed column moves), and at the tool's default
+`--cx=3` — L20's frame — the `G` lattice yields **0** judged candidates. Every command in the record
+carries the flag.
+
+**(A negative census, published as a finding.)** `--pocketsize=5 --qmax=5 --cap=800` returns **0 accepts
+of 0 judged** — and the cause is *upstream of the par filter*: **not one room survived sealability**
+(`column-leak` 72 471 · `mixed-entry-phase` 24 004 over 476 devices). Measured consequence: in this frame
+the walk-sealable room caps at **4 tiles**, so the `G` family carries only **2 device/seal skeletons per
+`par`**. The five rungs therefore share skeletons (L21/L24/L25 one, L22/L23 the other) while differing in
+portal endpoint, landing tile and switch placement — **five distinct §6.1.4 keys**, 0 collisions. That is
+a **legibility risk reported to the designer**, not a guard violation: §7.7 item 4 forbids re-stamping
+L20's shipped skeleton and forbids clone-key collisions; it does not demand five skeletons.
+
+**(The accept class, with its refusals beside it — §7.7 item 5.)** `--pocketsize=4 --qmax=4 --cap=200`:
+**2208 accepts of 9570 judged in 29.0 s** (set-identical to the earlier dump, so the pass reproduces from
+its own record). Refusal histogram: **`unsolvable` 4004 · `g5-identity-broken` 1864 · `par-out-of-band`
+1494**, with upstream `room2 sets not sealable` 47 608 and room rejections `column-leak` 31 603 /
+`mixed-entry-phase` 28 743 — and **`in-band candidates refused by a gate: 1864`**, i.e. every in-band
+candidate was refused by exactly the identity gate and none by a stray rule. Note the shape: the dominant
+filter is *the puzzle not existing*, the second is *the device's own structural law* — `par-out-of-band`
+is **not** the dominant filter. Measured `par` census over every judged candidate:
+`9:24 10:8 11:128 12:38 13:276 14:56 15:450 16:112 24:260 25:24 26:96 28:22`.
+
+**(The selection rule, published before it ran.)** Rungs strictly inside Act II's 16–24 band with `D_exec`
+in `[19.75, 29.06]` and `B` in the measured band; `D_exec` **strictly rising** along the batch (§7.3: no
+dip; plateau only at act-open, labelled `ΔM = 0`); then prefer the maximum number of `Δpar ≥ 2` steps
+(§6.1.1 P2), then the largest minimal `D_exec`, then the smallest spread. **A fourth clause was added
+before anything was written** — the §6.1.4 distinct-key rule read over the *stricter seal-inclusive* key —
+and the first draft of the preference was **measured to violate it** (two rungs on one skeleton with
+identical portals *and identical door tiles*), which is why it is a **filter, not a preference**. Dry run:
+**21 par combinations tried · 0 dropped by the rising clause · 0 par dropped by the clone clause · pars
+[17, 18, 20, 21, 23] · Δpar≥2 steps 2/4 · min `D_exec` 21.581395 · spread 6.023256 · 5 distinct keys, 0
+colliding with the shipped 16**. The 2/4 step count is the *maximum achievable* in a 7-wide window
+(`17 + 2·4 = 25 > 23`) and the two violated steps are reported beside the ladder, never smoothed over.
+
+**The ladder as measured, per rung** (prover: `scripts/prove-candidate.ts --family=g
+--ladder=21,22,23,24,25 --peak=24.729412`):
+
+| rung | par | `D_exec` | `B` | coverage | press-then-cross | Δ vs Act I peak 24.729412 |
+|---|---|---|---|---|---|---|
+| L21 | 17 | 21.581395 | 1.5271 | 42/42 | 12/12 | −3.148017 |
+| L22 | 18 | 22.584000 | 1.5280 | 42/42 | 16/16 | −2.145412 |
+| L23 | 20 | 24.620000 | 1.5400 | 42/42 | 20/20 | −0.109412 |
+| L24 | 21 | 25.604651 | 1.5349 | 42/42 | 90/90 | **+0.875239** |
+| L25 | 23 | 27.604651 | 1.5349 | 42/42 | 72/72 | **+2.875239** |
+
+**5/5 GATES ACCEPT**, **13/13 negative controls caught with each control's own gate named on every rung**,
+all-OFF world **UNSATISFIABLE** per rung, coverage 42/42 ×5, `T ≡ R ≡ 0` ×5, `D_exec` strictly rising
+**4/4** with no dip, and **`B` in band 5/5**. §7.3's `act-peak` obligation is **DISCHARGED by the batch's
+measured maximum** (`L25` 27.604651 > Act I's measured 24.729412), with **1.455349** of headroom to the
+Act II ceiling 29.06 — and the obligation rides **only on the peak rung** (§7.3), which is why the
+interior members are allowed below it. A **falsification pass** (`--peak=28.5`) fails **exactly one rung
+on exactly one gate** (`L25`, `act-peak`), so the clause is live rather than decorative.
+
+**The proving side grew, and its expectations were measured first.** `scripts/prove-candidate.ts` gains
+`--family=g|sl`, `--ladder=`, `--peak=`, `--measure-controls` (an **expectation pass** that asserts
+nothing, per the F-L16-3 order: measure, then write the expectation) and a `measureRoom()` that
+re-measures each sealed room's boundary against the **current** bytes, so a control that mutates a door is
+still named by `g2`. The family-`g` gate set is `g0-portal-pair` · `g1-pocket-on-foot` · `g2-room-exit-door`
+· `g6-room-structure` · `g3-ordered-chain` · `g4-switch-required` · `g5-identity-broken`, with the base
+`par-step` replaced inside the act band by `act2-par-band` · `act2-exec-band` · `act2-b-band` · `act-peak`.
+`g3` is the strongest of them: besides the per-route order census it **stages worlds** — dropping the
+first *k* switches must leave the `(k+1)`-th switch tile **and** the goal unreachable — so the order is
+**forced**, not merely present. Transcript: `scripts/prove-candidate-l2125.transcript.md`.
+
+**(Acceptance / report-only.** `tsc --noEmit` clean on production · `npm run levels` **20/20 ok · 0 errors ·
+58 warnings · 11/11 probes** (candidates are excluded from the root pass by construction) · `solve-levels
+src/levels/candidates --audit` **5/5 PASS with `parMatch=true` 5/5** (17/18/20/21/23) · `vitest` at the
+dispatch base with the shelf empty **33 files · 758 passed · 3 skipped**, and with the five candidates
+**1 failed file / 1 failed test** — `tests/solver/l16-l20-candidates.test.ts:163`, QA-011's *booked-shelf*
+pin `expect(shelf).toEqual([])`, **no previously-passing test failing**. That one red is the **tests
+lane's** (QA / Orchestrator) and is reported, not edited — exactly as R-003c/QA-014 handled the pins its
+own ticket owns.)
+
+**(Cross-lane, named not taken)** the registry row (`src/game/levels/level-registry.ts`), the level-id
+block law in `src/core/solver/policy.ts`, `EXPECTED_LEVEL_COUNT` and the metrics sidecar all stay with
+their owners until registration: **a proven candidate does not widen a registered ceiling.**
+
+**(F-L20-3 — CLOSED by measurement. The `--stage=p --pocketsize=10` census, landed as its own commit.)**
+§7.7 item 1 asked for exactly this and forbade closing it by assumption — and §7.4 makes `P`/`SL`
+"extended past F-L20-3's open ≥ 9-pocket boundary" Act II's **first** lattice family, so the boundary had
+to be measured before anything could be built on it. *(Why it is a slice job)* the monolithic pass is
+exponential in `--pocketsize` and LV-011 deliberately killed it after 25 lines because an accept already
+existed at ≤ 8; LV-012 ran the same measurement as **18 disjoint `--only=x,y` landing slices** — identical
+tool, identical `--stage=p --pocketsize=10`, the only difference being which landing each process walks.
+Disjointness is what makes summation **exact**, and that was demonstrated rather than argued: the killed
+pass's **25 data lines reproduce byte-for-byte** (`5,0` 1 338 255/13 per near × 8 · `6,0` 354 129/40 × 9 ·
+`5,1` 8 262 157/40), and its three per-near readings are reproduced **exactly** on all three landings it
+reached (`5,1` **40**, `6,0` **40**, `5,0` **13** — the aborted pass's own numbers, now confirmed rather
+than projected). *(What it cost)* **724 203 655 pockets tested · 592 804 433 single-phase boundary ·
+17 476 leak-free**, **18/18 landings measured**, **0 slices carrying an error or OOM string**, in
+**45 min 37 s** of 8-way wall time = **264 573 candidates/s** aggregate; the ≤8 pass is **2.3 %** of this
+volume (16 431 095 / 724 203 655 = **44×**). *(The verdict)* **the leak-free size histogram at ≤10 is
+`3:34 · 4:204 · 6:510 · 7:2040 · 9:14688`.** Its first four rows are the committed ≤8 histogram **digit for
+digit** (`34 + 204 + 510 + 2040 = 2 788`, the committed leak-free total), so the ≤10 pass reproduces its
+predecessor's class as a **sub-histogram** instead of merely agreeing with it in aggregate — and it does so
+**per landing**: the size-≤7 counts reproduce both ≤8 anchors on record (`5,0` = **24** = 8 × 3 and `6,0` =
+**108** = 9 × 12, the committed per-near counts times their near ends). The fifth row is new: a **size-9
+class of 14 688 members**, **7.2×** the largest ≤8 row, distributed over the twelve class-bearing landings
+(`6,3` 3 584 · `6,2` 4 032 · `6,4` 2 520 · `6,1` 2 240 · `5,3` 630 · `5,2` 560 · `5,1` 252 · `6,0` 252 ·
+`5,4` 224 · `6,5` 224 · `5,5` 90 · `5,0` 80). And **no size-8 and no size-10 member exists anywhere in
+the 18-landing frame** — measured directly, `NF == 8` and `NF == 10` count **0** on every one of the 18
+landings. So inside `≤ 10` the admitted sizes are exactly **`{3, 4, 6, 7, 9}`**, `{5, 8, 10}` are empty, and
+LV-011's "the ≤8 class is a slice, not the whole space" is now **measured as such** (its three preview
+readings all confirmed). *(Scope, stated so the closure is not misread as a ceiling)* completeness is
+proven **for pocket size ≤ 10**, which is the frame's own enumeration limit; sizes **≥ 11 were not
+enumerated** and stay unmeasured, and per §7.7 item 1 **no ceiling claim about the landing device is
+published either way**. What the new members buy is a **wider pool** for Act II rungs — 2 363 leak-free on
+the six x=5 landings, 15 113 on the six x=6 landings, **0** on the six x=4 landings — a pool statement, not
+a difficulty claim: **no `par`, no `B` and no `D_exec` moves because of this census.** *(Two findings
+recorded beside the verdict, neither promoted to law)* ① **the mirrored-column identity**: the `x=4` and
+`x=6` slices enumerate to **identical `tested` counts on all six landing rows** (3 187 161 · 18 777 072 ·
+45 252 927 · 40 224 824 · 21 124 206 · 2 833 032 — six exact matches to the last digit) while the parity
+verdict between them is **total and opposite** — `x=4` returns **0** single-phase boundary and **0**
+leak-free, `x=6` returns its **entire** tested count as single-phase and all 15 113 of its leak-free
+members; the enumeration is mirror-symmetric in those two columns and the phase check is not, and **the
+mechanism is not established by this census**, so it is named as an open lattice question for the
+architect rather than asserted. ② the parities of the empty sizes (5, 8, 10) are measured over 724M
+candidates; no structural argument for them is offered here. *(The instrument work that made it
+affordable — this lane, `scripts/**`, both semantics-preserving and both proven)* `pocketCandidates` was an
+**eager `Pocket[]` builder that materialized the entire class**; the ≤10 OOM was a **materialization bug,
+not infeasibility**, and it is now a **lazy generator**, whose equivalence was proven by re-running
+`--pocketsize=8` to the identical `16 431 095 / 13 163 780 / 2 788` and histogram `3:34 4:204 6:510 7:2040`
+(exit 0); and `--only=x,y` (repeatable, stage P only) was added, with the no-`--only` shipped loop left
+byte-unchanged. **Nothing that changes what is counted was touched** — the slice partition is a **cost**
+optimisation whose exactness is demonstrated against the killed pass, and it was published *before* it ran,
+together with the rule that an unmeasured landing is reported **`NOT MEASURED`, never as zero** (there were
+none: 18/18). *(The lever for the next census, named not taken)* `pocketCandidates` walks **growth
+sequences, not distinct tile sets** — the same pocket appears repeatedly under different build orders — so
+the committed ≤8 numbers `16 431 095` / `2 788` are **sequence counts**; a distinct-set enumerator would
+make a ≤11/≤12 pass affordable **and re-baseline them**, which is a ticket boundary, not a silent
+optimisation. Transcript: `scripts/author-l20-p10.transcript.md`.
+
 ## 9. Change log
 
 | Date | Version | Change | Author |
@@ -1141,3 +1300,5 @@ rebuild.
 | 2026-10-16 | V1.6 | **R-003c — the shelf empties and the block is registered: the four rungs are dataset, and the law is what judges them.** New **§8.13** records the registration end-to-end. *(The copy)* `git mv` of `l016`–`l019` from `src/levels/candidates/` into the root — a **byte-copy, never an edit** — with identity proven by git blob hash against `3cc6df2:src/levels/candidates/lNNN.json` (`4635a866…`/`97ce1448…`/`486fedac…`/`3feca910…`) and the check **failing** rather than skipping when git cannot answer. *(The law, before the numbers)* `BLOCK_L1619_*` constants + the six-id `BlockL1619GateId` union + `blockL1619Gates()` + four lesson rows **all `switchRequired: "required"`** (measured, not decreed: the all-OFF subgraph contains no goal state on 4/4, so this latch carries **existence** — L16–L19 are the first latch block in the set that is not `"exempt"`) + six new `gate-block-l1619-*` codes. *(The gate that could have been self-serving)* `scripts/prove-candidate.ts`'s `measureCut()` now **excludes `BLOCK_L1619_IDS`** from the cut basis: without it, registering the rungs would have let the block's own max `D_exec` (22.885157) become the ceiling it is judged against, and all four rungs would have been **falsely REJECTed**. *(The re-attestation)* `scripts/attest-lv010-block.ts` + committed transcript, `RESULT: REGISTERED-MATCH`, exit 0 — byte identity; the law's basis re-derived from the live L1–L15 files (10 / 14.969697 / `[1.2500, 1.6875]`, all MATCH against the imported constants); **every booked number re-measured from the root bytes**; all gates PASS per rung; the ladder (exact rung `par`, strictly rising `D_exec`, terminal = the 22.885157 ceiling); and **6/6 negative controls caught by name** — one per gate, in-lane (the `tests/**` `Record<PolicyViolationCode, …>` is deliberately left RED with its six missing keys named for QA). *(The parity claim)* the registered bytes re-measure the booked `12/17.100000 · 14/19.027027 · 16/20.907923 · 18/22.885157` **identically** — every published number is a Solver read-out of the root files, never a candidate note; the tail-ceiling gate compare is 6-dp for exactly that reason (bit-exact wrongly refused `l019`). *(Acceptance)* validator `19/19 ok · 0 errors · 52 warnings` (11/11 probes) · solver `19/19 PASS` (1 standing escalation, `l008`) · sidecar regenerated to **19 records** · `tsc` clean on production · `vitest` **33 files → 9 failed / 38 rows**, every red one a count- or dataset-derived pin itemised with **file:line** in `src/levels/README.md` §7. *(A measured finding, not a mystery)* `route-budget.test.ts`'s exhaustive-vs-pruned equality runs an **unpruned** walk under the default `PAR_ROUTE_VISIT_CAP = 2_000_000`, and the new rungs' unpruned demand is **1,363,684 / 17,779,004 / 98,736,430 / > 5 × 10⁸** work units (L16→L19) while the **pruned** walk every shipped tool uses costs 115/570 … 2162/7386 on the same boards — n-11's lookahead prune shown to be load-bearing, with the numbers handed to QA. *(Cross-lane, named not taken)* the registry row (`src/game/levels/level-registry.ts`), `EXPECTED_LEVEL_COUNT` `tests/e2e/helpers/levels.ts:76`, and eight derived pin tables; `src/levels/candidates/README.md` created so the empty shelf reads as **graduated**, not lost. *(The permanent gap)* **L20 is not authored** and no fifth rung was invented: the goal-gated full-seal device's ceiling is par 18 / `D_exec` 22.885157 on `7×6` at every arity, `7×7` reaches par 22 only by re-running L19's exact seal shape longer (refused as an escalation), and `block-l1619-tail-ceiling` enforces the stop as an equality — a par-20 rung needs a new lattice stage (gauntlet or sealed landing), recorded for the next lane. **No earlier row, gate, band, weight or shipped number moved** | Level AI + Solver (R-003c) |
 | 2026-10-16 | V1.7 | **LV-011 — L20 is authored: the ADOPTED sealed landing is built, censused, and proven as a candidate.** New **§8.14**. *(The law first)* GD-007 / ADR-`design-0004`: **sealed landing ADOPTED, gauntlet REJECTED** (≥ 6 doors on a 7×6 arity-3 ring, and walls cannot remove an approach — a far-region phase wall makes its tile unstandable and the 42/42 coverage gate fails); only the adopted device is implemented, no stage and no gate for the rejected one. *(The search)* new tool `scripts/author-l20.ts` — stage **P** (pocket class census), stage **SL** (the lattice `portal entry × pocket × pocket switch × goal × seal-switch tuple`, each tuple re-derived and judged), stage **V**, the §6.1.4 clone guard on the **stricter seal-inclusive** geometry key, `probePar()` as the rung pin filter; **238 devices / 269 484 tuples** at pockets ≤ 5 and **2 788 / 284 784** at ≤ 8 give the **same 640 accepts**, the whole rejection histogram being `par-not-rung` (the rung pin is the only filter that fires) with `par-20 candidates refused by a gate: 0`; accepts run `D_exec` 24.729412…24.790588 · `B` 1.5765…1.6485, and the selection is derived (exact rung par → min `D_exec` → enumeration order). *(The instrument)* **F-L20-1**: pass 1 returned `0 accept(s) of 269484` from **two false refusals** — `landingArrival()` searched a *walk-in* where `applyMove` fires the portal on **entry** and flips after it (so the arrival is the teleport's successor), and g1's escape flood counted moves made *after* leaving the pocket (now edges out of the pocket only, with the near-end return named); both corrected to the shipped rule and mirrored in the prover, justified by the rule and not by the outcome, and visible only because two independent implementations disagreed. *(The proof)* `l020.json` = **par 20 · `D_exec` 24.729412 · `B` 1.5765 · 252/252 press-then-cross · 14 refusals · 42/42 · all-OFF UNSATISFIABLE · gates 15/15 ACCEPT**, with the rung-≥20 chain adding `rung-plus-block-escalation` (`> 22.885157` **and** `B` in band), `par-rung-exact` and **g1–g5** (pocket on-foot-unreachable and leak-free · boundary sealed by **exactly one** door object, 0 free leaks, 0 walls · the ordered two-press chain on every route · all-OFF unsatisfiable · **the census identity broken** — the identity's value 16 < par 20 while every par route presses 2 switches). *(The battery)* **11/11 caught by their named gate**, each g1–g5 control measured before its `expect` was written — and **F-L20-4**: the inherited *"both switches retargeted"* control **MISSED** (this board carries five, and the first refusal is `unsolvable`), so per F-L16-3 it was **renamed to its measured meaning** and its `expect` corrected to the measured names. *(The open boundary)* **F-L20-3**: stage P's ≤8 class is complete (`16 431 095` tested · `13 163 780` single-phase boundary · 2 788 leak-free, sizes `3:34 4:204 6:510 7:2040`) but `--pocketsize=10` measures **more** leak-free pockets on the same landings (`5,1` 12 → 40, `6,0` 12 → 40, `5,0` 3 → 13) — recorded as **class completeness OPEN at ≥ 9**, a named slice, never a completeness theorem and never a ceiling claim. *(Acceptance / report-only-up)* validator 19/19 ok · 0 errors · 52 warnings · 11/11 probes; solver `src/levels/candidates --audit` **1/1 PASS** with `parMatch=true`; `tsc` production clean (the single red row is the QA-011 pin, pre-existing at `b597f64`); `vitest` delta is **one suite turning from "crashed, 0 tests executed" into "ran, 17 executed"** — baseline 33 files · 12 failed / 21 passed · 42 failed / 648 passed / 3 skipped · 1 failed suite → 33 files · 12 failed / 21 passed · 45 failed / 662 passed / 3 skipped · 0 failed suites, **no previously-passing test failing**, the three new reds itemised (two are the fixture's `15`-vs-`19` and the one-candidate shelf; the third is **F-L20-2**, reported not edited: QA's *latch-removed* control asserts a bare board stays solvable, which a sealed landing falsifies **by construction** — the same class of false refusal as F-L20-1, on the test side, handed to QA-011 with its mechanism). *(Cross-lane, named not taken)* registration, the registry row, `EXPECTED_LEVEL_COUNT`, the sidecar and the **registered `block-l1619-tail-ceiling`** stay R-003c/Orchestrator — the registered ceiling is still par 18 / 22.885157 and a proven candidate does not widen it. Transcript: `scripts/author-l20.transcript.md` | Level AI + Solver (LV-011) |
 | 2026-10-16 | V1.8 | **R-003d — the fifth rung is registered: L20 joins the block, and the tail ceiling moves only after a certified root re-measure.** New **§8.15** records the pass: `git mv` byte parity (blob `78acaed0…`, rename 100 %), the root re-measure reproducing the booked `20 / 24.729412 / 1.5765` **before** any law file was touched, the block law grown to `BLOCK_L1619_IDS = [16..20]` with the derived rungs `12/14/16/18/20` matched exactly, the **re-registered** tail (`BLOCK_L1619_TAIL_PAR` 20 / `BLOCK_L1619_TAIL_EXEC_CEILING` 24.729412; the old 18/22.885157 recorded as the door-count seal's census ceiling, i.e. the standard rung 5 beat), the `measureCut()` exclusion grown to the five-rung block so the **cut stays frozen L1–L15 14.969697** (quoted red: the pre-fix run refused L20 with `escalation - D_exec=24.729412 > CUT 24.729412`, the board judging itself), `switchRequired: "required"` on the fifth row, `prove-candidate` **ACCEPT + 13/13 controls caught by name** (incl. the F-L20-2 re-point: the latch-removed control is the **named `unsolvable`** refusal on a sealed landing), the new in-lane battery `scripts/audit-block-l1620-controls.ts` **6/6 caught by name**, the **P-1** readout (**252/252** par routes re-land through the landing portal => a LIVE PA-003 row, not a structural guard), `attest-lv010-block` **exit 0 REGISTERED-MATCH** with per-rung byte origins, the sidecar regenerated to **20 records**, and the cross-lane pins named for **GAME-002** (registry row) and **QA-014** (verbatim broken-pin list in `src/levels/README.md` §7b). **No earlier row, weight, gate or shipped number moved** | Level AI + Solver (R-003d) |
+| 2026-10-17 | V1.9 | **LV-012 — Act II batch 1: the `G` lattice is named, censused, and five rungs are proven on the shelf.** New **§8.16**. *(The law)* `docs/level-design.md` §7.2/§7.4/§7.7 + ADR-`design-0005`: Act II = portal orchestration, `par` **16–24**, `D_exec` **`[19.75, 29.06]`** (derived from the measured `B` band, no new maths), stage **G** = multi-pocket with an ordered ≥ 2-press plan under §6.2.3's obligations **verbatim**. *(The frame)* `--stage=frame` measures the far-frame phase law against a bare-board BFS: **2754/2754 readings agree, 0 mismatches**; the batch runs at **`--cx=2`** (at the tool's default `--cx=3` — L20's frame — the `G` lattice judges **0** candidates), and every command in the record carries the flag. *(The shape before the search, §7.7 item 2)* the device is published in the tool header before anything is enumerated: landing pocket `P` (portal-only, exit = one door `d1`, press `s1 ∈ P`) → free far region `F` (entered only through `d1`, press `s2 ∈ F`) → second walk-sealed pocket `Q` (`d2` its only entrance *and* exit, press `sg ∈ Q`) → goal (every in-region neighbour a `d3` tile); the forced order `s1 → d1 → s2 → d2 → sg → d3` is a **property of the board**, and the prover re-derives it **from the landed bytes** and stages the worlds to show it is *forced*, not merely present. *(A negative census published as a finding)* `--pocketsize=5 --qmax=5 --cap=800` returns **0 accepts of 0 judged** with **not one room surviving sealability** (`column-leak` 72 471 · `mixed-entry-phase` 24 004 over 476 devices) ⇒ in this frame the walk-sealable room caps at **4 tiles**, so the family carries only **2 skeletons per `par`**; the five rungs therefore share skeletons while carrying **five distinct §6.1.4 keys, 0 collisions** — reported as a **legibility risk to the designer**, never as a guard violation (§7.7 item 4 forbids re-stamping L20's shipped skeleton and forbids clone-key collisions; it does not demand five skeletons). *(The accept class, refusals beside it — §7.7 item 5)* `--pocketsize=4 --qmax=4 --cap=200`: **2208 accepts of 9570 judged in 29.0 s**, set-identical to the earlier dump ⇒ reproducible from its own record; histogram **`unsolvable` 4004 · `g5-identity-broken` 1864 · `par-out-of-band` 1494**, upstream `room2 sets not sealable` 47 608, room rejections `column-leak` 31 603 / `mixed-entry-phase` 28 743, and **`in-band candidates refused by a gate: 1864`** — every in-band refusal is the identity gate, none a stray rule; note the shape, the dominant filter is *the puzzle not existing* and the second is *the device's own structural law*, **`par-out-of-band` is not the dominant filter**. *(The selection rule, published before it ran, §6.1.4 clause added before the write)* a fourth clause (distinct seal-inclusive key) was **measured to be violated by the first draft** (two rungs on one skeleton with identical portals *and identical door tiles*), which is why it is a **filter, not a preference**; dry run — **21 par combinations tried · 0 dropped by the rising-`D_exec` clause · 0 par dropped by the clone clause · pars [17, 18, 20, 21, 23] · Δpar≥2 steps 2/4 · min `D_exec` 21.581395 · spread 6.023256 · 5 distinct keys, 0 colliding with the shipped 16**. *(The ladder, prover-measured)* **L21 `par 17` / `D_exec` 21.581395 / `B` 1.5271 / 12-12 · L22 `18` / 22.584000 / 1.5280 / 16-16 · L23 `20` / 24.620000 / 1.5400 / 20-20 · L24 `21` / 25.604651 / 1.5349 / 90-90 · L25 `23` / 27.604651 / 1.5349 / 72-72** — coverage **42/42 ×5**, `T ≡ R ≡ 0` ×5, all-OFF **UNSATISFIABLE** ×5, `B` in band **5/5**, `D_exec` strictly rising **4/4 with no dip** (`Δ` +1.002605 / +2.036000 / +0.984651 / +2.000000), **5/5 GATES ACCEPT**, **13/13 negative controls caught with each control's own gate named on every rung**, and §7.3's `act-peak` **DISCHARGED by the batch maximum** (27.604651 > Act I's measured 24.729412, **+2.875239**, headroom to the ceiling 29.06 = **1.455349**) with the clause riding **only on the peak rung**; `Δpar ≥ 2` on **2 of 4** steps is a *measured* consequence of a 7-wide window (`17 + 2·4 = 25 > 23`) reported beside the ladder, never smoothed over. *(Falsification)* `--peak=28.5` fails **exactly one rung on exactly one gate** (`L25`, `act-peak`), so the clause is live rather than decorative. *(The proving side)* `prove-candidate.ts` gains `--family=g|sl`, `--ladder=`, `--peak=`, `--measure-controls` (**expectation pass asserts nothing** — F-L16-3 order: measure, then write the expectation) and `measureRoom()` re-measuring each room's boundary against the **current** bytes so a door-mutating control is still named by `g2`; family-`g` gates `g0-portal-pair · g1-pocket-on-foot · g2-room-exit-door · g6-room-structure · g3-ordered-chain · g4-switch-required · g5-identity-broken` with the base `par-step` replaced inside the act band by `act2-par-band · act2-exec-band · act2-b-band · act-peak`; `g3` **stages worlds** (dropping the first *k* switches must leave the `(k+1)`-th switch tile **and** the goal unreachable) so the order is *forced*. *(Acceptance at this tree)* `tsc --noEmit` clean on production · `npm run levels` **20/20 ok · 0 errors · 11/11 probes** · `solve-levels src/levels/candidates --audit` **5/5 PASS, `parMatch=true` 5/5** (17/18/20/21/23) · `vitest` at this tree **33 files → 32 passed / 1 failed · 761 rows → 757 passed / 1 failed / 3 skipped**, the single red being `tests/solver/l16-l20-candidates.test.ts:163` (QA-011's *booked-shelf* pin `expect(shelf).toEqual([])`) with **no previously-passing test failing** — the empty-shelf baseline at the same base was **758 passed / 3 skipped**. *(Cross-lane, named not taken)* the registry row, the id block law in `src/core/solver/policy.ts`, `EXPECTED_LEVEL_COUNT` and the sidecar stay with their owners until registration — **a proven candidate does not widen a registered ceiling**; the one red row (`tests/solver/l16-l20-candidates.test.ts:163`, QA-011's booked-shelf pin) is the **tests lane's** and is reported, not edited. **F-L20-3 is a SEPARATE pass and lands as its own commit** — no verdict is recorded here. Transcripts: `scripts/author-l21.transcript.md`, `scripts/prove-candidate-l2125.transcript.md` | Level AI + Solver (LV-012) |
+| 2026-10-17 | V1.10 | **LV-012 — F-L20-3 is CLOSED by measurement: the ≥ 9-pocket boundary is a real, enumerated size-9 class, and the ≤8 census is proven to be a slice of it.** The `--stage=p --pocketsize=10` pass LV-011 deliberately killed after 25 lines was run as **18 disjoint `--only=x,y` landing slices** (identical tool and stage; only the landing walked differs), which makes summation exact — demonstrated, not argued: the killed pass's **25 data lines reproduce byte-for-byte** and its three per-near previews are **confirmed exactly** (`5,1` 40 · `6,0` 40 · `5,0` 13). *(Measured)* **724 203 655 pockets tested · 592 804 433 single-phase boundary · 17 476 leak-free · 18/18 landings · 0 errors**, in **45 min 37 s** at 8-way = **264 573 candidates/s**; the ≤8 pass is **2.3 %** of that volume (**44×**). *(Verdict)* histogram at ≤10 = **`3:34 · 4:204 · 6:510 · 7:2040 · 9:14688`**; the first four rows are the committed ≤8 histogram **digit for digit** (`= 2 788`), reproducing it **per landing too** (`5,0` 24 = 8 × 3, `6,0` 108 = 9 × 12 — both committed anchors), so the ≤10 pass carries its predecessor as a **sub-histogram**; the new row is a **size-9 class of 14 688 members** (7.2× the largest ≤8 row) spread over the twelve class-bearing landings; and **no size-8 and no size-10 member exists anywhere** (`NF == 8` and `NF == 10` are **0** on all 18 landings) ⇒ inside `≤ 10` the admitted sizes are exactly **`{3, 4, 6, 7, 9}`**. LV-011's "the ≤8 class is a slice, not the whole space" is therefore **measured**, and the boundary **closes**. *(Scope)* completeness holds **for pocket size ≤ 10**, the frame's own limit; **≥ 11 was not enumerated** and per §7.7 item 1 **no ceiling claim is published either way**. What the new members buy is a **wider pool** (2 363 leak-free on x=5 landings · 15 113 on x=6 · **0** on x=4), a pool statement — **no `par`, `B` or `D_exec` moves because of this census**. *(Two findings recorded, neither promoted to law)* ① the `x=4` / `x=6` slices enumerate to **identical `tested` counts on all six landing rows** (3 187 161 · 18 777 072 · 45 252 927 · 40 224 824 · 21 124 206 · 2 833 032 — six exact matches) while the parity verdict between them is **total and opposite** (**0** single-phase and **0** leak-free at `x=4`; the whole tested count plus 15 113 leak-free at `x=6`) — **mechanism NOT established**, named as an open lattice question for the architect; ② the parity pattern of the empty sizes (5, 8, 10) is measured over 724M candidates with no structural argument offered. *(Instrument work, both semantics-preserving and both proven)* `pocketCandidates` was an **eager `Pocket[]` builder materializing the whole class** — the ≤10 OOM was a **materialization bug, not infeasibility** — now a **lazy generator**, equivalence proven by re-running `--pocketsize=8` to the identical `16 431 095 / 13 163 780 / 2 788` and histogram `3:34 4:204 6:510 7:2040`; and `--only=x,y` (repeatable, stage P only) was added with the no-`--only` shipped loop **byte-unchanged**. **Nothing that changes what is counted moved**, the slice method and the `NOT MEASURED`-never-zero rule were published **before** the run, and **no tuning-to-pass** occurred. *(Next lever, named not taken)* the enumerator walks **growth sequences, not distinct tile sets**, so `16 431 095` / `2 788` are **sequence counts**; a distinct-set enumerator makes ≤11/≤12 affordable **and re-baselines them** — a ticket boundary. **No root row, weight, band, gate or shipped number moved.** Transcript: `scripts/author-l20-p10.transcript.md` | Level AI + Solver (LV-012) |
