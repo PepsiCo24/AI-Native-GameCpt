@@ -27,6 +27,15 @@
  *   none` and whose card re-enables `pointer-events: auto` on itself (§7.3);
  * - every interactive control is a real `<button>` with a visible focus ring at
  *   ≥ 3:1 (`accent`), ≥ 44 × 44 CSS px hit box (R-T1), ≥ 8 px gaps (R-T2).
+ *
+ * ─── §6.6 motion beats on the DOM side (GAME-003) ────────────────────────────
+ * **B12** (button press: scale 0.97 + shadow 12 → 6 px, 90 ms in / 140 ms out) and
+ * **B13** (win panel entrance: 160 ms alpha + fixed offset, Next tappable from the
+ * first frame) are implemented here as CSS over the existing nodes. Every number and
+ * every reduced-motion variant arrives as a `--ps-*` value written by `hud.ts`, so the
+ * collapse under `prefers-reduced-motion` is a **data flip** (R-M4), not a branch: the
+ * press scale and the panel offset are variables, and the panel's alpha fade is the
+ * one beat MV-4 keeps.
  */
 
 /** `<style>` element id — the injection is idempotent (never two copies). */
@@ -118,7 +127,13 @@ export const HUD_CSS = `
 .ps-glyph[data-glyph="sun"]::after { content: ""; position: absolute; inset: 2px; border-radius: 50%; border: 2px solid currentColor; }
 .ps-glyph[data-glyph="crescent"]::after { content: ""; position: absolute; inset: 9px; left: 3px; border-radius: 50%; background: var(--ps-chip-fill); }
 
-/* Buttons — real buttons, 44 px hit box floor (R-T1), ≥ 8 px gaps (R-T2). */
+/* Buttons — real buttons, 44 px hit box floor (R-T1), ≥ 8 px gaps (R-T2).
+
+   B12 (§6.6) — press feedback: visual scale 0.97 + shadow lift 12 → 6 px,
+   90 ms in / 140 ms out. The **hit box stays the layout box**: the beat is a
+   transform, never a width/height/margin change, so the 44 px floor is untouched.
+   Both the scale and the offset are data (--ps-press-*), so MV-4's reduced form
+   (the scale dies, the value state survives) is a variable flip, not a branch. */
 .ps-actions { display: flex; align-items: center; gap: var(--ps-control-gap); }
 
 .ps-btn {
@@ -133,7 +148,21 @@ export const HUD_CSS = `
   font-weight: 600;
   cursor: pointer;
   touch-action: manipulation;
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.18);
   transition:
+    background-color var(--ps-flip-tokens-ms) linear var(--ps-flip-tokens-delay-ms),
+    color var(--ps-flip-tokens-ms) linear var(--ps-flip-tokens-delay-ms),
+    border-color var(--ps-flip-tokens-ms) linear var(--ps-flip-tokens-delay-ms),
+    transform var(--ps-press-out-ms) ease-out,
+    box-shadow var(--ps-press-out-ms) ease-out;
+}
+
+.ps-btn:active {
+  transform: scale(var(--ps-press-scale));
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.28);
+  transition:
+    transform var(--ps-press-in-ms) ease-out,
+    box-shadow var(--ps-press-in-ms) ease-out,
     background-color var(--ps-flip-tokens-ms) linear var(--ps-flip-tokens-delay-ms),
     color var(--ps-flip-tokens-ms) linear var(--ps-flip-tokens-delay-ms),
     border-color var(--ps-flip-tokens-ms) linear var(--ps-flip-tokens-delay-ms);
@@ -178,6 +207,17 @@ export const HUD_CSS = `
   color: var(--ps-text-primary);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   transition: background-color var(--ps-flip-tokens-ms) linear var(--ps-flip-tokens-delay-ms);
+  /* B13 (§6.6) — entrance from flipTimings.total (220 ms, the HUD's own delay),
+     160 ms, settled ≈ 380–400 ms. Alpha + a fixed offset; **Next is tappable from
+     the first frame** because the overlay unhides with no input gate. Under reduced
+     motion the offset is 0 (--ps-panel-offset), which leaves the alpha fade alone
+     — MV-4's "kept (alpha only)". */
+  animation: ps-panel-in var(--ps-panel-ms) ease-out both;
+}
+
+@keyframes ps-panel-in {
+  from { opacity: 0; transform: translateY(var(--ps-panel-offset)); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .ps-dialog-title { margin: 0; font-size: 28px; font-weight: 700; }
@@ -207,12 +247,18 @@ export const HUD_CSS = `
   border: 0;
 }
 
-/* §6.4 — reduced motion: the token swap stays, the transition goes. */
+/* §6.4 — reduced motion: the token swap stays, the transition goes. B12's press
+   scale and B13's panel offset die as *data* (--ps-press-scale / --ps-panel-offset
+   are set to 1 / 0px by hud.ts); the panel's own alpha fade is kept (MV-4), so
+   .ps-dialog is deliberately NOT in the animation: none list below. */
 @media (prefers-reduced-motion: reduce) {
   .ps-shell, .ps-bar, .ps-play, .ps-chip, .ps-btn, .ps-dialog {
     transition: none;
+  }
+  .ps-shell, .ps-bar, .ps-play, .ps-chip {
     animation: none;
   }
+  .ps-btn:active { transition: none; }
 }
 `;
 

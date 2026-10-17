@@ -44,6 +44,10 @@
  *   centre-pivoted, so the visible form lands on rank 5's `0.70 × cell` ceiling (the
  *   R-005a R-1 pattern: delivered files bake their own framing band). §3.1d
  *   occlusion is unchanged (portal in its own slot, actor always above).
+ * - **B6 (§6.6)** — on the end that turns live, **one arrival turn** of the baked
+ *   swirl rides the existing `walls` row (a per-frame scalar, 0 new tweens). No new
+ *   graphic anywhere, and none at the exit end (E3-3); reduced motion suppresses the
+ *   turn (the state swap survives inside B3's alpha/value swap).
  *
  * Two flagged deviations remain, both reported in DESIGN_IMPACT:
  *
@@ -88,6 +92,20 @@ export const PORTAL_ART_FRAMING = 0.788;
  * 0.70 box would land the form ≈ 0.55 cell, ~21 % under the ceiling.
  */
 export const PORTAL_ART_BOX = PORTAL_FOOTPRINT / PORTAL_ART_FRAMING;
+
+/** B6 — one arrival turn of the baked swirl (a full revolution, not a partial arc). */
+export const PORTAL_ARRIVAL_TURNS = 1;
+
+/**
+ * B6 — radians of the arrival turn at `progress` (0 → 1 over the `walls` row). One
+ * **full** turn ends where it began (`2π ≡ 0`), so the settled board and the beat's
+ * end are the same orientation and no residual rotation can desync from state
+ * (§6.4). The caller gates this to the end that turned live and to non-reduced
+ * motion; a settled board passes progress 0.
+ */
+export function portalArrivalTurn(progress: number): number {
+  return 2 * Math.PI * PORTAL_ARRIVAL_TURNS * clamp01(progress);
+}
 
 /**
  * The swirl (extension of §3.1c's "inner swirl", which the spec does not draw):
@@ -177,6 +195,8 @@ export interface PortalPaintContext {
    * portal pair): the view registers one image per end, so this selects which one.
    */
   readonly instance?: string;
+  /** B6 — radians of the one arrival turn, `0` when settled or under reduced motion. */
+  readonly turn?: number;
 }
 
 /**
@@ -219,11 +239,12 @@ export function paintPortal(ctx: PortalPaintContext): void {
   if (art !== undefined && live !== null) {
     // Live raster — the signed bytes at R-PM3's measured art box, centre-pivoted, so
     // the *visible* form lands on rank 5's 0.70 ceiling while the box bakes the
-    // file's own framing band. Never tinted (R-PM2/R-PM4); alpha is the live half of
-    // the in-place dormant↔live swap on the one container.
+    // file's own framing band. Never tinted (R-PM2/R-PM4); B6's one arrival turn
+    // arrives as `turn` (radians), 0 on a settled board.
     const box = ctx.cell * PORTAL_ART_BOX;
     art.draw(live, parts.cx, parts.cy, box, box, {
       alpha: look.swirlAlpha,
+      rotation: ctx.turn ?? 0,
       instance: ctx.instance,
     });
     return;
