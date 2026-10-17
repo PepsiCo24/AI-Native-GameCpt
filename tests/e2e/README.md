@@ -1260,6 +1260,49 @@ lists `tests/**` only.
 
 ---
 
+### 1.12 QA-018 — the shelf re-booking to Act II batch 1, and the ceiling-wording scrub
+
+LV-012 landed five **proven but unregistered** candidates (`src/levels/candidates/l021.json
+… l025.json`) and left exactly one red behind *by design*: the booked-shelf pin
+(`tests/solver/l16-l20-candidates.test.ts:163`) still asserted QA-014's empty booking.
+QA-018 re-books it and scrubs the label. This is a **pin migration in the QA-011/QA-014
+lineage**, not a rule change: no `src/**` byte moved.
+
+**The booking moves `[]` → the five LV-012 ids**, and it stays *set equality* so neither
+an unregistered extra nor a vanished member can pass. All three directions were measured
+on these very bytes (each mutation reverted, `git status --short src/` empty after):
+
+```
+$ cp src/levels/candidates/l021.json src/levels/candidates/l026.json   # an UNREGISTERED extra
+  × AssertionError: expected [ 'l021.json', 'l022.json', …(4) ] to deeply equal [ …(3) ]
+$ mv src/levels/candidates/l025.json <tmp>                             # a VANISHED booked member
+  × AssertionError: expected [ 'l021.json', 'l022.json', …(2) ] to deeply equal [ …(3) ]
+```
+
+The re-booked list is non-empty, so the **second half of the law is now reachable again**
+(QA-014 recorded it as unreachable-by-construction while the booking was `[]`): with a
+temporary probe booking that *named* a below-rootMax row, clause (b) fired on its own
+channel with its own message — `l012.json sits at or below the registered root max 20:
+expected 12 to be greater than 20` — which is how "the derived relation is live" is a
+measurement rather than an argument.
+
+**The label scrub (item 114's no-ceiling law binds test prose).** The pin's own name said
+"…(now none), all above the census ceiling", and QA-014's terminal-rung comment called
+`BLOCK_L1619_TAIL_EXEC_CEILING` "the device's census ceiling". Both are ceiling claims
+about a device whose pocket census is **unmeasured at ≥ 11** (`docs/project-status.md`
+item 114: no ceiling either direction, so no doc *or test label* may say "9 is the
+largest" or "20 is the ceiling"). Renamed to the derived form — **"the shelf holds only
+the booked pre-registration candidates (l021–l025, LV-012 batch 1), every rung derived
+strictly above the registered root max"** — and the second test's "above an EMPTY shelf"
+and the terminal rung's "the dataset's tail" were re-stated the same way ("above a shelf
+booked by set equality"; "the registered dataset's tail, and no row above it is
+documented or shipped"). The remaining occurrences of the word in the file are the
+*named law's own prohibition*, not claims. No assertion changed count and no row was
+deleted: the file still reports **52 cases** (8 per-member rows × 5 members + block-level
+and negative-control rows) and the suite tally is unchanged.
+
+---
+
 ## 2. Inventory — 144 cases in 10 files (measured)
 
 **Dated note (2026-10-16, QA-005h).** The per-ticket blocks in §1 are **historical

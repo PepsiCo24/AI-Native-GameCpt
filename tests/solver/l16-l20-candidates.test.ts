@@ -1,7 +1,8 @@
 /**
  * `tests/solver/l16-l20-candidates.test.ts` — the durable pin on the L16–L20
  * registered root block (QA-011, retargeted from the pre-registration candidate
- * shelf; QA-014 extended to the registered terminal rung).
+ * shelf; QA-014 extended to the registered terminal rung; QA-018 re-booked the shelf
+ * to the Act II batch-1 ids).
  *
  * Why this file exists: `scripts/author-l16-candidates.ts` proposes and
  * `scripts/prove-candidate.ts` proves, but both are *runs* — their output lives in
@@ -18,13 +19,18 @@
  * root set and derives `BLOCK_IDS` from `documentedLesson(id)?.obligation` — never from
  * a typed 16–20.
  * The candidate shelf (`src/levels/candidates/`) is asserted to hold **exactly the
- * booked pre-registration set** — which, with R-003d's landing registered at the root,
- * is now the **empty set** — and only rungs strictly above the registered root max: the
- * shelf's role is to hold a proven candidate *while its rung is above the census
- * ceiling* (QA-012; R-003c moved l016–l019 off it, LV-011 → R-003d moved the landing
- * rung off it last). A shelf file at or below the ceiling is a root row hiding outside
- * the census, and the pin below still catches it **as a live guard, not as a count**:
- * the empty booking is asserted by set equality, so a stray candidate is still caught.
+ * booked pre-registration set** — the five Act II batch-1 ids `l021`–`l025` since
+ * QA-018, after QA-014's booking was `[]` (R-003d had registered the last entry) — and
+ * only rungs *derived strictly above the registered root max*: the shelf's role is to
+ * hold a proven candidate *while its rung is above the registered dataset* (QA-012;
+ * R-003c moved l016–l019 off it, LV-011 → R-003d moved the landing rung off it last,
+ * LV-012 posted the Act II batch). That is a **derived rung relation, never a ceiling
+ * claim about any device** — `docs/project-status.md` item 114: the pocket census is
+ * unmeasured at ≥ 11, so no ceiling may be published in either direction, and the law
+ * binds test prose too. A shelf file at or below the registered root max is a root row
+ * hiding outside the census, and the pin below still catches it **as a live guard, not
+ * as a count**: the booking is asserted by set equality, so a stray candidate is still
+ * caught.
  *
  * Why the pre-block filter matters: the block's own rows clear the cut by design
  * (`D_exec` 17.1 … 22.9) and `l016` carries the one NAMED `B` excursion (1.7000).
@@ -114,7 +120,7 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     expect(PRE_BLOCK.at(-1)?.id).toBe(BLOCK_MIN - 1);
   });
 
-  it("is registered as the L16–L20 ladder the law publishes, above an EMPTY shelf that is a live guard, not a count", () => {
+  it("is registered as the L16–L20 ladder the law publishes, above a shelf booked by set equality that is a live guard, not a count", () => {
     // The five rows the `block-l1619` obligation names are exactly `BLOCK_L1619_IDS`.
     expect([...BLOCK_IDS]).toEqual([...BLOCK_L1619_IDS]);
     // Contiguous, one rung per id, id === file name — a mis-named rung would break
@@ -134,22 +140,31 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
 
   /**
    * The booked shelf, **named once**: the candidates that a pre-registration
-   * transcript (R-003b/R-003c lineage; LV-011 for `l020`) measured and proved while
-   * their rung sat above the registered root max. Registering a candidate moves it
-   * to `src/levels/` *and* off this list, in the same commit — so this pin cannot
+   * transcript measured and proved while their rung sat above the registered root max
+   * (`l016`–`l019` on the R-003c lineage, `l020` on LV-011's — both registered at the
+   * root since, which is why QA-014's booking was `[]`; the Act II batch-1 ids
+   * `l021`–`l025` are LV-012's, re-booked here by QA-018). Registering a candidate moves
+   * it to `src/levels/` *and* off this list, in the same commit — so this pin cannot
    * silently absorb a new shelf file, and a *missing* booked file fails too.
    *
-   * **QA-014: the booking is EMPTY.** R-003d registered `l020` at the root
-   * (`4deeb64` lineage → `4deeb50`), which was the last booked entry, so the list is
-   * `[]` and it stays a **live guard rather than a count**: the assertion below is
-   * *set equality*, so a stray `l021.json` (or a re-appearing `l020.json`) on the
-   * shelf still fails by name. The empty case is proved non-vacuous the same way
-   * QA-012 proved the booked case — by dropping a file in and watching the guard
-   * fire (`cp`/`del` transcript in the QA-014 ledger, README §1).
+   * **QA-018: the booking is the five LV-012 ids**, whose proof lives in
+   * `scripts/prove-candidate-l2125.transcript.md` and whose measured rungs are all
+   * strictly above the registered root max. The list stays a **live guard rather than a
+   * count**: the assertion below is *set equality*, so an unregistered extra
+   * (`l026.json`) and a vanished member (`l025.json` gone) both fail by name. QA-012
+   * proved the booked case non-vacuous by dropping a file in and watching the guard fire;
+   * QA-014 proved the **empty** case the same way; QA-018 re-proves the re-booked case in
+   * both directions (`cp` in / `mv` out transcripts, tests/e2e/README §1.12).
    */
-  const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = [];
+  const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = [
+    "l021.json",
+    "l022.json",
+    "l023.json",
+    "l024.json",
+    "l025.json",
+  ];
 
-  it("the shelf holds only the booked pre-registration candidates (now none), all above the census ceiling", () => {
+  it("the shelf holds only the booked pre-registration candidates (l021–l025, LV-012 batch 1), every rung derived strictly above the registered root max", () => {
     const rootMax = Math.max(...shipped.map((level) => level.id));
     const shelf = existsSync(CANDIDATES_DIR)
       ? readdirSync(CANDIDATES_DIR)
@@ -157,15 +172,19 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
           .sort()
       : [];
     // (a) Set equality with the booking: the shelf's role is a *named* hold, not a
-    //     dumping ground. A stray `l012.json` (a root row hiding outside the census)
-    //     or an unregistered extra is caught here — including now, when the booked
-    //     set is empty: `[]` is compared, not "length 0".
+    //     dumping ground. A stray `l012.json` (a root row hiding outside the census), a
+    //     re-appearing registered rung, or an unregistered extra is caught here — the
+    //     booking is compared as a *set*, never as a length.
     expect(shelf).toEqual([...BOOKED_CANDIDATE_IDS_IN_SHELF]);
     // (b) The honest law, re-derived per run: a shelf rung must strictly exceed the
     //     registered root max. At or below it there is no "candidate" — there is a
-    //     duplicate of a registered rung, which would be a census lie. The ceiling is
-    //     the shared dataset pin, so a shelf file cannot be justified by a dataset
-    //     that moved without the pin moving.
+    //     duplicate of a registered rung, which would be a census lie. The root max is
+    //     asserted against the shared dataset pin right here, so a shelf file cannot be
+    //     justified by a dataset that moved without the pin moving.
+    //     This is a *derived* relation between the landed root rows and the shelf rungs,
+    //     and it claims nothing about any device's ceiling: `docs/project-status.md`
+    //     item 114 — the pocket census is unmeasured at ≥ 11, so neither "9 is the
+    //     largest" nor "20 is the ceiling" may be published, here or anywhere.
     expect(rootMax).toBe(EXPECTED_LEVEL_COUNT);
     for (const name of shelf) {
       const id = Number(/^l(\d+)\.json$/.exec(name)?.[1]);
@@ -175,10 +194,13 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     }
   });
 
-  it("L20 is the registered TERMINAL rung: the ladder's tail is the dataset's tail, and nothing claims to be above it", () => {
+  it("L20 is the registered TERMINAL rung: the ladder's tail is the registered dataset's tail, and no row above it is documented or shipped", () => {
     const maxShipped = Math.max(...shipped.map((level) => level.id));
     // The block's last member is the last shipped row: the ladder stops where the
-    // dataset stops (the device's census ceiling, `BLOCK_L1619_TAIL_EXEC_CEILING`).
+    // registered dataset stops (`EXPECTED_LEVEL_COUNT`). That is a statement about the
+    // registered root set, not a ceiling claim about the landing device — the shelf
+    // sitting above it is a proposal, and item 114 forbids publishing a ceiling either
+    // direction.
     expect(BLOCK_IDS.at(-1)).toBe(maxShipped);
     expect(maxShipped).toBe(EXPECTED_LEVEL_COUNT);
     // QA-014 re-point (QA-012's drift note): the tail rung is now REGISTERED, so the
