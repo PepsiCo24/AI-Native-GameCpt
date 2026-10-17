@@ -205,6 +205,24 @@ const PINS: Readonly<Record<number, DifficultyPin>> = {
   // (`scripts/solve-levels.ts`'s read-out, `docs/level-difficulty.report.json`
   // record 20) — derived, then typed, exactly like every row above.
   20: { L: 20, B: 1.576471, T: 0, R: 0, M: 4, D: 44.729412, dexec: 24.729412, bRaw: 3.04, forced: 0.05, lookahead: 19, states: 1275 },
+  // R-004a — Act II batch 1 (`l021`–`l025`, registered at the root by the byte-parity
+  // `git mv` of `50e9ac0` and published at `178d9d8`). The five rows below are the
+  // **regenerated sidecar's** records 21–25 (`docs/level-difficulty.report.json`, the
+  // law) re-read on the ROOT bytes by the shipped metric functions — the same
+  // read-out `scripts/solve-levels.ts` prints (`difficultyExec`), never a note. Shape
+  // in one column: `M = 4` ×5 (M1+M3+M2), `T ≡ R ≡ 0` ×5 (§4 holds — 0 dead,
+  // `noUnrecoverableOk` true), full coverage `42/42` ×5, the par ladder is
+  // **17 / 18 / 20 / 21 / 23** (`ACT_II_B1_LADDER`) and `D_exec` climbs
+  // 21.581395 → 27.604651 strictly. `B` is in the measured band on 5/5
+  // (1.5271 / 1.5280 / 1.5400 / 1.5349 / 1.5349), so Act II adds no named excursion,
+  // and the batch's peak (27.604651) is the registered `act2-act-peak` value.
+  // `lookaheadDepth ≡ L − 1` holds on 5/5 (16 / 17 / 19 / 20 / 22), so the alternative
+  // reading of `T` is still not the missing lever.
+  21: { L: 17, B: 1.5271, T: 0, R: 0, M: 4, D: 41.581395, dexec: 21.581395, bRaw: 2.88, forced: 0.05, lookahead: 16, states: 258 },
+  22: { L: 18, B: 1.5280, T: 0, R: 0, M: 4, D: 42.584, dexec: 22.584, bRaw: 2.86, forced: 0.04, lookahead: 17, states: 250 },
+  23: { L: 20, B: 1.5400, T: 0, R: 0, M: 4, D: 44.62, dexec: 24.62, bRaw: 2.86, forced: 0.04, lookahead: 19, states: 250 },
+  24: { L: 21, B: 1.5349, T: 0, R: 0, M: 4, D: 45.604651, dexec: 25.604651, bRaw: 2.88, forced: 0.05, lookahead: 20, states: 258 },
+  25: { L: 23, B: 1.5349, T: 0, R: 0, M: 4, D: 47.604651, dexec: 27.604651, bRaw: 2.88, forced: 0.05, lookahead: 22, states: 258 },
 };
 
 describe("LV-007B · item 3 — the shipped dataset's difficulty table, measured", () => {
@@ -395,6 +413,17 @@ describe("LV-007C · item 2 — `D_exec` is a derived reading of the published t
       // i.e. the column's first value past L19. Par 20 is what the derived refusal
       // envelope (`refusalRouteEnvelopeMs`, tests/e2e/helpers/levels.ts) absorbs.
       "24.73",
+      // R-004a — Act II batch 1, dataset order: the five registered rungs' measured
+      // execution axis (21.581395 / 22.584000 / 24.620000 / 25.604651 / 27.604651),
+      // the same column `docs/level-difficulty.md` §5.2 and the sidecar print. Par 22
+      // is the first rung whose derived refusal envelope is CAP-BOUND (240 s) and par
+      // 23 the first whose uncapped formula lands above it — the QA-013 law's named
+      // re-derivation, documented on `refusalRouteEnvelopeMs` (helpers/levels.ts).
+      "21.58",
+      "22.58",
+      "24.62",
+      "25.60",
+      "27.60",
     ]);
   });
 });

@@ -654,6 +654,137 @@ const BLOCK_L1619_INTERIOR_MEMBER_AS_LAST: Level = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Act II batch 1 (R-004a) — the six `gate-act2-*` codes, lifted by R-004c
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The six controls below are **lifted** from R-004a's own proof table
+ * (`scripts/attest-r004a-act2.ts` §[5/6], printed on every invocation of that script as
+ * `7/7 caught, 0 act2 violations on the registered set`). R-004c's move is to give the
+ * inventory teeth, never to re-derive the law — the Act II dossier says so in as many
+ * words (`src/levels/README.md` §7c item 6: "lift that table into the `Record`").
+ *
+ * Five land here board-for-board as the attest run wrote them; the sixth
+ * (`gate-act2-exec-band`) is the one **non-surgical** member, and its definition states
+ * why (a `Record<code → Level[]>` cannot carry a mutation of the law table itself).
+ *
+ * The Act II gates only run when `documentedLesson(id)?.obligation === "act-2-batch-1"`
+ * (`policy.ts` → `auditLevel`), so every control has to wear an Act II id (21–25) —
+ * which is why the shared reader's control also borrows `l021`'s bytes.
+ */
+const act2L021 = shippedBoard(21);
+const act2L024 = shippedBoard(24);
+
+/**
+ * **`gate-act2-registered-rung`** — the registered `l021` bytes wearing an Act II id
+ * whose rung they are not (`par` 17 against id 22's registered 18). §7.5 item 1 makes the
+ * rung an **equality against the law's table**, not a lower bound: a longer board under a
+ * registered id would silently re-price the batch.
+ *
+ * Not surgical, and the coupling *is* the refusal: the relabel moves the rung
+ * expectation, which is this gate's own subject. Attest control, lifted unchanged.
+ */
+const ACT2_REGISTERED_RUNG_RELABELLED: Level = { ...act2L021, id: 22 };
+
+/**
+ * **`gate-act2-exec-band`** — the one **non-surgical** member of the set, recorded rather
+ * than hidden.
+ *
+ * The attest control mutates the *law table* (L23's registered `D_exec` restamped to 30
+ * while the bytes stay registered) — a shape a `Record<code → Level[]>` cannot carry,
+ * because `auditLevel(board)` always reads the registered `ACT_II_B1_LADDER` itself. So
+ * the same clause is exercised from the other side, board-side: the table stays
+ * registered and the **bytes** are what moved — `l024`'s board
+ * (`D_exec = 25.604651`, *inside* the derived band [19.75, 29.06]) under id 21, whose
+ * registered value is 21.581395. The band half therefore still holds and the
+ * **anti-restamp half** is the half that fires — precisely the half the attest control's
+ * own name and detail are written about ("a silent re-measure of a registered rung has
+ * to come back to this table in the same commit").
+ *
+ * The surgical, table-side control stays on the record and keeps being re-run:
+ * `scripts/attest-r004a-act2.ts` §[5/6] member 2. This is non-surgical by the identity of
+ * the two halves — never by a weakened assertion.
+ */
+const ACT2_EXEC_BAND_RESTAMPED_BYTES: Level = { ...act2L024, id: 21 };
+
+/**
+ * **`gate-act2-b-band`** — the goal-gated seal's `l016` board (`B = 1.7000`, F-L16-2's
+ * **named** excursion) wearing an Act II id, where no excursion is registered. The
+ * register is act-scoped on purpose (Act II batch 1 measured 5/5 in band, 1.5271 /
+ * 1.5280 / 1.5400 / 1.5349 / 1.5349), so a named Act I excursion cannot be borrowed
+ * across acts.
+ *
+ * Not surgical: the rung gate fires with it (`par` 12 ≠ 23) — the same coupling the
+ * existing `gate-block-l1619-b-band` control admits. Attest control, lifted unchanged.
+ */
+const ACT2_B_BAND_UNNAMED_EXCURSION: Level = { ...shippedBoard(16), id: 23 };
+
+/**
+ * **`gate-act2-exec-identity`** — the R-003c B10 construction on `l021`: a phase-B portal
+ * landing in an A-walled pocket, so the par route can teleport-travel (`T > 0`) and
+ * `D_exec = par + 3·B` stops holding — the identity §7.0 *derives the band from*.
+ *
+ * Not surgical, and the coupling is named rather than hidden: `T > 0` also **lifts**
+ * `D_exec`, which is exactly why the clause is checked as an identity and not as a bound.
+ * Attest control, lifted unchanged.
+ */
+const ACT2_EXEC_IDENTITY_POCKET_TRAVEL: Level = {
+  ...act2L021,
+  portals: [
+    ...act2L021.portals,
+    { id: "p2", pair: [[0, 5], [1, 0]] as const, activePhase: "B" as const },
+  ],
+  phaseAWalls: [...act2L021.phaseAWalls, [1, 5], [0, 4]] as [number, number][],
+};
+
+/**
+ * **`gate-act2-coverage`** — the registered `l021` bytes on 7 × 7 with the added seventh
+ * row **sealed in both phases**: the walkable world is byte-for-byte the shipped device's
+ * (par, latch grading and the refusal census all unmoved), so only the law's *accounting*
+ * moved — `distinctPositions` is 42 of the 49 positions the grid now claims.
+ *
+ * Not surgical: the grid is part of the registered lattice key, so the row check fires in
+ * the same breath — stated, not hidden. Attest control, lifted unchanged.
+ */
+const ACT2_COVERAGE_ROW_SEALED: Level = (() => {
+  const sealedRow = Array.from({ length: 7 }, (_, x) => [x, 6] as [number, number]);
+  return {
+    ...act2L021,
+    height: 7,
+    phaseAWalls: [...act2L021.phaseAWalls, ...sealedRow],
+    phaseBWalls: [...act2L021.phaseBWalls, ...sealedRow],
+  };
+})();
+
+/**
+ * **`gate-act2-act-peak`** — the batch's *interior* member `l024` (`par` 21 /
+ * `D_exec = 25.604651`) wearing the batch's **peak** id 25. §7.3 puts the across-act
+ * obligation on the act's measured maximum, so the peak clause is an equality **and** a
+ * strict rise: an interior rung in the peak's slot cannot claim the registered
+ * 27.604651.
+ *
+ * Not surgical: the rung gate fires with it (`par` 21 ≠ 23) — the act-scale analogue of
+ * `BLOCK_L1619_INTERIOR_MEMBER_AS_LAST` above. Attest control, lifted unchanged.
+ */
+const ACT2_ACT_PEAK_INTERIOR_AS_PEAK: Level = { ...act2L024, id: 25 };
+
+/**
+ * The **shared reader**'s Act II control (the attest table's seventh member):
+ * `gate-shortest-solution-presses-switch-and-crosses-door` on `l021` with the pocket
+ * switch's `targets` emptied, so no par route presses-then-crosses.
+ *
+ * The point is the *reader*, not the board: Act II must not re-implement the G2 reader,
+ * and a re-implementation that drifted would leave this control green. Coupled by
+ * construction (`switch-without-targets` fires at the same layer) and admitted here.
+ */
+const ACT2_SHARED_READER_BYPASSED: Level = {
+  ...act2L021,
+  switches: act2L021.switches.map((sw, index) =>
+    index === 0 ? { ...sw, targets: [] } : sw,
+  ),
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 1. Coverage — typed by the inventory, measured by the analyzer
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -682,6 +813,9 @@ const NEGATIVE_CONTROLS: Readonly<Record<PolicyViolationCode, readonly Level[]>>
       // needs a control of its own on M2 content: this one fails gate (ii) alone (the
       // par route teleports and never crosses the door the switch drives).
       PORTAL_DEBUT_DOOR_BYPASSED,
+      // R-004c: …and the same reader on *Act II* content — the attest table's seventh
+      // member, lifted. The batch must not grow a second G2 reader either.
+      ACT2_SHARED_READER_BYPASSED,
     ],
     "gate-refused-then-entered": [
       STATIC_BOARD_AS_AHA,
@@ -715,6 +849,13 @@ const NEGATIVE_CONTROLS: Readonly<Record<PolicyViolationCode, readonly Level[]>>
     "gate-block-l1619-escalation-cut": [BLOCK_L1619_CUT_BREACHED],
     "gate-block-l1619-b-band": [BLOCK_L1619_UNNAMED_B_EXCURSION],
     "gate-block-l1619-tail-ceiling": [BLOCK_L1619_INTERIOR_MEMBER_AS_LAST],
+    // ── R-004c — the Act II batch-1 member gates (R-004a's proven 6/6, lifted) ──
+    "gate-act2-registered-rung": [ACT2_REGISTERED_RUNG_RELABELLED],
+    "gate-act2-exec-band": [ACT2_EXEC_BAND_RESTAMPED_BYTES],
+    "gate-act2-b-band": [ACT2_B_BAND_UNNAMED_EXCURSION],
+    "gate-act2-exec-identity": [ACT2_EXEC_IDENTITY_POCKET_TRAVEL],
+    "gate-act2-coverage": [ACT2_COVERAGE_ROW_SEALED],
+    "gate-act2-act-peak": [ACT2_ACT_PEAK_INTERIOR_AS_PEAK],
   };
 
 describe("LV-007A · m-2 — every policy code has a negative control that fails when the check is disabled", () => {

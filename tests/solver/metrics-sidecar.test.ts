@@ -441,6 +441,15 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
       // QA-014 — R-003d's terminal rung (the sealed landing): 24.729412, the first
       // value past L19, mirrored out of the *other* file's table again below.
       "24.73",
+      // R-004a — Act II batch 1, dataset order: the five registered rungs' measured
+      // execution axis (21.581395 / 22.584000 / 24.620000 / 25.604651 / 27.604651),
+      // mirrored out of `tests/solver/difficulty.test.ts`'s table (this file's own
+      // parsed `HAND_PINS`), so the builder still cannot agree with itself.
+      "21.58",
+      "22.58",
+      "24.62",
+      "25.60",
+      "27.60",
     ]);
     expect(HAND_PINS.get(11)?.dexec.toFixed(2)).toBe("8.57");
     expect(HAND_PINS.get(12)?.dexec.toFixed(2)).toBe("8.23");
@@ -452,6 +461,10 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
     // QA-014 — and the terminal rung's row with them, so the census pin and the
     // mirror are re-taken together (the builder cannot agree with itself here).
     expect(HAND_PINS.get(20)?.dexec.toFixed(2)).toBe("24.73");
+    // R-004a — Act II batch 1's open and peak rows, so the five new mirrors are read
+    // from the parsed table on both ends (the batch's `D_exec` band edges).
+    expect(HAND_PINS.get(21)?.dexec.toFixed(2)).toBe("21.58");
+    expect(HAND_PINS.get(25)?.dexec.toFixed(2)).toBe("27.60");
   });
 });
 
