@@ -27,10 +27,12 @@
  * is a **test** file, so this is not a second production path.
  *
  * The file list is discovered from the directory; the hand-pinned count is
- * {@link EXPECTED_LEVEL_COUNT} (the dataset's **20**-level ladder — R-002 tree →
+ * {@link EXPECTED_LEVEL_COUNT} (the dataset's **25**-level ladder — R-002 tree →
  * R-003's L11 unlock at `f484e23` → LV-009-B's L12–L15 block, ADR-design-0003 §8 →
  * R-003c's L16–L19 registration at `208c5eb`/`a75b420` → LV-011/R-003d's L20 sealed
- * landing, registered at `4deeb50`), which `playthrough.spec.ts`
+ * landing, registered at `4deeb50` → **R-004a's Act II batch 1** (`l021`–`l025`,
+ * registered at `50e9ac0`/`178d9d8`, `docs/level-difficulty.md` §5.2 + the sidecar's
+ * 25 records), which `playthrough.spec.ts`
  * compares the discovered set against. **Every other inventory is derived**
  * (QA-005c OQ2): {@link datasetIds}, {@link doorLevelIds}, {@link discoveredFileIds}
  * and {@link inventoryViolation} — so an unlock costs one pin, not three, while a
@@ -68,6 +70,10 @@ import { sameVec } from "@/core/state/types";
  * **QA-014 re-pinned 19 → 20** one batch later, when GAME-002 registered LV-011's
  * sealed landing at the dataset root (`src/levels/l020.json` + registry row 20 at
  * `4deeb50`; `npm run levels` = 20/20 PASS, the sidecar regenerated to 20 records).
+ * **R-004c re-pinned 20 → 25** when R-004a registered the Act II batch 1 at the
+ * dataset root (`src/levels/l021.json … l025.json`, registered at `50e9ac0` and
+ * published at `178d9d8`; `npm run levels` = 25/25 PASS, the sidecar regenerated to
+ * 25 records).
  * The pin moves **only** with a registration commit — it is the alarm, and the
  * registration is the event the alarm is *for*.
  *
@@ -85,13 +91,18 @@ import { sameVec } from "@/core/state/types";
  * ⚠ The pin names the **dataset**, and the dataset is what it is checked against.
  * The *playable* registry (`src/game/levels/level-registry.ts`) is a second,
  * independent list; R-003b registered L12–L15 (`3cd643e`), R-003c/GAME-001 the
- * L16–L19 rows (`a75b420`) and GAME-002 the L20 row (`4deeb50`), so it now ships the
- * same twenty, and the UI-walk specs (playthrough rows for every level, the
- * L1→L20 unlock chain, `?level=16..20`) resolve off it and run green. The dataset pin
- * stays independent on purpose: it is the alarm that fires when the files move,
- * whether or not the registry follows.
+ * L16–L19 rows (`a75b420`), GAME-002 the L20 row (`4deeb50`) and **R-004b the
+ * L21–L25 rows** (`agent/gameplay/r-004b-serve25`, `1f72420`, the GAME-002
+ * precedent). With that row stacked the registry ships the same twenty-five, and the
+ * UI-walk specs (playthrough rows for every level, the `L1→L25` unlock chain,
+ * `?level=21..25`) resolve off it and run green. Until it is stacked, the two
+ * registry-dependent unit rows and the chain spec read 20 and stay red — a
+ * *dependency* this dossier names rather than a pin this file may paper over. The
+ * dataset pin stays independent on purpose: it is the alarm that fires when the files
+ * move, whether or not the registry follows — and that independence is exactly what
+ * keeps the registry rows *measurable* instead of self-fulfilling.
  */
-export const EXPECTED_LEVEL_COUNT = 20;
+export const EXPECTED_LEVEL_COUNT = 25;
 
 /**
  * The dataset directory — resolved **lazily**, at call time, so importing this
@@ -486,7 +497,7 @@ export function cheapestDoorFixtures(ref: LevelRef): {
   return { occupancy, refusedEntry };
 }
 
-/** Levels that ship at least one door — the dataset's latch levels (L6–L20). */
+/** Levels that ship at least one door — the dataset's latch levels (L6–L25). */
 export function levelsWithDoors(refs: readonly LevelRef[]): readonly LevelRef[] {
   return refs.filter((ref) => ref.level.doors.length > 0);
 }
@@ -606,7 +617,7 @@ export function cheapestPortalFixtures(ref: LevelRef): {
   return { teleport, inactive, pair };
 }
 
-/** Levels that ship at least one portal — the dataset's M2 levels (L11–L20). */
+/** Levels that ship at least one portal — the dataset's M2 levels (L11–L25). */
 export function levelsWithPortals(refs: readonly LevelRef[]): readonly LevelRef[] {
   return refs.filter((ref) => ref.level.portals.length > 0);
 }
@@ -692,10 +703,31 @@ export function resolveRoute(level: Level, route: readonly Direction[]): SearchS
  * the derivation was written *for* is the rung that proves it, and **no constant was
  * touched for this migration**.
  *
- * The cap binds from par 22 on. That is **deliberate and loud**: a future rung
- * that reaches it is a *named* re-derivation, not a silently clamped number
- * (item 84 / item 95 doctrine). This is wall clock only — every assertion in the
- * spec is untouched.
+ * ── The cap binds from par 22 on, and R-004c's new rung is the first to bind it ──
+ * The Act II batch 1 walk takes the refusal family to **par 23** (L25, registered by
+ * R-004a), and par 23 is the first rung whose *uncapped* envelope exceeds the cap. So
+ * it is registered here as a **named cap-binding row**, evaluated from the formula
+ * above, rather than quietly clamped:
+ *
+ * ```
+ * cloudUpperS(23, capped)   = 5.9 × (1.17 × 23 − 1.28 + 3.0)   = 5.9 × 28.63  = 168.917 s
+ * uncapped envelope (23)    = ceil(1.5 × 168.917) × 1000      = ceil(253.3755) × 1000 = 254_000 ms
+ * refusalRouteEnvelopeMs(23)= min(240_000, max(90_000, 254_000))                     = 240_000 ms
+ * exceedance over the cap   = 254_000 − 240_000                                       = +14_000 ms (+5.8 %)
+ * ```
+ *
+ * The **same cap already binds at par 22** (the pre-existing 20-row rung):
+ * `ceil(1.5 × 5.9 × (1.17 × 22 − 1.28 + 3.0)) = ceil(1.5 × 162.014) = ceil(243.021) = 244_000 ms`
+ * — also above the cap (by +4 s), so that rung also reads 240 s and needed **no**
+ * re-migration for this batch. Both rungs therefore hold 240 s, and **no number in the
+ * table above was changed** by the migration: this is the named re-derivation the cap
+ * requires (item 84 / item 95 doctrine), not a silent widening.
+ *
+ * ⚠ The standing consequence, stated so it stays loud: from par 22 on the derived form
+ * has **stopped growing** — every further rung reads the cap. That is the signal for a
+ * *named* re-derivation of the envelope itself (its cloud factor, or the cap), and this
+ * row exists so the signal cannot be missed. This is wall clock only — every assertion in
+ * the spec is untouched.
  */
 export function refusalRouteEnvelopeMs(par: number): number {
   /** Least-squares slope of the five local rows against par. */

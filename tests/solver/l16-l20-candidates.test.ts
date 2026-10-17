@@ -55,6 +55,7 @@ import { analyse, explore } from "@/core/solver/bfs";
 import { analyseDifficulty } from "@/core/solver/difficulty";
 import {
   allOffShortestSolution,
+  ACT_II_B1_IDS,
   auditLevel,
   BLOCK_L1619_IDS,
   BLOCK_L1619_NAMED_B_EXCURSIONS,
@@ -141,30 +142,25 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
   /**
    * The booked shelf, **named once**: the candidates that a pre-registration
    * transcript measured and proved while their rung sat above the registered root max
-   * (`l016`–`l019` on the R-003c lineage, `l020` on LV-011's — both registered at the
-   * root since, which is why QA-014's booking was `[]`; the Act II batch-1 ids
-   * `l021`–`l025` are LV-012's, re-booked here by QA-018). Registering a candidate moves
-   * it to `src/levels/` *and* off this list, in the same commit — so this pin cannot
+   * (`l016`–`l019` on the R-003c lineage, `l020` on LV-011's, `l021`–`l025` on the
+   * Act II batch-1 lineage — all three registered at the root since, which is why every
+   * booking since QA-014 has been `[]`). Registering a candidate moves it to
+   * `src/levels/` *and* off this list, in the same commit — so this pin cannot
    * silently absorb a new shelf file, and a *missing* booked file fails too.
    *
-   * **QA-018: the booking is the five LV-012 ids**, whose proof lives in
-   * `scripts/prove-candidate-l2125.transcript.md` and whose measured rungs are all
-   * strictly above the registered root max. The list stays a **live guard rather than a
-   * count**: the assertion below is *set equality*, so an unregistered extra
-   * (`l026.json`) and a vanished member (`l025.json` gone) both fail by name. QA-012
-   * proved the booked case non-vacuous by dropping a file in and watching the guard fire;
-   * QA-014 proved the **empty** case the same way; QA-018 re-proves the re-booked case in
-   * both directions (`cp` in / `mv` out transcripts, tests/e2e/README §1.12).
+   * **R-004c: the booking returns to `[]`.** R-004a registered the five LV-012 ids
+   * (`l021`–`l025`, proof in `scripts/prove-candidate-l2125.transcript.md`; their
+   * measured rungs sat strictly above the registered root max *at booking time*), so
+   * the list reverts to the empty shape QA-014 shipped for the L16–L20 registration.
+   * The list stays a **live guard rather than a count**: the assertion below is *set
+   * equality*, so an unregistered extra (`l026.json`) dropped into the shelf still
+   * fails by name while the booking is empty — the empty case's non-vacuity is the
+   * `cp`-in / `mv`-out mutation probe QA-014 ran (`tests/e2e/README.md` §1.12), and
+   * QA-018's re-booked case proved the populated direction.
    */
-  const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = [
-    "l021.json",
-    "l022.json",
-    "l023.json",
-    "l024.json",
-    "l025.json",
-  ];
+  const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = [];
 
-  it("the shelf holds only the booked pre-registration candidates (l021–l025, LV-012 batch 1), every rung derived strictly above the registered root max", () => {
+  it("the shelf holds only the booked pre-registration candidates (empty — R-004a landed l021–l025), every rung derived strictly above the registered root max", () => {
     const rootMax = Math.max(...shipped.map((level) => level.id));
     const shelf = existsSync(CANDIDATES_DIR)
       ? readdirSync(CANDIDATES_DIR)
@@ -194,27 +190,44 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     }
   });
 
-  it("L20 is the registered TERMINAL rung: the ladder's tail is the registered dataset's tail, and no row above it is documented or shipped", () => {
+  it("two tails, two facts: the block's tail stays rung 20 while the dataset's tail is the pinned 25 — never a re-stamp", () => {
+    const blockMax = BLOCK_IDS.at(-1) as number;
     const maxShipped = Math.max(...shipped.map((level) => level.id));
-    // The block's last member is the last shipped row: the ladder stops where the
-    // registered dataset stops (`EXPECTED_LEVEL_COUNT`). That is a statement about the
-    // registered root set, not a ceiling claim about the landing device — the shelf
-    // sitting above it is a proposal, and item 114 forbids publishing a ceiling either
-    // direction.
-    expect(BLOCK_IDS.at(-1)).toBe(maxShipped);
+
+    // ── FACT 1: the BLOCK's tail. `block-l1619` ends where its own registry rows end,
+    // and that number is *the block's*, not the dataset's. R-004c was handed this row
+    // as a re-word precisely so that R-004a landing Act II above it cannot re-stamp it
+    // (`docs/ai-native-pipeline.md` §7.7 item 4 forbids re-stamping L20 for a new act).
+    expect(blockMax).toBe(20);
+    expect(documentedLesson(blockMax)?.obligation).toBe("block-l1619");
+    const blockTailFile = `l${String(blockMax).padStart(3, "0")}.json`;
+    expect(
+      existsSync(join(LEVELS_DIR, blockTailFile)),
+      `${blockTailFile} is the block's terminal rung and must live in the root set`,
+    ).toBe(true);
+
+    // ── FACT 2: the DATASET's tail. The registered root set runs to the shared dataset
+    // pin, and the shipped files agree with it. That is a statement about the registered
+    // root set and the dataset census — never a ceiling claim about the landing device
+    // (`docs/project-status.md` item 114: the pocket census is unmeasured at ≥ 11, so
+    // neither "9 is the largest" nor any other ceiling may be published).
     expect(maxShipped).toBe(EXPECTED_LEVEL_COUNT);
-    // QA-014 re-point (QA-012's drift note): the tail rung is now REGISTERED, so the
-    // claim is no longer "no L20 file" — it is that the registered tail is the
-    // dataset's tail and that nothing sits above it. Both halves stay live:
+    expect(EXPECTED_LEVEL_COUNT).toBe(ACT_II_B1_IDS.at(-1));
     const tailFile = `l${String(maxShipped).padStart(3, "0")}.json`;
     expect(
       existsSync(join(LEVELS_DIR, tailFile)),
       `${tailFile} is the registered terminal rung and must live in the root set`,
     ).toBe(true);
-    expect(documentedLesson(maxShipped)?.obligation).toBe("block-l1619");
-    // …and the ABSENCE clause, re-derived rather than deleted: rung max+1 must have no
-    // file, no lesson row and no `block-l1619` obligation.
-    expect(existsSync(join(LEVELS_DIR, `l${String(maxShipped + 1).padStart(3, "0")}.json`))).toBe(false);
+    expect(documentedLesson(maxShipped)?.obligation).toBe("act-2-batch-1");
+
+    // …and the ABSENCE clause, re-pointed at the *new* max rather than deleted: rung
+    // max+1 must have no file, no lesson row and no obligation (`l026.json` absent ·
+    // `documentedLesson(26)` null · no shipped id above 25). All three are re-derived
+    // from the live set, so the clause stays live instead of becoming prose.
+    expect(
+      existsSync(join(LEVELS_DIR, `l${String(maxShipped + 1).padStart(3, "0")}.json`)),
+      "l026.json must not exist: the registered dataset stops at the pinned count",
+    ).toBe(false);
     expect(documentedLesson(maxShipped + 1)).toBeNull();
     expect(
       shipped.filter((level) => level.id > maxShipped).map((level) => level.id),

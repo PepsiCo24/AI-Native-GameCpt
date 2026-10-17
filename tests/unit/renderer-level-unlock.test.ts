@@ -77,7 +77,7 @@ function hoverCell(session: GameSession, cell: Vec): Vec | null {
   return dir !== null && session.movePreview(dir) ? cell : null;
 }
 
-describe("level registry — L6–L20 are unlocked", () => {
+describe("level registry — L6–L25 are unlocked", () => {
   it("lists the whole authored slice, in order", () => {
     // The registry's file list is checked against the **dataset on disk** (QA-011,
     // derivation-first): `discoveredFileIds()` is an independent fs scan, so a
