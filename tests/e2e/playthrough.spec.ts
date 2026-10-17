@@ -54,6 +54,7 @@ import {
   pressRoute,
   settle,
 } from "./helpers/game";
+import { installCpuThrottle } from "./helpers/throttle";
 
 const REFS = loadReferenceLevels();
 
@@ -214,7 +215,79 @@ test.describe("par route → win → HUD contract", () => {
     // observation item 77(d) requires, and if it crosses the envelope is
     // `E = 1.5 × (fitted local(rows) + worst residual) × cloud factor` taken from
     // *that* round's numbers with the fitted×safety ≥ 1.5 leg quoted beside it.
-    test.setTimeout(360_000);
+    //
+    // ── QA-024: THE BOOKED CROSSING ARRIVED (round `39031050727`) — K = 23; the
+    //    envelope is DERIVED cloud-anchored and raised to 639 s (option A) ────────
+    // The round (tip `4c1d9cae6`, an 84 m e2e job — the worst of this era's three
+    // 1.4 h-class days) truncated this row inside the 24th level's **first** `hud()`
+    // round trip (`helpers/game.ts:308`, `page.evaluate`: "Test timeout of 360000ms
+    // exceeded"). No assertion failed — the walk was cut by harness patience.
+    // Cloud progress, read from the one readable half of the 108.9 MB failure bundle
+    // (`test-results/.../error-context.md`, page snapshot): **`L 24 / moves 0 / 白昼`**
+    // ⇒ the cloud had completed **K = 23 of 25 levels** (23 routes, 46 HUD round trips,
+    // 23 `Next` clicks) and was standing on L24's opening read (its 47th). The bundle's
+    // `trace.zip` is DEFLATE-compressed *inside* the artifact, so per-level cloud
+    // timestamps were not retrievable; the snapshot is the cloud datum.
+    //
+    // Inputs, all measured this round (worktree `qa-024-envelope`, `--retries=0`):
+    //   plain walk            **88.6 s** and **95.7 s** (two greens, exact JSON) and
+    //                         **97.4 s** inside the whole-file run ⇒ this round's plain
+    //                         band is 88.6–97.4 s (R-004c measured 96/108 s on its bench)
+    //   `PS_E2E_CPU_THROTTLE=10`  **168.5 s** green  = 1.90 × 88.6
+    //   `PS_E2E_CPU_THROTTLE=20`  **232.0 s** green  = 2.62 × 88.6
+    //   local per-level curve (one instrumented plain walk): L23 = **81.783 s**,
+    //   L25 = **96.715 s** ⇒ the last two rungs are 44/269 moves = 16.4 % of the moves
+    //   and 15.4 % of the measured walk time.
+    // Cloud run-rate for the work it demonstrably completed: ≤ `360 / 81.783` =
+    // **4.40 × local** — i.e. this day is **1.68 × harsher than CDP rate 20**
+    // (4.40 / 2.62). The rate-20 green is therefore *not* a cloud-day reproduction,
+    // and the cloud side binds the envelope.
+    //
+    // DERIVATION (the `refusalRouteEnvelopeMs` form: formula + inputs + result):
+    //   cloudFullChainS = 360 s × localTotal / localThroughL23
+    //                   = 360 × 96.715 / 81.783                  = 425.7 s
+    //   flatLevelVariant= (360 / K) × 25 = 15.65 × 25             = 391.3 s   ← 8 % below
+    //                     the work-weighted figure: it prices the last two rungs at
+    //                     their *level* share (8 %) where their measured *work* share is
+    //                     15.4 %, so it is the optimistic face of the same arithmetic —
+    //                     quoted here, not used.
+    //   envelopeMs      = ceil(1.5 × 425.7) × 1000                = **639_000 ms**
+    //   (same-family variant, the refusal family's own cloud factor 5.9:
+    //    ceil(1.5 × 5.9 × 96.715) = 856_000 ms.)
+    // 639 s is **above the 600 s line**, so QA-024 stopped and put the number to the
+    // orchestrator with two priced options — row B of option (B) (L14→L25, 197/269
+    // moves, local 71.371 s) would have read `ceil(1.5 × 4.40 × 71.371) = 472_000 ms`
+    // and row A (L1→L13, 72/269, local 25.344 s) `168_000 ms`.
+    //
+    // ── ORCHESTRATOR DECISION: option (A) adopted, so the constant below IS 639_000 ──
+    // Three grounds, recorded here so the reasoning travels with the number:
+    //   1. the watchdog-semantics law binds: (B) would have needed row B to open a
+    //      mid-chain level directly (`?level=14`), and a direct open is exactly the
+    //      thinning this row exists to prevent — it needs design-level approval, and it
+    //      buys no suite time at all (two boots for the same walk);
+    //   2. the arithmetic above is **cloud-anchored** — K = 23 from the round's own page
+    //      snapshot, the work-weighted 425.7 s, the standing item-77(d) ×1.5 leg;
+    //   3. it prices the worst day actually OBSERVED, with headroom, not a projection.
+    //
+    // PRE-REGISTERED UPPER BOUND — the remedy is written before it is needed: if a
+    // future round crosses 639_000 ms, the remedy is the **856_000 ms** same-family row
+    // quoted above (`ceil(1.5 × 5.9 × local)`, the refusal family's own measured cloud
+    // factor 5.9) — **not** a fresh improvisation and not another round that re-derives
+    // the same three inputs.
+    //
+    // DERIVATION ANCHOR for future walk-class envelopes (measured this round): **no
+    // local throttle rate reproduced the crossing.** Rate 10 = 168.5 s (1.90×) and rate
+    // 20 = 232.0 s (2.62×) both went GREEN while the cloud ran at ≤ 4.40× local (1.68×
+    // harsher than rate 20) and still stalled out. Walk-class envelopes therefore derive
+    // from **cloud datums**; a throttled-local green is **necessary, not sufficient** —
+    // it proves the row is not scheduler-fragile, never that it fits a starvation day.
+    test.setTimeout(639_000);
+
+    // QA-024 starvation arm (opt-in, inert unless `PS_E2E_CPU_THROTTLE` is set —
+    // `helpers/throttle.ts`): the cloud crossing this envelope is derived from
+    // happened on a 1.4 h-starvation day, so the derivation must be certifiable
+    // against starvation on this bench, not against a fast machine.
+    await installCpuThrottle(page);
 
     await openLevel(page, levelUrl(1));
 
