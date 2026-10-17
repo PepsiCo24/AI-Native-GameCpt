@@ -1,5 +1,5 @@
 attest-lv010-block — R-003c/R-003d registration re-attestation (L16–L20)
-levels dir: /Users/Admin/.local/share/opencode/worktree/f9a5d9/r-003d-reg/src/levels/
+levels dir: /Users/Admin/VibeCoding/GameCpt/.worktrees/r-004a-reg/src/levels/
 origin(s):  L16–L19 3cc6df2:src/levels/candidates · L20 2ea83ac:src/levels/candidates (the shelves the bytes were copied from)
 
 [1/6] byte identity — the registered root files are byte-copies, not edits
@@ -13,7 +13,7 @@ origin(s):  L16–L19 3cc6df2:src/levels/candidates · L20 2ea83ac:src/levels/ca
   MATCH      par(L15) = BLOCK_L1619_PAR_BASE — measured 10 · constant 10
   MATCH      cut = BLOCK_L1619_CUT_FLOOR — measured 14.969697 · constant 14.969697
   MATCH      B band = BLOCK_L1619_B_BAND — measured [1.2500, 1.6875] · constant [1.2500, 1.6875]
-  MATCH      the registered set is the 15-level basis + the 5 rungs — root 20 files = 15 basis + 5 rungs
+  MATCH      the registered set is the 15-level basis + the 5 rungs (+ R-004a's registered Act II batch) — root 25 files = 15 basis + 5 rungs + 5 Act II batch-1 rungs (R-004a; excluded from this block's basis so the cut stays L1–L15)
 
 [3/6] booked numbers — re-measured from the ROOT bytes, never read from a note
   l016.json (rung 16)

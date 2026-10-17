@@ -54,6 +54,10 @@ import { DIRECTIONS, move } from "@/core/state/move";
 import { hashState } from "@/core/state/hash";
 import type { SearchState } from "@/core/state/types";
 import {
+  ACT_II_B1_IDS,
+  ACT_II_EXEC_BAND,
+  ACT_II_PAR_BAND,
+  ACT_I_REGISTERED_PEAK_EXEC,
   BLOCK_L1619_B_BAND,
   BLOCK_L1619_PRE_R003D_TAIL_EXEC,
   BLOCK_L1619_IDS,
@@ -81,8 +85,10 @@ const FAMILY = argOf("family") ?? (RUNG >= 21 ? "g" : "sl");
 const MEASURE_CONTROLS = process.argv.includes("--measure-controls");
 /** `--ladder=21,22,23,24,25`: prove the whole batch in order and print the ladder table. */
 const LADDER = (argOf("ladder") ?? "").split(",").filter((s) => s !== "").map(Number);
-/** `--peak=`: the Act I measured peak the batch must clear (printed by the authoring tool). */
-const ACT1_PEAK = Number(argOf("peak") ?? "24.729412");
+/** `--peak=`: the Act I measured peak the batch must clear (printed by the authoring tool).
+ * R-004a: the default is the **registered** peak constant from the law, so the tool cannot
+ * quote a peak the registration does not publish. */
+const ACT1_PEAK = Number(argOf("peak") ?? String(ACT_I_REGISTERED_PEAK_EXEC));
 
 interface Gate {
   readonly id: string;
@@ -130,7 +136,16 @@ function measureCut(): { floor: number; l15Par: number; n: number; basis: readon
     // (`BLOCK_L1619_IDS`), and the basis is printed. The rung-to-rung rise, which the
     // cut cannot see, is judged by `block-l1619-rung` / the ladder rows of
     // `scripts/attest-lv010-block.ts` and by `blockL1619Gates`.
+    //
+    // R-004a: same rule, second registration — with L21–L25 in the root (R-004a) the
+    // exclusion has to grow with the dataset again, or Act II's own peak (27.604651)
+    // would become the ceiling Act II is judged against and every rung of the batch
+    // would be falsely REFUSED (the R-003d quoted red, one mechanism later). The cut
+    // stays **frozen at L1–L15 = 14.969697**; §7 needs no re-derivation of it, and the
+    // act's own escalation is judged by §7.3's act-peak clause (`act2Batch1Gates` +
+    // `actScaleTailGuards`), never by moving the cut.
     if (BLOCK_L1619_IDS.includes(level.id)) continue;
+    if (ACT_II_B1_IDS.includes(level.id)) continue;
     basis.push(level.id);
     const d = analyseDifficulty(level, explore(level));
     if (d.Dexec !== null && d.Dexec > floor) floor = d.Dexec;
@@ -694,10 +709,14 @@ function sealedLandingGates(
 //      and the goal unreachable (§6.2.3 item 4, the ordered ≥ 2-press chain).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Act II's published par band — strict (`docs/level-design.md` §7.2). */
-const ACT2_PAR_BAND: readonly [number, number] = [16, 24];
+/** Act II's published par band (`docs/level-design.md` §7.2) — the AUTHORING filter is the
+ * **strictly interior** form (`> 16`, `< 24`), deliberately narrower than the band: the tool
+ * may only ever accept less than §7.2 permits, never more, so a widening here is impossible
+ * by construction. The band itself is imported from the law (`@/core/solver/policy`, R-004a)
+ * so the tool and the registration gate cannot drift apart. */
+const ACT2_PAR_BAND: readonly [number, number] = ACT_II_PAR_BAND;
 /** Act II's published `D_exec` band (§7.2; derived from the measured `B` band, not new maths). */
-const ACT2_EXEC_BAND: readonly [number, number] = [19.75, 29.06];
+const ACT2_EXEC_BAND: readonly [number, number] = ACT_II_EXEC_BAND;
 /** The batch's peak rung, when a ladder was given (§7.3: the across-act clause rides on the peak). */
 const PEAK_RUNG: number | null = LADDER.length > 0 ? Math.max(...LADDER) : null;
 
@@ -1127,7 +1146,7 @@ function multiPocketGates(
 const cut = measureCut();
 console.log(`prove-candidate — CUT re-measured from the shipped set: D_exec max = ${cut.floor.toFixed(6)} ` +
   `· par(L15) = ${String(cut.l15Par)} · ${String(cut.n)} shipped files · basis ids [${cut.basis.join(", ")}] ` +
-  `(the L16–L19 ladder is excluded from its own filter — see measureCut)`);
+  `(the L16–L20 block and the registered Act II batch are excluded from their own filter — see measureCut)`);
 console.log(
   `family ${FAMILY}${FAMILY === "g" ? " (Act II multi-pocket — §7.2 / §7.4 stage G)" : " (the L20 sealed landing — §6.2.6)"}` +
     ` · Act I's measured peak the batch must clear: ${ACT1_PEAK.toFixed(6)}` +
@@ -1223,10 +1242,18 @@ function proveOne(file: string, rung: number): Proved {
 const ladderRows: { id: number; par: number | null; dexec: number | null; b: number | null; coverage: string | null; chain: string | null; accepted: boolean }[] = [];
 let allOk = true;
 const targets = LADDER.length > 0 ? LADDER : [RUNG];
-if (LADDER.length > 0) console.log(`ladder mode: proving ${LADDER.map((i) => `L${String(i)}`).join(" → ")} from src/levels/candidates/`);
+/**
+ * Where a ladder run reads its bytes. The shelf is the default (this is the authoring
+ * prover), and `--dir=<path>` re-points it at a **registered** set — which is what R-004a
+ * used to re-prove the batch from `src/levels/` after the registration moved it there. The
+ * resolved directory is printed per run, so a transcript can never be read as "proved on the
+ * shelf" when it was proved at the root (and vice versa).
+ */
+const LADDER_DIR = argOf("dir") ?? CANDIDATES_DIR;
+if (LADDER.length > 0) console.log(`ladder mode: proving ${LADDER.map((i) => `L${String(i)}`).join(" → ")} from ${LADDER_DIR}`);
 for (const id of targets) {
   const file =
-    LADDER.length > 0 ? join(CANDIDATES_DIR, `l${String(id).padStart(3, "0")}.json`) : CANDIDATE;
+    LADDER.length > 0 ? join(LADDER_DIR, `l${String(id).padStart(3, "0")}.json`) : CANDIDATE;
   const r = proveOne(file, id);
   allOk = allOk && r.ok;
   const coverage = r.verdict.gates.find((g) => g.id === "coverage")?.detail ?? null;
