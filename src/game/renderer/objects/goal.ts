@@ -12,6 +12,13 @@
  * Nothing else in the renderer idles, including `wallEcho` (R-E5). The pulse is a
  * *size* rule, so the texture rides it identically (`pulseScale` is applied to the
  * form before the framing correction, never to the box).
+ *
+ * §6.6 beats touching this painter (GAME-003): **B7**'s one-shot attract arrives
+ * already folded into `pulseScale` by the registry (additive, so the hard ceiling is
+ * exactly `1 + 6 % + 2 % = 8 %`); **MV-4**'s reduced form is `pulseScale = 1`, a data
+ * flip applied by the registry, not a branch here. **M-5** (ORDERED, §3.1e): the art
+ * branch also draws R-C1's centre dot, because the delivered annulus carries zero ink
+ * inside `r < 0.62 · outer` and the goal must not read as a second live portal.
  */
 
 import type { Rect } from "@/game/renderer/grid-mapping";
@@ -84,16 +91,24 @@ export function paintGoal(ctx: GoalPaintContext): void {
   // R-C1's visible footprint, after R-C8's pulse — the size both branches land on.
   const cell = Math.min(rect.w, rect.h);
   const form = cell * GOAL_DIAMETER * ctx.pulseScale;
+  const colour = toInt(theme.obj.goal);
 
   if (ctx.art?.has(GOAL_TEXTURE_KEY) === true) {
     // The box carries the file's baked headroom, so the *visible* annulus is `form`.
     const box = cell * GOAL_ART_BOX * ctx.pulseScale;
     ctx.art.draw(GOAL_TEXTURE_KEY, cx, cy, box, box);
+    // §3.1e M-5 (ORDERED) — R-C1's centre dot, drawn over the delivered annulus.
+    // The probe found **zero ink inside r < 0.62 · outer** on the shipped
+    // `goal.png`, so the art branch previously returned a bare ring and the goal
+    // was indistinguishable from the live portal at a glance (§3.1e "both rings").
+    // Same construction, radius and token as the vector branch below; the file's
+    // centre is transparent, so the dot reads through it.
+    g.fillStyle(colour, 1);
+    g.fillCircle(cx, cy, (cell * GOAL_DOT_DIAMETER) / 2);
     return;
   }
 
   const radius = form / 2;
-  const colour = toInt(theme.obj.goal);
 
   g.lineStyle(STROKE_CSS * cssScale, colour, 1);
   g.strokeCircle(cx, cy, radius);

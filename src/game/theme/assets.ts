@@ -18,7 +18,9 @@
  * actor ({@link actorSlotFor}): that pairing is manifest data, and since R-C9's
  * ring decision is measured from the colour of whichever body is drawn
  * (`theme/tokens.ts` `applyDrawnActorBody`), the pairing is a *rule input* rather
- * than a cosmetic lookup.
+ * than a cosmetic lookup. The same is true, one class over, of the portal pair
+ * ({@link portalSlotFor}): its phase mapping is a **measured** colour pairing
+ * (§3.1e R-PM1), not a suffix convention — see that function for the trap.
  *
  * ── One slot left this table (A-07 `ui_kit`, 2026-10-16) ─────────────────────
  * "A slot in this table" means "a drawn thing that stands in for art". A-07 was
@@ -110,6 +112,28 @@ export const PLACEHOLDER_SLOTS: readonly PlaceholderSlot[] = [
     usage: "Goal (L4 object) — the delivered annulus, ring + centre dot while unmounted",
     resolved: true,
   },
+  {
+    // §3.1e R-PM5 — A-06's **portal half**, mounted by GAME-003. Not a placeholder
+    // row in spirit (`docs/ui-ux.md` §9.1: the live figure is *signed raster*, the
+    // dormant figure is vector-by-design), but it MUST be a resolved row here: the
+    // `assertArtSourcesMatchSlots()` both-ways guard reads `integratedSlots()`, so a
+    // key in `ART_SOURCES` with no resolved row is "shipped but not resolved" — the
+    // mount and the declaration have to land together (architecture §9.1 rule 3).
+    placeholder: "portal_a",
+    assetId: "A-06",
+    assetName: "portal_a",
+    usage:
+      "Portal, Phase B (M2 — mounted SWAPPED per §3.1e R-PM1; dormant figure is the §3.1c vector outline)",
+    resolved: true,
+  },
+  {
+    placeholder: "portal_b",
+    assetId: "A-06",
+    assetName: "portal_b",
+    usage:
+      "Portal, Phase A (M2 — mounted SWAPPED per §3.1e R-PM1; dormant figure is the §3.1c vector outline)",
+    resolved: true,
+  },
 ];
 
 /**
@@ -121,9 +145,20 @@ export const PLACEHOLDER_SLOTS: readonly PlaceholderSlot[] = [
  * V0.5.4: A-07 → DELIVERED, integrated as a **reference kit**). The sheet is never
  * loaded at runtime, so there is no texture key to map and no runtime consumer to
  * rename from a placeholder: the row left the table, exactly as the K-4 portal
- * ruling left `portal_a/b` out (no slot, no entry, R-P5-consistent). A future
+ * ruling once left `portal_a/b` out (no slot, no entry, R-P5-consistent). A future
  * Stage-4+ adoption of a sheet export re-enters through the §11 gate with a spec
  * row first, never by re-adding a line here.
+ *
+ * **The K-4 portal ruling is superseded (GAME-003, `docs/ui-ux.md` V0.9.6 §3.1e).**
+ * `portal_a` / `portal_b` are now **resolved rows** in {@link PLACEHOLDER_SLOTS},
+ * because the signed A-06 portal pair is mounted (R-PM5: the two `ART_SOURCES`
+ * entries and the two resolved rows land in one commit). This table is derived from
+ * those rows, so it gained the two entries by construction — the "`PLACEHOLDER_TO_ASSET`
+ * is unchanged" phrasing in §3.1e's R-PM5 note is an internal contradiction of R-P5
+ * (a slot may not exist in one table without the other) and is reported, not
+ * obeyed. The dev strip's old K-4 negative (`portalMentioned: false`) is superseded
+ * *deliberately* by the mount, and the §3.3b Entry-6 record states that supersession
+ * (QA-017 re-points the probe; the old probe is never deleted).
  */
 export const PLACEHOLDER_TO_ASSET: Readonly<Record<string, string>> = Object.fromEntries(
   PLACEHOLDER_SLOTS.map((slot) => [slot.placeholder, slot.assetId]),
@@ -154,6 +189,60 @@ export function actorSlotFor(phase: Phase): PlaceholderSlot | undefined {
   const suffix = `_${phase.toLowerCase()}`;
   return PLACEHOLDER_SLOTS.find(
     (slot) => slot.assetId === ACTOR_ASSET_ID && slot.assetName.endsWith(suffix),
+  );
+}
+
+/**
+ * The Asset ID of the portal's delivered pair — A-06's **portal half**.
+ *
+ * A-06 is one Asset ID with two halves: the goal annulus (its own `goal` row) and
+ * this portal pair. Reading the ID through a constant (rather than the literal in
+ * {@link portalSlotFor}) keeps the pairing a manifest fact, exactly like
+ * {@link ACTOR_ASSET_ID} does for the spirit pair.
+ */
+const PORTAL_ASSET_ID = "A-06";
+
+/**
+ * §3.1e R-PM1 — **the phase mapping is measured, not suffixed.**
+ *
+ * Phase A mounts `portal_b`; Phase B mounts `portal_a`. This is deliberately the
+ * **opposite** of the A-03 spirit pair's `_a` / `_b` convention, so deriving the key
+ * from the phase letter (the spirit convention) is a **defect, not a style choice**
+ * (`docs/ui-ux.md` §3.1e R-PM1 names that derivation a defect outright).
+ *
+ * ── Why no other cue can be inherited: the pair's alpha is bit-identical ─────
+ * Probe `pair` (`art-acceptance-2026-10-16.md` R-T06): both delivered files carry the
+ * **same 74 713 px ink census and the same α-bbox** — only 77 543 px differ in RGB,
+ * and R-T06's silhouette IoU is **1.0000**. Silhouette and geometry are therefore
+ * *shared*: the phase pairing is a colour measurement or nothing, and the wrong
+ * mapping still *looks* right (it is bit-identical in alpha) while failing R-C3.
+ *
+ * ── The measurement, both directions (R-C3 ≥ 3:1) ────────────────────────────
+ * As-named (`portal_a` on A = **2.24:1** / **1.91** vs `cellAlt`; `portal_b` on B =
+ * **2.16:1** / **1.90**) fails on both grounds. Swapped = **6.50 / 5.53** on the A
+ * ground and **6.25 / 5.49** on the B ground. Those numbers are quoted here because
+ * the next reader's instinct is the suffix convention and the failure mode is silent.
+ */
+const PORTAL_SLOT_BY_PHASE: Readonly<Record<Phase, string>> = {
+  A: "portal_b",
+  B: "portal_a",
+};
+
+/**
+ * The manifest row that draws the portal in `phase` — §3.1e R-PM1's **measured**
+ * mapping, the portal's counterpart to {@link actorSlotFor}.
+ *
+ * The live figure's phase is the portal's own `activePhase`
+ * (`renderer/cell-state.ts` `portalLivePhase`), so this resolver's input is a
+ * *portal* phase, not a board phase — the two coincide exactly when the end is live
+ * (`portalAt`). `undefined` rather than a throw when the row is absent: a manifest
+ * without the portal slot must degrade to the §3.1c vector figure, not break boot
+ * (the same rule `actorSlotFor` follows).
+ */
+export function portalSlotFor(phase: Phase): PlaceholderSlot | undefined {
+  const placeholder = PORTAL_SLOT_BY_PHASE[phase];
+  return PLACEHOLDER_SLOTS.find(
+    (slot) => slot.assetId === PORTAL_ASSET_ID && slot.placeholder === placeholder,
   );
 }
 

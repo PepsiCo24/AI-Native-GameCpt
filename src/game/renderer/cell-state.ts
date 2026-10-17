@@ -242,14 +242,49 @@ export function portalTilesOf(level: Level): readonly PortalTile[] {
 }
 
 /**
+ * The portal whose end is `tile`, **regardless of phase**.
+ *
+ * Deliberately not core's `portalAt`, which filters by the current phase: that is
+ * the *rules* question ("would entering this tile teleport?", `applyMove`'s entry
+ * step) and it answers `undefined` for the dormant half of the flip — the wrong
+ * question for painting, where the end's own `activePhase` is the datum the look
+ * is derived from (§3.1e R-PM1/R-PM2). A tile carrying no portal returns
+ * `undefined`, so the predicate is answerable for any tile on the board.
+ */
+export function portalDefAt(level: Level, tile: Vec): PortalDef | undefined {
+  for (const portal of level.portals) {
+    for (const [x, y] of portal.pair) {
+      if (x === tile.x && y === tile.y) return portal;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * §3.1e R-PM2 — the phase whose raster draws this portal end **live**, or
+ * `undefined` for a tile with no portal.
+ *
+ * A portal end is live exactly when it is active now, which by construction means
+ * the board phase equals the portal's own `activePhase` (`portalAt` is filtered on
+ * that field). The painter therefore reads the **live figure's phase from the def**
+ * and maps it through `portalSlotFor` (R-PM1) — it never writes a `phase ===`
+ * branch to decide *which* figure is live, which is the R-PM2 prohibition. The
+ * cross-fade between the two figures is carried by the existing `activeMix` scalar
+ * and the swap happens in place on one container (R-E6 pattern).
+ */
+export function portalLivePhase(level: Level, tile: Vec): Phase | undefined {
+  return portalDefAt(level, tile)?.activePhase;
+}
+
+/**
  * Is this portal end **active now**? Asked of core's `portalAt` (the same function
  * `applyMove`'s entry step uses), so the swirl can never promise a teleport the
  * rules would not perform — the §3.1c primary channel is exactly this flag.
  *
- * There is deliberately no `portalDefAt` counterpart to `switchDefAt`: a portal's
- * look takes no per-portal data (§3.1c gives the class one outline token and a swirl,
- * never a colour or a glyph), so the tile's def has no consumer and a lookup that
- * nothing calls is API, not abstraction. `portalTilesOf` is what enumerates the ends.
+ * There is now a `portalDefAt` counterpart to `switchDefAt`, added by GAME-003 for
+ * exactly one consumer: {@link portalLivePhase}, which needs the end's `activePhase`
+ * to pick the live raster (§3.1e R-PM1). Core's `portalAt` still answers the *rules*
+ * question and remains the only thing that decides teleporting.
  */
 export function portalIsActive(level: Level, gs: GameState, tile: Vec): boolean {
   return portalAt(level, gs.phase, tile) !== undefined;

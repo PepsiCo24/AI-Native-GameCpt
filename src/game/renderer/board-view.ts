@@ -105,6 +105,7 @@ import type { ObservedLayer } from "@/game/renderer/layers";
 import { mixTheme } from "@/game/renderer/theme-mix";
 import { WallTileView, staggerFor } from "@/game/renderer/wall-tiles";
 import { isArtMounted, slotKey } from "@/game/theme/art";
+import { portalSlotFor } from "@/game/theme/assets";
 import { flipTimings, theme, toInt } from "@/game/theme/tokens";
 import type { FlipTimings, ThemeTokens } from "@/game/theme/tokens";
 
@@ -242,23 +243,33 @@ export class BoardView {
   /** The registry seam: each painter and the L4 container its slot owns. */
   private readonly l4Painters: readonly L4Painter[];
   /**
-   * Delivered art drawn at L4 (R-005a), by texture key: **at most one object per
-   * slot**, created once when the texture mounted and destroyed with the view. An
-   * empty map is the pre-integration state, not an error — every painter then draws
-   * its vector placeholder exactly as it did before.
+   * Delivered art drawn at L4 (R-005a), keyed by **the single image's slot** or —
+   * for a class whose two instances share one texture key — by
+   * `${textureKey}@${x},${y}` (the portal pair, §3.1e). Created once when the
+   * texture mounted and destroyed with the view. An empty map is the pre-integration
+   * state, not an error — every painter then draws its vector placeholder exactly as
+   * it did before.
    */
   private readonly l4Art = new Map<string, Phaser.GameObjects.Image>();
   /**
    * The port every L4 painter receives (`objects/registry.ts`): the painter resolves
    * the geometry, this view owns the display object. `has` is what makes the texture
-   * and the vector placeholder mutually exclusive rather than layered.
+   * and the vector placeholder mutually exclusive rather than layered — it asks the
+   * **mount measurement** (`isArtMounted`), because the portal pair is keyed per end
+   * and a plain key lookup would answer "no art" for a mounted portal.
    */
   private readonly artPort: TileObjectArtPort = {
-    has: (key) => this.l4Art.has(key),
-    draw: (key, cx, cy, w, h) => {
-      // A no-op for an unmounted key, and a resize **in place** for a mounted one:
-      // the goal's R-C8 pulse is a per-frame `setDisplaySize`, never a new object.
-      this.l4Art.get(key)?.setPosition(cx, cy).setDisplaySize(w, h);
+    has: (key) => isArtMounted(key),
+    draw: (key, cx, cy, w, h, opts) => {
+      // The per-end instance when one is named (the portal pair), else the slot's one
+      // image (the goal). A no-op for an unmounted key, and a resize **in place** for
+      // a mounted one: the goal's R-C8 pulse is a per-frame `setDisplaySize`, never a
+      // new object. Alpha is the live half of the §3.1e in-place swap (R-PM2).
+      const image =
+        opts?.instance === undefined ? this.l4Art.get(key) : this.l4Art.get(opts.instance);
+      if (image === undefined) return;
+      image.setPosition(cx, cy).setDisplaySize(w, h);
+      image.setAlpha(opts?.alpha ?? 1);
     },
   };
   /**
@@ -359,6 +370,24 @@ export class BoardView {
     // *what is drawn*, never in the order things are drawn in.
     const goalArt = this.createArtImage(GOAL_KEY, l4Depth(L4_SLOT.goal));
     if (goalArt !== null) this.l4Art.set(GOAL_KEY, goalArt);
+
+    // L4 slot `portal` (§3.1d rank 1) — the signed A-06 raster pair (§3.1e). The two
+    // ends of one pair share **one texture key per phase** (both live in the portal's
+    // own `activePhase`), so the single-image-per-key map cannot place both: each end
+    // gets its own instance under `${key}@${x},${y}`, at the slot's own depth (R-PM3:
+    // §3.1d occlusion unchanged, actor always above). The dormant figure is the
+    // §3.1c vector, drawn by the painter — never an image, never dimmed.
+    for (const portal of this.level.portals) {
+      const key = portalSlotFor(portal.activePhase)?.assetName;
+      if (key === undefined || !isArtMounted(key)) continue;
+      for (const [x, y] of portal.pair) {
+        const image = this.scene.add
+          .image(0, 0, key)
+          .setOrigin(0.5, 0.5)
+          .setDepth(l4Depth(L4_SLOT.portal));
+        this.l4Art.set(`${key}@${x},${y}`, image);
+      }
+    }
 
     // L5 — one container at `DEPTH.actor`, children in the fixed order the actor's
     // own module documents. The container is what the §5.2 stack guard sees, and
@@ -778,11 +807,7 @@ export class BoardView {
             flip.startAt + flip.timings.background.start,
             flip.timings.background.dur,
           );
-    const w = phaseWeight(
-      flip?.fromPhase ?? this.shown.phase,
-      this.shown.phase,
-      easeOutQuad(raw),
-    );
+    const w = phaseWeight(flip?.fromPhase ?? this.shown.phase, this.shown.phase, easeOutQuad(raw));
 
     const width = this.scene.scale.width;
     const height = this.scene.scale.height;
@@ -886,8 +911,8 @@ export class BoardView {
           // from the same mixed map `paintGround` filled it with, so the punch is
           // exact at every frame of the `tokens` cross-fade.
           knockout: this.knockoutFor(tile.x, tile.y, tokens),
-          // R-005a — every painter gets the same port; only the goal stands in for
-          // delivered art today, and a class with no asset simply never asks.
+          // R-005a — every painter gets the same port; the goal and the portal pair
+          // stand in for delivered art today, and a class with no asset never asks.
           art: this.artPort,
         });
       }
