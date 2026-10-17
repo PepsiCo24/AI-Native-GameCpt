@@ -6,7 +6,8 @@
  * - `docs/level-design.md` §7.2 (GD-009 / ADR-design-0005): Act II =
  *   "**Portal orchestration**: multi-pocket sealed landings (2–4 pockets), ordered
  *   multi-switch chains, portal-repriced latches; the walk-only world deleted from
- *   the outset", par band **16–24**, `D_exec` band **[19.75, 29.06]**, batch size 5.
+ *   the outset", par band **16–24**, `D_exec` band **[19.75, 29.0625]** (printed
+ *   `[19.75, 29.06]`; §7.9's notation law — derived-exact is the value), batch size 5.
  * - §7.4: stage **G** = "multi-pocket: pocket count 1–4 × portal pairs 1–2 × door
  *   arity 2–5 × landing position, on 7×6 → 7×7". This pass enumerates **7×6 first**
  *   (the dispatch's order) with **one** portal pair, per §6.2.3 item 1.
@@ -112,7 +113,7 @@
  *    comparable. (No "cheapest board" shortcut: the par set is fixed first, and the
  *    minimum is taken *inside* a par, never across pars.)
  * 3. **Membership:** every rung strictly inside the act's par band (17…23), inside
- *    `D_exec` [19.75, 29.06] and the measured `B` band — re-checked per file by
+ *    `D_exec` [19.75, 29.0625] (printed [19.75, 29.06]; §7.9) and the measured `B` band — re-checked per file by
  *    `validateLevel` + `auditLevel`, never granted by the selector.
  * 4. **The §6.1.4 clone clause** as a *filter*: no rung may key a shipped board or a
  *    landed candidate, and the five rungs carry five distinct seal-inclusive keys.
@@ -205,7 +206,8 @@
  * - **§7.8 item 5** (**label before the bytes**): if batch 3's opening rung sits below L30
  *   (`27.566265`), that seam is a `ΔM = 0` interior relaxation and takes a **§7.3.1-form
  *   relief label published before the batch is authored**.
- * - **§7.2 / §7.4 / §7.5**: Act II's band (`par` 16–24, `D_exec` [19.75, 29.06], batch = 5);
+ * - **§7.2 / §7.4 / §7.5**: Act II's band (`par` 16–24, `D_exec` [19.75, 29.0625], printed
+ *   [19.75, 29.06], batch = 5);
  *   stage `G` = *"multi-pocket: pocket count 1–4 × portal pairs 1–2 × door arity 2–5 ×
  *   landing position, on 7×6 → 7×7"*; and the per-batch proof obligations, unchanged.
  * - **§6.2.3**, the sealed-landing lattice law, read against a **5-door** device: exactly one
@@ -253,7 +255,7 @@
  *    *last rung* rather than its interior (§7.3.2 read as a selection rule). Every departure
  *    is printed beside the ladder.
  * 5. **Bands and gates are filters, never preferences** (§7.5 item 1): `par ∈ [16, 24]`,
- *    `D_exec ∈ [19.75, 29.06]`, `B ∈ [1.2500, 1.6875]`, `T ≡ R ≡ 0`, coverage `42/42`,
+ *    `D_exec ∈ [19.75, 29.0625]` (printed `[19.75, 29.06]`), `B ∈ [1.2500, 1.6875]`, `T ≡ R ≡ 0`, coverage `42/42`,
  *    `switchRequired` measured as the all-OFF world, the `g0`–`g6` family gates by name.
  * 6. **§6.1.4 clone filter:** each rung's seal-inclusive key must be free of the 30 existing
  *    keys **and** of its siblings'; collisions are counted and printed, never hidden.
@@ -331,6 +333,7 @@ import {
   ACT_II_B1_IDS,
   ACT_II_B1_LADDER,
   ACT_II_B1_REGISTERED_PEAK_EXEC,
+  ACT_II_EXEC_BAND,
   ACT_II_PAR_BAND,
   ACT_I_REGISTERED_PEAK_EXEC,
   BLOCK_L1619_B_BAND,
@@ -392,8 +395,16 @@ const PAR_MIN = Number(argOf("parmin") ?? "17");
 const BATCH_FIRST_ID = BATCH === 3 ? 31 : BATCH === 2 ? 26 : 21;
 const RUNG_COUNT = 5;
 const PAR_MAX = Number(argOf("parmax") ?? "23");
-/** The Act II `D_exec` band (§7.2, derived from the measured `B` band). */
-const ACT2_EXEC_BAND: readonly [number, number] = [19.75, 29.06];
+/** The Act II `D_exec` band (§7.2, derived from the measured `B` band).
+ *
+ * **Read from the law module, never re-typed (LV-016 / §7.9).** This line used to be the
+ * literal `[19.75, 29.06]` — §7.2's *printed rounding* of the derived-exact
+ * `[19.75, 29.0625]`. That is the defect §7.9 names: a printed band value used as a
+ * comparison operand leaves the `(29.06, 29.0625]` sliver inadmissible, i.e. §7.8 item 2's
+ * own `par 24` mandate unbuildable at its top. The census/selection filters below (`>=`/`<=`
+ * at 1216/2554) now compare against the derived-exact constant by construction.
+ */
+const ACT2_EXEC_BAND: readonly [number, number] = ACT_II_EXEC_BAND;
 
 const at = (px: number, py: number): Coord => [px, py];
 const x = (c: Coord): number => c[0];
@@ -2453,7 +2464,7 @@ function stageRoomCap(): void {
  *
  * 1. Rungs are `L21 … L25` (batch 1) or `L26 … L30` (batch 2, `--batch=2`) in that
  *    order; every member must have `par` strictly inside Act II's 16–24 band (17…23)
- *    and `D_exec` inside `[19.75, 29.06]`; `B` inside the measured band.
+ *    and `D_exec` inside `[19.75, 29.0625]` (printed `[19.75, 29.06]`); `B` inside the measured band.
  * 2. **`D_exec` must strictly rise along the batch** — batch 1 only. §7.3's act law
  *    calls the plateau an act-open property and the batch proved the rise; **LV-014
  *    amends this clause for batch 2 by design, and the amendment is published before

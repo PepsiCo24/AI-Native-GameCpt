@@ -55,6 +55,7 @@ import { hashState } from "@/core/state/hash";
 import type { SearchState } from "@/core/state/types";
 import {
   ACT_II_B1_IDS,
+  ACT_II_B_BAND,
   ACT_II_EXEC_BAND,
   ACT_II_PAR_BAND,
   ACT_I_REGISTERED_PEAK_EXEC,
@@ -251,14 +252,14 @@ function judge(
             detail:
               `par=${String(stamped)} inside Act II's band [${String(ACT2_PAR_BAND[0])}, ${String(ACT2_PAR_BAND[1])}] (inclusive; §7.2 "par 16–24") ` +
               `— §7.8 item 2 names par ${String(ACT2_PAR_BAND[1])} "Act II's own band ceiling" and requires one, and the derived D_exec top ` +
-              `${ACT2_EXEC_BAND[1].toFixed(2)} is exactly ${String(ACT2_PAR_BAND[1])} + 3·1.6875, so the ceiling belongs to the band (F-L31-1)`,
+              `${String(ACT2_EXEC_BAND[1])} (printed ${ACT2_EXEC_BAND[1].toFixed(2)}; §7.9) is exactly ${String(ACT2_PAR_BAND[1])} + 3·${String(ACT_II_B_BAND[1])}, so the ceiling belongs to the band (F-L31-1)`,
           },
           {
             id: "act2-exec-band",
             ok: diff.Dexec !== null && diff.Dexec >= ACT2_EXEC_BAND[0] && diff.Dexec <= ACT2_EXEC_BAND[1],
             detail:
-              `D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} ∈ [${ACT2_EXEC_BAND[0].toFixed(2)}, ${ACT2_EXEC_BAND[1].toFixed(2)}] ` +
-              `(§7.2's derived Act II band; derived from the measured B band through D_exec = par + 3·B — no new maths)`,
+              `D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} ∈ [${String(ACT2_EXEC_BAND[0])}, ${String(ACT2_EXEC_BAND[1])}] (printed [${ACT2_EXEC_BAND[0].toFixed(2)}, ${ACT2_EXEC_BAND[1].toFixed(2)}]; §7.9) ` +
+              `(§7.2's derived Act II band; derived from the measured B band through D_exec = par + 3·B — no new maths, and the compared operands ARE the derived values)`,
           },
           {
             id: "act2-b-band",
@@ -1310,7 +1311,7 @@ if (LADDER.length > 0) {
   console.log(
     `batch peak: ${maxRow === null || maxRow.dexec === null ? "n/a" : `L${String(maxRow.id)} at ${maxRow.dexec.toFixed(6)}`} · ` +
       `Act I measured peak ${ACT1_PEAK.toFixed(6)} · §7.3 act-peak clause ${maxRow !== null && maxRow.dexec !== null && maxRow.dexec > ACT1_PEAK ? "DISCHARGED" : "NOT DISCHARGED"} ` +
-      `· headroom to the Act II ceiling ${ACT2_EXEC_BAND[1].toFixed(2)}: ${maxRow === null || maxRow.dexec === null ? "n/a" : (ACT2_EXEC_BAND[1] - maxRow.dexec).toFixed(6)}`,
+      `· headroom to the Act II ceiling ${String(ACT2_EXEC_BAND[1])} (printed ${ACT2_EXEC_BAND[1].toFixed(2)}; §7.9 — derived-exact is the value): ${maxRow === null || maxRow.dexec === null ? "n/a" : (ACT2_EXEC_BAND[1] - maxRow.dexec).toFixed(6)}`,
   );
   // F-L31-2 (`scripts/prove-candidate-l3135.transcript.md` §0): this line used to assert
   // "every control caught on every rung" as a STRING LITERAL, printing it even when a control had

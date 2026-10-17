@@ -435,7 +435,7 @@ const memberControls: readonly {
   {
     mustFire: "gate-act2-exec-band",
     name: "-exec-band: the LAW table is restamped (L23's registered D_exec moved to 30) while the bytes stay registered",
-    coupling: "named: the band is [19.75, 29.06], so a restamped row leaves the band by three units — the silent-restamp direction this dispatch's guard exists for",
+    coupling: "named: the band is [19.75, 29.0625] (printed [19.75, 29.06]; §7.9 — derived-exact is the value), so a restamped row leaves the band by three units — the silent-restamp direction this dispatch's guard exists for",
     codes: gatesOf(readLevel(23), restampedRows),
   },
   {
