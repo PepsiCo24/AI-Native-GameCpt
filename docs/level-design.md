@@ -1,10 +1,10 @@
 # Level Design — Phase Shift: Echo Grid / 双相棋盘：昼夜回响
 
 > Owner: **Agent 1 — Game Designer**
-> Version: **V1.1** *(header had lagged the change log at V0.9 through the V1.0/GD-007 row; corrected here, no content moved)*
+> Version: **V1.2** *(V1.1 was the header sync; V1.2 is GD-010 — §7.3.1–§7.3.4 + §7.8, the sawtooth ruling on Act II batch 2)*
 > Date: 2026-10-17
-> Status: **Draft for Stage 2 prototype** (all level content requires Solver verification per ADR-0004; mechanic schedule per GATE D / ADR-0009; **100-level act architecture per GD-009 / ADR-design-0005, §7**)
-> Governing docs: `docs/game-design.md` (core rule §3, mechanics §5, rhythm §8, difficulty §11, move-depth ruling §14.2), ADR-0002, ADR-0004, **ADR-0008 rules 1–7** (entry-only solidity; clause 8 withdrawn), **ADR-0009** (checkerboard invariant; GATE D mechanics-forward), **ADR-design-0001** (dip law on the execution axis `D_exec`), **ADR-design-0003** (GD-011: the L12–L15 block law — par obligation, two-beat dip, latch grade), **ADR-design-0004** (L20 sealed landing), **ADR-design-0005** (GD-008 stars-not-cap + GD-009 act architecture), ADR-architecture-0002 (metric #7 canonicality; gate (iii) ordered reader)
+> Status: **Draft for Stage 2 prototype** (all level content requires Solver verification per ADR-0004; mechanic schedule per GATE D / ADR-0009; **100-level act architecture per GD-009 / ADR-design-0005, §7**; **act-close peak + pre-published relief labels per GD-010 / ADR-design-0006, §7.3.1–§7.3.2**)
+> Governing docs: `docs/game-design.md` (core rule §3, mechanics §5, rhythm §8, difficulty §11, move-depth ruling §14.2), ADR-0002, ADR-0004, **ADR-0008 rules 1–7** (entry-only solidity; clause 8 withdrawn), **ADR-0009** (checkerboard invariant; GATE D mechanics-forward), **ADR-design-0001** (dip law on the execution axis `D_exec`), **ADR-design-0003** (GD-011: the L12–L15 block law — par obligation, two-beat dip, latch grade), **ADR-design-0004** (L20 sealed landing), **ADR-design-0005** (GD-008 stars-not-cap + GD-009 act architecture), **ADR-design-0006** (GD-010 act-close peak clause + pre-published relief-label form), ADR-architecture-0002 (metric #7 canonicality; gate (iii) ordered reader)
 
 ---
 
@@ -577,6 +577,135 @@ accept-share cliff 0.5 % → 0.03 % by par 10; `docs/level-difficulty.md` §3.5)
   full dip law and needs a Game Designer ruling + ADR before authoring — it cannot be smuggled in as
   "Act VI".
 
+#### 7.3.1 Relief labels — PRE-PUBLISHED FORM, and the two named instances (GD-010)
+
+**Why this exists (the process law, not the prose).** R-004a set the precedent and LV-008 set the older
+one: a law lands **before** the bytes it judges (LV-008's acceptance contract was frozen before any L11
+candidate existed; R-004a labelled the L20→L21 relief *at registration*, in the same artifact that
+registered the rung). RV-012's finding (`docs/project-status.md` item 129) is that Act II batch 2's
+interior relief was **labelled after the transfer** — measured `−6.044410`, lawful by the clause above,
+but with **no artifact pre-publishing the label** the way the precedent demands. This sub-section fixes
+the *order*, not just the instance: the label **form** is published once, and every further relief is a
+**fill-in against it**, never fresh prose written after a number lands. A relief that has no
+pre-published label is **not registrable**.
+
+**The form (binding on every future relief, all acts):**
+
+> **RELIEF LABEL — `[kind]` seam `[level_prev]`→`[level_next]` · `ΔD_exec = [value]` · band `[lo, hi]`.**
+> This is an **interior relaxation at a `ΔM = 0` boundary, on the execution axis only — never a dip,
+> and never a claim of lower felt difficulty.** §6's dip law does **not** fire: no mechanic is
+> introduced, so the seam is §7.3 interior freedom and nothing else. It **discharges no clause and
+> satisfies none**: the `act-peak` clause rides on the act's **measured maximum**, never on a relief.
+> It asserts nothing about the felt half — `D_exec` is **blind to comprehension** (`M`/`T` are not in
+> it), so any claim about how the seam *reads* to a player is a **labelled Playtest hypothesis**
+> (§7.3.3), never an asserted ease. If the relief is an artifact of a **measurement design** (e.g. a
+> par mirror held constant to isolate one variable), the label **says so** — a measurement instrument
+> is not a designed rhythm.
+
+Two instances, both named with the constants the law files may carry:
+
+1. **`act-open` · L20→L21 · `ΔD_exec = −3.148017` · band `[19.75, 29.06]`** — registered by R-004a
+   (`L21 = 21.581395` under `L20 = 24.729412`); constants `ACT_II_B1_OPEN_RELIEF_LEVEL_ID` / `_EXEC`
+   (`21` / `21.581395`) already exist. **Unchanged by GD-010** — recorded here only so both instances
+   are read under one form.
+2. **`batch-seam` · L25→L26 · `ΔD_exec = −6.044410` · band `[19.75, 29.06]`** — Act II batch 2's
+   interior seam, **PRE-PUBLISHED HERE as the exact text R-005 must cite at registration** (the batch
+   is solver-proven and ON THE SHELF; the bytes have not moved). Registration-side constants for the
+   law files: `ACT_II_B2_SEAM_RELIEF_LEVEL_ID = 26`, `ACT_II_B2_SEAM_RELIEF_EXEC = 21.560241`,
+   `ACT_II_B2_SEAM_RELIEF_DELTA = −6.044410` (`L25 = 27.604651` registered). The full label, verbatim:
+
+   > **RELIEF LABEL — `batch-seam` seam L25→L26 · `ΔD_exec = −6.044410` · band `[19.75, 29.06]`.**
+   > Interior relaxation at a `ΔM = 0` boundary, on the execution axis only — **never a dip, never a
+   > claim of lower felt difficulty, and never the thing that satisfies a clause.** §6 does not fire:
+   > no mechanic is introduced (`ΔM = 0`) — the fenced **3-pocket / forced 4-press** chain
+   > (`p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4`) is **variety inside §7.2's Act II family**, one door
+   > deeper than batch 1's 3-press device. `act-peak` rides on the act's measured maximum (L25
+   > `27.604651`), never on this relief. **The relief is largely an artifact of the measurement
+   > design:** batch 2 **mirrored** batch 1's pars on purpose (equal-par comparators for the one
+   > variable, chain length — published pre-run, git-dated before the run), so the `par` term is held
+   > identical by construction and the `B` term moves by ≤ 0.0239; the label therefore asserts **no**
+   > ease the instrument cannot see — the batch-2 device carries a **longer** ordered chain (4 presses
+   > vs 3) and `D_exec` is **blind to comprehension** (`M`/`T` are not terms in it), so *how the seam
+   > reads* — mastery rest or deflation — is a **labelled Playtest hypothesis** (§7.3.3), not a result.
+   > The mirrored pars are **not** a designed repetition of batch 1's climb; they are the measurement
+   > instrument's control.
+
+#### 7.3.2 The ACT-CLOSE PEAK clause (new law; ADR-design-0006)
+
+**Original hypothesis.** §7.3's `act-peak` clause (the act's *measured maximum* must exceed the previous
+act's) says nothing about **where inside the act** that maximum sits — interior freedom was published to
+protect variety, and correctly so.
+
+**Problem.** Act II measured it: batch 1 registered a rising ladder to `27.604651` at **L25**, and batch
+2 (shelf) mirrors it at `−0.02…−0.07` `D_exec`, so the act's maximum would sit **mid-act** while its last
+five rungs re-climb to `27.566265` — a second half that is *numerically* a photocopy of the first, at
+five already-shipped pars. Lawful, but it makes every act **end on its own plateau** and leaves
+`1.455349` of the act's derived band headroom unused; Act III then has to open against a base no higher
+than its predecessor's midpoint (`docs/level-difficulty.md` §5.2 V1.3/V1.5; RV-012, item 129).
+
+**Change (one clause, generalised to every act, machine-checkable).**
+
+- **`act-close` clause.** An act's registered **maximum `D_exec` must be carried by its last two
+  batches** (for Act II: L31–L40). The act's true peak therefore lands late, and the `act-peak` clause
+  of §7.3 is read against a tail peak, not a midpoint peak.
+- **What it does *not* do.** It is **not** a per-rung climb. Every per-rung and per-block rule is
+  untouched: no dip without `ΔM > 0`, no padded pars, `Δpar` windows as measured, interior members free
+  in the band, and an act's opening rungs may still sit below the previous act's peak — as a labelled
+  **relief** under §7.3.1. One peak per act, carried late; the interior stays free.
+- **Escape hatch (honest, never silent).** If the census shows the family's ladder **cannot** reach a
+  closing peak without padding, the shortfall is **reported as a named act limitation** (with the
+  measured class ceiling beside it), the batch still registers **only** proven members (§7.5's
+  no-caveat rule is untouched — the caveat is on the act's shape, never on a board's proof), and the
+  gap rides into the next act's band arithmetic as a named input. Never smoothed, never faked.
+- **Falsifiable:** the closing batch's measured maximum is the number that fires or fails this clause;
+  a batch whose members are all below the act's current maximum fails it by measurement.
+
+**Evidence.** Item 129 (RV-012: the second-half duplication and the unlabelled `−6.044410`); item 124
+(batch 1 registered, L25 `27.604651`, Act I peak `24.729412`); `docs/level-difficulty.md` §5.2 V1.3/V1.5
+(both ladders, the per-par windows, headroom `1.455349`); ADR-design-0005 §7.3 (the law this rider
+amends) and ADR-design-0001 (withdrawn-not-refit); §7.4 (the named open axes batch 3 can spend).
+
+**Result.** The sawtooth keeps its meaning — **peak → breath → re-climb** — but the re-climb of the
+**last** batch ends **above** the first peak, so an act reads as a shape with a culmination rather than
+as one long plateau. No register moves, no par changes, no board is re-stamped; the obligation lands on
+**unauthored** bytes (L31–L40) only.
+
+#### 7.3.3 The falsifiable Playtest ask (Act II's relief reading — GD-010)
+
+**The question the lens owns:** a player who has just beaten **L25** (the act's registered peak) meets
+**L26** — a *smaller* board (`par 17` vs `23`) carrying a *longer* ordered chain. Is that a **mastery
+rest** (the same par family, a new mechanic expression, the star chase meeting fresh boards) or a
+**deflation** (the hardest board is behind them and what follows recycles it)? The metric cannot answer
+this: `D_exec` is blind to comprehension. So it is asked, pre-registered, with the thresholds frozen
+before the cohort (T6; the row lives in the Playtest lane's star-era instrument —
+`docs/playtest-analysis/star-era-asks-readiness.md` STAR-1/STAR-5, which today reads **NOT TESTABLE,
+n = 0**).
+
+> **ASK (one line, star-era archives):** on the five equal-par mirror pairs — **L21↔L26 · L22↔L27 ·
+> L23↔L28 · L24↔L29 · L25↔L30** — report **STAR-1 replay share** and **M5/M6** per rung (batch-2 side
+> vs batch-1 side); **`mastery-rest` survives** iff the batch-2 member's replay share is **≥ its
+> same-par comparator's** on **≥ 3/5** participants (paired), and **`deflation` is declared** on **≥ 2/5**
+> showing a quit-within-the-next-level or a flat M5/M6-with-low-dwell pattern at the **L25→L26** seam —
+> which fires the **C path** (below) **with its own ADR**, and never a silent re-tune of any number.
+
+**The C path (pre-registered remedy, NOT adopted now).** If `deflation` is declared, the authorised remedy
+is to move **Act II's registered maximum onto its tail** by selecting the par-23 class reach
+**`27.746988`** (published unselected four times: item 128/129, `docs/level-difficulty.md` §5.2 V1.5,
+`docs/ai-native-pipeline.md` §8.19) as the **L30**-slot rung — proven under §7.5 before registration,
+with **its own ADR** (it supersedes the act's registered maximum basis and re-keys the law constants).
+**Refused now, on evidence discipline:** adopting it today would be **fitting the curve to a desired
+shape** with zero playtest data behind it — the exact practice ADR-design-0001 withdrew the old "2–3
+points" margin for. **Taste — mine included — is not evidence (AGENTS §7).**
+
+#### 7.3.4 GD-010's ruling on Act II batch 2 (registration shape)
+
+| Option | Verdict | Grounds (one line each) |
+|---|---|---|
+| **(A) SHIP-AS-IS — batch 2 registers as VARIATION RÜNDS after batch 1's climb, relief labelled** | **ADOPTED** | The duplicated pars are the **measurement instrument**, not a designed repeat (§7.3.1 instance 2); the boards are mechanically distinct (clone guard 0/5 keys over 21 roots, one door deeper, 4-press chain), and `par` is invisible in play (GD-OQ1) — what the player repeats is a **par frame**, what they meet is a **new puzzle**. |
+| **(B) RE-ORDER / INTERLEAVE at registration** | **REFUSED** | It cannot remove the relief (both batches span `par 17→23`, so *some* seam drops ~6), it would break the **index-keyed** published mirror (`ACT_II_B1_LADDER[i].par`, read from the law constant) and the prover's ladder mapping, and it buys no comprehension (§1). Registration order stays as authored; the level lane is not asked to price it. |
+| **(C) PROMOTION — the act ends higher than 27.604651** | **DEFERRED, pre-registered as the remedy** | Correct **eventually** (§7.3.2 makes it an obligation for L31–L40 anyway), **wrong today**: no playtest data exists, so promoting now is curve-flattery (§7.3.3). It fires on the `deflation` signal, with its own ADR. |
+| **(D) BATCH-3 STEERING — the act must not read as one plateau** | **ADOPTED** | Set explicitly in **§7.8**: a derived par obligation (par 24 ⇒ `D_exec ≥ 27.7500` from the measured `B` band) plus the `act-close` clause; the derivation introduces **no new number**. |
+
 ### 7.4 Generator lattice families (what the level lane censuses to build)
 
 Each act is fed by a **named, bounded, enumerable** lattice stage, extending the shipped stage-P/stage-SL
@@ -663,6 +792,45 @@ n-11 prune above L15) is this policy's first concrete case and belongs to QA.
 5. **Report the refusal census with the accepts**, and hand the batch to QA for the §7.6 stratum
    assignment before registry.
 
+### 7.8 Handoff — Act II batches 3–4 (L31–L40): the CLOSING-PEAK obligation (GD-010)
+
+**The level lane authors; GD writes no JSON and no scripts.** Batch 2 is on the shelf at batch 1's pars;
+the act therefore has a **midpoint peak** (L25 `27.604651`) and no tail peak. Batches 3–4 exist to close
+that, and every number below is **derived from already-published law** (§7.0) — no new target is
+invented, and none of it promises an unauthored board is authorable.
+
+1. **`act-close` obligation (§7.3.2).** Act II's registered maximum must be carried by **batch 3 or 4**
+   and must **strictly exceed `27.604651`**. The closing batch carries the act's maximum. A closing batch
+   whose every member is below the act's current maximum **fails the clause by measurement**.
+2. **Par obligation — the derived route (no new number).** At least one batch-3 rung at **`par 24`**,
+   Act II's own band ceiling (§7.2: `par 16–24`). Inside the **measured** `B` band `[1.2500, 1.6875]`
+   the collapse `D_exec = par + 3·B` (the measured theorem `T ≡ R ≡ 0`) forces
+   **`D_exec ∈ [27.7500, 29.0625]`** — i.e. **strictly above the registered peak by ≥ `+0.145349`**, with
+   the window's top **being** Act II's derived ceiling `29.06`. That redeems the act's unused
+   `1.455349` headroom without touching any weight, band or registered row.
+3. **Named census obligation, never a promise.** LV-014's accept pool by par is `17:24 · 18:28 · 19:36 ·
+   20:38 · 21:70 · 22:94 · 23:106` — it **tops at `par 23`**, so **`par 24` is in-band but unmeasured**
+   in the `G` lattice: the batch must *measure* whether the class reaches it (§7.4's `G`: pocket count
+   1–4 × portal pairs 1–2 × door arity 2–5, on 7×6 → 7×7). **No ceiling claim either way is publishable
+   before that measurement** (§7.0).
+   **Fallback if `par 24` yields no accept:** the already-published par-23 class reach **`27.746988`**
+   (`+0.142337` over the registered peak) — which must pass §7.5 in full and, because it supersedes the
+   act's registered-maximum basis, travels the **§7.3.3 C path with its own ADR**.
+4. **Anti-mirror clause.** Batch 3 must **not** mirror batch 1's ladder again, and must not copy batch
+   2's device. The mirror was a **one-off measurement instrument** (equal-par comparators, published
+   pre-run) — repeating it converts a measurement into a formula and yields a third indistinct rung set.
+   Batch 3 publishes **its own** par set inside `16–24` (the census's own pool supports `19` and `22`,
+   neither yet used) and a device distinct in the stricter **§6.1.4 seal-inclusive key**. The named open
+   axes available to it: the **4-pocket** member (§7.4's `pocket count 1–4`; LV-014 states it
+   **unenumerated**, no completeness claim) and the **deferred `--pocketsize ≥ 11` probe** (≤ 10 closed
+   by measurement, ≥ 11 unmeasured).
+5. **Any further relief is labelled BEFORE the bytes move.** If batch 3's opening rung sits below L30,
+   that seam is another `ΔM = 0` interior relaxation and takes a §7.3.1-form label **published before the
+   batch is authored** — the process fix RV-012 (item 129) demands, and the reason §7.3.1 publishes the
+   *form* once. A relief with no pre-published label is **not registrable**.
+6. **Report the refusal census with the accepts**, hand the batch to QA for the §7.6 stratum assignment
+   before registry, and report the act's measured maximum per batch as §7.5 item 2 requires.
+
 ## 8. Change log
 
 | Date | Version | Change | Author |
@@ -677,3 +845,4 @@ n-11 prune above L15) is this policy's first concrete case and belongs to QA.
 | 2026-10-16 | V0.9 | **GD-011 — new §6.1: the L12–L15 block law published BEFORE integration (three design-owned gaps closed).** LV-009-A returned four solver-proven L12–L15 candidates and correctly stopped at its own OQ-1/OQ-2/OQ-3; §6.1 answers all three as law so the boards are **measured** against it, never fitted to it. **§6.1.0** states the integrity boundary: `par` is published as law (weightless, schema-enforced, already law at §6 / `policy.ts:599`) while **no new `D`/`D_exec` target is published** — `docs/level-difficulty.md` §3.5's deliberate silence above L11 is untouched, and the only numeric `D_exec` obligation remains §6's frozen block-end clause. **§6.1.1 (Q1)** publishes the par obligation as **floor ∩ step ∩ ceiling ∩ coverage** with derivation pointers: **P1** `par(L12) = 4` by intersection (§6 successor slot `≤ 4` ∧ the game's measured par floor `4`); **P2** `Δpar ≥ 2` from `B`'s measured band [1.2500, 1.6875] on 11/11 shipped levels (`3·B` spread 1.3125 < 2) — the minimal integer that makes §3.4's within-block ramp a *guarantee*; **P3** ceiling `par ≤ 10` from the measured **coverage** invariant (`distinctPositions == width × height` on 4/4), §1's hard 7-cap, the measured searchability cliff (0.5 %→0.03 % accept share, 315 566 tried / 484 accepted) and shipped precedent (max par 9); **P4** the coverage clause itself. **Uniqueness proved**: 4 members (`game-design.md` §8) ∧ P1 ∧ P2 ∧ P3 ⇒ `4, 6, 8, 10` is the only admissible ramp — adopted as **derived**, not approved by taste. Stable shape for L16+ published, incl. the already-forced consequence `par(L16) ≥ 10` (labelled conditional on the V0.1 weights) and a self-correcting guard if `B` leaves its band. **§6.1.2 (Q2)** rules **two-beat** post-debut (L12 owns §6's successor slot; single-beat REJECTED, no re-author) on five comprehension-first reasons — the text's plain reading, the invariant-break needs a consolidation beat before the **mandatory-channel** step (`portalFree false` from L13, measured), and single-beat buys nothing the block-end clause requires; the L6 and L11 blocks are shown **isomorphic** on `D_exec`; the second beat is honestly labelled a **consolidation plateau** (par flat at 4, the −0.342402 carried entirely by `B` 1.5244→1.4103), and the felt half stays a PA hypothesis. **§6.1.3 (Q3)** accepts **option (a)** as doctrine with the quotable sentence — *"the switch buys you speed, the sealed channel buys you existence; from L13 the portal IS the solvability-load"* — on the measured 0/484 `switchRequired` universality, the locked core's entry-only refusal semantics, one-existence-gate-per-block, Aha #2 not Aha #1 being this block's lesson, and gate (iii) still firing 4/4 (3/5/5/6) so the witnessable beat survives; the exemption is **hardened** into falsifiable obligations **G1** `allOffShortest − par ≥ 1` (measured 2 on 4/4), **G2** switch-pressed-and-door-crossed on every par route, **G3** ordered reader, **G4** `"exempt"` not `null` in `DOCUMENTED_LESSONS`; option (b) rejected as invalidating 0/484 ⇒ full restart, and as *lengthening* the puzzle rather than deepening it. **§6.1.4** confirms `[multi-switch-door]` DORMANT (required by §6's single-concept floor, not merely permitted) and records the `l12TemplateFamily` 0/512 read — a shipped debut board is a **one-off fit, not a template**; author plan shapes, search skeletons, never clone-and-perturb. **§6.1.5** records §6's frozen block-end clause as **DISCHARGED** (`D_exec(L15) = 14.969697 > 13.64` and `> 13.642857`), the first **positive/escalation-direction** firing, filtered not fitted (122 `block-floor` rejections). **§6.1.6** is the LV-009-B handoff: exact numbers to encode, in order, plus the pre-registered acceptance law and a STOP-and-route clause on reader divergence. Per-board clause-by-clause ACCEPT verdicts (L12/L13/L14/L15 + the block as a set) live in `docs/decisions/design-0003-l1215-block-law.md`. **No code, gate, threshold, weight or lesson outside this section changed; no candidate JSON was edited.** | Agent 1 (GD-011) |
 | 2026-10-16 | V1.0 | **GD-007 — new §6.2: the L20 mechanism is RULED: the SEALED LANDING (Aha #3, ordered landing); the GAUNTLET is REJECTED on census measurement.** The L16+ census (LV-010f, `docs/project-status.md` item 86) closed the goal-gated full-seal device at `par 18` / `D_exec 22.885157` on `7×6` at **every** arity (arity 4: 17 160 tuples enumerated completely, `12:10230 14:6450 16:446 18:34`), and `7×7` reaches `par 22` only by re-stamping L19's exact seal — refused as a re-lengthened walk; `block-l1619-tail-ceiling` forbids widening the terminal instead of building a mechanism. Of the two named candidates, **ADOPT (B) SEALED LANDING / REJECT (A) GAUNTLET**, argued in priority-law order: **(1 Fun)** the census identity `par = min_i(d(start→s_i)+1+d(s_i→goal))` makes a gauntlet's extra doors terms in a **minimum** — more reading, no decision (measured saturation 16→18→18) — while the landing forces the mandatory second press the census proved the seal cannot; **(2 Comprehension)** one visible portal→pocket→door story vs. ≥ 12 objects inferred from clutter at the 44 px floor; **(3 Depth)** ORDER is a new dimension, COUNT is the saturated one, and the gauntlet's only defensible verb (the key is itself gated) is the same verb delivered worse; **(4 Scalability)** the sealed landing's lattice is bounded/enumerable, the ≥ 6-door nested ring is outside the census and unmeasured. **§6.2.2** rules `ΔM(L20) = 0` (new **verb**, existing mechanics ⇒ no dip fires, rung law stands). **§6.2.3** publishes the lattice (one opposite-colour pair; pocket not on-foot reachable; exit MUST be an openable door per F-L19-2; ≥ 2 ordered presses breaking the census identity; `par 20`; P4 42/42). **§6.2.4** teaching beat (zero text, Aha #3). **§6.2.5** fail conditions + two named comprehension risks (PA measures M5/M6 L20 vs L19). **§6.2.6** obligations (`par = 20` exact; `D_exec > 22.885157` automatic at `par 20` + in-band `B`, margin ≥ +0.864843; block becomes L16–L20 and the tail-ceiling moves **only after** the mechanism is proven; five new named gates g1–g5). No core-rule, weight, gate-widening or shipped-board change. Full record: `docs/decisions/design-0004-l20-mechanism-sealed-landing.md`. | Agent 1 (GD-007) |
 | 2026-10-17 | V1.1 | **GD-008 + GD-009 (one ticket, two user-ordered rulings — `docs/project-status.md` item 106) — new §7: the 100-level ACT ARCHITECTURE; and the move-depth ruling's `par`-side restatement (§7.1).** **RULING A:** `par` stays a Solver/difficulty field and **never** a fail condition; the ordered shape is a **post-win star rating** (`k1 = 2·⌈par/10⌉`, `k2 = 2·k1`; factors = ADR-0009's detour quantum 2 and P3's published par unit 10), and the **hard move cap is REFUSED** (a cap creates `R > 0` states, contradicting §4 and repricing every published `D_exec` row — it would need the AGENTS §2 triad + ADR). The dispatch's "pars 3..20" is **corrected by measurement**: the shipped ladder is 4,5,6,6,6,4,4,6,8,9,4,4,6,8,10,12,14,16,18,20 and the measured par floor is **4** (ADR-design-0003 P1) — no level measures par 3. **RULING B:** §7.0 integrity statement (par bands = law; `D_exec` bands = **derived** from the measured `B` band via `D_exec = par + 3·B`, no new math; no absolute `D` band, no promise of unproven authorability); **§7.2** five acts × 20 (Act I = the shipped L1–L20 spine; Act II portal orchestration; Act III both-pair objects + the XOR allowance moved off §8's L36–L45; Act IV phase-maze + gauntlet-as-FLAVOUR-only per GD-007's census identity; Act V synthesis/density with **L100 = Final Exam**, §8's `L50` role re-mapped to the Act III `Midterm`), each with a par band, a derived `D_exec` band and a batch size of 5; **§7.3** the act-scale tail law — the one changed law: within an act unchanged, across acts the obligation moves to the measured **`act-peak`** (strictly above the previous act's measured max), with interior members free inside the band and any below-peak act-open labelled a **plateau relaxation at `ΔM = 0`, never a dip**; **§7.4** named generator lattice families (`P`/`SL` extended past F-L20-3's open ≥ 9-pocket boundary, then new `G` multi-pocket, `H` both-pair, `I` phase-maze, `J` gauntlet-flavour census; Act V recombines only proven ceilings; §6.1.4 clone guard on every stage); **§7.5** per-batch proof obligations (Solver PASS 100/100, band containment, measured `B` in band or a named F-L16-2 excursion, family gates, one negative control per new gate named by its measured refusal, sidecar/PINS/`EXPECTED_LEVEL_COUNT` last; **no "registered with a caveat" path**); **§7.6** the P10 sampling policy shape (full-census Solver stays full/cheap on 100/100 every round; e2e = new-batch-full + boundaries always-in + seeded rotating interior strata with a bounded coverage horizon + sampled live lane; the full 100-level chain runs at release/milestone certification — forced by the measured unlock chain 60.3 s of a 360 s ceiling at 20 levels and `route-budget.test.ts:152`'s 1.36M → 17.8M → 98.7M → > 5×10⁸ explosion); **§7.7** first-batch handoff (Act II L21–L25: re-run stage P at `--pocketsize=10` to close or keep open F-L20-3 **by measurement**, then the multi-pocket `G` lattice under §6.2.3 verbatim, **never re-stamping L20** per the `l12TemplateFamily` 0/512 lesson). Header version corrected V0.9 → V1.1 (it had lagged the change log through the V1.0/GD-007 row). **No core rule, mechanic, weight, gate threshold, shipped board or published number moved** — the locked loop is byte-identical; full record: `docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md`. | Agent 1 (GD-008 / GD-009) |
+| 2026-10-17 | V1.2 | **GD-010 — the Act II batch-2 sawtooth is RULED (RV-012's MEDIUM), and two §7 clauses are added: the pre-published RELIEF-LABEL form and the `act-close` PEAK clause.** Ruling = **(A) ADOPTED + (D) ADOPTED, (B) REFUSED, (C) DEFERRED with a named trigger** (§7.3.4): batch 2 registers as **VARIATION RÜNDS** after batch 1's climb because the duplicated pars are the **measurement instrument** (batch 2 mirrored batch 1's pars on purpose, published pre-run and git-dated, to isolate chain length at equal par) and not a designed repeat — the boards are mechanically distinct (fenced 3-pocket, forced **4-press** chain, one door deeper, clone guard 0/5 keys over 21 roots) and `par` is invisible in play (GD-OQ1), so what repeats is a **par frame**, not a puzzle; re-ordering (B) is refused because it cannot remove the relief (both batches span `par 17→23`), would break the index-keyed published mirror `ACT_II_B1_LADDER[i].par` and buys no comprehension; promotion (C, the published-unselected par-23 class reach **27.746988**) is **not** adopted on zero playtest data — that is curve-flattery, the practice ADR-design-0001 withdrew — and is pre-registered as the remedy that **fires on the deflation signal with its own ADR**. **§7.3.1** publishes the **relief-label FORM once** (road-lesson from RV-012: batch 2's `−6.044410` was lawful but its label came after the transfer; a relief with no pre-published label is **not registrable**) and both named instances — the registered `act-open` L20→L21 `−3.148017` and the **`batch-seam` L25→L26 `−6.044410`**, quoted verbatim for R-005 to cite, with the constants `ACT_II_B2_SEAM_RELIEF_LEVEL_ID/_EXEC/_DELTA` (`26` / `21.560241` / `−6.044410`) and the honest note that the relief is **largely an instrument artifact** (`par` held identical by the mirror, `ΔB ≤ 0.0239`) and that `D_exec` is **blind to comprehension**, so the *felt* reading is a hypothesis. **§7.3.2** adds the `act-close` clause (new law, ADR-design-0006): an act's registered **maximum must be carried by its last two batches** — not a per-rung climb (no dip without `ΔM > 0`, no padded pars, interior freedom intact, act-open reliefs still lawful), with an honest **escape hatch** (a family that cannot reach a closing peak is a **named act limitation**, reported, never smoothed, and §7.5's no-caveat rule is untouched because the caveat is on the act's shape, not a board's proof). **§7.3.3** pre-registers the **falsifiable Playtest ask** on the five equal-par mirror pairs (STAR-1 replay share + M5/M6, batch-2 side vs batch-1 side; `mastery-rest` survives iff ≥ its same-par comparator on ≥ 3/5 paired participants, `deflation` declared on ≥ 2/5 quit-within-next-level at the L25→L26 seam ⇒ fires C with an ADR) — defensible because `D_exec` carries no comprehension term. **§7.4…§7.7 unchanged.** **§7.8** new: the Act II batches-3–4 handoff — the closing-peak obligation (`> 27.604651`), the **derived** par obligation (**`par 24` ⇒ `D_exec ∈ [27.7500, 29.0625]`** from the measured `B` band `[1.2500, 1.6875]` and `D_exec = par + 3·B`, ≥ `+0.145349`, redeeming the `1.455349` headroom — **no new number invented**), the **named census obligation** that `par 24` is in-band but **unmeasured** (LV-014's accept pool tops at `par 23`; fallback = the published `27.746988` via the C path + ADR), the **anti-mirror clause** (no third indistinct rung set; own par set inside 16–24; §6.1.4 key distinct; named open axes = the 4-pocket member and the deferred `--pocketsize ≥ 11` probe), and the "label before the bytes" rule for any further relief. **No registered row, par, weight, gate, band, sidecar cell or board byte moved** — Act II batch 2 stays ON THE SHELF and L21–L25 stay registered; no star threshold re-prices (`par` unchanged; a future `par 24` is already covered by ADR-design-0005's `21–30 → +6/+12` row, derivation not pins). Full record: `docs/decisions/design-0006-act-close-peak-and-relief-label-form.md`. | Agent 1 (GD-010) |
