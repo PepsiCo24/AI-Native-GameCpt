@@ -1,7 +1,8 @@
-# `src/levels/candidates/` — the proposal shelf (booked: the five Act II batch-1 candidates `l021`–`l025`)
+# `src/levels/candidates/` — the proposal shelf (**EMPTY**: the Act II batch-1 set `l021`–`l025` graduated at R-004a)
 
 > Owner: **Level AI + Solver** (AGENTS.md §4). The dataset itself is one directory up:
-> `src/levels/README.md` §0 lists it, §2e documents the **registered** L16–L20 block.
+> `src/levels/README.md` §0 lists it, §2e documents the **registered** L16–L20 block, and §2f the
+> **registered** Act II batch 1.
 
 This directory is the **shelf, not the ship**: a candidate is authored here, proven here, and only
 moved into `src/levels/` root by a deliberate registration ticket. It sits *inside* `src/levels/`
@@ -10,48 +11,60 @@ on purpose — the three readers that own the shipped-set census walk the root *
 report length, and `src/game/levels/level-registry.ts`'s explicit imports), so a candidate on the
 shelf is visible to a human and invisible to every gate that counts shipped levels.
 
-## Current state: the booked set `l021`–`l025` — proven, **unregistered**
+## Current state: **EMPTY** — the booked set graduated
 
-The shelf holds **exactly five files, and they are the booked set**: `l021.json` … `l025.json`, the
-**Act II batch 1** rungs authored and proven by LV-012 on these very bytes
-(`scripts/prove-candidate-l2125.transcript.md`; pipeline record `docs/ai-native-pipeline.md` §8.16).
-The booking is asserted as **set equality** — QA-018's re-book of the shelf pin
-(`tests/solver/l16-l20-candidates.test.ts:163`) — so an unregistered extra (`l026.json`) and a
-vanished member (`l025.json` gone) both fail **by name**:
+The shelf holds its `README.md` and **nothing else**. The five files that were booked here
+(`l021.json` … `l025.json`, the **Act II batch 1** rungs authored and proven by LV-012 on those very
+bytes; `scripts/prove-candidate-l2125.transcript.md`, pipeline record `docs/ai-native-pipeline.md`
+§8.16) were moved into the dataset root by **R-004a** with `git mv`, **no content edit during the
+move**, rename 100 %, and `sha256` **and** git blobs identical on both sides:
 
-| file | `par` (solver) | `D_exec` | `B` | coverage | all-OFF world | gates / controls |
-|---|---|---|---|---|---|---|
-| `l021.json` | 17 | 21.581395 | 1.5271 | 42/42 | UNSATISFIABLE | 5/5 ACCEPT · 13/13 caught |
-| `l022.json` | 18 | 22.584000 | 1.5280 | 42/42 | UNSATISFIABLE | 5/5 ACCEPT · 13/13 caught |
-| `l023.json` | 20 | 24.620000 | 1.5400 | 42/42 | UNSATISFIABLE | 5/5 ACCEPT · 13/13 caught |
-| `l024.json` | 21 | 25.604651 | 1.5349 | 42/42 | UNSATISFIABLE | 5/5 ACCEPT · 13/13 caught |
-| `l025.json` | 23 | 27.604651 | 1.5349 | 42/42 | UNSATISFIABLE | 5/5 ACCEPT · 13/13 caught |
+| file | root blob (`551fd43:` shelf blob) | root `sha256` | `par` (solver) | `D_exec` | `B` | all-OFF world | gates / controls |
+|---|---|---|---|---|---|---|---|
+| `l021.json` | `18d05965c81afa972e74e07918c5cd3ba801742d` | `78df6c27…` | 17 | 21.581395 | 1.5271 | UNSATISFIABLE | 5/5 ACCEPT · 13/13 caught |
+| `l022.json` | `e8fcabd5a0a6ef25eb7345281626a11292ceb5a9` | `de0b579b…` | 18 | 22.584000 | 1.5280 | UNSATISFIABLE | 5/5 ACCEPT · 13/13 caught |
+| `l023.json` | `a2331baf00271991c8206619a521dcb7cefa54e9` | `f435f8f5…` | 20 | 24.620000 | 1.5400 | UNSATISFIABLE | 5/5 ACCEPT · 13/13 caught |
+| `l024.json` | `cb23369c633a71131f385f3d0f28b7acec0485db` | `524aadbc…` | 21 | 25.604651 | 1.5349 | UNSATISFIABLE | 5/5 ACCEPT · 13/13 caught |
+| `l025.json` | `6e4b10d10b6be889bd35e0bc04293a107fb9dd51` | `afd6bc0e…` | 23 | 27.604651 | 1.5349 | UNSATISFIABLE | 5/5 ACCEPT · 13/13 caught |
 
-Every rung's `par` is derived **strictly above the registered root max** (20) and its `D_exec` rises
-strictly above the registered Act I peak (24.729412) — a **derived rung relation, never a ceiling
-claim about any device**: `docs/project-status.md` item 114's law binds this prose too — the pocket
-census is unmeasured at ≥ 11, so neither "9 is the largest pocket" nor "20 is the device ceiling" may
-be published in either direction. A shelf file at or below the registered root max is a root row
-hiding outside the census, and the pin catches it **as a live guard, not as a count**.
+Every number in that table was **re-measured on the registered root bytes before any law edit**, and
+the five rows are now in `docs/level-difficulty.md` §5.2 and in the regenerated
+`docs/level-difficulty.report.json` (**25** records). The registration's own law — the act's
+**maximum** carries §7.3's across-act obligation, while the act's *opening* rung sits below the
+previous act's peak as a **plateau relaxation at a `ΔM = 0` boundary**, never a dip — lives in
+`@/core/solver/policy` and is re-derived per run by `scripts/attest-r004a-act2.ts` (exit 0,
+`RESULT: REGISTERED-MATCH`). The **registered `block-l1619-tail-ceiling` did not move** because
+candidates existed, and it did not move at registration either: `BLOCK_L1619_IDS` is still
+`[16 … 20]` and L20 was **not re-stamped** (`src/levels/README.md` §2f, §7c).
 
-`l020.json` was the shelf's previous occupant: it **graduated** by R-003d (`git mv` into
-`src/levels/`, blob `78acaed0…`, root re-measure equal to the booked `20 / 24.729412 / 1.5765`), and
-`l016.json`–`l019.json` graduated earlier the same way by R-003c — so the shelf has been
-*re-occupied* by LV-012's batch, not left empty. Registration of `l021`–`l025` is a **later ticket**
-(the R-003c/R-003d precedent: the root move with blob-hash identity, the registry rows, the count
-pins, the metrics-sidecar regeneration and the derived tables in `src/levels/README.md` §7), and the
-**registered `block-l1619-tail-ceiling` does not move because candidates exist**.
+**Shelf history, in one line each.** `l016.json`–`l019.json` graduated by **R-003c**, `l020.json`
+by **R-003d** (blob `78acaed0…`), and `l021.json`–`l025.json` by **R-004a** — so the shelf has now
+been emptied twice and re-occupied once, each time by a provenance-exact `git mv`. A future batch
+re-occupies it; until then the booking is the **empty set**.
+
+A shelf rung must sit **strictly above the registered root max** — that is a **derived rung
+relation, never a ceiling claim about any device**: `docs/project-status.md` item 114's law binds
+this prose too — the pocket census is unmeasured at ≥ 11, so neither "9 is the largest pocket" nor
+"20 is the device ceiling" may be published in either direction. A shelf file at or below the
+registered root max is a root row hiding outside the census, and the pin catches it **as a live
+guard, not as a count**.
 
 **Why this `README.md` exists.** `tests/solver/l16-l20-candidates.test.ts` walks this directory and
-pins the shelf's obligations (set equality with the booking, and every rung strictly above the
-registered root max). Earlier in its life the walking reader died before running a single test
-(`readLevel(dir, undefined)` against an *empty* shelf) — the R-003c handover recorded in
-`src/levels/README.md` §7 alongside `tests/e2e/helpers/levels.ts:76` and the other count pins — which
-is why the booking is a named, live-guarded set rather than a convenience. QA-018 proved the re-booked
-case non-vacuous in **both** directions (`cp` in / `mv` out transcripts, `tests/e2e/README.md` §1.12);
-the ceiling-wording scrub that came with it is the reason no sentence here quantifies a device's
-maximum. This file is documentation, not data: the suite filters on `l\d+\.json`, so it changes no
-count.
+pins the shelf's obligations (set equality with the booking — now `[]` — and every shelf rung
+strictly above the registered root max). Earlier in its life the walking reader died before running
+a single test (`readLevel(dir, undefined)` against an *empty* shelf) — the R-003c handover recorded
+in `src/levels/README.md` §7 alongside `tests/e2e/helpers/levels.ts:76` and the other count pins —
+which is why the booking is a named, live-guarded set rather than a convenience, and why QA-018
+proved **both** directions non-vacuously (`cp` in / `mv` out transcripts, `tests/e2e/README.md`
+§1.12). The ceiling-wording scrub that came with it is the reason no sentence here quantifies a
+device's maximum. This file is documentation, not data: the suite filters on `l\d+\.json`, so it
+changes no count.
+
+⚠ Two `tests/**` rows read the shelf and are **RED** until R-004c re-takes them
+(`src/levels/README.md` §7c item 5): the booking literal at
+`tests/solver/l16-l20-candidates.test.ts:159/:178` (`["l021.json" … "l025.json"]` → `[]`) and the
+terminal-rung clause at `:204`, which must be **re-worded, not re-stamped** (`BLOCK_L1619_IDS.at(-1)`
+is 20 while the dataset max is now 25). `tests/**` is QA's lane and was not touched here.
 
 ## Working here
 
@@ -59,10 +72,10 @@ count.
 node_modules/.bin/tsx scripts/author-l20.ts --stage=p --pocketsize=8        # stage P: pocket class census
 node_modules/.bin/tsx scripts/author-l20.ts --stage=sl --pocketsize=8 --write  # stage SL: lattice + land the selection
 node_modules/.bin/tsx scripts/author-l20.ts --stage=sl --only=6,2           # per-landing pass (an estimator, measured not guessed)
-node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l021.json --rung=17 --family=g
-node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l025.json --rung=23 --family=g
+node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l021.json --rung=17 --family=g   # at authoring time; R-004a moved the bytes to src/levels/l021.json
+node_modules/.bin/tsx scripts/prove-candidate.ts --family=g --ladder=21,22,23,24,25 --dir=src/levels    # R-004a: the same ladder re-proven from the ROOT
+node_modules/.bin/tsx scripts/attest-r004a-act2.ts                          # R-004a: byte identity + the registered ladder + the §7.3 tail law + its control battery
 node_modules/.bin/tsx scripts/author-l16-candidates.ts --stage=a --cx=4     # the L16–L19 (goal-gated seal) tool, unchanged
-node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l024.json --rung=21 --family=g
 ```
 
 `--write` is what lands bytes on the shelf; nothing here is ever auto-repaired (ADR-0004). A
