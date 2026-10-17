@@ -109,7 +109,8 @@ export type LessonObligation =
   | "latch-aha-1"
   | "portal-aha-2"
   | "block-l1215"
-  | "block-l1619";
+  | "block-l1619"
+  | "act-2-batch-1";
 
 export interface DocumentedLesson {
   readonly levelId: number;
@@ -380,6 +381,69 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
     evidence:
       "docs/decisions/design-0004-l20-mechanism-sealed-landing.md (GD-007 ruling, adopted) + docs/level-design.md §5 (the two-step lookahead this pays) + §6.1.3 G2/G3 · docs/ai-native-pipeline.md §8.14 (LV-011 authoring) + §8.15 (R-003d registration) · measured on the ROOT bytes: par 20 = par(L15) + 2·5 exactly, D_exec 24.729412 = the first rung ABOVE the 7 × 6 full-seal ceiling 22.885157, B 1.5765 (in band), coverage 42/42, all-OFF UNSATISFIABLE, 252/252 par routes execute the ordered two-press chain, refusedBeforeEnteredTiles 14, and all 252 re-land through the landing portal (P-1 readout, PA-003) · docs/level-difficulty.md §5.2 · src/levels/README.md §2e-5",
   },
+  // ── L21–L25 — Act II batch 1, on the law `docs/level-design.md` §7.2/§7.3 publishes ─────
+  //
+  // One obligation kind (`act-2-batch-1`) for the five rows, for the same reason as the two
+  // blocks above: the *batch* is the proofing unit (§7.2 "5 levels sharing one plan shape and
+  // one lattice family, proven as a set before any of them is registered"), so the rungs are a
+  // property of the registered ladder (`ACT_II_B1_LADDER`), the band membership is a property
+  // of the act (§7.2's par 16–24 / `D_exec` [19.75, 29.06]), and the across-act obligation is
+  // a property of the act's measured **maximum** (§7.3's `act-peak` clause), never of every
+  // interior member. `act2Batch1Gates` therefore reads `ACT_II_B1_LADDER` by member index and
+  // is the single implementation behind all five rows.
+  //
+  // `switchRequired: "required"` on all five — and it is **measured**, not asserted: the
+  // stage-`G` multi-pocket device makes every approach to the goal a door, so with every
+  // switch OFF the goal is unreachable (measured on the ROOT bytes: `allOffGoalReachable =
+  // false` on 5/5, all-OFF subgraph 16/258, 15/250, 15/250, 16/258, 15/250 states with no goal
+  // in it). §7.5 item 1 states the obligation the same way — "`switchRequired` read as a
+  // **measurement**, never an assertion" — and the measurement is what makes the five rows
+  // `"required"` rather than an L6-style concession.
+  {
+    levelId: 21,
+    lesson:
+      "Act II opens: the pocket is entered only through the portal and its way out is a door, so the plan is ordered — land, press the pocket switch, step back through the portal, then press a seal switch",
+    obligation: "act-2-batch-1",
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 (Act II = portal orchestration, par 16–24, D_exec [19.75, 29.06]) + §7.4 stage G + §7.7 item 3 (the batch's rung/band pin) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.16 (LV-012 authoring) + §8.17 (R-004a registration) · measured on the ROOT bytes: par 17 (solver-stamped), D_exec 21.581395, B 1.5271 (in band), coverage 42/42, T ≡ R ≡ 0, all-OFF UNSATISFIABLE, parRoutes 12/12 press-then-cross, refusedThenEnteredTiles 17 · docs/level-difficulty.md §5.2 · src/levels/README.md §2f",
+  },
+  {
+    levelId: 22,
+    lesson:
+      "the second pocket: the same ordered plan one rung longer — the pocket switch and the seal switch are two walls apart in the plan, not in the drawing",
+    obligation: "act-2-batch-1",
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2/§7.4 stage G + §7.5 item 1 (batch proof obligations) · docs/ai-native-pipeline.md §8.16 (LV-012 authoring) + §8.17 (R-004a registration) · measured on the ROOT bytes: par 18 (solver-stamped), D_exec 22.584000, B 1.5280 (in band), coverage 42/42, T ≡ R ≡ 0, all-OFF UNSATISFIABLE, parRoutes 16/16 press-then-cross, refusals 17 · docs/level-difficulty.md §5.2 · src/levels/README.md §2f",
+  },
+  {
+    levelId: 23,
+    lesson:
+      "the pocket chain lengthens: three doors and three switches in one plan, and the order is forced — dropping the first press leaves both the next switch tile and the goal unreachable",
+    obligation: "act-2-batch-1",
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.4 stage G (`portal entry × pocket × pocket switch × goal × seal-switch tuple`; the family's `g3` ordered-chain gate stages the worlds to show the order is FORCED) + §7.5 item 2 · docs/ai-native-pipeline.md §8.16 (2208 accepts of 9570 judged; `g5-identity-broken` 1864 is the second filter, so the identity break is the device's own law) + §8.17 · measured on the ROOT bytes: par 20 (solver-stamped), D_exec 24.620000, B 1.5400 (in band), coverage 42/42, T ≡ R ≡ 0, all-OFF UNSATISFIABLE, parRoutes 20/20 press-then-cross, refusals 17 · docs/level-difficulty.md §5.2 · src/levels/README.md §2f",
+  },
+  {
+    levelId: 24,
+    lesson:
+      "interior freedom: the act's members need not climb one by one — this rung sits where the batch's own shape put it, above its predecessor on the execution axis without introducing a new mechanic",
+    obligation: "act-2-batch-1",
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.3 (interior freedom: “a member of an act sits anywhere inside the act's D_exec band, in any order (variety)”) + §7.5 item 2 (the act-peak clause is evaluated once the batch's measured peak exists) · docs/ai-native-pipeline.md §8.16 + §8.17 · measured on the ROOT bytes: par 21 (solver-stamped), D_exec 25.604651, B 1.5349 (in band), coverage 42/42, T ≡ R ≡ 0, all-OFF UNSATISFIABLE, parRoutes 90/90 press-then-cross, refusals 17 · docs/level-difficulty.md §5.2 · src/levels/README.md §2f",
+  },
+  {
+    levelId: 25,
+    lesson:
+      "the batch's peak: the longest ordered plan in Act II batch 1 — and the rung that discharges §7.3's across-act obligation for the whole act, which is exactly why the clause rides on the peak and not on every member",
+    obligation: "act-2-batch-1",
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.3 (`act-peak` clause: “act n's measured maximum D_exec strictly exceeds act n−1's measured maximum”; Act I's registered peak is 24.729412) + §7.7 item 3 · docs/ai-native-pipeline.md §8.16 (the falsification: `--peak=28.5` fails exactly one rung on exactly one gate) + §8.17 · measured on the ROOT bytes: par 23 (solver-stamped), D_exec 27.604651 = Act I's measured peak + 2.875239, B 1.5349 (in band), coverage 42/42, T ≡ R ≡ 0, all-OFF UNSATISFIABLE, parRoutes 72/72 press-then-cross, refusals 17 · docs/level-difficulty.md §5.2 · src/levels/README.md §2f",
+  },
 ];
 
 export function documentedLesson(levelId: number): DocumentedLesson | null {
@@ -464,8 +528,36 @@ export type BlockL1619GateId =
   | "block-l1619-b-band"
   | "block-l1619-tail-ceiling";
 
+/**
+ * The named gates the **Act II law** adds (R-004a, `docs/level-design.md` §7.2/§7.5):
+ * the registered rung of the batch's ladder table, the derived `D_exec` band, the shared
+ * measured `B` band, the `T ≡ R ≡ 0` identity, the coverage clause, and the §7.3
+ * **`act-peak`** clause on the batch's peak rung. A closed union for the same reason as the
+ * four above: a gate that is not declared here is a compile error, and every declared gate
+ * has a `gate-…` policy code with its own control.
+ *
+ * Deliberately **not** a growth of {@link BlockL1619GateId}: Act II is a different law (a
+ * *band* plus an act-level peak obligation, §7.3) than a ladder of derived rungs, and
+ * re-using the block's ids would make one label describe two rules. The **shared** readers
+ * stay shared where they exist (the `B` band constant is imported from the block law rather
+ * than re-declared); the family gates `g0`–`g6` stay in `scripts/prove-candidate.ts`, which
+ * is where the batch was proved on the shelf.
+ */
+export type Act2GateId =
+  | "act2-registered-rung"
+  | "act2-exec-band"
+  | "act2-b-band"
+  | "act2-exec-identity"
+  | "act2-coverage"
+  | "act2-act-peak";
+
 export interface NamedGate {
-  readonly id: AhaGateId | PortalGateId | BlockGateId | BlockL1619GateId;
+  readonly id:
+    | AhaGateId
+    | PortalGateId
+    | BlockGateId
+    | BlockL1619GateId
+    | Act2GateId;
   /** The condition in the words of the design doc / dispatch. */
   readonly label: string;
   readonly status: GateStatus;
@@ -1058,13 +1150,11 @@ export function blockL1619Gates(
     difficulty.B >= BLOCK_L1619_B_BAND[0] && difficulty.B <= BLOCK_L1619_B_BAND[1];
   const onGrid =
     level.width === BLOCK_L1619_GRID[0] && level.height === BLOCK_L1619_GRID[1];
-  // The law constants are published at 6 decimal places (the precision the census
-  // table prints), so the tail clause is an equality **at that precision**: `D_exec`
-  // itself is `par + 3·B` at full float precision, and comparing it bit-for-bit with
-  // a 6-dp literal would reject the very board the literal was read from. Half a unit
-  // in the last printed place is the widest tolerance that still cannot hide a rung.
-  const LAW_PRECISION = 5e-7;
-
+  // The tail clause is an equality at the law's published precision — see
+  // {@link LAW_PRECISION} (hoisted to module scope at R-004a, when the Act II law needed
+  // the same tolerance): `D_exec` itself is `par + 3·B` at full float precision, and
+  // comparing it bit-for-bit with a 6-dp literal would reject the very board the literal
+  // was read from. R-004a's comparison is byte-identical to R-003c's; only the binding moved.
   const gates: NamedGate[] = [
     {
       id: "block-l1619-rung",
@@ -1162,6 +1252,573 @@ export function blockL1619Gates(
         `device. re-registered this clause on a NEW mechanism instead of a longer walk: the sealed landing, where the portal ` +
         `hands the player a new start inside a walk-sealed pocket whose only exit is a door, so the shortest plan is the ORDERED ` +
         `land → press → leave → press chain (L20; ADR-design-0004; 252/252 par routes, measured). Widening this number instead of building a mechanism is what this gate forbids.`,
+    });
+  }
+
+  return gates;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3b. The ACT LAW (`docs/level-design.md` §7 / ADR-design-0005) — R-004a
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The law constants are published at 6 decimal places (the precision the census table
+ * prints), so a registered value is an equality **at that precision**: `D_exec` itself is
+ * `par + 3·B` at full float precision, and comparing it bit-for-bit with a 6-dp literal
+ * would refuse the very board the literal was read from (the R-003c finding). Half a unit
+ * in the last printed place is the widest tolerance that still cannot hide a rung.
+ */
+export const LAW_PRECISION = 5e-7;
+
+/**
+ * ── The **Act II** law, batch 1 (`docs/level-design.md` §7.2/§7.3, ADR-design-0005) ──
+ *
+ * §7.0 is explicit about what this architecture may publish: the **bands** are law and each
+ * `D_exec` band is *derived* (`[par_min + 3·1.2500, par_max + 3·1.6875]`, the measured `B`
+ * band inside the measured theorem `T ≡ R ≡ 0 ⇒ D_exec = par + 3·B`), while **no absolute
+ * `D`/`D_exec` target above the last measured row** is published — §3.5's silence stands.
+ * The constants below are therefore of two kinds and are kept apart:
+ *
+ * - **bands** ({@link ACT_II_PAR_BAND}, {@link ACT_II_EXEC_BAND}) — §7.2's published ranges,
+ *   "and the range is the law: a candidate outside its act band is **rejected**, not
+ *   re-banded";
+ * - **measurements** ({@link ACT_II_B1_LADDER}, the act-scale tail constants) — the Solver's
+ *   read-outs of the **registered** bytes. They are pins, exactly like
+ *   `BLOCK_L1619_TAIL_PAR` / `BLOCK_L1619_TAIL_EXEC_CEILING`: a re-registration moves them
+ *   in the commit that re-measures, never silently.
+ */
+
+/** §7.2 — Act II's par band (a *plateau*, not a ladder): 16–24. */
+export const ACT_II_PAR_BAND: readonly [number, number] = [16, 24];
+
+/**
+ * §7.2 — Act II's `D_exec` band, **derived** (`[16 + 3·1.2500, 24 + 3·1.6875]`) from the
+ * measured `B` band, never invented. LV-012 measured the accepted pool inside it (`B`
+ * 1.5271 … 1.6008) and §7.5 item 1 asks every registered member to sit inside it.
+ */
+export const ACT_II_EXEC_BAND: readonly [number, number] = [19.75, 29.06];
+
+/** Act II batch 1's members, in registered order (`docs/level-design.md` §7.2/§7.7). */
+export const ACT_II_B1_IDS: readonly number[] = [21, 22, 23, 24, 25];
+
+/**
+ * One **registered** row of the Act II batch-1 ladder: the Solver's read-out of the landed
+ * bytes (transcript `scripts/attest-r004a-act2.transcript.md`). `par` is the solver's
+ * `shortestSolution` (a stamped value, not a label), `dexec` / `b` are published at the law's
+ * precision, and `grid` / `coverage` are the lattice key the registration moved (a restamp of
+ * the board changes them and the row no longer matches).
+ */
+export interface ActIILadderRow {
+  readonly id: number;
+  readonly par: number;
+  readonly dexec: number;
+  readonly b: number;
+  readonly grid: readonly [number, number];
+  readonly coverage: number;
+}
+
+/**
+ * **The registered ladder table (§7.7 item 3's pin)** — pars **17 / 18 / 20 / 21 / 23**,
+ * `D_exec` **21.581395 / 22.584000 / 24.620000 / 25.604651 / 27.604651**, `B` **1.5271 /
+ * 1.5280 / 1.5400 / 1.5349 / 1.5349**, all five on the family's 7 × 6 lattice with 42/42
+ * coverage. Deliberately **not** a derived rung like `BLOCK_L1619_PAR_EXPECTATION`: §7.2 gives
+ * Act II a *band* and §7.5 item 1 asks the member to sit **in** it, so an act rung is a
+ * *selected* par that has been measured, and the table is the record of that selection —
+ * pinned so that a later edit cannot re-stamp a registered rung. Note the measured
+ * consequence §7.5 item 2 requires beside the table: `Δpar ≥ 2` holds on only **2 of 4**
+ * steps (`17 + 2·4 = 25 > 23`), which is reported, never smoothed.
+ */
+export const ACT_II_B1_LADDER: readonly ActIILadderRow[] = [
+  { id: 21, par: 17, dexec: 21.581395, b: 1.5271, grid: [7, 6], coverage: 42 },
+  { id: 22, par: 18, dexec: 22.584, b: 1.528, grid: [7, 6], coverage: 42 },
+  { id: 23, par: 20, dexec: 24.62, b: 1.54, grid: [7, 6], coverage: 42 },
+  { id: 24, par: 21, dexec: 25.604651, b: 1.5349, grid: [7, 6], coverage: 42 },
+  { id: 25, par: 23, dexec: 27.604651, b: 1.5349, grid: [7, 6], coverage: 42 },
+];
+
+// ── §7.3 — the act-scale tail law: act-peak progression, with its guards ──────
+//
+// §7.3's words, quoted because the two halves of this law are the two halves of the trap:
+//
+//   "**Within an act, nothing changes.** […] **Across acts, the obligation moves from the
+//    rung to the act** […] **`act-peak` clause (new, machine-checkable):** act *n*'s
+//    **measured maximum** `D_exec` strictly exceeds act *n−1*'s measured maximum. Act I's
+//    registered peak is **24.729412** (L20) until a batch measures higher inside Act II."
+//
+//   "**Interior freedom:** a member of an act sits anywhere inside the act's `D_exec` band,
+//    in any order (variety). An act may therefore open **below** the previous act's peak.
+//    That is a **plateau relaxation at a `ΔM = 0` boundary**, honestly labelled — it is
+//    **never** presented as a dip (a dip is a `D_exec` event at a mechanic introduction,
+//    §6), and it is never an excuse to drop a level out of its band."
+//
+// Both directions are live here. A tail law that only compares an act's maximum against a
+// constant *restamped at the moment of registration* is self-confirming — that is the R-003d
+// lesson (`BLOCK_L1619_PRE_R003D_TAIL_EXEC`), and {@link actScaleTailGuards} keeps the
+// pre-R004a standard as its own constant for it. But a reader that *demands a cross-act
+// monotone rise* is the **other** side of the same coin: it would call L21's registered
+// 21.581395 a dip, which §7.3 explicitly permits as an act-open plateau relaxation. The law
+// is quoted above, and the clauses below implement it and nothing else.
+
+/** Act I's registered peak rung (§7.3 names the number and the rung). */
+export const ACT_I_REGISTERED_PEAK_LEVEL_ID = 20;
+
+/** §7.3 — "Act I's registered peak is **24.729412** (L20) until a batch measures higher inside Act II." */
+export const ACT_I_REGISTERED_PEAK_EXEC = 24.729412;
+
+/** The rung that discharges Act II batch 1's `act-peak` obligation (§7.7 item 3, measured). */
+export const ACT_II_B1_PEAK_LEVEL_ID = 25;
+
+/** **R-004a** — the post-registration Act II peak: L25's `D_exec`, the Solver's read-out of the ROOT bytes. */
+export const ACT_II_B1_REGISTERED_PEAK_EXEC = 27.604651;
+
+/**
+ * **R-004a** — the **frozen pre-registration standard** the batch's peak had to beat: the
+ * registered tail as it stood *before* this ticket (`L20`'s `D_exec`, i.e. Act I's registered
+ * peak). Kept as data for the same reason `BLOCK_L1619_PRE_R003D_TAIL_EXEC` is: a
+ * re-registration that quietly restamps the standard it is judged against never fails
+ * anything, and this constant plus {@link actScaleTailGuards}' measurement clause is what
+ * makes that restamp visible.
+ */
+export const ACT_II_B1_PRE_R004A_REGISTERED_TAIL_EXEC = 24.729412;
+
+/**
+ * **R-004a** — the measured gap: `27.604651 − 24.729412 = +2.875239` (§7.5 item 2: the
+ * `act-peak` clause is "evaluated once the batch's measured peak exists"). The guard checks
+ * the *derived* difference, so neither end of the pair can be edited alone.
+ */
+export const ACT_II_B1_PEAK_ADVANTAGE = 2.875239;
+
+/** The act's first member — the rung §7.3's interior-freedom clause is *about*. */
+export const ACT_II_B1_OPEN_RELIEF_LEVEL_ID = 21;
+
+/**
+ * **R-004a** — the registered act-open relief: `D_exec(L21) = 21.581395`, which is
+ * `−3.148017` below Act I's registered peak (24.729412) and **inside** the act band. That is
+ * the "plateau relaxation at a `ΔM = 0` boundary" §7.3 permits, honestly labelled: it is not
+ * a dip (no new mechanic is introduced), and it is not a reason to leave the band.
+ */
+export const ACT_II_B1_OPEN_RELIEF_EXEC = 21.581395;
+
+/** The clause ids {@link actScaleTailGuards} reports (a closed union: a new clause is a compile error). */
+export type ActTailClauseId =
+  | "act-tail-act-i-peak-pin"
+  | "act-tail-act-ii-peak-pin"
+  | "act-tail-peak-advantage"
+  | "act-tail-pre-r004a-standard"
+  | "act-tail-l20-not-restamped"
+  | "act-tail-l21-open-relief";
+
+/** One measured act-scale clause. Deliberately **not** a {@link NamedGate}: it is an act-level
+ * reading, never emitted per level, so it must not enter `POLICY_VIOLATION_CODES` (which is
+ * the per-level audit inventory) or the suite's one-control-per-code table. */
+export interface ActTailClause {
+  readonly clause: ActTailClauseId;
+  readonly label: string;
+  readonly status: GateStatus;
+  readonly detail: string;
+}
+
+/** A measured act peak: the maximum `D_exec` over a set of registered ids, and where it sits. */
+export interface ActPeakReading {
+  readonly levelId: number;
+  readonly dexec: number;
+}
+
+/** Everything the act-scale tail law reads. Each field is a **measurement** of the root bytes. */
+export interface ActScaleLawReading {
+  /** Measured max `D_exec` over the registered Act I set (L1–L20). */
+  readonly actI: ActPeakReading;
+  /** Measured max `D_exec` over the registered Act II set. */
+  readonly actII: ActPeakReading;
+  /** Measured max `D_exec` over **this batch's** ids (immutable once registered). */
+  readonly actIIBatchPeak: ActPeakReading;
+  /** The act's first member — the relief clause's subject. */
+  readonly actOpen: ActPeakReading;
+  /**
+   * The **block law's terminal rung as it stands**. Injectable so a control can *simulate* a
+   * re-stamp (grafting L21–L25 onto `BLOCK_L1619_IDS` would move which rung the registered
+   * `block-l1619-tail-ceiling` judges — the "never re-stamp L20" clause). Defaults to the
+   * shipped constants through {@link actScaleLawReading}.
+   */
+  readonly l20Tail: {
+    readonly ids: readonly number[];
+    readonly tailPar: number;
+    readonly tailExec: number;
+  };
+  /**
+   * The **pre-registration standard** the batch's peak is measured against — in production
+   * {@link ACT_II_B1_PRE_R004A_REGISTERED_TAIL_EXEC}, kept as a *reading* rather than read
+   * straight from the constant so that a control can inject a restamped standard and show the
+   * clause refuses it. That injection is the point: without it, "the re-registration did not
+   * move the standard it is judged by" would be an assertion about a constant, i.e. exactly
+   * the self-confirming shape R-003d named.
+   */
+  readonly preR004aStandard: number;
+  /**
+   * The registered **act-open relief value** (production:
+   * {@link ACT_II_B1_OPEN_RELIEF_EXEC}). A reading rather than a bare constant so a control
+   * can hold the bytes and move the *registered* value, and so the clause's two halves (the
+   * named rung's pinned value · the band) can be probed independently of the direction the
+   * member happens to take.
+   */
+  readonly actOpenRelief: number;
+}
+
+/** Build the law's reading from measurements, binding the terminal-rung clause to the live constants. */
+export function actScaleLawReading(measured: {
+  readonly actI: ActPeakReading;
+  readonly actII: ActPeakReading;
+  readonly actIIBatchPeak: ActPeakReading;
+  readonly actOpen: ActPeakReading;
+}): ActScaleLawReading {
+  return {
+    ...measured,
+    preR004aStandard: ACT_II_B1_PRE_R004A_REGISTERED_TAIL_EXEC,
+    actOpenRelief: ACT_II_B1_OPEN_RELIEF_EXEC,
+    l20Tail: {
+      ids: BLOCK_L1619_IDS,
+      tailPar: BLOCK_L1619_TAIL_PAR,
+      tailExec: BLOCK_L1619_TAIL_EXEC_CEILING,
+    },
+  };
+}
+
+const near = (a: number, b: number): boolean => Math.abs(a - b) < LAW_PRECISION;
+
+/**
+ * §7.3's `act-peak` clause as six measured clauses, each with an anti-tautology guard:
+ *
+ * 1. `act-tail-act-i-peak-pin` — the re-derived Act I maximum equals
+ *    {@link ACT_I_REGISTERED_PEAK_EXEC} **and belongs to** {@link ACT_I_REGISTERED_PEAK_LEVEL_ID}
+ *    **and is not an Act II board**. Fails if the Act I constant is relabelled to the Act II
+ *    value, or if an Act II board is counted into Act I's basis (a "relabel" by arithmetic).
+ * 2. `act-tail-act-ii-peak-pin` — the re-derived peak over **this batch's ids** equals
+ *    {@link ACT_II_B1_REGISTERED_PEAK_EXEC} at {@link ACT_II_B1_PEAK_LEVEL_ID}. The batch's own
+ *    registered record: immutable, and a silent restamp of the bytes or the constant fails here.
+ * 3. `act-tail-peak-advantage` — the clause itself (act II's measured max **strictly exceeds**
+ *    act I's) **plus** the derived identity `registered II − registered I =
+ *    {@link ACT_II_B1_PEAK_ADVANTAGE}`, so neither constant can be edited alone.
+ * 4. `act-tail-pre-r004a-standard` — {@link ACT_II_B1_PRE_R004A_REGISTERED_TAIL_EXEC} must
+ *    still equal Act I's registered peak (the standard is the tail *as it stood before* this
+ *    ticket) and the batch peak must strictly exceed it. A re-registration cannot restamp the
+ *    standard it is measured against.
+ * 5. `act-tail-l20-not-restamped` — the block law's terminal rung is still L20
+ *    (`BLOCK_L1619_IDS` = 16–20, tail par 20, tail `D_exec` = Act I's registered peak) and the
+ *    act-II ids are **not** grafted onto it. That is the clone-guard lesson applied to the law
+ *    itself: L20's tail reading is *one registered rung*, not "the dataset's tail", and moving
+ *    the block's tail to rung 25 would re-stamp a law the five new rungs do not belong to.
+ * 6. `act-tail-l21-open-relief` — the act's first member is inside the act band, below Act I's
+ *    peak, and equals the registered relief: **§7.3's permitted plateau relaxation, labelled**.
+ *    The clause deliberately does **not** require the registered rise that items 1–4 put on the
+ *    act's *maximum*: demanding a cross-act monotone rise is the mirror-image tautology, and a
+ *    member outside the band still fails (see the clause's own detail).
+ */
+export function actScaleTailGuards(
+  reading: ActScaleLawReading,
+): readonly ActTailClause[] {
+  const { actI, actII, actIIBatchPeak, actOpen, l20Tail, preR004aStandard, actOpenRelief } =
+    reading;
+  const advantage = actII.dexec - actI.dexec;
+  const registeredAdvantage =
+    ACT_II_B1_REGISTERED_PEAK_EXEC - ACT_I_REGISTERED_PEAK_EXEC;
+  const actIFromActII = ACT_II_B1_IDS.includes(actI.levelId);
+  const grafted = l20Tail.ids.filter((id) => ACT_II_B1_IDS.includes(id));
+  const reliefInBand =
+    actOpen.dexec >= ACT_II_EXEC_BAND[0] &&
+    actOpen.dexec <= ACT_II_EXEC_BAND[1];
+
+  return [
+    {
+      clause: "act-tail-act-i-peak-pin",
+      label:
+        "§7.3 — Act I's registered peak, re-derived from the registered L1–L20 bytes (never read from a constant that the same edit moved)",
+      status:
+        near(actI.dexec, ACT_I_REGISTERED_PEAK_EXEC) &&
+        actI.levelId === ACT_I_REGISTERED_PEAK_LEVEL_ID &&
+        !actIFromActII
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `measured Act I max D_exec=${actI.dexec.toFixed(6)} at L${String(actI.levelId)}; constant ` +
+        `${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} at L${String(ACT_I_REGISTERED_PEAK_LEVEL_ID)}. ` +
+        `ANTI-TAUTOLOGY: a relabel that moves this constant to the Act II value (or counts an Act II board into Act I's basis) ` +
+        `disagrees with the re-derived measurement and FAILs here — the number has to be re-measured, not restamped.`,
+    },
+    {
+      clause: "act-tail-act-ii-peak-pin",
+      label:
+        `§7.5 item 2 — Act II batch 1's measured peak is the registered ${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} at L${String(ACT_II_B1_PEAK_LEVEL_ID)}`,
+      status:
+        near(actIIBatchPeak.dexec, ACT_II_B1_REGISTERED_PEAK_EXEC) &&
+        actIIBatchPeak.levelId === ACT_II_B1_PEAK_LEVEL_ID
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `measured batch peak D_exec=${actIIBatchPeak.dexec.toFixed(6)} at L${String(actIIBatchPeak.levelId)}; ` +
+        `registered ${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} at L${String(ACT_II_B1_PEAK_LEVEL_ID)}. ` +
+        `The batch's own record is immutable: a restamp of L${String(ACT_II_B1_PEAK_LEVEL_ID)}'s bytes or of the constant moves this line and is refused.`,
+    },
+    {
+      clause: "act-tail-peak-advantage",
+      label:
+        "§7.3 — act n's measured maximum strictly exceeds act n−1's, and the registered gap is the measured gap (the derived identity)",
+      status:
+        advantage > 0 &&
+        near(registeredAdvantage, ACT_II_B1_PEAK_ADVANTAGE) &&
+        near(advantage, ACT_II_B1_PEAK_ADVANTAGE)
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `measured: Act II ${actII.dexec.toFixed(6)} − Act I ${actI.dexec.toFixed(6)} = ${advantage.toFixed(6)}; ` +
+        `registered: ${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} − ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} = ` +
+        `${registeredAdvantage.toFixed(6)}; pinned advantage ${ACT_II_B1_PEAK_ADVANTAGE.toFixed(6)}. ` +
+        `The clause is an inequality (strictly exceeds) AND a derived equality, which is what keeps it from being satisfied by ` +
+        `editing one of the two constants.`,
+    },
+    {
+      clause: "act-tail-pre-r004a-standard",
+      label:
+        `R-004a — the pre-registration standard is the registered tail as it stood before this ticket (${ACT_II_B1_PRE_R004A_REGISTERED_TAIL_EXEC.toFixed(6)}, L${String(ACT_I_REGISTERED_PEAK_LEVEL_ID)}), and the batch peak strictly exceeds it`,
+      status:
+        near(preR004aStandard, ACT_I_REGISTERED_PEAK_EXEC) &&
+        actIIBatchPeak.dexec > preR004aStandard
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `pre-R004a standard ${preR004aStandard.toFixed(6)} (constant ` +
+        `${ACT_II_B1_PRE_R004A_REGISTERED_TAIL_EXEC.toFixed(6)}) vs Act I's registered peak ` +
+        `${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} (they must stay the same number: the tail before this ticket *was* Act I's peak); ` +
+        `batch peak ${actIIBatchPeak.dexec.toFixed(6)}. This is the R-003d pattern ("BLOCK_L1619_PRE_R003D_TAIL_EXEC"): the ` +
+        `standard is kept as its own datum so the re-registration above cannot silently self-confirm.`,
+    },
+    {
+      clause: "act-tail-l20-not-restamped",
+      label:
+        "the L16–L20 block law is untouched: the terminal rung is still L20 at its registered par/D_exec, and L21–L25 are NOT grafted onto BLOCK_L1619_IDS",
+      status:
+        l20Tail.ids.length === BLOCK_L1619_IDS.length &&
+        l20Tail.ids.every((id, i) => id === BLOCK_L1619_IDS[i]) &&
+        l20Tail.tailPar === BLOCK_L1619_TAIL_PAR &&
+        near(l20Tail.tailExec, BLOCK_L1619_TAIL_EXEC_CEILING) &&
+        near(l20Tail.tailExec, ACT_I_REGISTERED_PEAK_EXEC) &&
+        grafted.length === 0
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `tail ids [${l20Tail.ids.join(", ")}] vs BLOCK_L1619_IDS [${BLOCK_L1619_IDS.join(", ")}]; tail par ` +
+        `${String(l20Tail.tailPar)} vs ${String(BLOCK_L1619_TAIL_PAR)}; tail D_exec ${l20Tail.tailExec.toFixed(6)} vs ` +
+        `${BLOCK_L1619_TAIL_EXEC_CEILING.toFixed(6)} and vs Act I's registered peak ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)}; ` +
+        `grafted act-II ids [${grafted.join(", ")}]. §7.7 item 4 — "do not re-stamp L20": the registered tail ceiling is a ` +
+        `statement about the *sealed landing's* rung, so the five new rungs must prove under their own gates, and a law that ` +
+        `moved the block's tail to rung 25 would silently retire the gate L20 is judged by (the clone-guard lesson).`,
+    },
+    {
+      clause: "act-tail-l21-open-relief",
+      label:
+        "§7.3 interior freedom — the act may open BELOW Act I's peak: “That is a plateau relaxation at a ΔM = 0 boundary, honestly labelled — it is never presented as a dip” (the act-open member carries the registered relief, inside the act band; the DIRECTION is not part of the law)",
+      status:
+        actOpen.levelId === ACT_II_B1_OPEN_RELIEF_LEVEL_ID &&
+        near(actOpen.dexec, actOpenRelief) &&
+        reliefInBand
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `L${String(actOpen.levelId)} D_exec=${actOpen.dexec.toFixed(6)}; registered relief ${actOpenRelief.toFixed(6)} ` +
+        `(constant ${ACT_II_B1_OPEN_RELIEF_EXEC.toFixed(6)}); relief vs Act I's peak ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} = ` +
+        `${(actOpen.dexec - ACT_I_REGISTERED_PEAK_EXEC).toFixed(6)} (MEASURED, not required — the status binds the named rung's ` +
+        `registered value and the band, nothing else); act band [${ACT_II_EXEC_BAND[0].toFixed(2)}, ${ACT_II_EXEC_BAND[1].toFixed(2)}] ` +
+        `⇒ in band = ${String(reliefInBand)}. The relief is a ΔM = 0 boundary (the batch introduces no mechanic; M is 4 on every rung), ` +
+        `which is what distinguishes it from §6's dip. REFUSED HERE: a reader that demands a cross-act monotone rise (L21 > L20) — that ` +
+        `is the mirror-image tautology, and this clause is satisfied by the registered relief *and* by any in-band value in either ` +
+        `direction, while an out-of-band member (or a value on the wrong rung) still FAILs by name.`,
+    },
+  ];
+}
+
+/** Measured act peak: the max `D_exec` over the given registered ids, and the rung it sits on. */
+export function actPeakOf(
+  levels: readonly Level[],
+  ids: readonly number[],
+): ActPeakReading | null {
+  let best: ActPeakReading | null = null;
+  for (const level of levels) {
+    if (!ids.includes(level.id)) continue;
+    const difficulty = analyseDifficulty(level, explore(level));
+    if (difficulty.Dexec === null) continue;
+    if (best === null || difficulty.Dexec > best.dexec)
+      best = { levelId: level.id, dexec: difficulty.Dexec };
+  }
+  return best;
+}
+
+/**
+ * Act II batch 1's named gates — `docs/level-design.md` §7.5 item 1's per-level obligations,
+ * read on the registered bytes. Returned in a stable, documented order:
+ *
+ *   1. `act2-registered-rung` — the rung is the **registered** one (`ACT_II_B1_LADDER`, par
+ *      exact, authored *and* solver-stamped) and strictly inside §7.2's par band [16, 24].
+ *      §7.5 item 1's "`par` ∈ act band" is discharged here in its stronger form: the band is a
+ *      range, the registered rung is a measurement, and this level is both.
+ *   2. `act2-exec-band` — `D_exec` inside §7.2's derived band [19.75, 29.06] **and** equal to
+ *      the registered row's value at {@link LAW_PRECISION}. The band half is §7.5 item 1 ("a
+ *      candidate outside its act band is rejected, not re-banded"); the equality half is the
+ *      anti-restamp pin.
+ *   3. `act2-b-band` — `B` inside the measured band the shipped L1–L15 set reports
+ *      (`BLOCK_L1619_B_BAND`, §7.5 item 1: "`B` inside the measured band [1.2500, 1.6875]")
+ *      and equal to the registered row at the 4 dp the table prints. `B` is reused from the
+ *      block law on purpose: one band, one implementation.
+ *   4. `act2-exec-identity` — `D_exec = par + 3·B`, i.e. `T ≡ R ≡ 0` inside §4's acceptance
+ *      region. A board with a dead pocket or an unrecoverable move fails here by name.
+ *   5. `shortest-solution-presses-switch-and-crosses-door` — **G2**, the **shared** reader,
+ *      emitted with the shared id exactly as the two blocks emit it: every par route presses a
+ *      switch and then enters a door that switch drives. This is what makes the batch's
+ *      "ordered plan" claim program-true on the registered bytes rather than a shelf note.
+ *   6. `act2-coverage` — `distinctPositions == width × height` (42/42, §7.5 item 1's coverage
+ *      clause): the board is sized to the route, never padded to buy `par`.
+ *   7. `act2-act-peak` — **only on the batch's peak rung**: `D_exec` strictly exceeds
+ *      {@link ACT_I_REGISTERED_PEAK_EXEC} (the `act-peak` clause) **and** equals
+ *      {@link ACT_II_B1_REGISTERED_PEAK_EXEC} (so the clause cannot be satisfied by moving the
+ *      board, and the peak cannot be restamped without a re-registration). The dataset-level
+ *      guards that keep this from self-confirming are {@link actScaleTailGuards}.
+ *
+ * Deliberately **absent**: `dual-phase-tiles` (the M2 debut's reader, already reported per
+ * level) and the family gates `g0`–`g6` (§7.4's lattice gates). Those are the *authoring*
+ * readers and live in `scripts/prove-candidate.ts`, which proved this batch on the shelf; the
+ * registration law reads the registered bytes with the shipped readers, exactly as the
+ * L12–L15 block and the L16–L20 block do.
+ */
+export function act2Batch1Gates(
+  level: Level,
+  graph: ReachableGraph,
+  result: SolveResult,
+  embeds: EmbedMetrics,
+  rows: readonly ActIILadderRow[] = ACT_II_B1_LADDER,
+): readonly NamedGate[] {
+  const par = result.shortestSolution ?? level.par;
+  const index = ACT_II_B1_IDS.indexOf(level.id);
+  const row = index === -1 ? null : (rows[index] ?? null);
+  const difficulty = analyseDifficulty(level, graph);
+  const dexec = difficulty.Dexec;
+  const identity = dexec === null ? null : dexec - (par + 3 * difficulty.B);
+  const inParBand =
+    level.par >= ACT_II_PAR_BAND[0] && level.par <= ACT_II_PAR_BAND[1];
+  const inExecBand =
+    dexec !== null &&
+    dexec >= ACT_II_EXEC_BAND[0] &&
+    dexec <= ACT_II_EXEC_BAND[1];
+  const inBBand =
+    difficulty.B >= BLOCK_L1619_B_BAND[0] &&
+    difficulty.B <= BLOCK_L1619_B_BAND[1];
+
+  const gates: NamedGate[] = [
+    {
+      id: "act2-registered-rung",
+      label:
+        `§7.5 item 1 — par is the REGISTERED rung for this member of Act II batch 1 (the ladder table, not a lower bound) and strictly inside §7.2's par band ${String(ACT_II_PAR_BAND[0])}..${String(ACT_II_PAR_BAND[1])}`,
+      status:
+        row !== null &&
+        level.par === row.par &&
+        par === row.par &&
+        inParBand
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `par=${String(level.par)} (solver shortest=${String(result.shortestSolution)}); registered row expects ` +
+        `${row === null ? "n/a (not a batch-1 member)" : String(row.par)}; the registered ladder is ` +
+        `${ACT_II_B1_LADDER.map((r) => String(r.par)).join(" / ")} from ACT_II_B1_IDS=[${ACT_II_B1_IDS.join(", ")}]. ` +
+        `§7.2 gives the act a *range* and §7.5 asks the member to sit inside it; the registered table is the stricter ` +
+        `statement — an act rung is a selected par that has been measured on the landed bytes, so a longer board under the ` +
+        `same id would silently re-price the batch. Measured beside it, not hidden: Δpar ≥ 2 holds on only 2 of 4 steps ` +
+        `(17 + 2·4 = 25 > 23), a consequence of the 7-wide window.`,
+    },
+    {
+      id: "act2-exec-band",
+      label:
+        `§7.2 / §7.5 item 1 — D_exec inside the DERIVED Act II band [${ACT_II_EXEC_BAND[0].toFixed(2)}, ${ACT_II_EXEC_BAND[1].toFixed(2)}] and equal to the registered value at the law's precision`,
+      status:
+        inExecBand &&
+        row !== null &&
+        dexec !== null &&
+        near(dexec, row.dexec)
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `Dexec=${dexec === null ? "n/a (unsolvable)" : dexec.toFixed(6)} ∈ [${ACT_II_EXEC_BAND[0].toFixed(2)}, ` +
+        `${ACT_II_EXEC_BAND[1].toFixed(2)}] = ${String(inExecBand)}; registered ${row === null ? "n/a" : row.dexec.toFixed(6)}. ` +
+        `The band is derived (${String(ACT_II_PAR_BAND[0])} + 3·1.2500 … ${String(ACT_II_PAR_BAND[1])} + 3·1.6875), not invented, ` +
+        `and §7.3 says the range is the law: an out-of-band member is rejected, never re-banded. The registered equality is the ` +
+        `anti-restamp half — a silent re-measure of a registered rung has to come back to this table in the same commit.`,
+    },
+    {
+      id: "act2-b-band",
+      label:
+        `§7.5 item 1 — B inside the measured band the shipped L1–L15 set reports (${BLOCK_L1619_B_BAND[0].toFixed(4)}..${BLOCK_L1619_B_BAND[1].toFixed(4)}) and equal to the registered row at 4 dp`,
+      status:
+        inBBand && row !== null && Math.abs(difficulty.B - row.b) < 5e-5
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `B=${difficulty.B.toFixed(4)} vs [${BLOCK_L1619_B_BAND[0].toFixed(4)}, ${BLOCK_L1619_B_BAND[1].toFixed(4)}] = ` +
+        `${String(inBBand)}; registered ${row === null ? "n/a" : row.b.toFixed(4)}. Measured on 5/5 in band (1.5271 / 1.5280 / ` +
+        `1.5400 / 1.5349 / 1.5349), so Act II batch 1 needs no named excursion (the register stays empty) — and the band is ` +
+        `re-derived from the live L1–L15 files on every attest run, never widened.`,
+    },
+    {
+      id: "act2-exec-identity",
+      label:
+        "§7.5 item 1 / §4 — the identity D_exec = par + 3·B holds (T ≡ R ≡ 0 inside §4's acceptance region): no dead pocket, no unrecoverable move, nothing that would be graded by a number a player cannot feel",
+      status: identity !== null && Math.abs(identity) < 1e-9 ? "PASS" : "FAIL",
+      detail:
+        `Dexec − (par + 3·B) = ${identity === null ? "n/a" : identity.toExponential(2)} ` +
+        `(B=${difficulty.B.toFixed(6)}, T=${String(difficulty.T)}, R=${difficulty.R.toFixed(6)}, par=${String(par)}). ` +
+        `Measured T ≡ R ≡ 0 on 5/5 and quoted as the batch's invariant, exactly as §7.0 derives the band from it.`,
+    },
+    pressThenCrossGate(
+      par,
+      embeds,
+      routeVerdict(level, par, result.refusedThenEnteredTileList),
+    ),
+    {
+      id: "act2-coverage",
+      label:
+        "§7.5 item 1 — the coverage clause: distinctPositions == width × height (42/42 measured on all five rungs of the family's 7 × 6 lattice)",
+      status:
+        result.distinctPositions === level.width * level.height &&
+        row !== null &&
+        level.width === row.grid[0] &&
+        level.height === row.grid[1] &&
+        result.distinctPositions === row.coverage
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `grid ${level.width} × ${level.height} (registered ${row === null ? "n/a" : `${String(row.grid[0])} × ${String(row.grid[1])}`}); ` +
+        `distinctPositions=${String(result.distinctPositions)} of ${String(level.width * level.height)} ` +
+        `(registered ${row === null ? "n/a" : String(row.coverage)}). §7.4's stage G works on 7×6 → 7×7, so the grid is part of the ` +
+        `registered lattice key rather than a doctrine: what §7.5 asks is full coverage, because a ramp bought by padding the board ` +
+        `would break §1's board cap instead.`,
+    },
+  ];
+
+  if (index === ACT_II_B1_IDS.length - 1) {
+    gates.push({
+      id: "act2-act-peak",
+      label:
+        `§7.3 — the act-peak clause on the batch's PEAK rung: act II's measured maximum (${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)}) strictly exceeds Act I's registered peak (${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)}), and the peak is the registered one`,
+      status:
+        dexec !== null &&
+        dexec > ACT_I_REGISTERED_PEAK_EXEC &&
+        near(dexec, ACT_II_B1_REGISTERED_PEAK_EXEC)
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `Dexec=${dexec === null ? "n/a (unsolvable)" : dexec.toFixed(6)} vs Act I's registered peak ` +
+        `${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} (delta ${dexec === null ? "n/a" : (dexec - ACT_I_REGISTERED_PEAK_EXEC).toFixed(6)}; ` +
+        `registered delta ${ACT_II_B1_PEAK_ADVANTAGE.toFixed(6)}). §7.3 puts the across-act obligation on the act's MEASURED MAXIMUM ` +
+        `and §7.7 item 3 discharges it per batch — which is why the clause rides only on the peak rung: requiring it of every member ` +
+        `would demand 20 padded rungs the gates forbid (item 86(a) census saturation; P3(a)/P4 par-is-bounded-by-the-board). ` +
+        `The dataset-level anti-tautology guards are actScaleTailGuards (relabel, restamp, pre-registration standard, L20 un-restamped, ` +
+        `and the act-open relief).`,
     });
   }
 
@@ -1680,7 +2337,8 @@ export type PolicyViolationCode =
   | `gate-${AhaGateId}`
   | `gate-${PortalGateId}`
   | `gate-${BlockGateId}`
-  | `gate-${BlockL1619GateId}`;
+  | `gate-${BlockL1619GateId}`
+  | `gate-${Act2GateId}`;
 
 export const POLICY_VIOLATION_CODES: readonly PolicyViolationCode[] = [
   "door-without-switch",
@@ -1722,6 +2380,19 @@ export const POLICY_VIOLATION_CODES: readonly PolicyViolationCode[] = [
   "gate-block-l1619-escalation-cut",
   "gate-block-l1619-b-band",
   "gate-block-l1619-tail-ceiling",
+  // ── R-004a — the Act II law (docs/level-design.md §7) ──────────────────────
+  //
+  // Same discharge as R-003c's six above, and for the same reason: `tests/**` is QA's lane
+  // and this dispatch forbids edits there, so the controls for these six run in-lane in
+  // `scripts/attest-r004a-act2.ts` (measured on every run, transcript committed) rather than
+  // in `tests/solver/policy-negative-controls.test.ts`'s durable table. The
+  // one-control-per-code rule is not waived — it is discharged in-lane until QA moves it.
+  "gate-act2-registered-rung",
+  "gate-act2-exec-band",
+  "gate-act2-b-band",
+  "gate-act2-exec-identity",
+  "gate-act2-coverage",
+  "gate-act2-act-peak",
 ];
 
 /** Switch ids that actually toggle somewhere in the reachable graph. */
@@ -1918,6 +2589,15 @@ export function auditLevel(
         // because the device measures `allOffGoalReachable = false` on 4/4, so the
         // obligation has teeth rather than being a concession.
         break;
+      case "act-2-batch-1":
+        // Act II's own conditions are the named gates below (`act2Batch1Gates`: the
+        // registered rung, the derived band, the shared `B` band, the identity, the
+        // coverage clause, and §7.3's `act-peak` on the peak rung). As in both blocks,
+        // no board-level code is added here; what is *different* from L12–L15 is that
+        // these rows are `switchRequired: "required"` **measured** (§7.5 item 1 reads
+        // `switchRequired` as a measurement): the stage-`G` device makes every approach
+        // to the goal a door, so with every switch OFF the goal is unreachable on 5/5.
+        break;
       default:
         break;
     }
@@ -1955,7 +2635,9 @@ export function auditLevel(
           ? blockL1215Gates(level, graph, result, embeds)
           : lesson?.obligation === "block-l1619"
             ? blockL1619Gates(level, graph, result, embeds)
-            : [];
+            : lesson?.obligation === "act-2-batch-1"
+              ? act2Batch1Gates(level, graph, result, embeds)
+              : [];
   for (const gate of gates) {
     if (gate.status !== "FAIL") continue;
     violations.push({
