@@ -1321,8 +1321,11 @@ if (LADDER.length > 0) {
   const controlsTotal = ladderRows.reduce((n, r) => n + r.controls, 0);
   console.log(
     `LADDER RESULT: ${allOk ? "PASS" : "FAIL"} (${String(ladderRows.filter((r) => r.accepted).length)}/${String(ladderRows.length)} rung(s) ACCEPT, ` +
-      `controls named: ${String(caughtTotal)}/${String(controlsTotal)} across the ${String(ladderRows.length)} rung(s)` +
-      `${caughtTotal === controlsTotal ? "" : " — MISSES are listed per rung above and are not hidden"})`,
+      (MEASURE_CONTROLS
+        ? `controls MEASURED, not asserted (F-L16-3 expectation pass): ${String(controlsTotal)} across the ${String(ladderRows.length)} rung(s)`
+        : `controls named: ${String(caughtTotal)}/${String(controlsTotal)} across the ${String(ladderRows.length)} rung(s)` +
+          `${caughtTotal === controlsTotal ? "" : " — MISSES are listed per rung above and are not hidden"}`) +
+      `)`,
   );
 }
 
