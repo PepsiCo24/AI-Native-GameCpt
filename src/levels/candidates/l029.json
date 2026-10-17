@@ -1,0 +1,183 @@
+{
+  "id": 29,
+  "width": 7,
+  "height": 6,
+  "startPhase": "A",
+  "player": [
+    0,
+    0
+  ],
+  "goal": [
+    6,
+    4
+  ],
+  "phaseAWalls": [
+    [
+      2,
+      1
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      2,
+      5
+    ]
+  ],
+  "phaseBWalls": [
+    [
+      2,
+      0
+    ],
+    [
+      2,
+      2
+    ],
+    [
+      2,
+      4
+    ]
+  ],
+  "doors": [
+    {
+      "id": "d1",
+      "color": "blue",
+      "tiles": [
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "d2",
+      "color": "red",
+      "tiles": [
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          5,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "d3",
+      "color": "blue",
+      "tiles": [
+        [
+          3,
+          5
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          5,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "d4",
+      "color": "red",
+      "tiles": [
+        [
+          5,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          5
+        ]
+      ]
+    }
+  ],
+  "switches": [
+    {
+      "id": "s1",
+      "tile": [
+        6,
+        0
+      ],
+      "activePhase": "A",
+      "targets": [
+        "d1"
+      ]
+    },
+    {
+      "id": "s2",
+      "tile": [
+        3,
+        1
+      ],
+      "activePhase": "A",
+      "targets": [
+        "d2"
+      ]
+    },
+    {
+      "id": "s3",
+      "tile": [
+        4,
+        2
+      ],
+      "activePhase": "A",
+      "targets": [
+        "d3"
+      ]
+    },
+    {
+      "id": "s4",
+      "tile": [
+        4,
+        5
+      ],
+      "activePhase": "B",
+      "targets": [
+        "d4"
+      ]
+    }
+  ],
+  "portals": [
+    {
+      "id": "p1",
+      "pair": [
+        [
+          1,
+          5
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "activePhase": "B"
+    }
+  ],
+  "par": 21
+}
