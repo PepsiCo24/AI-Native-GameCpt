@@ -253,6 +253,28 @@ test.describe("par route → win → HUD contract", () => {
   test(
     "the last level's dialog must not claim the prototype ends at L5",
     async ({ page }) => {
+      // ── QA-015: derived envelope, from the round that crossed (item 77(d)) ────────
+      // Main round `38920309798` (train 4, `72a5366`) finished 131 passed / 1 FAILED at
+      // 52.4 m — the slowest cloud round observed so far — and this row is the lone
+      // red: `page.evaluate` hard-timed at the **30 s DEFAULT**. Same class QA-005j
+      // (`ce9f1b0`) ruled on: a row that overruns the default gets the derived 90 s
+      // family envelope. Why it grew here: the row walks the win of the *last* shipped
+      // level (`EXPECTED_LEVEL_COUNT`), so the ladder census from 15 → 20 rows (the
+      // L16–L20 block) lengthened its route and its HUD/dialog reads.
+      //
+      // Arithmetic, not a feeling: local (`PS_E2E_PORT=5245`, `--retries=0`) this
+      // dispatch measured **7.4 s body / 8.4 s total** against the 30 s default ⇒ the
+      // round that crossed implies a cloud factor of **≥ 4.05×** (30 / 7.4) — a
+      // *lower* bound, since the row timed out rather than merely nearing it.
+      // 90 s = local × **12.2×** (90 / 7.4), i.e. ≥ **3.0×** (12.2 / 4.05) the
+      // exceedance today's round already demonstrated, and it matches the QA-005j
+      // family ratio (30.9 s → 90 s, 126 s → 360 s ≈ 2.9×). 90 s is therefore the
+      // fitted envelope with safety, not a thin one; the local measure does **not**
+      // justify 120 s (that would be 16.2× local for a row whose route is 20 legs).
+      // Wall clock only — no retry, no test logic and no assertion changes with this
+      // budget.
+      test.setTimeout(90_000);
+
       // Fixed (R-004b): `hud.ts` now reads the ladder range from the registry's own
       // list (`ladderLabelOf`), so the end panel names the levels that shipped
       // instead of the stale `L1–L5` prototype literal. Pin removed.
