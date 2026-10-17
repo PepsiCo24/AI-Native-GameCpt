@@ -62,18 +62,23 @@ import bgPhaseBUrl from "../../../assets/art/background/bg_phase_b_1920x1080.png
 import echoSpiritAUrl from "../../../assets/art/character/echo_spirit_a.png?url";
 import echoSpiritBUrl from "../../../assets/art/character/echo_spirit_b.png?url";
 import goalUrl from "../../../assets/art/props/goal.png?url";
+import portalAUrl from "../../../assets/art/props/portal_a.png?url";
+import portalBUrl from "../../../assets/art/props/portal_b.png?url";
 
 /**
  * Manifest export name (§11/R-P5) → the URL this build emitted for the file.
  *
- * **The five ASSET-GATE-approved canvas slots and nothing else.** `portal_a/b`
- * are out by ruling — portals are vector-by-design (`ui-ux.md` V0.8 §3.1c/§9.1)
- * and the raster pair is optional Stage-5 polish; `ui_kit` was ruled CSS-by-design
- * FINAL by UA-0013 (2026-10-16, `ui-ux.md` V0.9.4 §9.1/§11 + manifest V0.5.4:
- * A-07 DELIVERED as a **reference kit**, never loaded at runtime) and its row left
- * `theme/assets.ts`; logo/cover are not renderer slots at all. Listing a file here
- * is what *ships* it, so listing one the renderer never draws would be both a lie
- * and dead weight in the bundle.
+ * **The seven ASSET-GATE-approved canvas slots and nothing else** (five since
+ * R-005a, plus the A-06 portal pair mounted by GAME-003, §3.1e R-PM5). `ui_kit` was
+ * ruled CSS-by-design FINAL by UA-0013 (2026-10-16, `ui-ux.md` V0.9.4 §9.1/§11 +
+ * manifest V0.5.4: A-07 DELIVERED as a **reference kit**, never loaded at runtime)
+ * and its row left `theme/assets.ts`; logo/cover are not renderer slots at all.
+ * Listing a file here is what *ships* it, so listing one the renderer never draws
+ * would be both a lie and dead weight in the bundle.
+ *
+ * The order is `integratedSlots()`' own declaration order, because
+ * {@link assertArtSourcesMatchSlots} compares the two lists **element-wise**: the
+ * two portal rows therefore sit after `goal`, where `theme/assets.ts` declares them.
  */
 export const ART_SOURCES: Readonly<Record<string, string>> = Object.freeze({
   echo_spirit_a: echoSpiritAUrl,
@@ -81,6 +86,8 @@ export const ART_SOURCES: Readonly<Record<string, string>> = Object.freeze({
   bg_phase_a_1920x1080: bgPhaseAUrl,
   bg_phase_b_1920x1080: bgPhaseBUrl,
   goal: goalUrl,
+  portal_a: portalAUrl,
+  portal_b: portalBUrl,
 });
 
 /** Every texture key this build can mount, in declaration order. */

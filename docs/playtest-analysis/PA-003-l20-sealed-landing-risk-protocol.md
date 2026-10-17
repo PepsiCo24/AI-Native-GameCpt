@@ -231,3 +231,61 @@ probe string or level index in this file may be edited (T6 semantics carried); m
 Table F and apply to the next round only; **any pre-session edit to this file is a re-freeze event** (RF-3,
 dated grounds, fresh manifest). Round truth lives in `docs/playtest-log.md` §10 + the raw tables (A–F);
 this file holds no results and may hold none.
+
+---
+
+## 10. SUCCESSOR POINTER — the act-open relief rung after R-004 (PA-004 addendum, 2026-10-17)
+
+> **Re-freeze declaration for THIS file: `RF-3s`** — the suffix plus the filename disambiguate it from
+> `docs/playtest-log.md` §11.0's **RF-3**, declared the same day; the two files carry **separate** freeze
+> contracts. **Grounds:** §9 makes *any* pre-session edit to this file a re-freeze event, so this addendum
+> is **declared rather than slipped in**. **Nothing scored here moves:** rows PL-1…PL-4, the land window,
+> the S-1/S-2 signals, every threshold, the L19 contrast rule and the GREEN/RED routing are
+> **byte-unchanged**; this section adds a **pointer and two status facts**, and §9's freeze stands
+> otherwise as written.
+>
+> **Status facts — both were pre-registered questions, and both were answered by the repo, not by a player:**
+> **(i) P-0 is MET.** L20 is a **registered** level: R-003d moved the candidate to the root and
+> re-registered the block tail at `par 20 / D_exec 24.729412` (`docs/project-status.md` item 98;
+> `src/levels/README.md` §7b). §7 P-0's registration precondition therefore no longer blocks the L20 rows.
+> **(ii) P-1 is ANSWERED, and §4's structural-guard clause therefore BINDS.** Enumeration over the shipped
+> board found **0/252** par routes re-landing through the landing portal (ITER-0020: *"P-1 ANSWER: 0/252 par
+> routes re-land through the landing portal ⇒ PL-3 is a STRUCTURAL GUARD, not a live cohort row"*). Per §4's
+> own clause — written **before** data — **S-2a is reported as a structural-Y context row** and PL-3's live
+> weight moves to **S-2b + the Aha verbatim**. That is the clause firing as pre-registered, **not** a
+> post-hoc spin. **P-2** (the optional product ask) stays **P-pending** and never blocks.
+
+### 10.1 The pointer — after **R-004** registers L21–L25, this protocol's *family* meets the act-open rung
+
+**Booked, not re-derived.** **R-004** is the registration train that puts **L21–L25** into the playable
+registry (Act II batch 1: `par` **17/18/20/21/23**, `D_exec` 21.581395 → 27.604651 strictly rising, 5/5
+GATES ACCEPT + 13/13 negative controls — `docs/project-status.md` items 111/114, shelf merged `3b05541`;
+the train itself is gated on item 121's round being green **carrying the rewritten QA-021 rows**). When it
+lands, two things follow for **this** protocol:
+
+1. **The L20 device's class recurs inside Act II**, so a future round's L20 rows gain the same family on
+   the new rungs: the protocol's *discipline* — **M5/M6 must not spike; the device is re-designed, never
+   re-labelled** — is the right instrument **unchanged**.
+2. **The act-open relief rung becomes a second candidate object.** ADR **design-0005 Ruling B** decision 3
+   makes an act's first level a **labelled plateau** (`ΔM = 0`: *"below-peak act-open = labelled plateau,
+   never a dip"*) — i.e. **L21 is the Act II act-open relief rung**. What changes for a reader is precise:
+   the within-session matched control would become **L20 → L21**, **not L19 → L20**.
+
+### 10.2 What a successor round must do first — and must not do
+
+- **Pre-register, then measure.** A new object pair (**L20/L21**) needs a **new row set with its own
+  pre-registration**, prepared by this lane **before the round that will score it opens**. Because this
+  file is frozen **absolutely** once cohort-v2 session 1 has run (T6 semantics, §9), a successor row set
+  can only be scored in a **later round** — **never** grafted mid-round.
+- **Re-check the board by program before writing any number.** §1's entry-phase dependency (the press
+  cannot be made on the arriving move) and §4's arrival-parity question must be **re-derived on the new
+  board** (a P-1-style enumeration) — **the L20 answers do not transfer**, and the board's own law must
+  precede the row.
+- **Never move a threshold to fit a new object.** PL-1…PL-4 were frozen on the L19/L20 pair; re-labelling
+  them "L20/L21" is a **threshold move in disguise** (this file's §9 prohibition, and §11.6's no-widening
+  rule in the log). PD-4's `+0.5 / 1.0 / 2.0` margins may be **reused as a *form*** — never silently
+  re-pointed; the star-era asks do exactly that reuse and say so
+  (`docs/playtest-analysis/star-era-asks-readiness.md` §1 STAR-5).
+- **This file holds no results and may hold none** (§8's honesty box carried verbatim): **n = 0** stands,
+  the cohort is the user's lane, and the L21+ rungs are **not yet registered** — so nothing above is
+  evidence about players.

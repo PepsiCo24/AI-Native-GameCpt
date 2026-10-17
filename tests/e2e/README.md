@@ -1145,7 +1145,587 @@ lists `tests/**` only.
 
 ---
 
-## 2. Inventory — 132 cases in 8 files (measured)
+### 1.11 QA-017 — GAME-003's art+motion acceptance surface (A-1…A-10), and the four things the spec's own wording cannot reach
+
+GAME-003 mounted the signed A-06 portal pair **swapped** (`portalSlotFor("A") ⇒
+portal_b`, `"B" ⇒ portal_a`) and added the §6.6 beats B6/B7/B10/B12/B13 as per-frame
+scalars. QA-017 is the acceptance battery for `docs/ui-ux.md` §3.1e R-PM5/A-1…A-10,
+split by *what can be measured where*:
+
+| tier | file | cases | what it decides |
+|---|---|---:|---|
+| unit | `tests/unit/portal-mount-acceptance.test.ts` | 22 | the mapping/box/turn/ceiling/deny-list claims as **draw calls and data** (no pixels, no canvas) |
+| e2e | `tests/e2e/portal-mount.spec.ts` | 10 | everything that must come off the **running page**: the bytes its loader fetched, the pixels it presented, the styles it applied |
+| e2e | `tests/e2e/portal-mount.mobile.spec.ts` | 2 | A-2's painted core and A-8's stillness at the R-L6 mobile pitch |
+| helpers | `tests/e2e/helpers/frames.ts`, `helpers/art.ts` | — | in-page frame census/diff (`cellCensus` with a luma-only disc, `profileDelta`) and served-PNG decode + WCAG maths |
+
+**The measured numbers, all from the shipped build.** Every figure below was read in
+this round and reproduces `docs/assets/evidence-2026-10-17-portal-mount/portal_probe.py`
+where the two overlap; nothing in either tier is typed from the probe.
+
+```
+A-1  manifest: 7 resolved rows, portal_a/portal_b under A-06; both rasters 512×512, ink 74 713 px
+     pair agreement  phase A live/far ink 384/384 inner 0/0   |  phase B 1885/1888 inner 87/88
+A-2  swapped  A 6.51/5.54  B 6.24/5.48   (as-named A 2.25/1.91  B 2.16/1.89 → all < 3: the swap is load-bearing)
+     mobile pitch (cellCss 51.5, renderScale 2): painted core 68,184,207 vs served 69,186,209; ink 2403, inner 90
+A-3  B value backup (live raster vs obj.portalEcho) = 1.03:1; luma census dormant ink 384 / inner 0 → live 1885 / inner 87 (ratio 4.91)
+A-5  far-end ROI frames 28, grid 26.1 ms, frozenUntil 116.5, onset 138.9, duration 183.2 ≤ 200 + grid
+     exit-end ink live 1885 / far 1888, inner 87 / 88
+A-7  B12 samples 47, grid 23.7 ms, rampSamples 4, rampSpan [70.7, 118.6] ms, declared 90 ms
+     transition's own record: elapsedTime = 90 ms, event wall span 141.5 ms
+     curve x:scale = 0.185:0.9914 0.556:0.9777 0.740:0.9730 0.926:0.9703   (model within 0.0002)
+     crossing 32.26 ms (analytic 30.82, linear 45); scale@45ms measured 0.9777 / analytic 0.9795; settled 0.9700
+     B13 panelDelay 260.9 ms (declared 220), opacity at unhide 0, hit-test at the Next centre = Next, disabled false,
+     entrance running at currentTime 0 → raw pointer click advanced the level with moves 0
+A-8  desktop idle 2 s: changed 348 / 988 160 px, maxDelta 158, union bbox 882,83,941,142 ⊂ goal cell 867,67,91,91
+     mobile  idle 2 s: changed 1150, maxDelta 184, bbox 666,254,736,325 ⊂ goal cell 650,238,103,103
+A-9  reduced idle changed 0 / maxDelta 0; press scales {1.000}; panel ps-panel-in / 0.16 s / translateY 0; legibility identical
+A-10 entry 1554 px and Undo 1627 px of diff both ⊆ the goal cell; DOM snapshot byte-equal over 2 s; runningAnimations []
+```
+
+**A-1's dev-strip sentence is unreachable by construction, and is proved at the level
+the strip reads from.** A-1 asks the dev strip to list `A-06 portal_a` / `portal_b`.
+The strip's whole purpose is to name **unresolved** slots (R-P3/R-P6); since
+R-005b/UA-0013 every one of the seven `PLACEHOLDER_SLOTS` rows is `resolved: true`, so
+`activePlaceholderSlots()` is `[]`, `unmountedResolvedSlots()` is `[]` and the strip
+renders `hidden`. Printing it to satisfy the sentence would be theatre. The claim the
+sentence carries — *the pair is mounted under A-06* — is asserted on the same table
+(R-P5's single source) in both tiers, and the wording conflict is recorded **here**
+rather than edited into the spec. Related: A-1's second clause ("both ends
+pixel-identical in every frame") is measured as **figure agreement**, not byte equality:
+the pair's two ends sit on opposite `(x+y)` chequerboard parity, so they are drawn on
+*different ground tokens* by R-C4 and can never be byte-identical. The measured
+substitute — ink mass within 8 %, bbox size within 2 px, radial-profile bin share
+< 0.1, swirl presence equal — is what actually catches a per-end marker or a second
+graphic at the exit end (E3-3), and it is the same shape A-5 uses for "zero new ink at
+the exit end".
+
+**A-2's pass shape binds one ground, not two.** The row's named bar is "≥ 6.2:1 on the
+mount order's own ground" and its parenthetical quotes two numbers per phase
+(6.50 / 5.53 A, 6.25 / 5.49 B). Only the **first** is ≥ 6.2; the second is the
+*alternate* ground (`isAltCell`), and it is below the named bar. The measured pair
+above (6.51 / 5.54 · 6.24 / 5.48) therefore binds `.cell` at the named 6.2 and `.cellAlt`
+at the pre-registered **5.4** — the parenthetical's own value, quoted as the row's
+second ground rather than re-specified. The falsifier is on the same bytes: the
+**as-named** (suffix-convention) mapping measures 2.25 / 1.91 · 2.16 / 1.89, i.e. under
+3:1 on both grounds of both phases, so a renderer regression to the suffix convention
+turns this row red on the *files*, not on a screenshot.
+
+**A-6 — the testability finding (reported, never patched around).** B7's attract is
+`≤ +2 %` additive on the R-C8 envelope (`±6 %`, 2.4 s) and B10's hysteresis is a state
+rule with no motion. Neither is observable from the presented pixels at this pitch: a
++2 % attract on a ±6 % pulse that is itself composited over a cross-fade is inside the
+noise of the first beat's own alpha. The constants (`GOAL_ATTRACT_MS`,
+`GOAL_ATTRACT_PEAK` at `src/game/renderer/board-view.ts:132-133`), the predicate
+(`isInGoalNeighbourhood`, `:136`), its two call sites — the per-state re-read (`:578-580`)
+and the `false → true` firing gate (`:619-624`) — and the scalar channel
+(`attractAt` `:335`, `attractValue` `:755-766`) are **private** with no page hook,
+and `src/**` is DO_NOT_TOUCH for QA. So the *contract* is proven in the unit tier
+(additive ceiling exactly `1 + 6 % + 2 % = 8 %`; the channel absent == 0; a settled board
+carries no attract) and the observability gap is filed here, with file and line, as a
+**finding** — not worked around by inferring a private number from a screenshot.
+
+**A-7's "computed transform at 45 ms = 0.97" is unreachable inside its own window.**
+The press is `transform: scale(var(--ps-press-scale))` with `transition: transform
+90 ms ease-out` on `:active` (hud-styles.ts:160-169), and `ease-out` is
+`cubic-bezier(0, 0, 0.58, 1)` — not linear. At `x = 0.5` (45 ms of 90) the curve is at
+`y ≈ 0.686`, so the transform is `1 + 0.686 · (0.97 - 1) = 0.9794`, and it reaches
+0.97 only at the window's **end**. Measured on the running page: the press crosses
+mid-scale (`0.985`) at **32.26 ms**, the value nearest the 45 ms mark is 0.9777
+(analytic 0.9795), and the settled hold is 0.9700 — three readouts where the spec has
+one that cannot be true. The instrument is anchored on the **transition's own clock**
+(`CSSTransition.currentTime`), which is why the curve points above agree with the
+declared easing to ≈0.0002 and can separate `ease-out` from a linear ramp (the check
+requires each mid-window point to be twice as close to the model as to a linear read).
+Two instrument facts are recorded because they bound every number in the row: the
+sampling grid is the **frame** grid (~24 ms here — a running transition's computed value
+is recomputed once per frame), and the in-page `setTimeout(…, 4)` grid that was the
+first design is *worse* on this stack (~52 ms under a SwiftShader WebGL renderer at
+load), so the timer grid was dropped rather than quoted.
+
+**The K-4 supersession is a record, not a deletion — and these are the files that
+carry it.** §3.1e R-PM5 supersedes §3.3b **Entry-3's K-4 negative** (`portalMentioned:
+false`, the `l11_dev_channel` / `l5_no_portal_strip` rows). Nothing from that probe was
+deleted; the re-pointing is pinned positively in
+`tests/unit/portal-mount-acceptance.test.ts` ("K-4 supersession, recorded as its
+positive" → `PLACEHOLDER_TO_ASSET["portal_a" | "portal_b"] === "A-06"`, plus the
+derivation that the two rows can only exist because the manifest rows do) and in
+`tests/e2e/portal-mount.spec.ts`'s manifest row (same two entries, plus
+`unresolvedAssetIds() === []` and `assertNoPlaceholders()` not throwing). A search for
+the old negative's literal flag in `tests/**` finds only those two positive
+counterparts.
+
+**No production byte was touched.** `git status --porcelain` on this dispatch's worktree
+lists `tests/**` only.
+
+---
+
+### 1.12 QA-018 — the shelf re-booking to Act II batch 1, and the ceiling-wording scrub
+
+LV-012 landed five **proven but unregistered** candidates (`src/levels/candidates/l021.json
+… l025.json`) and left exactly one red behind *by design*: the booked-shelf pin
+(`tests/solver/l16-l20-candidates.test.ts:163`) still asserted QA-014's empty booking.
+QA-018 re-books it and scrubs the label. This is a **pin migration in the QA-011/QA-014
+lineage**, not a rule change: no `src/**` byte moved.
+
+**The booking moves `[]` → the five LV-012 ids**, and it stays *set equality* so neither
+an unregistered extra nor a vanished member can pass. All three directions were measured
+on these very bytes (each mutation reverted, `git status --short src/` empty after):
+
+```
+$ cp src/levels/candidates/l021.json src/levels/candidates/l026.json   # an UNREGISTERED extra
+  × AssertionError: expected [ 'l021.json', 'l022.json', …(4) ] to deeply equal [ …(3) ]
+$ mv src/levels/candidates/l025.json <tmp>                             # a VANISHED booked member
+  × AssertionError: expected [ 'l021.json', 'l022.json', …(2) ] to deeply equal [ …(3) ]
+```
+
+The re-booked list is non-empty, so the **second half of the law is now reachable again**
+(QA-014 recorded it as unreachable-by-construction while the booking was `[]`): with a
+temporary probe booking that *named* a below-rootMax row, clause (b) fired on its own
+channel with its own message — `l012.json sits at or below the registered root max 20:
+expected 12 to be greater than 20` — which is how "the derived relation is live" is a
+measurement rather than an argument.
+
+**The label scrub (item 114's no-ceiling law binds test prose).** The pin's own name said
+"…(now none), all above the census ceiling", and QA-014's terminal-rung comment called
+`BLOCK_L1619_TAIL_EXEC_CEILING` "the device's census ceiling". Both are ceiling claims
+about a device whose pocket census is **unmeasured at ≥ 11** (`docs/project-status.md`
+item 114: no ceiling either direction, so no doc *or test label* may say "9 is the
+largest" or "20 is the ceiling"). Renamed to the derived form — **"the shelf holds only
+the booked pre-registration candidates (l021–l025, LV-012 batch 1), every rung derived
+strictly above the registered root max"** — and the second test's "above an EMPTY shelf"
+and the terminal rung's "the dataset's tail" were re-stated the same way ("above a shelf
+booked by set equality"; "the registered dataset's tail, and no row above it is
+documented or shipped"). The remaining occurrences of the word in the file are the
+*named law's own prohibition*, not claims. No assertion changed count and no row was
+deleted: the file still reports **52 cases** (8 per-member rows × 5 members + block-level
+and negative-control rows) and the suite tally is unchanged.
+
+### 1.13 QA-019 — the post-win star field (A-11/A-12), and the sub-pixel measurement the spec's wording forces
+
+GAME-004 added one grid row to the frozen win panel: `starsFor(moves, par)` (a quoted
+ruling: `3★ ≤ par + 2⌈par/10⌉`, `2★ ≤ par + 4⌈par/10⌉`, `1★ any finish`), a win-only
+monotone store at `ps.echoGrid/stars@1` that records **moves**, and one additive
+`.ps-stars` row of three `data-state` slots with a 120 ms fill-in riding B13. QA-019 is
+its acceptance battery: **12 desktop rows** (`star-field.spec.ts`, A-11's five "never"s
++ the painted census per phase + the motion + reduced form + SF-1's DOM claim),
+**2 mobile rows** (`star-field.mobile.spec.ts`, the same field at the Pixel-5 DPR-2.75
+raster, including a real touch tap on `Next`), and **23 unit rows** over
+`tests/unit/stars-rating.test.ts` (8, `node` — the hand-typed ruling table) and
+`tests/unit/stars-persistence.test.ts` (15, `jsdom` — the monotone write contract).
+
+**Nothing is typed. Both halves are forced.** The (run, best) pairs a ruler needs are not
+seeded *into the rules* — a level is won after `2·d` extra moves by padding the par route
+with a **reversible detour pair** found through `isLegalMove`/`applyMove` at its
+pre-final state (the pair returns to the same tile in the same phase, ADR-0009's
+checkerboard quantum), so the run lands exactly on `par + k1` (3★), `par + k2` (2★) or
+above (1★) and the HUD's own move counter is asserted against that arithmetic. The
+levels themselves are *selected* (`pickEndPhase`: cheapest rung ending in the phase,
+no door, no portal, a reversible pair) rather than named. The stored record is seeded
+with one `localStorage.setItem` of the module's own payload shape **after `openLevel`**
+(which clears storage at navigation) and **before** the winning press; the key, schema
+and slot count all come from `src/game/systems/stars.ts`. Two shared helpers carry it
+(`helpers/star-field.ts`) and the pixel census (`helpers/star-pixels.ts` — a screenshot
+of the 76 px row ± 8 px of the card's own plate, decoded in-page via
+`createImageBitmap`/`OffscreenCanvas`, so no node-side image dependency).
+
+**The finding that changed the arithmetic: a 20 px star's ring is sub-pixel, so a
+nearest-reference ink count is phase-noise.** A-11's hollow form is the filled silhouette
+knocked out at 0.8 — a wall that is **2 px at the points and 0.76 px between them**, i.e.
+below the sampling limit of a 1× raster. Counting pixels as "nearer `obj.goal` than
+`ground.plate`" therefore rounds the ring's rim into noise, and the *same geometry*
+measured **0.35 (phase A) vs 0.26 (phase B)** for the declared 31–41 % hollow share — a
+phase-dependent number that is not a property of the design. The corrected channel is the
+**sub-pixel coverage** (each pixel's projection onto the `ground → ink` segment), which
+reads **0.37 / 0.36** — the analytic `1 − 0.8² = 36.0 %` in both phases. Every area claim
+in both specs is now stated on that channel (the hard mask survives only as a coarse
+"a figure with a knocked-out middle, not two blobs" sanity check), and the analytic
+comparisons are computed from the shipped constants (`STAR_OUTER_RATIO`,
+`STAR_INNER_RATIO`, `STAR_POINTS`, `STAR_KNOCKOUT_SCALE`, `STAR_DOT_PX`) rather than typed.
+
+**A-11 measured, per profile and phase** (all from painted pixels; `plate` cross-checked
+against `theme(phase).ground.plate`, ink against `obj.goal`/`text.secondary`):
+
+| profile | phase | plate (painted = token) | gold / dot | hollow | ratio (spec ≈ 2.78:1) | dot Ø | contrast gold/plate · dot/plate |
+|---|---|---|---|---|---:|---:|---|
+| desktop 1× | A | `247,241,227` = `#F7F1E3` | `168,117,42` · `110,96,71` | 0.37 | 2.73 | 5.00 px | **3.56 · 5.44** |
+| desktop 1× | B | `27,31,59` = `#1B1F3B` | `233,200,122` · `169,178,216` | 0.36 | 2.75 | 5.00 px | **9.96 · 7.69** |
+| mobile 2.75× | A | same tokens | same ink | 0.36 | 2.75 | 4.91 px | **3.56 · 5.44** |
+| mobile 2.75× | B | same tokens | same ink | 0.36 | 2.78 | 4.91 px | **9.96 · 7.69** |
+
+The desk-row numbers reproduce §5.5's own published A `3.556 / 5.441` and B `9.962 /
+7.694` to the printed precision, and the phone rows are the same law on a 2.75× raster of
+a 20 CSS px box (the dot reads 4.91 because its bbox is measured on that raster, not
+because it changed size: the row's box is **76.00 × 20.00 CSS px at dpr 2.75**, every slot
+20.00 × 20.00).
+
+**A-12 measured.** The fill-in is pinned as *data* (`--ps-star-ms` = `120ms`,
+`--ps-star-scale-from` = `0.86`), as the computed animation (`ps-star-in`, `0.12s`,
+delay `0s`, `finished`, `currentTime` 120), as three **identical** document-timeline start
+times (no stagger), and as the observer's own clock: `fillMs ≥ 120` and ≤ 3 frames of
+`this` machine's grid after it, `fillMs < panelMs`, with `panelMs` the declared 160 ms
+entrance within the same frame band (measured `fillMs 152–173` / `panelMs 190–210` at
+`gridMs 19.9–23.4`; the earlier `120 + 2 frames` bound was **0.2 ms too tight** at 19.9 ms
+and is recorded here rather than quietly widened). `Next` is hit-tested **on the unhide
+frame** (`elementFromPoint` at its centre = `BUTTON.ps-btn-primary`, not disabled) and a
+raw click there advances the level — the standing B13 gate is unchanged and re-run green.
+Idle: **0 changed of 1520 device px over 2 s** (desktop) and **0 of 11495** (mobile), with
+0 running animations anywhere on the field. Reduced motion: `--ps-star-scale-from` flips
+to `1` while the keyframes stay attached and the slot stays a 20 px box (`display` not
+`none`), the first frame is already at scale 1.00, and the census survives.
+
+**Liveness, both tiers, each mutation reverted (`git status --short src/` empty).** In the
+unit tier, `{moves: 7, par: 4, stars: 3}` in the ruling table → `1 failed | 22 passed`,
+failing by name: `7 moves at par 4: the first row above par + k1 = 6 is 2★, not 3★`. In
+the browser tier, flipping the worse-run expectation to `["earned","earned","earned"]` →
+`1 failed` on `a worse run against a stored 3★ record draws the hollow mark and extends
+the live line` at `star-field.spec.ts:365`, `Expected`/`Received` differing in exactly
+that slot.
+
+**One pre-existing red found in a standing row — reported, not patched.** §1.11's A-8
+idle row (`portal-mount.spec.ts:1269`, "two frames 2 s apart differ only inside the
+goal's own cell") is **flaky on the frozen bytes of this branch**, with `src/**` and that
+file byte-identical to `develop` (`git status --porcelain` = the new `tests/**` files and
+this file's own §1.13/§2 edit — `git diff --stat HEAD -- src tests/e2e/portal-mount.spec.ts`
+empty):
+
+```
+$ PS_E2E_PORT=5251 npx playwright test tests/e2e/portal-mount.spec.ts --retries=0   # ×5 (build + rebase)
+  [QA-017] A-8 idle diff changed=0 total=988160 maxDelta=0 bbox=null goalCell=867,67,91,91
+  ✘  two frames 2 s apart differ only inside the goal's own cell   →  expect(diff.changed).toBeGreaterThan(0)
+  … the other four runs: 10 passed (changed=126…774, bbox inside the cell every time)
+
+$ PS_E2E_PORT=5251 npx playwright test tests/e2e/portal-mount.spec.ts \
+    -g "two frames 2 s apart" --retries=0          # the SAME row, run alone
+  [QA-017] A-8 idle diff changed=513 total=988160 maxDelta=163 bbox=882,83,942,142 goalCell=867,67,91,91 elapsedMs=2057.3
+  1 passed (5.2s)
+```
+
+The pair is the discriminating observation: **zero reds on the row itself, one red on the
+same bytes inside its own file** — so the variable is load, not the row's semantics.
+
+**Root cause** (from the renderer, read-only): the goal's idle pulse is *wall-clock* (R-C8:
+"the slow 2.4 s breathing must not restart on every move" — `board-view.ts:973`). Sampling
+a 2.4 s period at exactly 2000 ms does not reveal it — the alias amplitude is
+`A·cos(θ + 150°)`, which **passes through zero** for two pulse phases, at which point the
+two captures are pixel-identical and the row's `changed > 0` assertion (correctly) fails.
+Which phase the page is in when the second frame lands is load-dependent, so the row is
+green on a quiet machine and red under the CPU pressure of a full-file run. **Fix
+direction for a follow-up QA ticket** (not this one: it is a §1.11 row's semantics, not
+QA-019's acceptance): sample at `T/2` (1.2 s — the anti-alias worst case, guaranteeing a
+non-zero delta), or keep `≥ 0` and assert the pulse's presence as a *range* over ≥ 3
+samples. **No `src/**` byte was touched, and nothing in QA-019's own 14 rows depends on
+it** (the star field's stillness rows are a DOM row, not the canvas pulse).
+
+> **Fix note (QA-020, 2026-10-17):** the flake above is closed — not by QA-019's
+> first-listed option, which the measurement in §1.14 shows keeps its own null phase
+> (`sin(θ+π) = −sin θ`), but by the three-sample form: a trio 800 ms apart with the
+> assertion on the **peak** and a *derived* floor as the positive control. §1.13's
+> `changed=0` reproduce line is left as it stands (historical snapshot); the row it
+> describes no longer exists in that shape.
+
+**What this ticket does not claim.** (a) The "never during play" clause is asserted on the
+**DOM** (no `.ps-stars`, no `data-state`, nothing in `.ps-top`, and the frozen strings
+carry no star glyph) — the canvas is not scanned for a star-shaped ink cloud, so a
+renderer that *drew* one would not fail these rows; named as a gap. **That gap's colour
+half was closed by QA-020 (§1.14): A-11's row now also reads the board canvas under the
+field's own box and measures the closest pixel to the mark's ink, with the goal's own gold
+as the detector's live positive control — the *shape* half remains a reported gap.**
+(b) No verdict on how
+the field *looks* (Asset Gate + UI/Art authority), and no claim that stars make the game
+more fun. (c) No full-suite round was taken for this ticket — the dispatch asked for
+targeted runs; the 14 new rows ran green in **1.0 m / 0 retries** (`PS_E2E_PORT=5251
+npx playwright test tests/e2e/star-field.spec.ts tests/e2e/star-field.mobile.spec.ts
+--retries=0` → `14 passed`).
+
+---
+
+### 1.14 QA-020 — A-8's idle row was phase-dependent, and the canvas star gap it closed
+
+**Reproduce.** The booked symptom (QA-019, §1.13): `portal-mount.spec.ts`'s A-8 row read
+`changed=0` in one schedule and `513…909` in another. It was reproduced on the frozen
+bytes by a phase-indexed probe — the capture's pulse phase is tracked as the residue of
+the page's own `performance.now()`, and the diff was swept across the cycle:
+
+```
+S=2000 (the row as shipped)   changed 1037 1052 816 542 1024 1011 348 [0] 277 985 1050 644 706 914
+   …aimed walk through the null: residue 687→127, 716→[0] maxDelta=0 bbox=null, 754→135, 806→309, 851→560
+S=1200 (QA-019's option (a))  changed 1521 950 1641 1637 1208 1165 1521 1757 481 1796 1326 706 716 1255
+   …aimed walk: 2302→102 maxDelta=80, 2315→88 maxDelta=40   (two orders below the row's own ~1600)
+trio 800+800+800, 12 phases    peaks 1554 1668 1688 1641 1684 1673 1670 1611 1541 1481 1457 1673
+   …individual samples DO reach 0 (`1688/1347/0`, `1400/126/1457`); every bbox inside the goal cell (36/36)
+```
+
+**Root cause — arithmetic, not a rendering accident.** The pulse is
+`1 + A·sin(2πt/2400)` (`src/game/renderer/objects/goal.ts:32-33,59-61`), fed the wall
+clock at `board-view.ts:973`, so two samples a spacing `S` apart differ by
+`A·|sin(θ+2πS/P) − sin θ| = A·2|cos(θ + πS/P)|·|sin(πS/P)|`: an **amplitude that is a
+cosine of the capture phase θ**, which the runner picks, not the test. At `S = 2000`
+that is `A·|cos(θ+150°)|` — exactly the form the ticket booked — and it is 0 at
+θ = −60°/120°: the two frames are then pixel-identical (`maxDelta=0`). The premise behind
+option (a) does not hold either: half a period returns the sine to its **negative**
+(`sin(θ+π) = −sin θ`), so `S = 1200` keeps its own null phase (measured 88 above).
+*No* two-sample schedule not a whole multiple of the period escapes this.
+
+**Fix form: (b), the trio — chosen by measurement, not by preference.** Three samples
+`800 ms` apart span one whole period (real steps 827–866 ms because the wait is
+`setTimeout` + one rAF + read-back, so the span is 2495–2545 ms ≥ 2400, never less) and
+over any θ the best of three phases 120° apart has `max|cos| ≥ 0.866` — computed in
+`minOfMaxAbsCos`, not typed. The assertion moves to that **peak**, and the positive
+control is a **derived floor**: the analytic moved band `2πR·ΔR` (ΔR guaranteed ≥ 8.3 % of
+R at the real step), derated 4×, with `R` read from the page's own goal census. The
+census is also the pulse's own receipt: `outer` walked 28.50…32.00 device px over the
+cycle against the law's predicted 28.44…32.07 — the 6 % amplitude and the 2.4 s period
+measured from the board, not quoted.
+
+**Three consecutive rounds, zero retries, on the frozen bytes of this branch**
+(`PS_E2E_PORT=5249 npx playwright test tests/e2e/portal-mount.spec.ts
+tests/e2e/portal-mount.mobile.spec.ts --retries=0`, `12 passed` each, 47.8 / 48.0 /
+48.0 s). Counts are per-file; the *numbers differ* run-to-run exactly as the ticket asked
+them to — the assertion never does:
+
+| round | desktop A-8 samples (peak / floor) | mobile A-8 samples (peak / floor) |
+|---|---|---|
+| 1 | 1704 / 1457 / **126** → peak **1704** / 115 | 1982 / 1110 / 1502 → peak **1982** / 145 |
+| 2 | 1687 / 1501 / 429 → peak **1687** / 115 | 1982 / 1110 / 1521 → peak **1982** / 145 |
+| 3 | 1673 / 1638 / 965 → peak **1673** / 115 | 1982 / 1168 / 1418 → peak **1982** / 145 |
+
+Round 1 is the point: the third sample reads **126** — 7 % of the peak, the phase window
+where the *old* row's single difference is exactly 0 (the sweep above reads a literal
+`changed=0` two residues away) — while the peak stays at ~15× the floor. The margin is the
+phase-invariance, visible in the data.
+
+**Meaning: preserved, and enlarged.** The row still fails if any rogue idle animation
+exists — a portal breathing, a grid line shimmering, an echo fading or a HUD beat on the
+canvas leaves the goal cell and the union bbox of that sample fails `bboxWithin` — and it
+now does so on **three** samples covering 2400 ms of wall clock (≈120° of pulse phase per
+step) instead of one pair covering 300°, so the deny-list's coverage is *larger*, not
+smaller. What replaced `changed > 0` is a *derived* floor with a live **positive
+control**: the goal's own census radius must be > 0 (or the floor is 0 and the row would
+be a tautology), and the peak must clear the band. A suppressed or halved pulse now fails,
+where `changed > 0` would have passed a halved one.
+
+**The named gap, half-closed (second commit).** "Stars never appear during play" was
+DOM-only. The canvas now gets a channel (`canvasInkProximity` in `helpers/star-pixels.ts`)
+inside A-11's existing row, mid-level, at the **panel's own box**, on the mark's own
+reference (`--ps-goal` = `theme(phase).obj.goal`, exactly the token the DOM clip-path
+fills with):
+
+```
+[QA-020] A-11 canvas channel phase=A ink=168,117,42 goalCell=832,194,128,128
+         goalMinDistance=0.00 tolerance=24 controlNear=181
+         field=480,363,320,175 fieldNear=0 fieldMinDistance=132.88 fieldPx=56000
+```
+
+`controlNear=181` is the **positive control** (the goal figure is painted in the same gold
+family, so "the reference is reachable on this canvas" is measured, not assumed);
+`fieldNear=0` with the closest pixel at 132.88 px — 5.5× the tolerance — is the claim.
+Two self-inflicted defects were caught by that control while building it, both recorded
+rather than hidden: the channel initially read a **cleared** buffer (this row never armed
+`installPixelReadback`, and every pixel then sat an exact 208.99 away from black — the
+control's own complaint), and the first threshold formula was unbounded (`1.5 × 209` = 313
+made *every* pixel "near"), so it is clamped to `[24, 48]`. **Still not covered:** the
+knock-out *shape* (its colour is `ground.plate`, which legitimately covers board areas, so
+"no knock-out colour" is not a falsifier) and the 5-fold silhouette test — a detector whose
+specificity against the board's own gold annulus is unverified would be an instrument that
+can never fire, which is worse than an honest colour channel. That residual needs either
+the star's clip-path geometry re-derived in the test (a second truth source) or a
+`src/**` hook exposing the painted star boxes — the DOM row already owns that claim, so it
+stays a **reported gap**, not a weakened row.
+
+**Gates.** `npx vitest run` → **809 passed | 3 skipped (812)** against QA-019's `803 | 3`:
+**+6 only-up**, exactly the new `tests/unit/idle-pulse-schedule.test.ts` (the schedule law
+— the two-sample null phases, the trio's 0.866, the floor's monotonicity and `bboxWithin`'s
+own negative controls — proven where it is exactly provable, so the browser row only has to
+measure). `npx tsc --noEmit` → **0**. Targeted rounds: the two portal-mount files **3 × 12
+passed / 0 failed / 0 flaky**, and both star-field files **14 passed** on the changed A-11
+row. No `src/**` byte was touched, no test deleted, no assertion relaxed, no retry, no
+budget re-derived.
+
+**What this ticket does not claim.** (a) It does not prove the *knock-out shape* is absent
+from the canvas (above). (b) It does not re-derive the pulse's own constants in the e2e
+tier — `objects/goal.ts` cannot be imported there (its `theme/art.ts` `?url` PNG imports
+are not transformed by Playwright's loader), so the numbers are quoted with the unit tier's
+pin and *re-measured* from the painted radius; the amplitude/period agreement is evidence,
+not a substitute for that pin. (c) No full-suite round: the dispatch asked for targeted
+runs, and the A-8 pair plus the changed A-11 row are the rows whose bytes moved.
+
+---
+
+### 1.15 R-004c — the 25-row pin migration, the cap-binding row it named, and the chain re-measure
+
+**Scope.** `tests/**` only — `git diff 178d9d8 -- src` is **empty** on this branch (verified
+again after the measurement below). R-004a registered the Act II batch 1 (`l021`–`l025`) at
+the dataset root, which moved the dataset **20 → 25** while every count-, dataset- and
+`PINS`-derived pin still read 20. The dossier (`src/levels/README.md` §7c) enumerated the
+**41 red vitest rows + 1 `tsc` red**; this ticket clears them. One lever moved six rows by
+itself: `EXPECTED_LEVEL_COUNT` **20 → 25** in `tests/e2e/helpers/levels.ts` (the one
+deliberately hand-typed dataset pin, §1 of that file).
+
+**41F → 0, per file, against the baseline run** (same tree, `vitest run`, 10 red files):
+
+| file | rows | what moved |
+|---|---:|---|
+| `tests/solver/difficulty.test.ts` | 8 | `PINS` + the five l021–l025 rows (`L`/`B`/`T`/`R`/`M`/`D`/`dexec`/`bRaw`/`forced`/`lookahead`/`states`) and the published `D_exec` 2-dp list appended `21.58 · 22.58 · 24.62 · 25.60 · 27.60` |
+| `tests/solver/route-budget.test.ts` | 7 | `PINS` + the five rows **and** the aggregate `dualPhaseTiles` typed list (the red found it; §7c did not name it — appended five `12`s) |
+| `tests/solver/metrics-sidecar.test.ts` | 4 | the mirror checks follow the pin; the sidecar's 25 records are already the law |
+| `tests/solver/ordered-companion.test.ts` | 5 | `ORDERED_PINS` + the five measured ordered lists (17 tiles, `ordered ≡ unordered` on 5/5) |
+| `tests/solver/l16-l20-candidates.test.ts` | 2 | the shelf booking returns to `[]` (R-004a landed the five) **and** the "L20 is the terminal rung" row was **re-worded, never re-stamped**: `BLOCK_IDS.at(-1) === 20` and `maxShipped === EXPECTED_LEVEL_COUNT === 25` are now two facts, with the absence clause re-pointed at `l026.json` |
+| `tests/solver/policy-negative-controls.test.ts` | 6 (+1 `tsc`) | the six `gate-act2-*` codes lifted from R-004a's proven attest table, **plus** the shared `gate-shortest-solution-presses-switch-and-crosses-door` reader's Act II control (the attest table's seventh member); the one non-surgical member (`gate-act2-exec-band`, a *table* mutation the `Record<code → Level[]>` cannot carry) uses the board-side dual and says so on its own definition |
+| `tests/solver/multi-switch-door-warning.test.ts` | 1 | derived count; the pin alone |
+| `tests/unit/level-inventory-derivation.test.ts` | 4 | the pin + its three mutation probes (ADD/REMOVE/RENUMBER) |
+| `tests/unit/player-embedded-home.test.ts` | 1 | **R-004b registry dependency** (registry length vs the shared pin) |
+| `tests/unit/renderer-level-unlock.test.ts` | 2 | **R-004b registry dependency** (registry rows vs the independent fs scan) |
+| `tests/unit/hud-end-panel-copy.test.ts` | 1 | **R-004b registry dependency** (the registry's last id vs the shared pin) |
+
+**The pin is not the registry — the three (four-row) dependency, stated by name.** The
+registry rows for L21–L25 are **R-004b** (`agent/gameplay/r-004b-serve25`, `1f72420`) and are
+*not* part of this branch (this branch carries `tests/**` only). So on this branch alone the
+battery reads **4 failed / 851 passed / 3 skipped (858)** — `renderer-level-unlock.test.ts:87`
+and `:96`, `player-embedded-home.test.ts:101`, `hud-end-panel-copy.test.ts:138` — and all
+four are that single unstacked dependency. With R-004b's own one-file patch applied in the
+worktree **uncommitted, for measurement only**, the identical tree reads **0 failed /
+860 passed / 3 skipped (863)** across **37 of 37 files** and `npx tsc --noEmit` → **0**,
+i.e. **41F → 0** plus the five per-level rows the longer registry derives. The patch was
+reverted before the commit: `git diff 178d9d8 -- src` is empty again, and the four reds
+return with it. That is the honest split — a *stacking order*, not a failing pin.
+
+**The cap-binding row, written out rather than silently clamped (special order 1).** Act II
+takes the refusal family to **par 23** (L25), and par 23 is the first rung whose *uncapped*
+envelope exceeds `refusalRouteEnvelopeMs`'s 240 s cap. It is registered as a **named
+cap-binding row** inside the envelope's own docstring with the formula evaluated there:
+`5.9 × (1.17 × 23 − 1.28 + 3.0) = 5.9 × 28.63 = 168.917 s` ⇒
+`ceil(1.5 × 168.917) × 1000 = ceil(253.3755) × 1000 = 254_000 ms` ⇒
+`min(240_000, max(90_000, 254_000)) = 240_000 ms`, exceedance **+14_000 ms (+5.8 %)**. The
+same cap already bound at par 22 (`ceil(1.5 × 162.014) = ceil(243.021) = 244_000 ms`), so
+**no number, no constant and no budget moved** for this migration — the row exists so the cap
+cannot be widened later without a named re-derivation.
+
+**The chain re-measure (special order 2).** The `L1→L25` unlock chain
+(`playthrough.spec.ts:163`) was walked **twice** in a real browser on this branch's test bytes
+plus R-004b's registry patch, one worker, `--retries=0`:
+
+| round | port | row time | budget | used |
+|---|---|---:|---:|---:|
+| round 1 | `PS_E2E_PORT=5250` | **1.8 m ≈ 108 s** | 360 s | 30.0 % |
+| round 2 | `PS_E2E_PORT=5251` | **1.6 m ≈ 96 s** | 360 s | 26.7 % |
+
+Both figures are Playwright's own row clock (`1.6m` / `1.8m` on the list reporter), so the
+row spans **96–108 s** — and that is quoted as measured: QA-014's 20-row observation was
+**57.1 s**, so the five extra rungs cost **≈ +39–51 s**, which is the route-length delta
+(route moves 170 → 258, +52 %) and nothing else. Reporting it at ~57 s would be a fiction.
+The row is nowhere near the 70 % hold line (252 s) and it **did not cross**. QA-014's two
+*cloud* projection models still disagree by 2.5×, so the constant stays **held at 360 s**
+(item 77(d) doctrine: disagreeing projections = hold and watch, no fiction-raise, no silent
+widening).
+
+**The surrounding file, same window.** `playthrough.spec.ts` ran **29 passed / 0 failed in
+4.3 m** — all **25** per-level par rows (L21 8.8 s, L22 9.1 s, L23 9.8 s, L24 10.2 s,
+L25 11.2 s, each inside its 90 s class), the chain row above, the out-of-range `?level` row
+and the end-panel row (**7.4 s of its 90 s**, and its `L1–L25` string now comes from the
+registry's own list rather than a literal).
+
+**Inventory (special order 3).** `npx playwright test --list` → **183 tests in 12 files**
+(167 desktop + 16 mobile) on this branch's bytes, and the *same* 183 on the stacked tree —
+the ladder rows are derived from the **dataset on disk** (`REFS`), so they were already
+extended to L21–L25 by the R-004a registration and only their *verdict* waited on the
+registry. Per-file: playthrough 29, latch-door 42, refusal 49, portal 6, controls 8,
+input-replay 4, transient 7, star-field 12, portal-mount 10, portal-mount.mobile 2, mobile 12,
+star-field.mobile 2 — the par-route rows come from the sidecar-backed solver, never hand-typed.
+
+**No weakened assertion.** Every row that moved is a count, a dataset census or a `PINS`
+value; no rule, no gate, no route and no wall-clock budget was relaxed, and the one
+deliberately-handed re-word (the L20-terminal row) gained assertions rather than losing them.
+
+---
+
+### 1.16 R-004d — the Act II refusal **classes**, the census the browser lane could not see, and the off-phase portal press that is not a refusal
+
+**What was missing.** R-004c took the pins to 25 and booked this ticket: the generic
+refusal rows above already walked every Act II par route and froze on every refused
+direction, so *"an illegal move is identity"* was **already asserted in-browser on
+L21–L25** (re-measured here: the five generic rows pass at 23.5 / 23.3 / 29.9 / 27.9 /
+30.1 s). What the suite could not see is *which kind of blocker* refuses, on the
+dataset's first **multi-pocket sealed landings** — boards where §8.16's device law puts
+two different blocker kinds side by side by construction.
+
+**Two new rows per rung family — one census row, five browser rows.** The census row is
+solver-side and has no page (`portal.spec.ts:89`'s precedent); the browser rows drive
+`cheapestRefusalFixtures()` — the classes are *found* in the level's own reachable set
+(`explore()` + `isLegalMove`), never typed:
+
+| rung | par | published `refusedThenEnteredTiles` | `out-of-bounds` | `phase-wall` | `door-without-switch` | `door-latch-on` | refused at a portal end |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| L21 | 17 | **17** (`T ≡ R ≡ 0`) | 188 | 48 | 52 | **0** | **0** |
+| L22 | 18 | **17** (`T ≡ R ≡ 0`) | 188 | 48 | 50 | **0** | **0** |
+| L23 | 20 | **17** (`T ≡ R ≡ 0`) | 188 | 48 | 50 | **0** | **0** |
+| L24 | 21 | **17** (`T ≡ R ≡ 0`) | 188 | 48 | 52 | **0** | **0** |
+| L25 | 23 | **17** (`T ≡ R ≡ 0`) | 188 | 48 | 52 | **0** | **0** |
+
+The **17** and the ordered-equals-unordered reading are the level lane's published
+numbers (§8.16's ladder, §8.18's root re-measure, `prove-candidate-l2125.transcript.md`'s
+`refused-beat` line on every rung, `attest-r004a-act2.transcript.md`); the tile lists stay
+pinned **once**, in `tests/solver/ordered-companion.test.ts`'s `ORDERED_PINS`. The **class
+partition is this ticket's own measurement** and is asserted as a *partition*: the four
+classes cover every refused press on the board (`refusedPresses === Σ byClass`, 288 on
+L21/L24/L25 and 286 on L22/L23), so no refusal is uncounted. `door-latch-on = 0` is the
+measured form of §8.16's device law — every seal door is met **closed, before** its switch.
+
+**The ticket's third surface does not exist, and the row says so instead of inventing it.**
+The dispatch expected an *off-phase press at a portal* to freeze the triple state. Measured
+on the landed bytes, the honest answer is **zero**: `refusedAtPortalEnds = 0` on 5/5, and
+the reason is the locked rule rather than a data gap — legality reads the destination in the
+**current** phase only (`src/core/rules/applyMove.ts:63-68`: in bounds + solid now) and
+`portalAt` filters on `activePhase` (`src/core/rules/solid.ts:204`), so clicking an *inactive*
+end is an ordinary **legal** step. The row therefore drives the press the other way and
+asserts the true claim in both lanes: the same click that crosses in one phase (the
+discriminating `pair`, whose active arrival is the non-adjacent far end) is a **single step
+with one flip** in the other, landing on the tile that was stepped onto. Writing "no move, no
+flip" here would have been a test asserting something false about the shipped core, so it was
+**not written** — a ticket premise contradicted by measurement, reported rather than patched
+into the suite.
+
+**Wall clock (both rounds, `--retries=0`, one worker, `PS_E2E_PORT` 5252–5255).**
+
+| row | round 1 | round 2 | envelope (par-derived) | used |
+|---|---:|---:|---:|---:|
+| census row (no browser) | 9 ms | 9 ms | — | — |
+| L21 (par 17) | 17.0 s | **17.2 s** | 192 s | 9.0 % |
+| L22 (par 18) | 16.8 s | **18.5 s** | 202 s | 9.2 % |
+| L23 (par 20) | 17.1 s | **19.0 s** | 223 s | 8.5 % |
+| L24 (par 21) | 17.3 s | **17.1 s** | 233 s | 7.4 % |
+| L25 (par 23) | 18.4 s | **18.1 s** | **240 s (capped)** | 7.5 % |
+
+Every new row rides the **same** `refusalRouteEnvelopeMs(par)` as the family (never a
+re-derived or widened constant): `192_000 / 202_000 / 223_000 / 233_000 / 240_000` ms.
+
+**The cap-binding watch — the second data point family.** Par 23 (L25) is the first rung whose
+*uncapped* envelope (254 s) exceeds the cap, so the family's par-23 row is the row the watch
+is about, and the **full-route** rows measured this round bind the cap by 12.5 % of budget,
+not by 100 %:
+
+| refusals row (whole par route) | par | measured (this round) | envelope | used |
+|---|---:|---:|---:|---:|
+| L21 | 17 | 23.5 s | 192 s | 12.2 % |
+| L22 | 18 | 23.3 s | 202 s | 11.5 % |
+| L23 | 20 | 29.9 s | 223 s | 13.4 % |
+| L24 | 21 | 27.9 s | 233 s | 12.0 % |
+| **L25** | **23** | **30.1 s** | **240 s (cap)** | **12.5 %** |
+
+So the five Act II rungs land in the **same 12–13.5 % band** as QA-014's par-20 observation
+(28.1 s of 223 s = 12.6 %), and the *derived* envelope absorbed five new rungs with **zero
+re-migration**. On QA-013's conservative cloud factor (5.9×) the par-23 row projects to
+**≈178 s inside the 240 s cap** — while the formula's own worst-case uncapped reading (254 s)
+says the cap *will* bind: that disagreement is exactly the watch, and it is **quoted, not
+resolved** (no constant moved; the named re-derivation stays R-004c's row with the Orchestrator).
+
+**File-level evidence.** The whole `refusal.spec.ts` ran **55 passed / 0 failed in 8.5 m**
+(`--retries=0`, one worker), the suite's slowest file by design. No `src/**` byte was touched:
+`git status --porcelain` lists `tests/**` only.
+
+---
+
+## 2. Inventory — 189 cases in 12 files (measured)
 
 **Dated note (2026-10-16, QA-005h).** The per-ticket blocks in §1 are **historical
 snapshots**: the `88/0` rounds, the `88 tests in 8 files` `--list` lines and the per-file
@@ -1206,16 +1786,119 @@ projection models disagree by 2.5× (suite-level 2.7–3.2× ⇒ 154–183 s ✓
 a fitted observation — the next cloud round is the crossing observation item 77(d)
 requires. No default was touched and no constant was silently widened.
 
+**Update (2026-10-17, QA-017 — GAME-003's art+motion acceptance, 132 → 144).** §1.11
+added **twelve** e2e cases (`portal-mount.spec.ts` 10 desktop, `portal-mount.mobile.spec.ts`
+2 mobile at the R-L6 pitch) and **22** unit cases, so the `--list` arithmetic is now
+`24 + 32 + 39 + 6 + 8 + 4 + 7 + 12 + 10 + 2 = 144 tests in 10 files` (132 desktop + 12
+mobile), and `npx vitest run` reads **780 passed | 3 skipped (783)** against QA-014's
+`758 | 3` — a **+22 only-up** delta that is exactly the new unit file, with no skip added
+and no case removed. The round on the shipped bytes is
+`PS_E2E_PORT=5246 npx playwright test --retries=0` → **144 passed / 0 failed / 0 flaky in
+678 s = 11.3 m**, `EXIT=0`, inside the same band as the three 132-case rounds (636–666 s).
+Slow-row sums in the QA-005g shape: refusal 231.2 s, playthrough 160.2 s, latch-door
+128.8 s, portal-mount 39.3 s, transient 34.0 s, mobile 31.9 s, controls 24.1 s, portal
+13.4 s, portal-mount.mobile 6.2 s, input-replay 4.5 s (Σ 673.6 s); the heaviest single
+rows are the unlock chain **55.4 s of its 360 s** and L20 refusal **26.7 s of
+`refusalRouteEnvelopeMs(20)` = 223 s**, both *below* QA-014's worst legs — this round ran
+on a quieter machine, which is the only reason its 11.3 m reads as like-for-like.
+
+**The load caveat that belongs on the record.** The first full round of this same 144-case
+tree took **22.6 m** with **zero reds**, in a window where the solver lane's `tsx` jobs held
+load average at 24–26; every file finished and `test-results/` was empty at every poll, so
+the overrun was CPU starvation, **not a regression**. The row that degraded most —
+`transient.spec.ts`'s P1 — still printed `verdict=resolvable` at `gridMs 41.6`, i.e. shrunk
+headroom, no red. **No budget, ceiling, envelope or constant was touched by QA-017.**
+
+**Update (2026-10-17, QA-019 — GAME-004's star field, 144 → 158).** §1.13 added
+**fourteen** e2e cases (`star-field.spec.ts` 12 desktop, `star-field.mobile.spec.ts`
+2 mobile) and **23** unit cases, so the `--list` arithmetic is now
+`24 + 32 + 39 + 6 + 8 + 4 + 7 + 12 + 10 + 2 + 12 + 2 = 158 tests in 12 files`
+(144 desktop + 14 mobile), and `npx vitest run` reads **803 passed | 3 skipped (806)**
+against QA-017's `780 | 3` — a **+23 only-up** delta that is exactly the two new unit
+files, with no skip added and no case removed.
+
+**What this update does *not* carry: a full-suite round.** QA-019's dispatch asked for
+**targeted** runs, and they were taken —
+`PS_E2E_PORT=5251 npx playwright test tests/e2e/star-field.spec.ts
+tests/e2e/star-field.mobile.spec.ts --retries=0` → **14 passed / 0 failed / 0 flaky in
+1.0 m**, plus the two standing gates QA-019 could have disturbed,
+`portal-mount.spec.ts + portal-mount.mobile.spec.ts` → **11 passed** alongside the
+pre-existing A-8 red described in §1.13 (which is why no 158-case round is quoted here:
+it would carry that flake, and reporting a red as a green would be the one thing this
+section must never do). The per-file counts in the table below are therefore `--list`
+counts, as `--list` is written for, and the **green-run evidence for QA-019 is its 14
+rows plus the unit battery**, not a suite round. No slow-row sum, no envelope and no
+constant was re-derived: the star field's own rows are sub-second and none of them is a
+route-length row, so nothing in the 144-case timing record moves.
+
+**Update (2026-10-17, QA-020 — A-8's phase-invariant trio, 158 → 158 cases, +6 unit).**
+§1.14 changed **one** row's *schedule* in each portal-mount file (the A-8 stillness row:
+`two frames 2 s apart` → `three frames across one goal-pulse period`) and extended A-11's
+existing star-field row with the canvas channel, so the `--list` arithmetic is
+**unchanged**: `24 + 32 + 39 + 6 + 8 + 4 + 7 + 12 + 10 + 2 + 12 + 2 = 158 tests in 12 files`
+(144 desktop + 14 mobile), and `npx vitest run` reads **809 passed | 3 skipped (812)**
+against QA-019's `803 | 3` — a **+6 only-up** delta that is exactly the new
+`tests/unit/idle-pulse-schedule.test.ts`, with no skip added, no case removed and no
+row deleted. `npx tsc --noEmit` → **0**.
+
+**Update (2026-10-17, R-004c — the 25-row pin migration, 158 → 183).** R-004a registered
+the Act II batch 1 (`l021`–`l025`, `50e9ac0` / `178d9d8`), so the dataset pin moved
+**20 → 25** and the ladder-derived specs grew with it. The `--list` arithmetic is now
+`29 + 42 + 49 + 6 + 8 + 4 + 7 + 12 + 10 + 2 + 12 + 2 = 183 tests in 12 files`
+(167 desktop + 16 mobile), against QA-020's 158. The whole growth is the five new rungs, and
+it is arithmetic rather than edit count: playthrough 24 → **29** (+5 per-level rows),
+refusal 39 → **49** (+5 per-level freeze rows **and** +5 ladder refused-then-entered rows),
+latch-door 32 → **42** (+10 = two rows per new latch level). Not one ladder row was added by
+hand — the per-level rows derive from the dataset on disk and their routes from the solver.
+`npx vitest run` reads **860 passed | 3 skipped (863)** with R-004b's registry row stacked
+(this branch alone: **851 | 3 (858)**, whose only four reds are the R-004b registry
+dependency — §1.15), and `npx tsc --noEmit` → **0**. Targeted rounds: `playthrough.spec.ts`
+**29 passed / 0 failed in 4.3 m**, and its chain row **2 × green** (`--retries=0`) at
+**1.6–1.8 m of its 360 s** budget, which is **held**, not raised (§1.15).
+
+**Update (2026-10-17, R-004d — the Act II refusal *classes*, 183 → 189).** The five new
+rungs' refusal *surface* is now classified as well as counted: **one** census row (no page —
+solver-side) asserting the published `refusedThenEnteredTiles = 17` per rung with
+`ordered ≡ unordered` (`T ≡ R ≡ 0`), plus the **class partition of every refused press** and
+`refusedAtPortalEnds = 0`; and **five** browser rows driving the cheapest reachable
+`phase-wall` and `door-without-switch` (F-L20-2) refusals — each freezing the triple state and
+then proving the due move still counts — before driving the off-phase portal press, which is a
+**legal single step**, not a refusal. The `--list` arithmetic is therefore
+`29 + 42 + 55 + 6 + 8 + 4 + 7 + 12 + 10 + 2 + 12 + 2 = 189 tests in 12 files`
+(173 desktop + 16 mobile): **refusal 49 → 55** and nothing else moves. Evidence: the whole
+`refusal.spec.ts` **55 passed / 0 failed in 8.5 m** (`--retries=0`, one worker) and
+`npx vitest run` **860 passed | 3 skipped (863)** — the base, only-up, zero red — with
+`npx tsc --noEmit` → **0**. §1.16 carries the class table, both timing rounds and the
+cap-binding watch.
+
+**The rounds, and what they are evidence for.** The A-8 pair ran **three consecutive
+times on the final bytes** (`PS_E2E_PORT=5249 npx playwright test
+tests/e2e/portal-mount.spec.ts tests/e2e/portal-mount.mobile.spec.ts --retries=0` →
+**12 passed** each, 47.8 / 48.0 / 48.0 s, no retries) with per-run sample counts
+**1704/1457/126**, **1687/1501/429** and **1673/1638/965** on the desk pitch (peaks
+1704 / 1687 / 1673 against a floor of 115) and **1982/1110/1502**, **1982/1110/1521**,
+**1982/1168/1418** at the mobile pitch (peak 1982, floor 145): the numbers move
+run-to-run — one round puts a sample at 7 % of the peak, the phase window where the
+*old* single difference is exactly 0 — and the assertion holds in all three. The changed
+A-11 row's file ran green alongside (`star-field.spec.ts + star-field.mobile.spec.ts`
+→ **14 passed**). **No envelope, budget or constant was re-derived**: both rows are
+sub-second, neither is a route-length row, and the trio adds ~1.6 s per round to a suite
+whose slow rows are the ladder walks.
+
 | file | cases | project | what it pins |
 |---|---:|---|---|
-| `playthrough.spec.ts` | 24 | desktop | L1–L20 par route → win dialog (one row per shipped level, from the dataset); the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the **L1→L20** unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L20` and never a stale `L1–L5` |
-| `refusal.spec.ts` | 39 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one (now including L16–L20) — each row's wall-clock budget is the par-derived `refusalRouteEnvelopeMs(ref.par)`, so L20 arrived with its own 223 s envelope and no test edit |
-| `latch-door.spec.ts` | 32 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all **fifteen** latch levels (L6–L20, the dataset's derived contiguous tail — the rule, not a typed list), in-core and through the UI |
+| `playthrough.spec.ts` | 29 | desktop | L1–L25 par route → win dialog (one row per shipped level, from the dataset); the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the **L1→L25** unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L25` and never a stale `L1–L5` |
+| `refusal.spec.ts` | 55 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one (now including L16–L25) — each row's wall-clock budget is the par-derived `refusalRouteEnvelopeMs(ref.par)`, so L21–L25 arrived with their own envelopes (par 23 reads the **240 s cap**, a named cap-binding row since R-004c, §1.15) and no test edit; **plus (R-004d, §1.16)** the Act II refusal **classes** — one census row (published `refusedThenEnteredTiles = 17` per rung, `T ≡ R ≡ 0`, the class partition of every refused press, `refusedAtPortalEnds = 0`) and one browser row per new rung freezing a `phase-wall` and a `door-without-switch` refusal (then proving the due move still counts) and driving the off-phase portal press, which is an ordinary step |
+| `latch-door.spec.ts` | 42 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all **twenty** latch levels (L6–L25, the dataset's derived contiguous tail — the rule, not a typed list), in-core and through the UI |
 | `portal.spec.ts` | 6 | desktop | the **portal column is every level from L11's debut to the tail** (the rule; QA-011 retired the typed `[11…15]` literal); M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
 | `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |
 | `transient.spec.ts` | 7 | desktop | the resampling channel is live; **P1** the 90 ms refusal arc with a **post-hoc** arbiter (QA-005e) whose trigger step comes from the observer's **execution order** (QA-005f: `frameIndex` + `ranAt`, never stamp arithmetic) — the full pixel claim whenever a beat is observed, or a named `RESOLVE-LIMIT` when the recording's own log proves no step could run inside the arc's window, or a loud `BEAT-REQUIRED-ABSENT` when one did and the beat is missing; **P1b** that limit fabricated with a 140 ms/frame stretcher (where the prediction is exact by construction); **P2** the press beat's occlusion proof (timing inequality + pixel-measured geometry) and the bounded arrival transient |
 | `mobile.mobile.spec.ts` | 12 | mobile | 56/72 px bars and the board filling the play area between them; whole-CSS-px square cells above the 40 px floor; ≥ 44×44 buttons with ≥ 8 px gaps; tap = move; distant tap = non-input; swipe ≥ 24 px = move on the dominant axis, with the gesture's **delivery and game-clock span asserted before the HUD read** (QA-005f: the span is the difference of the events' recorded frame indices, and their attribution is asserted); the R-T4 delivery shape pinned on a fabricated coarse grid; R-T6 ring never under touch; R-T5 hint at a 280×600 viewport and the swipe fallback; a touch-only win + dialog `Next`; touch undo |
+| `portal-mount.spec.ts` | 10 | desktop | §3.1e/§6.6 **A-1…A-10** read off the running page: the manifest the loader read (the A-06 pair, `unresolvedAssetIds() === []`, the strip's own `hidden`), the **served PNGs'** mapped contrast in both directions and both phases (the swap is load-bearing — the suffix convention measures under 3:1 on every ground), the live-vs-dormant figure census (value channel 1.03:1, ink 384 → 1885), B6's arrival transient on the far end, the **real** press transform on the transition's own clock, the win panel's onset/entrance/first-frame hit test, **three samples across one goal-pulse period** of idle stillness inside the goal's own cell (phase-invariant since QA-020, §1.14), the reduced-motion data flip, and the deny-list negatives |
+| `portal-mount.mobile.spec.ts` | 2 | mobile | the same A-2 painted-core read and the same phase-invariant A-8 trio at the Pixel-5 DPR-2 pitch, where the **served raster's** own ink is the only honest reference (`cellCss 51.5`, painted core 68,184,207 vs served 69,186,209) |
+| `star-field.spec.ts` | 12 | desktop | §5.5/§6.6 **A-11/A-12** read off the running page: the `.ps-stars` row is absent (and the frozen panel strings carry no star glyph) on every pre-win frame and appears only at the win — **and, since QA-020, the board canvas under the field's own box is scanned mid-level for the mark's own ink (`0` of 56000 px within tolerance, closest pixel 132.88 vs a live goal-cell control of 181 gold px)**; exactly three `data-state` slots, with `earned`/`held`/`empty` drawn as the `(run, best)` matrix dictates including the live-line **extension** case; the painted census per phase on the sub-pixel channel against the analytic knockout; the fill-in's data, computed animation, identical start times and observed 120 ms bound with `Next` hit-tested on frame 1; 2 s idle = 0 px; the reduced-motion `--ps-star-scale-from` data flip; SF-1's DOM-vs-canvas claim — whose canvas half is now measured, not named (QA-020) |
+| `star-field.mobile.spec.ts` | 2 | mobile | the same field at the Pixel-5 DPR-2.75 raster — declared **76.00 × 20.00 CSS px** with three 20.00 × 20.00 slots, all three states, idle 0 of 11495 px, a real touch tap on `Next`, and the both-phase census on the 2.75× raster (dot reads 4.91 px because its bbox is measured there) |
 
 **Every expectation is derived from production.** Routes, phases, refused
 directions, door states, latch fixtures and portal crossings come from `solve()` /
@@ -1223,7 +1906,21 @@ directions, door states, latch fixtures and portal crossings come from `solve()`
 `portalFixtures()` (`helpers/levels.ts`), the geometry from the renderer's own
 `computeLayout`, and colours from `theme(phase)` tokens. No route, tile, colour or
 pixel count is typed into a spec; a level edit that removes a behaviour fails the run
-instead of leaving a stale fixture behind. The **dataset inventories** are derived
+instead of leaving a stale fixture behind. **QA-017's rows obey the same law on the art
+side**: the mount facts come from `PLACEHOLDER_SLOTS` / `PLACEHOLDER_TO_ASSET` /
+`portalSlotFor` (`theme/assets.ts`) and from the *served bytes* the page's own loader
+fetched, the grounds from `theme(phase)` + `isAltCell` (`grid-mapping.ts`), and the
+motion numbers from the transition's own `CSSTransition.currentTime` — never from a
+typed hex or a screenshot average. **QA-019's rows obey it too, in the strictest place
+this suite has yet applied it**: the star counts are not written down but *forced* (a
+reversible detour pair found through `isLegalMove`/`applyMove` pads the par route to
+`par + k1`/`+ k2`/above, so the runner's own move counter is the arithmetic), the levels
+are *selected* (`pickEndPhase`) rather than named, the storage payload is the module's
+own shape (`STAR_STORAGE_KEY`/`STAR_SCHEMA`/`STAR_SLOTS`), and every area/geometry claim
+is computed from the shipped `hud-styles.ts` constants (`STAR_OUTER_RATIO`,
+`STAR_INNER_RATIO`, `STAR_POINTS`, `STAR_KNOCKOUT_SCALE`, `STAR_DOT_PX`) — the census
+channel itself had to be changed to sub-pixel coverage because a nearest-reference count
+was measurably phase-dependent (§1.13). The **dataset inventories** are derived
 too (`datasetIds` / `doorLevelIds` / `discoveredFileIds` / `inventoryViolation`), with
 exactly one hand-typed pin left — `EXPECTED_LEVEL_COUNT` (§1.3). **QA-011 retired the
 last hand-typed literal beside it**: `portal.spec.ts:91` used to re-baseline the

@@ -1,0 +1,1824 @@
+/**
+ * QA-017 — **the §6.6 art+motion acceptance surface** (GAME-003, `docs/ui-ux.md`
+ * V0.9.6 §3.1e + §6.6, acceptance rows **A-1…A-10**).
+ *
+ * The unit tier (`tests/unit/portal-mount-acceptance.test.ts`) already proves every
+ * claim that is *structural* — the mapping table, the box/pivot arithmetic, the
+ * arrival-turn function, the additive attract ceiling, the deny list as a set. This
+ * file is the other half, and the split is deliberate: **everything here is measured
+ * from the running page** — the bytes its own loader fetched, the pixels it actually
+ * presented, and the computed style it actually applied. Nothing in this file
+ * re-derives a game value; it reproduces a *measurement*.
+ *
+ * ── The two instruments, and why these two ───────────────────────────────────
+ * 1. **Served bytes** (`helpers/art.ts`): A-2's contrast numbers are properties of the
+ *    signed rasters, so they are read from the files the page fetched — through the
+ *    same apertures as `docs/assets/evidence-2026-10-17-portal-mount/portal_probe.py`,
+ *    with the *ground* supplied as a token, never as a pixel of the raster. A
+ *    screenshot would fold the board, the cross-fade and the display profile into the
+ *    number; that is how a contrast claim becomes unfalsifiable.
+ * 2. **Presented pixels** (`helpers/frames.ts`): A-1/A-3/A-5/A-8/A-9/A-10 are
+ *    questions about *what moved where*. Two read-backs of the canvas, diffed
+ *    in-page, plus a **luma-only cell census** for the figure read (A-3 is
+ *    load-bearing exactly because its value channel measures 1.0, so the census
+ *    throws hue away twice over — see `cellCensus`).
+ *
+ * ── What this file does NOT claim ────────────────────────────────────────────
+ * - **A-6's B10 hysteresis is not observable from pixels** at a +2 % attract over a
+ *   ±6 % idle pulse under a 2.4 s period: the second trigger's pixel effect is inside
+ *   the noise of the first beat's own composited alpha. The constants
+ *   (`board-view.ts:132-133`), the predicate (`:136`) and the scalar channel (`:757`)
+ *   are private with no page hook, so the *contract* is proven in the unit tier and
+ *   the testability gap is filed in `tests/e2e/README.md` — never worked around by
+ *   inferring a private number from a screenshot.
+ * - **A-7's literal "computed transform at 45 ms = 0.97"** is unreachable inside its
+ *   own window: `ease-out` over 90 ms reaches 0.97 only at the window's end. The row
+ *   below *measures* the transform instead and reports both the 45 ms reading and the
+ *   settled hold, so the report carries a number where the spec carries an
+ *   impossibility (already reported by GAME-003, not silently re-specified here).
+ *
+ * ── Row → evidence map ───────────────────────────────────────────────────────
+ * | row | where |
+ * |---|---|
+ * | A-1 | the manifest rows + `portalSlotFor` (no page) and the painted pair's figure agreement (page) |
+ * | A-2 | served-raster contrast, both directions, both phases |
+ * | A-3 | the same tile dormant (vector) vs live (raster), luma-only, + the served 1.03:1 value trap |
+ * | A-4 | unit tier (box 0.888 / centre pivot / slot order) — the painted *size* is re-measured here in A-1's bbox agreement |
+ * | A-5 | rAF transient capture on the far end + the pair's settled figure agreement |
+ * | A-7 | the pressed button's own transform samples + the panel's onset, animation and first-frame input |
+ * | A-8 | three presented frames across one goal-pulse period, union bbox vs the goal's own cell rect (phase-invariant since QA-020) |
+ * | A-9 | the same rows under `emulateMedia(reducedMotion: reduce)` |
+ * | A-10 | idle on a board carrying walls/echoes/doors/switches/portals + entry/Undo/Restart + the DOM's own stillness |
+ */
+
+import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+
+import { isAltCell } from "@/game/renderer/grid-mapping";
+import { PORTAL_ARRIVAL_TURNS, portalArrivalTurn } from "@/game/renderer/objects/portal";
+import {
+  PLACEHOLDER_SLOTS,
+  PLACEHOLDER_TO_ASSET,
+  assertNoPlaceholders,
+  portalSlotFor,
+  unresolvedAssetIds,
+} from "@/game/theme/assets";
+import { flipTimings, theme } from "@/game/theme/tokens";
+
+import { contrastRGB, hexToRgb, servedPngCensus } from "./helpers/art";
+import type { PngCensus } from "./helpers/art";
+import {
+  bboxWithin,
+  captureFrame,
+  cellCensus,
+  frameDiffAfter,
+  profileDelta,
+} from "./helpers/frames";
+import type { CellCensus, RgbBytes } from "./helpers/frames";
+import {
+  boardGeometry,
+  expectNoPageErrors,
+  hud,
+  installPixelReadback,
+  openLevel,
+  phaseOf,
+  pressDirection,
+  pressRestartKey,
+  pressRoute,
+  pressUndoKey,
+  settle,
+  watchErrors,
+} from "./helpers/game";
+import type { BoardGeometry } from "./helpers/game";
+import { levelUrl, loadReferenceLevels, refOf } from "./helpers/levels";
+import { idleStillnessProof } from "./helpers/pulse-schedule";
+import {
+  armFlipTimeline,
+  beatFrameCount,
+  beatRecorderFinished,
+  flipOwnEnd,
+  lastRider,
+  medianGridMs,
+  peakBefore,
+  readFlipTimeline,
+  restAfter,
+  roiAround,
+  saturateMainThread,
+  stampBeatPress,
+  startBeatRecorder,
+  stopBeatRecorder,
+} from "./helpers/timeline";
+import { installCpuThrottle } from "./helpers/throttle";
+
+const REFS = loadReferenceLevels();
+/** L11 is the dataset's portal debut (M2) and the board every §3.1e row was audited on. */
+const PORTAL_LEVEL_ID = 11;
+const PORTAL = refOf(REFS, PORTAL_LEVEL_ID);
+/** L1 — 5×3, par 4: the cheapest board that carries the goal and nothing else to distract. */
+const SIMPLE_LEVEL_ID = 1;
+const SIMPLE = refOf(REFS, SIMPLE_LEVEL_ID);
+
+/** `portalSlotFor`'s two rows, read from the exported resolver (never a literal name). */
+const SLOT_A = portalSlotFor("A");
+const SLOT_B = portalSlotFor("B");
+/** The swap law's two manifest export names, derived — `portal_a` / `portal_b`. */
+const PORTAL_ASSET_NAMES = [SLOT_A?.assetName, SLOT_B?.assetName] as const;
+
+/** The shipped pair's two ends, read out of the level file — never typed into the test. */
+const PAIR = PORTAL.level.portals[0]?.pair ?? [];
+const END_LIVE: readonly [number, number] = PAIR[0] ?? [0, 0];
+const END_FAR: readonly [number, number] = PAIR[1] ?? [0, 0];
+/** The par route's first leg: the cheapest legal press, and the one that lights the pair. */
+const FIRST_LEG = PORTAL.legs[0];
+
+/** The ground token a tile actually sits on (`isAltCell` is the renderer's own rule). */
+function groundOf(phase: "A" | "B", x: number, y: number): string {
+  const ground = theme(phase).ground;
+  return isAltCell(x, y) ? ground.cellAlt : ground.cell;
+}
+
+/** The cell rect in canvas **device** px — `computeLayout`'s own arithmetic. */
+function cellRect(
+  geometry: BoardGeometry,
+  tile: readonly [number, number],
+): { x: number; y: number; w: number; h: number } {
+  const { layout } = geometry;
+  return {
+    x: Math.round(layout.grid.x + tile[0] * layout.cellSize),
+    y: Math.round(layout.grid.y + tile[1] * layout.cellSize),
+    w: Math.round(layout.cellSize),
+    h: Math.round(layout.cellSize),
+  };
+}
+
+/**
+ * Census one portal end's cell.
+ *
+ * The sampling disc is `0.45 × cell`, which is inside the cell *surface*
+ * (half-side `0.47 × cell` after R-L3's 6 % gutter) and outside nothing the figure
+ * needs (the raster's ink bbox is `0.70 × cell`). A rectangle would have dragged the
+ * rounded-corner plate and the R-C4 grid rule into the ink census; a disc cannot.
+ */
+async function portalEndCensus(
+  page: Page,
+  geometry: BoardGeometry,
+  phase: "A" | "B",
+  tile: readonly [number, number],
+): Promise<CellCensus> {
+  return cellCensus(page, {
+    centre: geometry.cellCenterDevice(tile[0], tile[1]),
+    radius: geometry.layout.cellSize * 0.45,
+    ground: hexToRgb(groundOf(phase, tile[0], tile[1])) as RgbBytes,
+  });
+}
+
+/** Max per-channel distance between two RGB triples. */
+function rgbDistance(a: RgbBytes, b: RgbBytes): number {
+  return Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
+}
+
+/** The two numbers a rounded number is worth quoting with — a stable report shape. */
+function r2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/**
+ * CSS Easing L1's keyword → control points.
+ *
+ * `getComputedStyle` reports a timing function in its **specified** form: Chromium
+ * serialises the declared `ease-out` as the keyword `"ease-out"`, never as the bezier
+ * it denotes. So the analytic model below cannot just assume every declaration is
+ * expanded — it has to carry the spec's own keyword table and read the declaration
+ * into it, which is also what makes the assertion falsifiable: change the declaration
+ * to `linear` and the model follows it and the crossings move.
+ */
+const EASING_KEYWORDS: Readonly<Record<string, readonly [number, number, number, number]>> = {
+  linear: [0, 0, 1, 1],
+  ease: [0.25, 0.1, 0.25, 1],
+  "ease-in": [0.42, 0, 1, 1],
+  "ease-out": [0, 0, 0.58, 1],
+  "ease-in-out": [0.42, 0, 0.58, 1],
+};
+
+/** Parse the other form a declaration may take: `cubic-bezier(a, b, c, d)`. */
+function parseBezier(value: string): readonly [number, number, number, number] | null {
+  const match = /^cubic-bezier\(([^)]*)\)$/.exec(value.trim());
+  if (match === null) return null;
+  const parts = (match[1] ?? "").split(",").map((part) => Number(part.trim()));
+  if (parts.length !== 4 || parts.some((value2) => !Number.isFinite(value2))) return null;
+  return [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0, parts[3] ?? 0];
+}
+
+/** The easing a declaration denotes, as control points — read, never assumed. */
+function easingPoints(
+  value: string | null | undefined,
+): readonly [number, number, number, number] | null {
+  if (typeof value !== "string") return null;
+  return EASING_KEYWORDS[value.trim()] ?? parseBezier(value);
+}
+
+/**
+ * The declared curve, evaluated at a normalised time `x` — the analytic model named
+ * by the declaration the pressed element actually carries.
+ *
+ * A CSS timing function is **parametric, not `y(x)`**: the browser walks the curve
+ * `(X(t), Y(t))`, solves `X(t) = x` for the parameter and *then* reads `Y(t)`. That
+ * is exactly what happens below — a bisection on `X(t) - x` over `t ∈ [0, 1]`
+ * (monotone in `t`, so it is well posed), then `Y(t)`. Writing a direct `y = f(x)`
+ * would have produced a number for a curve the browser never uses, which is the
+ * mistake A-7's own sentence makes on its own terms.
+ *
+ * 60 halvings put `t` inside double precision.
+ */
+function bezierFraction(x: number, points: readonly [number, number, number, number]): number {
+  const [x1, y1, x2, y2] = points;
+  const axis = (t: number, p1: number, p2: number): number => {
+    const u = 1 - t;
+    return 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t;
+  };
+  let lo = 0;
+  let hi = 1;
+  for (let i = 0; i < 60; i += 1) {
+    const mid = (lo + hi) / 2;
+    if (axis(mid, x1, x2) < x) lo = mid;
+    else hi = mid;
+  }
+  return axis((lo + hi) / 2, y1, y2);
+}
+
+/**
+ * The **inverse** of {@link bezierFraction}: the normalised *time* at which the
+ * declared curve reaches `value` of its travel. Bisection again, over the already
+ * inverted function — the same 60 halvings.
+ *
+ * This is the quantity A-7's sentence is really about when it says "the transform
+ * at 45 ms": the curve is not linear, so the half-way *value* is reached at
+ * `t = 0.5` → `X = 0.3425` → **30.8 ms**, not at 45 ms. Measuring the *crossing*
+ * is what the row can resolve — the two models are 14 ms apart there, while the
+ * difference in *value* at 45 ms (0.0056 of scale, on a travel of 0.03) sits under
+ * the frame grid's own noise.
+ */
+function bezierTimeAt(value: number, points: readonly [number, number, number, number]): number {
+  let lo = 0;
+  let hi = 1;
+  for (let i = 0; i < 60; i += 1) {
+    const mid = (lo + hi) / 2;
+    if (bezierFraction(mid, points) < value) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+test.describe("§3.1e R-PM5 / A-1 — the pair is mounted, and the K-4 negative is superseded", () => {
+  test("the manifest carries both portal rows and the swap law resolves from them", () => {
+    // The dev strip's *literal* A-1 wording ("lists A-06 portal_a / portal_b") is
+    // unreachable in the mounted state by construction: the strip exists to list
+    // UNRESOLVED slots, and since R-005b/UA-0013 there are none, so it renders
+    // hidden. Printing it to satisfy a sentence would be theatre. The claim the
+    // sentence carries — *the pair is mounted under A-06* — is checked here at the
+    // level the strip reads from (R-P5's single table), and the wording conflict is
+    // recorded in tests/e2e/README.md rather than edited into the spec.
+    // A-06 is shared with the goal slot, so the pair is selected by its *placeholder*
+    // — the manifest name the dev strip prints — never by the Asset ID alone.
+    const portalRows = PLACEHOLDER_SLOTS.filter((slot) => slot.placeholder.startsWith("portal_"));
+    const names = portalRows.map((slot) => slot.placeholder).sort();
+
+    expect(names).toEqual(["portal_a", "portal_b"]);
+    for (const slot of portalRows) {
+      expect(slot.assetId, `A-06 ${slot.placeholder}`).toBe("A-06");
+      expect(slot.resolved, `A-06 ${slot.placeholder} is a resolved row`).toBe(true);
+      expect(slot.assetName, `${slot.placeholder}'s texture key is its manifest export name`).toMatch(
+        /^portal_[ab]$/,
+      );
+    }
+
+    // The deliberate supersession: Entry-3's K-4 probe measured `portalMentioned:
+    // false` (no slot, no entry). The derived map gaining those two rows **is** that
+    // probe's re-pointing, and it is positive evidence rather than a deleted line.
+    expect(PLACEHOLDER_TO_ASSET["portal_a"]).toBe("A-06");
+    expect(PLACEHOLDER_TO_ASSET["portal_b"]).toBe("A-06");
+
+    // R-PM1 — the mapping is measured, and the two rows are *exchanged*, so neither
+    // the suffix convention nor a single-row shortcut can satisfy this.
+    expect(SLOT_A?.assetName).toBe("portal_b");
+    expect(SLOT_B?.assetName).toBe("portal_a");
+    expect(SLOT_A?.assetName).not.toBe(SLOT_B?.assetName);
+    expect(PORTAL_ASSET_NAMES.filter((name) => name !== undefined)).toHaveLength(2);
+
+    // R-P6 stays armed: no slot is standing in for art, and the boot gate agrees.
+    expect(unresolvedAssetIds()).toEqual([]);
+    expect(() => {
+      assertNoPlaceholders();
+    }).not.toThrow();
+  });
+
+  test("the loader receives both files and both ends paint the same figure, in every phase", async ({
+    page,
+  }) => {
+    await installPixelReadback(page);
+    await openLevel(page, levelUrl(PORTAL_LEVEL_ID));
+    const geometry = await boardGeometry(page, PORTAL.level);
+
+    // A-1's mount half, measured on the bytes: the page's own resource log must
+    // carry both signed rasters, with the probe's exact ink census (74 713 px) —
+    // a re-encoded, re-cropped or swapped file changes one of these two numbers.
+    const censuses: Array<PngCensus | null> = [];
+    for (const name of PORTAL_ASSET_NAMES) {
+      censuses.push(name === undefined ? null : await servedPngCensus(page, name));
+    }
+    for (const [index, census] of censuses.entries()) {
+      expect(census, `${String(PORTAL_ASSET_NAMES[index])} was fetched by the game's own loader`).not.toBeNull();
+      expect(census?.width).toBe(512);
+      expect(census?.height).toBe(512);
+      expect(census?.ink, "the signed file's alpha≥128 ink census").toBe(74_713);
+    }
+
+    // A-1's pairing half, in both phases: the two ends of a pair mount **one** texture
+    // per phase (R-PM1), so their figures must agree in geometry and in mass. This is
+    // the clause that would catch a "new graphic at the exit end" (E3-3) without ever
+    // asking the renderer which branch it took.
+    const measure = async (phase: "A" | "B"): Promise<{ live: CellCensus; far: CellCensus }> => {
+      await settle(page);
+      const live = await portalEndCensus(page, geometry, phase, END_LIVE);
+      const far = await portalEndCensus(page, geometry, phase, END_FAR);
+      // eslint-disable-next-line no-console
+      console.log(
+        `[QA-017] A-1 pair agreement phase=${phase} live.ink=${String(live.ink)} far.ink=${String(far.ink)} ` +
+          `live.core=${live.core.map((c) => Math.round(c)).join(",")} far.core=${far.core.map((c) => Math.round(c)).join(",")} ` +
+          `live.inner=${String(live.innerInk)} far.inner=${String(far.innerInk)}`,
+      );
+      return { live, far };
+    };
+
+    const assertAgree = (phase: "A" | "B", a: CellCensus, b: CellCensus): void => {
+      expect(a.bbox, `phase ${phase}: the live end draws a figure`).not.toBeNull();
+      expect(b.bbox, `phase ${phase}: the far end draws a figure`).not.toBeNull();
+      expect(Math.abs(a.ink - b.ink) / Math.max(a.ink, b.ink), "phase-identical ink mass").toBeLessThan(0.08);
+      const bboxA = a.bbox;
+      const bboxB = b.bbox;
+      if (bboxA === null || bboxB === null) return;
+      // Same figure, same box: a per-end extra mark moves the bbox.
+      expect(Math.abs(bboxA.x1 - bboxA.x0 - (bboxB.x1 - bboxB.x0)), "same figure width").toBeLessThanOrEqual(2);
+      expect(Math.abs(bboxA.y1 - bboxA.y0 - (bboxB.y1 - bboxB.y0)), "same figure height").toBeLessThanOrEqual(2);
+      const delta = profileDelta(a.profile, b.profile);
+      expect(delta.maxBinShare, `no extra figure in any radius band (worst bin ${String(delta.worstBin)})`).toBeLessThan(0.1);
+      // The swirl is the state channel and it is binary: either both ends carry it or
+      // neither does, never one.
+      expect(a.innerInk > 0).toBe(b.innerInk > 0);
+    };
+
+    const phaseA = await measure("A");
+    assertAgree("A", phaseA.live, phaseA.far);
+    // Phase A is the pair's dormant phase on L11 (`activePhase: B`), so both ends
+    // must be the §3.1c vector figure — no swirl ink anywhere.
+    expect(phaseA.live.innerInk, "dormant ends carry no swirl ink").toBe(0);
+
+    expect(FIRST_LEG).toBeDefined();
+    if (FIRST_LEG === undefined) return;
+    await pressDirection(page, FIRST_LEG.direction);
+    const after = await hud(page);
+    expect(after.phase).toBe("B");
+
+    const phaseB = await measure("B");
+    assertAgree("B", phaseB.live, phaseB.far);
+    // …and in B the pair is live: the raster's baked swirl is present on both ends.
+    expect(phaseB.live.innerInk, "live ends carry the baked swirl").toBeGreaterThan(20);
+    expect(phaseB.live.ink, "the live raster is a filled figure, not an outline").toBeGreaterThan(
+      phaseA.live.ink,
+    );
+  });
+});
+
+test.describe("§3.1e A-2 — the mapped contrast survives on the bytes the game loaded", () => {
+  test("the swap law is load-bearing: as-named fails R-C3, swapped clears the named bar", async ({
+    page,
+  }) => {
+    await openLevel(page, levelUrl(PORTAL_LEVEL_ID));
+
+    const portalA = await servedPngCensus(page, "portal_a");
+    const portalB = await servedPngCensus(page, "portal_b");
+    expect(portalA).not.toBeNull();
+    expect(portalB).not.toBeNull();
+    if (portalA === null || portalB === null) return;
+
+    // The core is the probe's `mean_ink_core`: mean RGB over the α≥128 mask.
+    expect(portalA.core.map((c) => Math.round(c))).toEqual([69, 186, 209]);
+    expect(portalB.core.map((c) => Math.round(c))).toEqual([56, 95, 139]);
+    // Silhouette and alpha geometry are shared between the pair, which is *why* the
+    // mapping has to be a colour measurement (the whole point of A-1's audit note).
+    expect(portalA.ink).toBe(portalB.ink);
+    expect(portalA.innerInk).toBe(portalB.innerInk);
+
+    const grounds = {
+      A: { cell: hexToRgb(theme("A").ground.cell), alt: hexToRgb(theme("A").ground.cellAlt) },
+      B: { cell: hexToRgb(theme("B").ground.cell), alt: hexToRgb(theme("B").ground.cellAlt) },
+    } as const;
+
+    const swappedA = {
+      cell: contrastRGB(portalB.core as RgbBytes, grounds.A.cell),
+      alt: contrastRGB(portalB.core as RgbBytes, grounds.A.alt),
+    };
+    const swappedB = {
+      cell: contrastRGB(portalA.core as RgbBytes, grounds.B.cell),
+      alt: contrastRGB(portalA.core as RgbBytes, grounds.B.alt),
+    };
+    const asNamedA = {
+      cell: contrastRGB(portalA.core as RgbBytes, grounds.A.cell),
+      alt: contrastRGB(portalA.core as RgbBytes, grounds.A.alt),
+    };
+    const asNamedB = {
+      cell: contrastRGB(portalB.core as RgbBytes, grounds.B.cell),
+      alt: contrastRGB(portalB.core as RgbBytes, grounds.B.alt),
+    };
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-017] A-2 contrast swapped A=${r2(swappedA.cell)}/${r2(swappedA.alt)} B=${r2(swappedB.cell)}/${r2(swappedB.alt)} ` +
+        `| as-named A=${r2(asNamedA.cell)}/${r2(asNamedA.alt)} B=${r2(asNamedB.cell)}/${r2(asNamedB.alt)}`,
+    );
+
+    // The named bar, on the mount order's own `.cell` ground, both phases. Note A-2's
+    // pass shape quotes *two* numbers per phase (6.50 / 5.53 A · 6.25 / 5.49 B): only
+    // the first is ≥ 6.2, so the second ground binds at the pre-registered 5.4 — the
+    // spec's own parenthetical, not a re-specified threshold (see README).
+    expect(swappedA.cell).toBeGreaterThanOrEqual(6.2);
+    expect(swappedB.cell).toBeGreaterThanOrEqual(6.2);
+    expect(swappedA.alt).toBeGreaterThanOrEqual(5.4);
+    expect(swappedB.alt).toBeGreaterThanOrEqual(5.4);
+
+    // …and the suffixed (as-named) mapping FAILS R-C3 on both grounds of both phases.
+    // This is the falsifier: if the renderer regressed to the suffix convention, the
+    // shipped colours would land here and this row would go red on the *bytes*, not
+    // on a screenshot.
+    for (const value of [asNamedA.cell, asNamedA.alt, asNamedB.cell, asNamedB.alt]) {
+      expect(value).toBeLessThan(3);
+    }
+    expect(rgbDistance(portalA.core as RgbBytes, portalB.core as RgbBytes)).toBeGreaterThan(60);
+  });
+});
+
+test.describe("§3.1e A-3 — the B state read is structural, because B's value backup is 1.0", () => {
+  test("the same tile reads dormant → live through luma alone, and the value channel is useless", async ({
+    page,
+  }) => {
+    await installPixelReadback(page);
+    await openLevel(page, levelUrl(PORTAL_LEVEL_ID));
+    const geometry = await boardGeometry(page, PORTAL.level);
+
+    // 1. The *value* channel, on the served bytes: the live raster against the
+    //    reserved inactive token it swaps from. This is the number that makes the
+    //    whole row load-bearing — 1.03:1 is indistinguishable by luminance, so a
+    //    state read resting on value would be a coin flip in phase B.
+    const portalA = await servedPngCensus(page, "portal_a");
+    expect(portalA).not.toBeNull();
+    if (portalA === null) return;
+    const valueBackupB = contrastRGB(portalA.core as RgbBytes, hexToRgb(theme("B").obj.portalEcho));
+    // eslint-disable-next-line no-console
+    console.log(`[QA-017] A-3 B value backup live-vs-dormant = ${r2(valueBackupB)}:1`);
+    expect(valueBackupB, "phase B's value backup really is ~1.0").toBeLessThan(1.1);
+
+    // 2. The *structural* channel, on the presented board: the same tile in its
+    //    dormant phase (the §3.1c vector outline, swirl withheld) and after one press
+    //    (the signed raster, swirl baked in). The census is luma-only, so it uses
+    //    exactly the channel the number above proves is unreliable — and still reads
+    //    the two states apart, because the difference is *presence*, not value.
+    await settle(page);
+    const start = await hud(page);
+    const dormant = await portalEndCensus(page, geometry, start.phase as "A" | "B", END_LIVE);
+
+    expect(FIRST_LEG).toBeDefined();
+    if (FIRST_LEG === undefined) return;
+    await pressDirection(page, FIRST_LEG.direction);
+    const flipped = await hud(page);
+    expect(flipped.phase).not.toBe(start.phase);
+    await settle(page);
+    const live = await portalEndCensus(page, geometry, flipped.phase as "A" | "B", END_LIVE);
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-017] A-3 luma census tile=${END_LIVE.join(",")} dormant.ink=${String(dormant.ink)} dormant.inner=${String(dormant.innerInk)} ` +
+        `live.ink=${String(live.ink)} live.inner=${String(live.innerInk)} ratio=${r2(live.ink / Math.max(1, dormant.ink))}`,
+    );
+
+    // The swirl aperture is the probe's own: `r < 0.62 · outer` of the ink bbox. The
+    // vector diamond's nearest edge sits outside it (its mid-edge is 0.2475 × cell
+    // from the centre; the aperture is ~0.217 × cell), so "dormant carries zero ink
+    // inside" is geometry, not luck.
+    expect(dormant.innerInk, "the dormant figure withholds the swirl").toBe(0);
+    expect(live.innerInk, "the live raster bakes it in").toBeGreaterThan(20);
+    // Presence, not value: the live figure is a *filled* form over the outline's
+    // stroke, so the structural read is a large coverage step at desktop pitch.
+    expect(live.ink / Math.max(1, dormant.ink), "live coverage vs dormant outline").toBeGreaterThan(1.5);
+    // The state channel is binary in the census too: swirl present on exactly one.
+    expect(profileDelta(dormant.profile, live.profile).maxBinShare).toBeGreaterThan(0.1);
+  });
+});
+
+/**
+ * One transient inside the portal ROI, read on the **flip's own timeline**
+ * (`helpers/timeline.ts`; QA-023 conversion of the row that item 123 convicted).
+ *
+ * The row used to sample the ROI on the animation-frame grid, sleep 420 ms of wall
+ * clock, and call the last frame "the resting picture". On cloud round
+ * `39023384882` the grid was 204.6–294.6 ms, the tail frame landed inside the beat,
+ * and the row reported `tail.prevChanged = 8420` against an expected 0 — a
+ * *sampling schedule* reading, not a product defect. The conversion reads the
+ * beat's own declarations (the shipped table and the renderer's own turn function)
+ * and anchors rest on the flip's own end **on the document timeline**, so no
+ * assertion below is invariant to nothing but the animation itself.
+ */
+test.describe("§6.6 B6 / A-5 — the arrival beat fits its own window and adds no figure", () => {
+  test("the swap transient on the far end stays inside the walls row and settles", async ({ page }) => {
+    // QA-023 starvation arms (opt-in, inert unless set): the rate-20 green is the
+    // ticket's bar and the saturation arm is how the *cloud's* grid (204.6–294.6 ms)
+    // is reached on this machine — see `helpers/throttle.ts` + `helpers/timeline.ts`.
+    await installCpuThrottle(page);
+    await installPixelReadback(page);
+    await openLevel(page, levelUrl(PORTAL_LEVEL_ID));
+    const geometry = await boardGeometry(page, PORTAL.level);
+    await settle(page);
+
+    // ── The beat's own declaration, from the shipped table ──────────────────────
+    // B6 rides the `walls` row (`{ start: 80, dur: 120 }` in Variant S), so the swirl
+    // and the far end's swap both end at `start + dur`; the flip as a whole is capped
+    // by `total`. These numbers are the table's, re-read here — not typed.
+    const timings = flipTimings(false);
+    const declaredEndMs = timings.walls.start + timings.walls.dur;
+    expect(declaredEndMs, "the beat's declared window ends with the walls row").toBe(200);
+    // "The swirl exists, has ONE turn": existence is measured on the pixels below;
+    // the turn count is the renderer's own declaration — one full revolution, which
+    // closes where it began (`2π ≡ 0`), so a rogue two-turn swirl cannot pass the
+    // read, and a partial arc cannot pass the endpoints.
+    expect(PORTAL_ARRIVAL_TURNS, "B6's arrival turn is one full revolution").toBe(1);
+    expect(portalArrivalTurn(0), "the turn starts at the settled orientation").toBe(0);
+    expect(portalArrivalTurn(1), "…and one turn is a full revolution").toBeCloseTo(2 * Math.PI, 9);
+    expect(portalArrivalTurn(0.5), "…monotone, never past half a turn at half time").toBeGreaterThan(0);
+    expect(portalArrivalTurn(0.5)).toBeLessThan(2 * Math.PI);
+
+    const roi = roiAround(
+      geometry.cellCenterDevice(END_FAR[0], END_FAR[1]),
+      Math.round(geometry.layout.cellSize / 2),
+    );
+    // Both instruments are armed *before* the press. The recorder stops on the flip's
+    // own end (published by the riders' `transitionrun`), never on a sleep.
+    await armFlipTimeline(page, {
+      riders: [".ps-chip", ".ps-play", ".ps-shell", ".ps-btn"],
+      overlay: ".ps-overlay",
+      dialog: ".ps-dialog",
+    });
+    await startBeatRecorder(page, roi, { afterFrames: 3, maxMs: 4_000 });
+    await saturateMainThread(page);
+    // A pre-press frame is guaranteed by polling the recorder's own state, not by a
+    // sleep: under a 200 ms grid "the picture was still before the press" must not
+    // depend on how fast this machine dispatched the input.
+    await expect
+      .poll(() => beatFrameCount(page), { timeout: 10_000, message: "the ROI capture never opened" })
+      .toBeGreaterThan(0);
+    const pressT = await stampBeatPress(page);
+
+    expect(FIRST_LEG).toBeDefined();
+    if (FIRST_LEG === undefined) return;
+    await pressDirection(page, FIRST_LEG.direction);
+
+    await expect
+      .poll(() => beatRecorderFinished(page), {
+        timeout: 10_000,
+        message: "the ROI capture never reached the flip's own end",
+      })
+      .toBe(true);
+    const frames = await stopBeatRecorder(page, roi);
+    const timeline = await readFlipTimeline(page);
+
+    // ── The flip's own end, and the beat's declared window inside it ────────────
+    const anchor = flipOwnEnd(timeline);
+    const last = lastRider(timeline);
+    const starts = (timeline?.riders ?? [])
+      .map((rider) => rider.startTime)
+      .filter((start): start is number => start !== null);
+    const origin = starts.length === 0 ? null : Math.min(...starts);
+    const rest = anchor === null ? null : restAfter(frames, anchor);
+    const peak = anchor === null ? 0 : peakBefore(frames, anchor);
+    const prePress = frames.filter((frame) => frame.t < pressT);
+    const moved = frames.filter((frame) => frame.prevChanged > 0);
+    const onsetWall = moved[0]?.t ?? null;
+    const endWall = moved[moved.length - 1]?.t ?? null;
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-023] A-5 far-end frames=${String(frames.length)} gridMs=${r2(medianGridMs(frames))} ` +
+        `riders=${String(timeline?.riders.length ?? 0)} ` +
+        `origin=${origin === null ? "null" : r2(origin)} anchor=${anchor === null ? "null" : r2(anchor)} ` +
+        `anchorMinusOrigin=${origin === null || anchor === null ? "null" : r2(anchor - origin)} ` +
+        `declaredEnd=${String(declaredEndMs)}ms total=${String(timings.total)}ms ` +
+        `restFrames=${String(rest?.frames ?? 0)} restMoved=${String(rest?.moved ?? -1)} restUnsettled=${String(rest?.unsettled ?? -1)} ` +
+        `peakPrevChanged=${String(peak)} ` +
+        `[report-only, grid-bounded] onsetWall=${onsetWall === null ? "null" : r2(onsetWall)} ` +
+        `durationWall=${onsetWall === null || endWall === null ? "null" : r2(endWall - onsetWall)} ` +
+        `lastRider=${last?.target ?? "null"}:${last?.declaredDelay ?? "null"}+${last?.declaredDuration ?? "null"} ` +
+        `riderEnds=${(timeline?.riders ?? []).map((rider) => `${rider.target}@${rider.endOnDocumentTimeline === null ? "null" : r2(rider.endOnDocumentTimeline)}`).join(" ")} ` +
+        `riderEvents=${(timeline?.events ?? []).map((event) => `${event.kind}@${r2(event.elapsedMs)}`).join(" ")}`,
+    );
+
+    // The anchor is not assumed: the flip's own riders published it, and it is the
+    // flip's own end on the document timeline — the same clock the beat runs on.
+    expect(timeline?.riders.length ?? 0, "the flip's own DOM riders were observed").toBeGreaterThan(0);
+    expect(anchor, "the flip published its own end on the document timeline").not.toBeNull();
+    expect(origin, "…and its own origin, from the earliest rider").not.toBeNull();
+    if (anchor === null || origin === null || rest === null || timeline === null) return;
+    // Declared arithmetic, on the flip's own clock: the anchor (the LAST rider's own
+    // end, 220 ms in Variant S = `total`) is at or after the beat's declared window
+    // end (200 ms). So "resting from the anchor" can never be satisfied by a picture
+    // that was still *before* the beat — the anchor is past it by declaration.
+    expect(
+      anchor - origin,
+      `the anchor (${r2(anchor - origin)} ms after the flip's own origin) is at the flip's own END, not its start`,
+    ).toBeGreaterThanOrEqual(declaredEndMs);
+    // …and the anchor's *identity* is pinned, so "the ROI is resting" can never be
+    // satisfied by an inflated anchor: the rider that ends last must be the one whose
+    // own declared window ends at the flip budget (§6.1's cap). A rogue late rider
+    // breaks this read by name instead of quietly widening the rest window.
+    expect(
+      (last?.delayMs ?? -1) + (last?.durationMs ?? -1),
+      "the anchor rider's own declared end IS the flip budget",
+    ).toBe(timings.total);
+
+    // ── Rest, measured from the animation's own end (never from a sleep) ─────────
+    expect(rest.fromIndex, "the capture kept running past the flip's own end").toBeGreaterThanOrEqual(0);
+    expect(rest.frames, "…with frames to spare on the resting side of it").toBeGreaterThanOrEqual(2);
+    expect(rest.moved, "from the flip's own end on, nothing inside the ROI moves").toBe(0);
+    expect(rest.unsettled, "…and it is the settled picture, not a later keyframe of the beat").toBe(
+      0,
+    );
+    // …and the beat itself exists in the same capture: the transient is real, and it
+    // has a still, pre-press start on the presented pixels.
+    expect(peak, "the beat is a visible transient, not a no-op").toBeGreaterThan(0);
+    expect(prePress.length, "the capture opened before the press").toBeGreaterThan(0);
+    expect(
+      prePress.every((frame) => frame.prevChanged === 0),
+      "the picture was provably still before the press",
+    ).toBe(true);
+    expect(
+      prePress.every((frame) => frame.changed > 0),
+      "…and it was the pre-flip picture, not the settled one",
+    ).toBe(true);
+
+    // A-5's "zero new ink at the exit end", measured where it can be measured: the far
+    // end's settled figure must be the *same* figure as the live end's — same ink mass,
+    // same radius profile, same swirl presence. A marker or a second graphic at the
+    // exit end would break this on the presented pixels.
+    const phase = (await hud(page)).phase as "A" | "B";
+    const live = await portalEndCensus(page, geometry, phase, END_LIVE);
+    const far = await portalEndCensus(page, geometry, phase, END_FAR);
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-017] A-5 exit-end ink live=${String(live.ink)} far=${String(far.ink)} ` +
+        `inner live=${String(live.innerInk)} far=${String(far.innerInk)}`,
+    );
+    expect(far.ink).toBeGreaterThan(0);
+    expect(Math.abs(far.ink - live.ink) / Math.max(live.ink, far.ink)).toBeLessThan(0.08);
+    expect(profileDelta(live.profile, far.profile).maxBinShare).toBeLessThan(0.1);
+    expect(far.innerInk > 0).toBe(live.innerInk > 0);
+  });
+});
+
+/* ───────────────────────── B12/B13 — the DOM beats (A-7) ─────────────────── */
+
+interface PressSample {
+  /** ms since the sampler was installed. */
+  readonly t: number;
+  readonly scaleX: number;
+  /** Layout box (CSS px) — what the 44 px floor is measured on. */
+  readonly offsetW: number;
+  readonly offsetH: number;
+  /** Painted box (CSS px) — `getBoundingClientRect`, i.e. *after* the transform. */
+  readonly visualW: number;
+  /** The running `transform` transition's own clock at this sample, or `null`. */
+  readonly transitionMs: number | null;
+}
+
+/**
+ * The transform leg of the used `transition-*` longhands for one element, read at
+ * whichever moment it is asked for — the point being that the *pressed* state has
+ * its own declaration (`90 ms in`) and the resting state has another (`140 ms out`),
+ * so reading only one of the two would mis-state the beat.
+ */
+interface TransformTransition {
+  readonly transform: string;
+  readonly duration: string | null;
+  readonly easing: string | null;
+}
+
+/** One `transitionstart` / `transitionend` as the browser reported it. */
+interface TransitionRecord {
+  readonly phase: "start" | "end";
+  readonly propertyName: string;
+  /** `transitionend`'s own duration report, in **ms** (`elapsedTime` in seconds). */
+  readonly elapsedMs: number;
+  /** ms since the sampler was installed. */
+  readonly at: number;
+}
+
+/**
+ * Hold a HUD button down and sample its own computed transform on the **frame grid**.
+ *
+ * Four decisions carry this instrument:
+ *
+ * - the sampling is **in-page**, so no RPC round trip can be mistaken for the beat's
+ *   timing — and so is the *hold window*: `pointerdown` / `pointerup` (and their mouse
+ *   twins) on `window` in the capture phase stamp the press in the page's own clock,
+ *   and the sampler is stopped right after the release instead of after a wall-clock
+ *   wait. That is what keeps the post-release return leg out of the "settled hold"
+ *   filter: the release time is *measured*, never inferred from how long the driver
+ *   meant to hold.
+ * - the grid is `requestAnimationFrame`. A running CSS transition's computed value is
+ *   recomputed **once per frame**, so one sample per frame is exactly the resolution
+ *   of the underlying data; a finer timer grid can only ever repeat the same value,
+ *   and on this stack it is *coarser* than the frame grid instead — measured here,
+ *   `setTimeout(…, 4)` under a WebGL (SwiftShader) renderer at load lands at a ~50 ms
+ *   median while the frame grid stays ~30 ms. Sampling on the frame grid is therefore
+ *   both the honest and the finer instrument, and `gridMs` is reported so the row's
+ *   resolution is never implied to be better than it is.
+ * - each sample also carries the **running transition's own clock**: `CSSTransition`
+ *   objects are exposed by `element.getAnimations()`, so `currentTime` gives the
+ *   position on the declared curve at the instant the value was read.
+ * - the transition's **own record** is captured too (`transitionstart` /
+ *   `transitionend`, `propertyName === "transform"`): `elapsedTime` is the browser's
+ *   report of how long the ramp actually took, which is the one part of this beat
+ *   that no sampling grid has to interpolate.
+ *
+ * The pointer is released *off* the button, so the press has no side effect on the
+ * game — the row is about the button, not the move.
+ */
+async function holdAndSample(
+  page: Page,
+  label: string,
+): Promise<{
+  samples: readonly PressSample[];
+  hit: string | null;
+  /** The `:active` declaration read **during** the hold — the state that matters. */
+  active: TransformTransition | null;
+  /** The press's own window, in the sampler's clock: `[pointerdown, pointerup)`. */
+  downAt: number | null;
+  upAt: number | null;
+  /** The `transform` transition's start/end, as the browser reported them (ms). */
+  transitions: readonly TransitionRecord[];
+}> {
+  await page.evaluate((name: string) => {
+    const el = document.querySelector(`button[aria-label="${name}"]`);
+    if (el === null) throw new Error(`[press] no button labelled ${name}`);
+    interface PressRecorder {
+      samples: PressSample[];
+      stop: boolean;
+      t0: number;
+      downAt: number | null;
+      upAt: number | null;
+      transitions: TransitionRecord[];
+    }
+    const holder = window as unknown as { __psPress?: PressRecorder };
+    const rec: PressRecorder = {
+      samples: [],
+      stop: false,
+      t0: performance.now(),
+      downAt: null,
+      upAt: null,
+      transitions: [],
+    };
+    holder.__psPress = rec;
+    const t0 = rec.t0;
+    const stamp = (which: "down" | "up"): void => {
+      if (which === "down") {
+        if (rec.downAt === null) rec.downAt = performance.now() - t0;
+      } else if (rec.upAt === null) rec.upAt = performance.now() - t0;
+    };
+    // Both the pointer and the mouse pair: a CDP-dispatched press produces pointer
+    // events in Chromium, but the stamp must not depend on which family arrives first.
+    window.addEventListener("pointerdown", () => { stamp("down"); }, true);
+    window.addEventListener("mousedown", () => { stamp("down"); }, true);
+    window.addEventListener("pointerup", () => { stamp("up"); }, true);
+    window.addEventListener("mouseup", () => { stamp("up"); }, true);
+    const record = (phase: "start" | "end") => (event: Event) => {
+      const transition = event as TransitionEvent;
+      if (transition.propertyName !== "transform") return;
+      rec.transitions.push({
+        phase,
+        propertyName: transition.propertyName,
+        elapsedMs: transition.elapsedTime * 1000,
+        at: performance.now() - t0,
+      });
+    };
+    window.addEventListener("transitionstart", record("start"), true);
+    window.addEventListener("transitionend", record("end"), true);
+    const step = (): void => {
+      if (rec.stop) return;
+      const style = getComputedStyle(el);
+      const matrix =
+        style.transform === "none" ? new DOMMatrixReadOnly() : new DOMMatrixReadOnly(style.transform);
+      // The transform's own transition, when it is running: its `currentTime` is the
+      // position on the declared curve *now*, in the browser's animation clock.
+      const transition = el
+        .getAnimations()
+        .map((animation) => animation as Partial<CSSTransition>)
+        .find((animation) => animation.transitionProperty === "transform");
+      rec.samples.push({
+        t: performance.now() - t0,
+        scaleX: matrix.a,
+        offsetW: el instanceof HTMLElement ? el.offsetWidth : 0,
+        offsetH: el instanceof HTMLElement ? el.offsetHeight : 0,
+        visualW: el.getBoundingClientRect().width,
+        transitionMs:
+          transition?.currentTime === null || transition?.currentTime === undefined
+            ? null
+            : Number(transition.currentTime),
+      });
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, label);
+
+  const box = await page.locator(`button[aria-label="${label}"]`).boundingBox();
+  if (box === null) throw new Error(`[press] ${label} has no box`);
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.waitForTimeout(320);
+  // Read mid-hold, and read it *because* it is mid-hold: `:active` is the state the
+  // 90 ms window belongs to, and the resting `.ps-btn` rule declares the 140 ms out
+  // leg instead. The hit test goes with it: a transform that moved the button out
+  // from under the pointer would show up as a different element here.
+  const midHold = await page.evaluate(
+    (point: { x: number; y: number }) => {
+      const found = document.elementFromPoint(point.x, point.y);
+      const button = found?.closest("button") ?? null;
+      let declaration: TransformTransition | null = null;
+      if (button !== null) {
+        const style = getComputedStyle(button);
+        const props = style.transitionProperty.split(",").map((part) => part.trim());
+        const durations = style.transitionDuration.split(",").map((part) => part.trim());
+        const easings = style.transitionTimingFunction.split(",").map((part) => part.trim());
+        const index = props.indexOf("transform");
+        declaration = {
+          transform: style.transform,
+          duration: index < 0 ? null : (durations[index] ?? null),
+          easing: index < 0 ? null : (easings[index] ?? null),
+        };
+      }
+      return { hit: button?.getAttribute("aria-label") ?? null, declaration };
+    },
+    { x: cx, y: cy },
+  );
+  await page.mouse.move(cx, Math.max(0, cy - 240));
+  await page.mouse.up();
+  // A short tail, not a wait: enough to catch the release leg's first samples, short
+  // enough that nothing beyond the hold can be mistaken for the hold.
+  await page.waitForTimeout(60);
+
+  const result = await page.evaluate(() => {
+    const rec = (
+      window as unknown as {
+        __psPress?: {
+          samples: PressSample[];
+          stop: boolean;
+          downAt: number | null;
+          upAt: number | null;
+          transitions: TransitionRecord[];
+        };
+      }
+    ).__psPress;
+    if (rec === undefined) {
+      return {
+        samples: [] as PressSample[],
+        downAt: null,
+        upAt: null,
+        transitions: [] as TransitionRecord[],
+      };
+    }
+    rec.stop = true;
+    return { samples: rec.samples, downAt: rec.downAt, upAt: rec.upAt, transitions: rec.transitions };
+  });
+  return {
+    samples: result.samples,
+    hit: midHold.hit,
+    active: midHold.declaration,
+    downAt: result.downAt,
+    upAt: result.upAt,
+    transitions: result.transitions,
+  };
+}
+
+/**
+ * ── QA-021: the ramp, driven on the transition's own clock ───────────────────
+ *
+ * The fractions the drive seeks to, as positions on whatever window the captured
+ * transition declares. Five states, each strictly inside the window.
+ */
+const RAMP_FRACTIONS = [0.1, 0.25, 0.5, 0.75, 0.9] as const;
+
+/** One in-flight state of the press ramp, read on the transition's own clock. */
+interface RampFractionSample {
+  /** Position on the captured transition's own window, in `(0, 1)`. */
+  readonly fraction: number;
+  /** `CSSTransition.currentTime` after the seek — the abscissa, in ms. */
+  readonly transitionMs: number;
+  /** The computed `scale()` at that position. */
+  readonly scaleX: number;
+  readonly playState: string;
+}
+
+/** What {@link armRampDrive} / {@link readRampDrive} observed. */
+interface RampDrive {
+  readonly samples: readonly RampFractionSample[];
+  /**
+   * The captured transition's **own** duration (`getComputedTiming().duration`),
+   * in ms — the denominator of every fraction below. Reading it from the
+   * transition itself (never from a wall-clock span) is what makes the abscissa
+   * independent of the sampling grid.
+   */
+  readonly ownDurationMs: number | null;
+  readonly property: string | null;
+  /** True when the capture happened while the pointer was still down. */
+  readonly held: boolean;
+  /** How many `transform` `transitionrun`s were seen (press leg + release leg). */
+  readonly transitionRuns: number;
+  readonly capturedAt: number | null;
+  readonly ctAtCapture: number | null;
+  readonly pausedDuringReads: boolean;
+}
+
+/**
+ * Arm the ramp drive on `label`'s button — call this **before** the press.
+ *
+ * On the transition's own `transitionrun`, the captured `CSSTransition` is paused,
+ * seeked to each of `fractions` of its **own** duration, and the computed transform
+ * is read synchronously at each one; then the transition is put back where it was
+ * captured and resumed. Because the whole drive runs inside one task (the
+ * `transitionrun` dispatch), **no frame can elapse between two samples**, so the
+ * states are exact positions on the shipped curve instead of rAF sightings of it.
+ *
+ * That is the QA-021 rewrite of cloud round `39018968002`'s failure: the row used
+ * to read the ramp as `ms since the press` on the frame grid, and a starved runner
+ * (36.0 m vs 11.3 m) delivered 1 in-flight sample where the row demanded more than
+ * one — a clock reading, not a product defect (`docs/project-status.md` item 120).
+ *
+ * Two guards keep the instrument honest, both of them measured, not asserted:
+ * the pointer state at capture (a rogue press snap leaves only the *release*
+ * transition to capture — the probe caught exactly that), and the captured
+ * transition's own duration (90 ms in vs 140 ms out).
+ */
+async function armRampDrive(
+  page: Page,
+  label: string,
+  fractions: readonly number[],
+): Promise<void> {
+  await page.evaluate(
+    (input: { name: string; fractions: number[] }) => {
+      interface Rec {
+        samples: RampFractionSample[];
+        ownDurationMs: number | null;
+        property: string | null;
+        held: boolean;
+        transitionRuns: number;
+        capturedAt: number | null;
+        ctAtCapture: number | null;
+        pausedDuringReads: boolean;
+        down: boolean;
+        driven: boolean;
+      }
+      const holder = window as unknown as { __psRamp?: Rec };
+      const rec: Rec = {
+        samples: [],
+        ownDurationMs: null,
+        property: null,
+        held: false,
+        transitionRuns: 0,
+        capturedAt: null,
+        ctAtCapture: null,
+        pausedDuringReads: false,
+        down: false,
+        driven: false,
+      };
+      holder.__psRamp = rec;
+      const el = document.querySelector(`button[aria-label="${input.name}"]`);
+      if (el === null) throw new Error(`[ramp] no button labelled ${input.name}`);
+      // The pointer's own window, stamped in-page — the capture must happen inside
+      // it, so the release leg can never be mistaken for the press leg.
+      window.addEventListener("pointerdown", () => { rec.down = true; }, true);
+      window.addEventListener("mousedown", () => { rec.down = true; }, true);
+      window.addEventListener("pointerup", () => { rec.down = false; }, true);
+      window.addEventListener("mouseup", () => { rec.down = false; }, true);
+
+      const drive = (): void => {
+        if (rec.driven) return;
+        const anim = el
+          .getAnimations()
+          .find((a) => (a as Partial<CSSTransition>).transitionProperty === "transform");
+        if (anim === undefined) return;
+        const timing = (anim.effect as KeyframeEffect | null)?.getComputedTiming();
+        const own = timing?.duration;
+        rec.driven = true;
+        rec.ownDurationMs = typeof own === "number" ? own : null;
+        rec.property = (anim as Partial<CSSTransition>).transitionProperty ?? null;
+        rec.held = rec.down;
+        rec.capturedAt = performance.now();
+        rec.ctAtCapture = Number(anim.currentTime ?? -1);
+        const denominator = rec.ownDurationMs ?? 0;
+        anim.pause();
+        for (const fraction of input.fractions) {
+          anim.currentTime = fraction * denominator;
+          const transform = getComputedStyle(el).transform;
+          rec.samples.push({
+            fraction,
+            transitionMs: Number(anim.currentTime ?? -1),
+            scaleX: transform === "none" ? 1 : new DOMMatrixReadOnly(transform).a,
+            playState: anim.playState,
+          });
+        }
+        rec.pausedDuringReads = rec.samples.every((sample) => sample.playState === "paused");
+        // Put it back where it was captured and let it run out: the press beat's own
+        // wall span (transitionstart → transitionend) must stay the shipped one.
+        anim.currentTime = rec.ctAtCapture >= 0 ? rec.ctAtCapture : 0;
+        anim.play();
+      };
+
+      window.addEventListener(
+        "transitionrun",
+        (event) => {
+          const transition = event as TransitionEvent;
+          if (transition.propertyName !== "transform") return;
+          rec.transitionRuns += 1;
+          if (rec.driven) return;
+          // Same frame first; one rAF retry only if the style flush had not yet
+          // produced the transition (a scheduling artefact, never a missed beat:
+          // the transition is 90 ms long and this is its own start event).
+          drive();
+          if (!rec.driven) requestAnimationFrame(drive);
+        },
+        true,
+      );
+    },
+    { name: label, fractions: [...fractions] },
+  );
+}
+
+/** Read what {@link armRampDrive} recorded for the press that just happened. */
+async function readRampDrive(page: Page): Promise<RampDrive | null> {
+  return page.evaluate(
+    () => (window as unknown as { __psRamp?: RampDrive }).__psRamp ?? null,
+  );
+}
+
+test.describe("§6.6 B11/B12/B13 — the DOM beats' timing (A-7)", () => {
+  test("B12 — the press transform is the declared 90 ms ease-out to 0.97, on the layout box", async ({
+    page,
+  }) => {
+    // QA-021 starvation arm (opt-in, inert unless set): the row's own acceptance
+    // includes a throttled green — see `helpers/throttle.ts`.
+    await installCpuThrottle(page);
+    await openLevel(page, levelUrl(SIMPLE_LEVEL_ID));
+    await settle(page);
+
+    // A disabled button is never `:active`, so the row's precondition is stated rather
+    // than assumed: one legal move arms both bottom-bar buttons.
+    const leg = SIMPLE.legs[0];
+    expect(leg).toBeDefined();
+    if (leg === undefined) return;
+    await pressDirection(page, leg.direction);
+    await settle(page);
+    expect((await hud(page)).restartDisabled, "Restart is armed by the committed move").toBe(false);
+
+    const vars = await page.evaluate(() => {
+      const shell = document.querySelector(".ps-shell");
+      if (shell === null) return null;
+      const style = getComputedStyle(shell);
+      return {
+        scale: style.getPropertyValue("--ps-press-scale").trim(),
+        inMs: style.getPropertyValue("--ps-press-in-ms").trim(),
+        outMs: style.getPropertyValue("--ps-press-out-ms").trim(),
+      };
+    });
+    expect(vars).toEqual({ scale: "0.97", inMs: "90ms", outMs: "140ms" });
+
+    // The ramp drive is armed *before* the press: it hooks the transition's own
+    // start event, so it cannot be late by construction.
+    await armRampDrive(page, "Restart", RAMP_FRACTIONS);
+    const { samples, hit, active, downAt, upAt, transitions } = await holdAndSample(page, "Restart");
+    const drive = await readRampDrive(page);
+    expect(samples.length, "the sampler ran").toBeGreaterThan(3);
+
+    // The press's own *declaration*, read from the pressed element while it is
+    // pressed — that is what makes the arithmetic below a statement about the
+    // shipped stylesheet, and what makes the spec's "45 ms" reading checkable at
+    // all. `--ps-press-in-ms` is 90 ms on the `:active` rule; the resting rule
+    // declares the 140 ms out leg, so the two are read separately and both are
+    // asserted (reading only the resting one would silently quote the wrong window).
+    const resting = await page.evaluate((name: string) => {
+      const el = document.querySelector(`button[aria-label="${name}"]`);
+      if (el === null) return null;
+      const style = getComputedStyle(el);
+      const props = style.transitionProperty.split(",").map((part) => part.trim());
+      const durations = style.transitionDuration.split(",").map((part) => part.trim());
+      const easings = style.transitionTimingFunction.split(",").map((part) => part.trim());
+      const index = props.indexOf("transform");
+      return {
+        transform: style.transform,
+        duration: index < 0 ? null : (durations[index] ?? null),
+        easing: index < 0 ? null : (easings[index] ?? null),
+      };
+    }, "Restart");
+
+    expect(active?.easing, "the :active transform leg's declared easing").toBe("ease-out");
+    const points = easingPoints(active?.easing ?? null);
+    expect(points, "the declared easing is a value the model can carry").not.toBeNull();
+    // The keyword's own meaning is spec data (CSS Easing L1), asserted here so a
+    // declaration that stopped being `ease-out` could not keep borrowing this model.
+    expect(points, "CSS Easing L1 defines `ease-out` as cubic-bezier(0, 0, 0.58, 1)").toEqual([
+      0, 0, 0.58, 1,
+    ]);
+    // …and the transform really was read *inside* the pressed state: `.ps-btn` at rest
+    // declares no transform at all, so a `none` here would mean the hold missed its
+    // own window and the 90/140 ms split below was read off the wrong rule.
+    expect(active?.transform, "the sampler caught the button mid-press").not.toBe("none");
+    expect(active?.duration, "the :active transform leg is the declared 90 ms in").toBe("0.09s");
+    expect(resting?.duration, "…and the resting leg is the declared 140 ms out").toBe("0.14s");
+    expect(resting?.easing).toBe("ease-out");
+    if (points === null) return;
+
+    // A-7's *literal* number, computed from that declaration: `ease-out` is
+    // `cubic-bezier(0, 0, 0.58, 1)`, so the fraction of the window elapsed at 45 ms
+    // (x = 0.5) is y ≈ 0.686 and the transform is `1 + y · (0.97 - 1)` ≈ 0.9794 — not
+    // 0.97. The relaxation below is what makes the measurement falsifiable, and the
+    // measured curve is then required to bracket the declared 90 ms.
+    const at45 = 1 + bezierFraction(0.5, points) * (0.97 - 1);
+    const atEnd = 1 + bezierFraction(1, points) * (0.97 - 1);
+
+    const onsetIndex = samples.findIndex((sample) => sample.scaleX < 0.9999);
+    expect(onsetIndex, "the :active transform really started").toBeGreaterThanOrEqual(0);
+    // The hold's own window, stamped in-page. `[pointerdown, pointerup)` bounds every
+    // claim below: the press cannot start before the pointer is down, and the *out*
+    // leg cannot be inside the hold — so the "settled" filter is bounded by the
+    // measured release, never by the wall clock the driver meant to spend.
+    expect(downAt, "the pointerdown was stamped in-page").not.toBeNull();
+    expect(upAt, "the pointerup was stamped in-page").not.toBeNull();
+    const holdStart = downAt ?? 0;
+    const holdEnd = upAt ?? holdStart;
+    expect(holdEnd - holdStart, "the hold outlived the declared 90 ms ramp").toBeGreaterThan(150);
+
+    const after = samples.filter((sample) => sample.t >= holdStart && sample.t <= holdEnd);
+    const settled = after.filter((sample) => sample.scaleX > 0.968 && sample.scaleX < 0.9719);
+    // The frame grid — the resolution of a running transition's computed value. The
+    // ramp itself is no longer read on this grid (QA-021 moved it to the transition's
+    // own clock); it survives only as the tolerance of the two *event* stamps below,
+    // which the browser dispatches on frame boundaries.
+    const deltas = after
+      .slice(1)
+      .map((sample, index) => sample.t - (after[index]?.t ?? sample.t))
+      .sort((a, b) => a - b);
+    const gridMs = deltas[Math.floor(deltas.length / 2)] ?? 0;
+
+    // The declared duration as a number, parsed from the declaration itself (never
+    // typed) — the denominator of every `x` below.
+    const declaredMs =
+      active?.duration === null || active?.duration === undefined
+        ? null
+        : Number.parseFloat(active.duration) * 1000;
+    expect(declaredMs, "the declared transform duration parses to a number").toBe(90);
+
+    // The browser's own record of the ramp: `transitionend.elapsedTime` is how long
+    // it *actually* took, reported by the transition machinery itself — the one part
+    // of this beat that no sampling grid has to interpolate. The wall span between the
+    // two events brackets the same 90 ms; it is a frame or two wider than the duration
+    // because both events are dispatched on frame boundaries.
+    const inTransitions = transitions.filter((entry) => entry.at < holdEnd + 5);
+    const startEvent = inTransitions.find((entry) => entry.phase === "start");
+    const endEvent = inTransitions.find((entry) => entry.phase === "end");
+    const wallSpan = startEvent !== undefined && endEvent !== undefined ? endEvent.at - startEvent.at : null;
+
+    // ── The ramp, driven on the transition's own clock (QA-021) ────────────────
+    // Every state below was produced *inside* the captured transition's own
+    // `transitionrun` task — paused, seeked to each fraction of its own duration,
+    // read synchronously — so no frame can elapse between two samples and no sample
+    // can land outside the window. The abscissa is therefore exact, and the row no
+    // longer contains a single `ms since the press`.
+    const driven = drive?.samples ?? [];
+    const midScale = (1 + 0.97) / 2;
+    const analyticCrossMs = bezierTimeAt(0.5, points) * (declaredMs ?? 90);
+    const drivenCross = driven.find((sample) => sample.scaleX <= midScale);
+    const beforeCross = driven[driven.indexOf(drivenCross as RampFractionSample) - 1];
+    const crossFraction =
+      drivenCross !== undefined &&
+      beforeCross !== undefined &&
+      drivenCross.scaleX !== beforeCross.scaleX
+        ? beforeCross.fraction +
+          ((beforeCross.scaleX - midScale) / (beforeCross.scaleX - drivenCross.scaleX)) *
+            (drivenCross.fraction - beforeCross.fraction)
+        : (drivenCross?.fraction ?? 1);
+    const crossT = crossFraction * (declaredMs ?? 90);
+    // The A-7 reading *at* 45 ms — now a real reading rather than the nearest frame:
+    // `RAMP_FRACTIONS` contains 0.5, so there is a sample at exactly half the window.
+    const midFractionSample = driven.find((sample) => sample.fraction === 0.5);
+    const near45 = midFractionSample;
+    const settledScale = settled[settled.length - 1]?.scaleX ?? 1;
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-021] A-7 B12 samples=${String(samples.length)} gridMs=${r2(gridMs)} declared=${String(declaredMs)}ms ` +
+        `driven=${String(driven.length)} drivenOwn=${String(drive?.ownDurationMs)}ms held=${String(drive?.held)} ` +
+        `transitionElapsed=${endEvent === undefined ? "null" : r2(endEvent.elapsedMs)}ms ` +
+        `transitionWall=${wallSpan === null ? "null" : r2(wallSpan)}ms ` +
+        `crossT=${r2(crossT)}ms analyticCross=${r2(analyticCrossMs)}ms linearCross=45ms ` +
+        `scale@45measured=${(near45?.scaleX ?? 1).toFixed(4)} ` +
+        `scale@45analytic=${at45.toFixed(4)} scale@90analytic=${atEnd.toFixed(4)} settledScale=${settledScale.toFixed(4)} ` +
+        `hold=[${r2(holdStart)},${r2(holdEnd)}]`,
+    );
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-021] A-7 B12 driven curve x:scale = ${driven
+        .map((sample) => `${sample.fraction.toFixed(3)}:${sample.scaleX.toFixed(4)}@${r2(sample.transitionMs)}ms`)
+        .join(" ")}`,
+    );
+
+    // ── The ramp, on the transition's own clock (the cloud row's rewrite) ──────
+    // Positive control, named: a rogue *instant snap* on the press leg (`transition:
+    // none` / a 0 ms transform leg) leaves no `:active` transform transition at all —
+    // the only transform transition left is the release's 140 ms out leg, which this
+    // instrument rejects on **three** independent readings (it was not captured while
+    // held, its own duration is 140 not 90, and its samples run 0.97 → 1 instead of
+    // 1 → 0.97). Measured on a page-injected rogue sheet: captured `held=false`,
+    // `ownDurationMs=140`, scales rising 0.9731 → 0.9929. A rogue step-easing
+    // (`steps(1, jump-end)` over the same 90 ms) keeps the duration and the events but
+    // reads the from-value at every fraction — measured 5/5 states at exactly 1.0000 —
+    // which the "strictly between the two declarations" loop below rejects.
+    expect(
+      driven.length,
+      "the press's own transform transition was captured and drove one state per fraction",
+    ).toBe(RAMP_FRACTIONS.length);
+    expect(drive?.held, "…while the pointer was still down (never the release leg)").toBe(true);
+    expect(drive?.property, "…on the transform leg").toBe("transform");
+    expect(
+      drive?.ownDurationMs,
+      "…whose own declared duration is the :active 90 ms in",
+    ).toBe(90);
+    expect(drive?.pausedDuringReads, "every fraction was read with the transition frozen").toBe(true);
+    expect(
+      driven.length,
+      "the transform is a ramp, not an instant snap",
+    ).toBeGreaterThanOrEqual(3);
+    for (const sample of driven) {
+      expect(sample.fraction, "the abscissa is strictly inside the window").toBeGreaterThan(0);
+      expect(sample.fraction).toBeLessThan(1);
+      // Strictly between the two endpoints of the declaration: the press is a ramp,
+      // never a snap and never an overshoot.
+      expect(sample.scaleX, `at x=${sample.fraction.toFixed(3)}`).toBeGreaterThan(0.97);
+      expect(sample.scaleX, `at x=${sample.fraction.toFixed(3)}`).toBeLessThan(1);
+    }
+    // …and it runs the declared direction, 1 → 0.97. A captured release leg (what a
+    // rogue press snap leaves behind) is increasing, and fails here.
+    for (let index = 1; index < driven.length; index += 1) {
+      const earlier = driven[index - 1];
+      const later = driven[index];
+      expect(
+        later?.scaleX,
+        `x=${String(later?.fraction)} is further along the travel than x=${String(earlier?.fraction)}`,
+      ).toBeLessThan(earlier?.scaleX ?? 1);
+    }
+    expect(settled.length, "the press was held long enough to settle").toBeGreaterThan(0);
+    // The browser's own record, independent of the sampling grid: the transform
+    // transition really ran, and it ran for the declared 90 ms (`elapsedTime` is the
+    // transition machinery's own report, in seconds, of how long the ramp took).
+    expect(startEvent, "the transform transition started during the press").toBeDefined();
+    expect(endEvent, "…and it finished during the press").toBeDefined();
+    expect(endEvent?.elapsedMs, "the transition's own report of its duration").toBeCloseTo(90, 0);
+    expect(endEvent?.elapsedMs, "…which is the 90 ms window, not the 140 ms out leg").toBeLessThan(120);
+    expect(wallSpan, "the two events' wall span brackets the same 90 ms, a frame or two wide").not.toBeNull();
+    expect(wallSpan ?? 0).toBeGreaterThan(90 - 1.5 * gridMs);
+    expect(wallSpan ?? 999).toBeLessThan(90 + 3 * gridMs);
+    // The settled hold is the declared scale, and the *midpoint* of the declared window
+    // is measurably above it — A-7's literal "0.97 at 45 ms" is falsified by its own
+    // declaration, not by an interpretation: `ease-out` is not linear.
+    expect(settledScale, "the settled hold is the declared scale").toBeGreaterThan(0.968);
+    expect(settledScale).toBeLessThan(0.972);
+    expect(at45, "the analytic 45 ms value, from the declaration").toBeGreaterThan(0.975);
+    expect(at45).toBeLessThan(0.99);
+    expect(atEnd).toBeCloseTo(0.97, 6);
+    // ── The measured curve, fraction by fraction ───────────────────────────────
+    // Each state sits at a known position on the declared curve, so the shipped easing
+    // is checked directly: the measured value must track the model, and must sit
+    // *twice as close* to `ease-out` as to a linear ramp wherever the two differ
+    // enough to distinguish (the middle of the window, where the two models are
+    // ~0.005 apart on a travel of 0.03).
+    for (const sample of driven) {
+      const model = 1 + bezierFraction(sample.fraction, points) * (0.97 - 1);
+      expect(
+        Math.abs(sample.scaleX - model),
+        `at x=${sample.fraction.toFixed(3)} (${r2(sample.transitionMs)} ms) measured ${sample.scaleX.toFixed(4)} vs model ${model.toFixed(4)}`,
+      ).toBeLessThanOrEqual(0.003);
+    }
+    for (const sample of driven.filter(
+      (state) => state.fraction >= 0.25 && state.fraction <= 0.75,
+    )) {
+      const model = 1 + bezierFraction(sample.fraction, points) * (0.97 - 1);
+      const linear = 1 + sample.fraction * (0.97 - 1);
+      expect(
+        Math.abs(sample.scaleX - model),
+        `at x=${sample.fraction.toFixed(3)} measured ${sample.scaleX.toFixed(4)}: ease-out ${model.toFixed(4)} vs linear ${linear.toFixed(4)}`,
+      ).toBeLessThan(Math.abs(sample.scaleX - linear) / 2);
+    }
+    // The crossing, on the transition's own clock: `ease-out` reaches half its travel
+    // at 30.8 ms of a 90 ms window, a linear ramp at exactly 45 ms. The driven
+    // abscissae are exact, so the tolerance is the *curve's own* resolution between two
+    // adjacent fractions — no frame grid enters this number.
+    expect(
+      Math.abs(crossT - analyticCrossMs),
+      `measured crossing ${r2(crossT)} ms vs analytic ${r2(analyticCrossMs)} ms`,
+    ).toBeLessThanOrEqual(3);
+    expect(
+      crossT,
+      `the press crosses mid-scale at ${r2(crossT)} ms; a linear 45 ms read would not have crossed yet`,
+    ).toBeLessThan(45);
+    // A-7's own readout, at *exactly* the window's midpoint: the measured value there
+    // must be the model's value, and it is measurably not the settled 0.97.
+    expect(near45, "there is a driven state at the window's 0.5 fraction").toBeDefined();
+    expect(near45?.transitionMs, "…which is the 45 ms mark, not near it").toBe(45);
+    expect(
+      Math.abs((near45?.scaleX ?? 1) - at45),
+      `at 45 ms measured ${(near45?.scaleX ?? 1).toFixed(4)} vs analytic ${at45.toFixed(4)}`,
+    ).toBeLessThanOrEqual(0.003);
+    expect(near45?.scaleX ?? 0, "…and it is not the settled 0.97").toBeGreaterThan(0.972);
+    expect(analyticCrossMs, "ease-out crosses the half-way value at 0.3425 of the window").toBeGreaterThan(29);
+    expect(analyticCrossMs).toBeLessThan(32);
+
+    // The hit box is the layout box: `offsetWidth/Height` never move, `elementFromPoint`
+    // at the layout centre still resolves to the same button, and the *painted* box is
+    // the layout box scaled — i.e. 0.97 is a paint property, never a layout change
+    // (§8's 44 px floor is measured on `offset*`, so it cannot be spent by a beat).
+    const widths = new Set(samples.map((sample) => sample.offsetW));
+    const heights = new Set(samples.map((sample) => sample.offsetH));
+    expect(widths.size, "the layout width is constant through the press").toBe(1);
+    expect(heights.size, "the layout height is constant through the press").toBe(1);
+    expect(hit).toBe("Restart");
+    const held = settled[settled.length - 1];
+    expect(held).toBeDefined();
+    if (held !== undefined) {
+      expect(
+        Math.abs(held.visualW - held.offsetW * 0.97),
+        "the painted box is the scaled layout box",
+      ).toBeLessThan(1.5);
+    }
+  });
+
+  test("B13 — the panel starts at the flip budget and Next works on its first frame", async ({
+    page,
+  }) => {
+    // QA-023 starvation arms (opt-in, inert unless set): the row's own acceptance
+    // includes a throttled green — see `helpers/throttle.ts` + `helpers/timeline.ts`.
+    await installCpuThrottle(page);
+    await openLevel(page, levelUrl(SIMPLE_LEVEL_ID));
+
+    // One in-page instrument for the whole row (`helpers/timeline.ts`, QA-023). It
+    // stamps the winning keydown on the **document timeline**, records the flip's own
+    // DOM riders (each `transitionrun` publishes `startTime + delay + duration`, i.e.
+    // where that beat ends on its own clock), and reads the panel in the mutation that
+    // unhid it: the hit test at Next's centre — which can only be observed at that
+    // instant — plus the entrance animation's own onset.
+    await armFlipTimeline(page, {
+      riders: [".ps-chip", ".ps-play", ".ps-shell", ".ps-btn"],
+      overlay: ".ps-overlay",
+      dialog: ".ps-dialog",
+      resetOnPress: true,
+    });
+
+    await saturateMainThread(page);
+    await pressRoute(page, SIMPLE.route);
+
+    // The one thing that *must* wait: the panel is gated by `setTimeout(flipTimings
+    // (...).total)` (hud.ts:454), so a HUD read taken straight after the winning press
+    // would be reading the pre-panel board on purpose. Waiting on the instrument's own
+    // unhide stamp — not on a sleep — resolves on the unhide mutation itself, so the hit
+    // test and the click below land as early as the product allows.
+    await expect
+      .poll(async () => (await readFlipTimeline(page))?.onset?.at ?? null, {
+        timeout: 5_000,
+        message: "the win panel never unhid after the winning route",
+      })
+      .not.toBeNull();
+
+    const won = await hud(page);
+    expect(won.won).toBe(true);
+    expect(won.nextVisible).toBe(true);
+
+    const timelineBeforePlacement = await readFlipTimeline(page);
+    const onset = timelineBeforePlacement?.onset ?? null;
+    expect(onset, "the panel's unhide was observed in the mutation that unhid it").not.toBeNull();
+    if (timelineBeforePlacement === null || onset === null) return;
+
+    // The entrance's own `startTime` is placed by the browser on a **rendering update**
+    // after the animation is created, and the instrument retries on rAF until then
+    // (`helpers/timeline.ts` `readPanel`). Reading straight after the onset poll is a
+    // race on a starved runner — under the saturation arm the placement landed after
+    // the read (`panelStart=null`, `panel=ps-panel-in@0 running`, 1 of 2 runs), which
+    // says nothing about the panel. So the row waits on the instrument's own state, not
+    // on a clock: "no animation at all" is allowed through (the no-entrance control
+    // must still fail by name below) and only "created but still pending" is retried.
+    await expect
+      .poll(
+        async () => {
+          const state = await readFlipTimeline(page);
+          if (state?.panel === null || state?.panel === undefined) return "no-animation";
+          return state.panel.startTime === null ? "pending" : "placed";
+        },
+        { timeout: 5_000, message: "the panel's entrance was never placed on the document timeline" },
+      )
+      .not.toBe("pending");
+    const placed = await readFlipTimeline(page);
+    expect(placed, "the flip instrument is still on the page").not.toBeNull();
+    if (placed === null) return;
+    const timeline = placed;
+
+    // ── The flip's own declared values, read from the page ───────────────────────
+    // The panel's gate IS the flip's last rider's declared end: the chip row's delay +
+    // duration (`--ps-flip-chip-*`, written from `flipTimings.chip`) equals the table's
+    // `total`. Two declared reads and one causal chain — and both of them are computed
+    // style, i.e. byte-stable across throttle rates, unlike anything that moves.
+    const styles = await page.evaluate(() => {
+      const chip = document.querySelector(".ps-chip");
+      const dialog = document.querySelector(".ps-dialog");
+      if (chip === null || dialog === null) return null;
+      const chipStyle = getComputedStyle(chip);
+      const dialogStyle = getComputedStyle(dialog);
+      return {
+        chipDelay: chipStyle.transitionDelay,
+        chipDuration: chipStyle.transitionDuration,
+        entranceName: dialogStyle.animationName,
+        entranceDuration: dialogStyle.animationDuration,
+        entranceDelay: dialogStyle.animationDelay,
+      };
+    });
+    const timings = flipTimings(false);
+    expect(styles, "the chip and the dialog are both on the page").not.toBeNull();
+    if (styles === null) return;
+    // Computed *lists*: the chip declares the same row on both of its colour longhands
+    // (`background-color`, `color`), so every entry must be the table's value — a
+    // partial edit of the stylesheet (one longhand changed, one left) fails here.
+    const declared = (value: string): readonly string[] =>
+      value.split(",").map((part) => part.trim());
+    expect(declared(styles.chipDelay).length, "the chip declares its two colour rows").toBe(2);
+    expect(
+      declared(styles.chipDelay).every((value) => value === `${String(timings.chip.start / 1000)}s`),
+      `the chip rider's declared delays are the table's ${String(timings.chip.start)} ms`,
+    ).toBe(true);
+    expect(
+      declared(styles.chipDuration).every((value) => value === `${String(timings.chip.dur / 1000)}s`),
+      `…and its declared durations are the table's ${String(timings.chip.dur)} ms`,
+    ).toBe(true);
+    expect(
+      timings.chip.start + timings.chip.dur,
+      "the flip's LAST rider ends exactly at the flip budget, so the panel's gate is the flip's own end",
+    ).toBe(timings.total);
+    expect(timings.total, "§6.1's budget cap is the declared panel gate").toBe(220);
+
+    // ── The panel after the flip, on the animations' OWN document timeline ───────
+    // The retired form compared `panelAt - keyAt` against a typed 200/420 window: a
+    // wall-clock reading that coarsens with the runner's frame grid. Cloud round
+    // `39023384882` read 481.4 ms against a 420 ms budget and failed a panel that was
+    // exactly where the product declares it — `keyAt` is stamped on an input frame and
+    // `panelAt` on a later rAF, so that pair carries the grid twice (`docs/
+    // project-status.md` item 123, RED-2). The claim is causal, so it is read as one:
+    // both numbers below live on `document.timeline`, and the interval between them is
+    // the product's own declaration (`flipTimings.total`) rather than a typed bound.
+    const panelStart = timeline.panel?.startTime ?? null;
+    const keyDocT = timeline.keyDocT;
+    const frame = Math.max(onset.frameAtUnhideMs ?? 0, 1);
+    const flipEndFromPress = keyDocT === null ? null : keyDocT + timings.total;
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-023] A-7 B13 riders=${String(timeline.riders.length)} keyDocT=${keyDocT === null ? "null" : r2(keyDocT)} ` +
+        `flipEndFromPress=${flipEndFromPress === null ? "null" : r2(flipEndFromPress)} declaredTotal=${String(timings.total)}ms ` +
+        `panelStart=${panelStart === null ? "null" : r2(panelStart)} margin=${panelStart === null || flipEndFromPress === null ? "null" : r2(panelStart - flipEndFromPress)}ms ` +
+        `panel=${timeline.panel === null ? "null" : `${timeline.panel.name}@${r2(timeline.panel.currentTime ?? -1)} ${timeline.panel.playState}`} ` +
+        `chipDeclared=${styles.chipDelay}+${styles.chipDuration} entranceDeclared=${styles.entranceName}/${styles.entranceDuration}/${styles.entranceDelay} ` +
+        `frameAtUnhide=${r2(frame)} nextHit=${onset.nextHit ?? "null"} nextDisabled=${String(onset.nextDisabled)} ` +
+        `[report-only, grid-bounded] panelDelayWall=${timeline.keyAt === null ? "null" : r2(onset.at - timeline.keyAt)}ms ` +
+        `riderEnds=${timeline.riders.map((rider) => `${rider.target}@${rider.endOnDocumentTimeline === null ? "null" : r2(rider.endOnDocumentTimeline)}`).join(" ")} ` +
+        `riderEvents=${timeline.events.map((event) => `${event.kind}@${r2(event.elapsedMs)}`).join(" ")}`,
+    );
+
+    // The rider log is *reported*, never asserted: whether the browser creates a
+    // transition at all is a function of the press pacing against the runner's frame
+    // grid, not of the row's claim. Two mechanisms were measured (QA-023 diagnostics,
+    // rate 10): the chip's **declared 140 ms delay** parks its colour, so a leg
+    // pressed inside that delay sets a value equal to the parked one and creates no
+    // transition (`riders=2`, chip absent); and two presses drained in a single frame
+    // make the flip pair net-zero, so *no* rider publishes a `transitionrun` at all
+    // (`riders=0`, `events=0`, level won, panel gate correct, 2 of 12 runs). The claim
+    // below needs `keyDocT` — the press on the document timeline, the *same* clock the
+    // panel's own onset is published on — and both are schedule-free; the count is
+    // therefore diagnostic output only (`riderEnds` in the report above).
+    expect(keyDocT, "the winning press is stamped on the flip's own clock").not.toBeNull();
+    expect(panelStart, "the panel's entrance published its own onset").not.toBeNull();
+    if (panelStart === null || flipEndFromPress === null) return;
+    // One measured frame of slack, for the frame the animation was created on — the
+    // interval this observer actually experienced at the unhide, not a grid sampled at
+    // page open (the assumption CPU starvation breaks). An early panel misses this by
+    // the whole declared budget, so the control survives any frame grid.
+    expect(
+      panelStart + frame,
+      `the panel's own onset ${r2(panelStart)} is at or after the flip's declared end ${r2(flipEndFromPress)} (flip budget ${String(timings.total)} ms)`,
+    ).toBeGreaterThanOrEqual(flipEndFromPress);
+
+    // B13's declared entrance — and, at the unhide, the animation's own clock: it is
+    // *running* and it has barely started, which is the evidence that the button was
+    // hit-tested mid-entrance. The tolerance is the unhide frame's own resolution.
+    expect(timeline.panel, "the entrance exists as an animation").not.toBeNull();
+    expect(timeline.panel?.playState, "the entrance was running on the unhide").toBe("running");
+    expect(
+      timeline.panel?.currentTime ?? Number.NaN,
+      "…and it had barely started, so Next was hit-tested mid-entrance",
+    ).toBeLessThanOrEqual(2 * frame + 1);
+
+    // "Next is tappable from the first frame" — no input gate. The claim has two
+    // halves, and both are read at the unhide frame: the element under the button's
+    // own centre *is* the button (`nextHit`), and the button is not disabled. The
+    // click is then a raw pointer click, because Playwright's own actionability check
+    // would *wait out* the 160 ms entrance (a harness gate, not a product one) and
+    // would therefore prove the opposite of what the row asks.
+    expect(onset.nextHit, "the element under the button's centre is the button").toBe("Next");
+    expect(onset.nextDisabled, "…and it is live input, not a disabled placeholder").toBe(false);
+    expect(onset.nextBox).not.toBeNull();
+
+    const nextBox = await page.getByRole("button", { name: "Next" }).boundingBox();
+    expect(nextBox).not.toBeNull();
+    if (nextBox === null) return;
+    await page.mouse.click(nextBox.x + nextBox.width / 2, nextBox.y + nextBox.height / 2);
+    await expect
+      .poll(async () => (await hud(page)).won, { timeout: 5_000 })
+      .toBe(false);
+    const advanced = await hud(page);
+    expect(advanced.levelLabel).not.toBe(won.levelLabel);
+    expect(advanced.moves).toBe(0);
+  });
+});
+
+/* ───────────────────── Stillness, reduced motion, deny list ───────────────── */
+
+/** The goal's own cell rect, in canvas **device** px — R-M1's allowed motion region. */
+function goalRect(geometry: BoardGeometry, goal: readonly [number, number]): {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+} {
+  return cellRect(geometry, goal);
+}
+
+/** Everything the DOM is allowed to change on an idle board: nothing. */
+async function domSnapshot(page: Page): Promise<Record<string, unknown>> {
+  return page.evaluate(() => {
+    const text = (selector: string): string => document.querySelector(selector)?.textContent?.trim() ?? "";
+    const styleOf = (selector: string): string => {
+      const node = document.querySelector(selector);
+      if (node === null) return "";
+      const style = getComputedStyle(node);
+      return `${style.transform}|${style.opacity}|${style.backgroundColor}|${style.color}`;
+    };
+    return {
+      moves: text(".ps-moves"),
+      level: text(".ps-level"),
+      glyph: document.querySelector(".ps-glyph")?.getAttribute("data-glyph") ?? "",
+      chip: document.querySelector(".ps-chip")?.getAttribute("aria-label") ?? "",
+      phase: document.querySelector(".ps-shell")?.getAttribute("data-phase") ?? "",
+      movesStyle: styleOf(".ps-moves"),
+      levelStyle: styleOf(".ps-level"),
+      chipStyle: styleOf(".ps-chip"),
+      runningAnimations: document
+        .getAnimations()
+        .filter((animation) => animation.playState === "running")
+        .map((animation) => (animation as unknown as { animationName?: string }).animationName ?? animation.id),
+    };
+  });
+}
+
+test.describe("§6.6 R-M1 / A-8 + A-10 — one magnet, and nothing else moves", () => {
+  test("three frames across one goal-pulse period differ only inside the goal's own cell (L11: portals, switch, door, walls)", async ({
+    page,
+  }) => {
+    await installPixelReadback(page);
+    // L11 is the *hard* board for this row: it carries a portal pair, a switch, a door
+    // and walls, so every deny-list class is on screen while the census runs.
+    await openLevel(page, levelUrl(PORTAL_LEVEL_ID));
+    const geometry = await boardGeometry(page, PORTAL.level);
+    await settle(page);
+    await settle(page);
+
+    // ── QA-020: the sample schedule is phase-invariant, the row's meaning is not
+    //    changed. The old row read ONE 2 s difference and required `changed > 0`;
+    //    the goal's idle pulse (`board-view.ts:973` feeds `scene.time.now` into
+    //    R-C8's wall-clock `1 + A·sin(2πt/2400)` — `objects/goal.ts:32-33,59-61`)
+    //    makes that difference `A·|cos(θ + 150°)|`, a function of the *capture*
+    //    phase θ the runner does not control, so the row read `changed=0
+    //    maxDelta=0` whenever the start landed near θ = −60°/120° (QA-019 saw it in
+    //    1 of 5 runs; QA-020's phase sweep reproduced it on the frozen bytes at
+    //    page-clock residues 713 ms and 716 ms). Three samples 800 ms apart span a
+    //    whole period, and over any θ the best of three phases 120° apart carries
+    //    ≥ 0.866 of the pulse amplitude — the derivation, and the measured
+    //    `changed=1688/1347/0` that puts the assertion on the peak, live in
+    //    `helpers/pulse-schedule.ts`.
+    const phase = phaseOf(await hud(page));
+    const still = await idleStillnessProof(page, {
+      centre: geometry.cellCenterDevice(PORTAL.level.goal[0], PORTAL.level.goal[1]),
+      sampleRadius: Math.round(geometry.layout.cellSize * 0.45),
+      ground: hexToRgb(groundOf(phase, PORTAL.level.goal[0], PORTAL.level.goal[1])),
+    });
+    const rect = goalRect(geometry, PORTAL.level.goal);
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-020] A-8 idle samples=${still.samples.map((d) => String(d.changed)).join("/")} ` +
+        `peak=${String(still.peak)} spread=${String(still.spread)} floor=${String(still.floor)} ` +
+        `goalRadius=${still.goalRadius.toFixed(2)} guaranteedΔscale=${(still.guaranteedDeltaScale * 100).toFixed(2)}% ` +
+        `bboxes=${still.samples.map((d) => (d.bbox === null ? "null" : [d.bbox.x0, d.bbox.y0, d.bbox.x1, d.bbox.y1].join(","))).join("|")} ` +
+        `goalCell=${[rect.x, rect.y, rect.w, rect.h].join(",")} spanMs=${r2(still.spanMs)}`,
+    );
+
+    // The goal's own figure is on the board — the floor below is *measured* from the
+    // painted radius, so this is also the census's own positive control.
+    expect(still.goalRadius, "the goal's figure is painted, so the floor is measured not typed").toBeGreaterThan(0);
+    // The goal's pulse keeps the board alive: at least one sample of the trio must
+    // clear the derated analytic band, at *every* phase (see the helper's header).
+    expect(still.peak, "the goal's own pulse keeps the board alive").toBeGreaterThanOrEqual(still.floor);
+    // …and the union bbox is still reported, never assumed: the peak's own sample
+    // carries one (a `null` here with a peak above the floor would be a contradiction).
+    expect(still.samples.filter((d) => d.bbox !== null).length, "the union bbox is reported, never assumed").toBeGreaterThan(0);
+    // R-M1, as a falsifier: a portal breathing, a grid line shimmering, an echo fading
+    // or a HUD beat on the canvas would each land outside this rect — and on **every**
+    // sample, not on one lucky one.
+    still.samples.forEach((diff, index) => {
+      expect(
+        bboxWithin(diff.bbox, rect, 2),
+        `sample ${String(index + 1)} of ${String(still.samples.length)}: every moved pixel is inside the goal's cell`,
+      ).toBe(true);
+    });
+  });
+
+  test("A-10 — entry, Undo and Restart are not events: the board is still after the state lands", async ({
+    page,
+  }) => {
+    await installPixelReadback(page);
+    await openLevel(page, levelUrl(PORTAL_LEVEL_ID));
+    const geometry = await boardGeometry(page, PORTAL.level);
+    const rect = goalRect(geometry, PORTAL.level.goal);
+
+    // Entry: settle twice (the flip budget plus a margin), then require the board to be
+    // at rest *other* than the goal. A beat that fired at entry would still be moving
+    // here; a beat that fires at entry and is over by then is caught by the row below
+    // (nothing may be left moving at all).
+    await settle(page);
+    await settle(page);
+    await captureFrame(page);
+    const afterEntry = await frameDiffAfter(page, 700);
+    expect(bboxWithin(afterEntry.bbox, rect, 2), "level entry leaves the board still").toBe(true);
+
+    // Undo: commit a move, undo it, and then require the restored board to be at rest.
+    const before = await hud(page);
+    expect(FIRST_LEG).toBeDefined();
+    if (FIRST_LEG === undefined) return;
+    await pressDirection(page, FIRST_LEG.direction);
+    await settle(page);
+    await pressUndoKey(page);
+    await settle(page);
+    const undone = await hud(page);
+    expect(undone.moves).toBe(before.moves);
+    await settle(page);
+    await captureFrame(page);
+    const afterUndo = await frameDiffAfter(page, 700);
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-017] A-10 restored-board diffs entry=${String(afterEntry.changed)} undo=${String(afterUndo.changed)} ` +
+        `undoBbox=${afterUndo.bbox === null ? "null" : [afterUndo.bbox.x0, afterUndo.bbox.y0, afterUndo.bbox.x1, afterUndo.bbox.y1].join(",")}`,
+    );
+    expect(bboxWithin(afterUndo.bbox, rect, 2), "Undo restores without firing a beat").toBe(true);
+
+    // Restart: same claim on the other restoration path.
+    await pressRestartKey(page);
+    await settle(page);
+    await settle(page);
+    await captureFrame(page);
+    const afterRestart = await frameDiffAfter(page, 700);
+    expect(bboxWithin(afterRestart.bbox, rect, 2), "Restart restores without firing a beat").toBe(true);
+
+    // The DOM half of the deny list: HUD digits are a text swap only, the phase chip
+    // does not swap while idle, and nothing anywhere in the document is mid-animation.
+    const first = await domSnapshot(page);
+    await page.waitForTimeout(2000);
+    const second = await domSnapshot(page);
+    expect(second).toEqual(first);
+    expect(second["runningAnimations"]).toEqual([]);
+  });
+});
+
+test.describe("§6.4 MV-4 / A-9 — reduced motion is a data flip", () => {
+  test.use({ reducedMotion: "reduce" });
+
+  test("every declared reduced form reproduces: no scale, no translation, no idle motion", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    const watch = watchErrors(page);
+
+    await installPixelReadback(page);
+    await openLevel(page, levelUrl(SIMPLE_LEVEL_ID));
+    const geometry = await boardGeometry(page, SIMPLE.level);
+    const rect = goalRect(geometry, SIMPLE.level.goal);
+    await settle(page);
+    await settle(page);
+
+    // The two data flips, read from the shell the HUD writes them to.
+    const vars = await page.evaluate(() => {
+      const shell = document.querySelector(".ps-shell");
+      if (shell === null) return null;
+      const style = getComputedStyle(shell);
+      return {
+        pressScale: style.getPropertyValue("--ps-press-scale").trim(),
+        panelOffset: style.getPropertyValue("--ps-panel-offset").trim(),
+      };
+    });
+    expect(vars).toEqual({ pressScale: "1", panelOffset: "0px" });
+
+    // R-M1's one magnet dies (§6.6 B7/§6.4 "no object scale"): on an idle board under
+    // reduced motion there is *nothing* left moving, so two frames 2 s apart are
+    // identical — a strictly stronger statement than A-8's bbox containment.
+    await captureFrame(page);
+    const idle = await frameDiffAfter(page, 2000);
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-017] A-9 reduced idle changed=${String(idle.changed)} maxDelta=${String(idle.maxDelta)} ` +
+        `goalCell=${[rect.x, rect.y, rect.w, rect.h].join(",")}`,
+    );
+    expect(idle.changed, "the goal's idle pulse is a data flip, so it is gone").toBe(0);
+    expect(idle.maxDelta).toBe(0);
+
+    // B12's scale dies (kept as a value state): the same held press as the normal-motion
+    // row, on an armed button, with the transform pinned at 1 for the whole hold.
+    const leg = SIMPLE.legs[0];
+    expect(leg).toBeDefined();
+    if (leg === undefined) return;
+    await pressDirection(page, leg.direction);
+    await settle(page);
+    const { samples, hit } = await holdAndSample(page, "Restart");
+    expect(samples.length).toBeGreaterThan(3);
+    const scales = new Set(samples.map((sample) => sample.scaleX.toFixed(3)));
+    // eslint-disable-next-line no-console
+    console.log(`[QA-017] A-9 reduced press scales=${[...scales].join(",")} hit=${hit ?? "null"}`);
+    expect([...scales]).toEqual(["1.000"]);
+    expect(hit).toBe("Restart");
+
+    // Legibility identical: the *state* read survives with the motion removed. The
+    // portal's live/dormant channel is a swap, not a beat, so the A-3 census must return
+    // the same verdict with the arrival turn suppressed — measured on a fresh L11.
+    await openLevel(page, levelUrl(PORTAL_LEVEL_ID));
+    const portalGeometry = await boardGeometry(page, PORTAL.level);
+    await settle(page);
+    const portalStart = await hud(page);
+    expect(portalStart.phase).toBe("A");
+    const dormant = await portalEndCensus(page, portalGeometry, "A", END_LIVE);
+    expect(FIRST_LEG).toBeDefined();
+    if (FIRST_LEG === undefined) return;
+    await pressDirection(page, FIRST_LEG.direction);
+    await settle(page);
+    const live = await portalEndCensus(page, portalGeometry, "B", END_LIVE);
+    // eslint-disable-next-line no-console
+    console.log(
+      `[QA-017] A-9 reduced legibility dormant.inner=${String(dormant.innerInk)} dormant.ink=${String(dormant.ink)} ` +
+        `live.inner=${String(live.innerInk)} live.ink=${String(live.ink)}`,
+    );
+    expect(dormant.innerInk, "the reduced state swap withholds the swirl the same way").toBe(0);
+    expect(live.innerInk, "…and shows it, with no turn required").toBeGreaterThan(20);
+    expect(live.ink).toBeGreaterThan(dormant.ink);
+
+    // B13's offset dies while the alpha fade is kept (MV-4 "kept (alpha only)"). A fresh
+    // L1: the par route is walked from the level's own start state, never mid-game.
+    await openLevel(page, levelUrl(SIMPLE_LEVEL_ID));
+    await settle(page);
+    await pressRoute(page, SIMPLE.route);
+    const won = await hud(page);
+    expect(won.won).toBe(true);
+    const dialog = await page.evaluate(() => {
+      const node = document.querySelector(".ps-dialog");
+      if (node === null) return null;
+      const style = getComputedStyle(node);
+      const matrix = style.transform === "none" ? null : new DOMMatrixReadOnly(style.transform);
+      return {
+        name: style.animationName,
+        duration: style.animationDuration,
+        translateY: matrix === null ? 0 : matrix.f,
+      };
+    });
+    // eslint-disable-next-line no-console
+    console.log(`[QA-017] A-9 reduced panel=${JSON.stringify(dialog)} declaredDelay=${String(flipTimings(true).total)}ms`);
+    expect(dialog?.name, "the alpha fade is kept under reduced motion").toBe("ps-panel-in");
+    expect(dialog?.duration).toBe("0.16s");
+    expect(Math.abs(dialog?.translateY ?? 99), "the entrance offset dies").toBeLessThan(1);
+    expect(flipTimings(true).total, "the reduced flip budget is the panel's own delay").toBeLessThan(
+      flipTimings(false).total,
+    );
+
+    expectNoPageErrors(watch, "L1 + L11 reduced-motion run");
+  });
+});

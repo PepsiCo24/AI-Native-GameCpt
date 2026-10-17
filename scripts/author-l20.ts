@@ -264,6 +264,16 @@ interface Pocket {
  * The phase of a pocket tile is fixed while the pocket is sealed (every wandering
  * move comes in pairs), so it is `arrivalPhase ⊕ (distance from the landing mod 2)`
  * over the pocket graph.
+ *
+ * **LV-013 — ADR architecture-0004 Ruling 3: this screen screens nothing.** `grow`
+ * yields only *connected* sets, and on a bipartite grid every neighbour of a boundary
+ * tile carries one `(x+y)` parity while `dist mod 2 ≡ parity(t) ⊕ parity(landing)`, so
+ * `parities.size > 1` is **unreachable**: `ok` is always true for every candidate the
+ * census enumerates, and the count of `ok` verdicts is identically the `tested` count.
+ * It is kept (not deleted) so the tautology stays visible beside the historical screen;
+ * the `single-phase` column in `stagePockets` is labelled as what it is and must never
+ * be read as a measurement. Deleting the channel outright is a named, deferred row
+ * (`docs/ai-native-pipeline.md` §8.17) — it moves no number either way.
  */
 function sealedPocket(pocket: Pocket, arrivalPhase: Phase): { ok: boolean; detail: string } {
   const inPocket = new Set(pocket.tiles.map(coordKey));
@@ -323,26 +333,24 @@ function boundaryOf(tiles: readonly Coord[]): readonly Coord[] {
 }
 
 /** Every connected far-region tile set of size 2..`maxSize` containing `landing`. */
-function pocketCandidates(landing: Coord, maxSize: number): Pocket[] {
+function* pocketCandidates(landing: Coord, maxSize: number): Generator<Pocket> {
   const pool = FAR_TILES.filter((f) => coordKey(f) !== coordKey(landing));
-  const out: Pocket[] = [];
-  const grow = (tiles: Coord[]): void => {
+  function* grow(tiles: Coord[]): Generator<Pocket> {
     if (tiles.length >= 2) {
       const boundary = boundaryOf(tiles);
       if (boundary.length > 0)
-        out.push({ landing, tiles: [...tiles].sort((a, b) => coordKey(a).localeCompare(coordKey(b))), boundary });
+        yield { landing, tiles: [...tiles].sort((a, b) => coordKey(a).localeCompare(coordKey(b))), boundary };
     }
     if (tiles.length >= maxSize) return;
     for (const p of pool) {
       if (tiles.some((t) => coordKey(t) === coordKey(p))) continue;
       if (!tiles.some((t) => adjacent(t, p))) continue;
       tiles.push(p);
-      grow(tiles);
+      yield* grow(tiles);
       tiles.pop();
     }
-  };
-  grow([landing]);
-  return out;
+  }
+  yield* grow([landing]);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -878,24 +886,58 @@ function judge(
 
 const POCKET_MAX = Number(argOf("pocketsize") ?? "5");
 
+/**
+ * `--only=x,y` (repeatable) — **slice filter**, stage P only. Added by LV-012 for
+ * tractability, never for tuning: the pocket enumeration is exponential in
+ * `--pocketsize`, so the ≤10 census is measured in landing slices. With no `--only`
+ * the loop is exactly the shipped one (every far tile) and no measurement changes;
+ * a slice is verified by re-measuring a landing whose full-run line is already
+ * committed (`5,0` → 13, `6,0` → 40 at ≤10, `author-l20.transcript.md` §4).
+ */
+const ONLY_LANDINGS: ReadonlySet<string> = new Set(
+  process.argv.filter((a) => a.startsWith("--only=")).map((a) => a.slice("--only=".length)),
+);
+const SLICED: readonly Coord[] =
+  ONLY_LANDINGS.size === 0 ? FAR_TILES : FAR_TILES.filter((t) => ONLY_LANDINGS.has(coordKey(t)));
+
+/**
+ * **Census-cost note — ADR architecture-0004 Ruling 4 (`docs/architecture.md` §15.5).
+ * `PREDICTED` is a label, never a licence.**
+ *
+ * Within one frame, enumeration **sizes** are invariant per `D2` orbit of the far
+ * rectangle `Γ_F` (`tested = N(parity) × K(orbit)`, `N` recomputed per landing, never
+ * inherited across the parity-flipping half). So a batch *may* walk at most one landing
+ * per orbit and label the rest `PREDICTED`. **Results never inherit** — the equivariance
+ * condition `g(σ(P)) = g(P)` fails exactly on leaks (`x=4` 0 vs `x=6` 15 113 at ≤10) —
+ * with exactly one lawful exception, the first far column, where `leak-free ≡ 0` is a
+ * law (Ruling 2) and must be labelled a law, not a measurement.
+ *
+ * **No prediction is implemented here.** This tool walks every landing in `SLICED` and
+ * every figure it prints is measured. The one-flag version is a named, deferred row
+ * (`docs/ai-native-pipeline.md` §8.17); when it is built it must print `PREDICTED` beside
+ * any inherited size and must refuse to inherit a verdict.
+ */
 function stagePockets(): void {
   console.log(
     `\nstage P pocket census — grid ${String(W)}×${String(H)} · sealed column x=${String(CX)} · ` +
-      `pocket size ≤ ${String(POCKET_MAX)} · far tiles = ${String(FAR_TILES.length)}`,
+      `pocket size ≤ ${String(POCKET_MAX)} · far tiles = ${String(FAR_TILES.length)}` +
+      (ONLY_LANDINGS.size === 0 ? "" : ` · SLICE --only=${[...ONLY_LANDINGS].join(" --only=")} (${String(SLICED.length)} landing(s))`),
   );
   let tested = 0;
   let single = 0;
   let sealed = 0;
   const kept: string[] = [];
-  for (const landing of FAR_TILES) {
+  for (const landing of SLICED) {
     for (const near of LEFT_TILES) {
       if (coordKey(near) === coordKey(PLAYER)) continue;
       if (parity(near) === parity(landing)) continue; // ADR-0009: opposite parity only
       const arrivalPhase = arrivalPhaseOf(near);
+      let hereTested = 0;
       let hereSingle = 0;
       let hereSealed = 0;
       for (const pocket of pocketCandidates(landing, POCKET_MAX)) {
         tested += 1;
+        hereTested += 1;
         const sp = sealedPocket(pocket, arrivalPhase);
         if (!sp.ok) continue;
         hereSingle += 1;
@@ -909,18 +951,32 @@ function stagePockets(): void {
             `· door ${closedIn(arrivalPhase)}`,
         );
       }
-      if (hereSealed > 0) {
-        console.log(
-          `  landing ${coordKey(landing)} (near ${coordKey(near)}, arrival ${arrivalPhase}): ` +
-            `${String(hereSingle)} single-phase boundary, ${String(hereSealed)} leak-free`,
-        );
-        single += hereSingle;
-        sealed += hereSealed;
-      }
+      // ── LV-013 — ADR architecture-0004 Ruling 3: **the print gate is GONE.**
+      // It used to read `if (hereSealed > 0)`, which suppressed BOTH the line and the
+      // counter accumulation for every `(landing, near)` with no leak-free pocket — and
+      // that is exactly the first far column (Ruling 2: leak-free ≡ 0 by law). The
+      // published "x=4 → 0 single-phase" was therefore a suppressed counter, not a
+      // measurement: its deficit (`724 203 655 − 592 804 433` at ≤10, `16 431 095 −
+      // 13 163 780` at ≤8) was the x=4 `tested` sum, digit for digit.
+      // Accumulation below is unconditional, hence honest — and being honest it shows
+      // what it always was: `sealedPocket` cannot reject a connected pocket, so
+      // `hereSingle ≡ hereTested` on every single line. The label says so, in the
+      // output, so no future reader can mistake the column for a measurement.
+      const firstColumn = x(landing) === CX + 1;
+      console.log(
+        `  landing ${coordKey(landing)} (near ${coordKey(near)}, arrival ${arrivalPhase}): ` +
+          `${String(hereTested)} tested · ${String(hereSingle)} single-phase boundary ` +
+          `(TAUTOLOGY ≡ tested · ADR architecture-0004 R3: the screen screens nothing)` +
+          (firstColumn ? " · FIRST-COLUMN LAW: leak-free ≡ 0 (ADR architecture-0004 R2)" : "") +
+          ` · ${String(hereSealed)} leak-free`,
+      );
+      single += hereSingle;
+      sealed += hereSealed;
     }
   }
   console.log(
-    `\ncensus: ${String(tested)} pocket(s) tested · ${String(single)} single-phase boundary · ` +
+    `\ncensus: ${String(tested)} pocket(s) tested · ${String(single)} single-phase boundary ` +
+      `(TAUTOLOGY ≡ tested — ADR architecture-0004 Ruling 3) · ` +
       `${String(sealed)} leak-free (the census's accept class)`,
   );
   console.log("leak-free pockets:");

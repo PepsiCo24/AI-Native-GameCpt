@@ -1,7 +1,58 @@
 # Playtest Log
 
 > Owners: **QA Engineer** and **Playtest Analyst**
-> Version: **V0.7** · Date: 2026-10-16 (newest banner first; V0.6 and older preserved below)
+> Version: **V0.8** · Date: 2026-10-17 (newest banner first; V0.7 and older preserved below)
+
+> **V0.8 (PA-004, Playtest Analyst):** **U-001 booked honestly as a SINGLE-SEAT developer-player session;
+> the two stale Pages URLs corrected to the unfrozen state; the star-era asks armed; RF-3 declared.**
+> **(1) §6a — U-001: one seat, and it is not a cohort.** On 2026-10-17 the **user** played the **dev build
+> at `:5173`** on the develop tip carrying the 20-level dataset (R-003d, item 98) + GAME-003 art/motion
+> (certified QA-017, `5317150`) + GAME-004 stars (certified QA-019, `147fba6`), and filed three orders —
+> quoted **verbatim** in §6a, with the Orchestrator's receipts beside them. **It is not cohort data and no
+> threshold is scored against it:** one seat of **developer/owner class** (not a §9.4 non-developer), no
+> consent, no recording, no Table A, no coding — so **M1–M16 read `NOT COLLECTED`, never blank-as-zero**,
+> §6's P/V tables stay empty, and **§11.9's disclosure stands verbatim (n = 0 cohort sessions; the
+> 10-person cohort is untouched by this row)**. The seat's one **build** finding — the portal pair
+> delivered-but-unmounted — is a defect receipt, not an opinion about players (it became GAME-003, via
+> UA-002 `e4821a2`); the two U-001 reads that touch a metric (move economy, art coverage) are recorded
+> **anecdote-grade, single-seat** — they motivated rulings (ADR **design-0005**), and they are **not**
+> evidence about players.
+> **(2) The round's entry must not be a 404.** `https://pepsico24.github.io/AI-Native-GameCpt/` is
+> **OFFLINE**: workflow `385460470` is `disabled_manually` by the **user freeze order**
+> (`docs/project-status.md` item 89) and the Pages site itself was taken down on the user's instruction
+> (**ITER-0021**: `GET /pages` → **404**, edge → **404** after the cache; nothing is served). §11.1's
+> **Entry row** and the runbook's §2.1 are corrected to the repo-document path with **"live URL restored
+> post-unfreeze"** as the precondition, ITER-0021's three-command restore path, and the **booked
+> post-deploy step** (items 102c / 104c: enable → confirm the deployed bundle hash ≠ `index-r6pZvEiE.js`
+> → **live-lane re-baseline ONLY after deploy**, because that lane's expectations derive from the
+> checked-out dataset and therefore go RED against a stale artifact **by design**). ITER-0021's own law —
+> *no document may describe this game as playable at a URL* — binds this file.
+> **(3) Star-era asks armed** (pre-registered · **NOT TESTABLE** · **no numbers**):
+> `docs/playtest-analysis/star-era-asks-readiness.md` carries the asks booked with **ADR design-0005
+> Ruling A** (item 107d) — replay rate per level · star distribution · **median (best − par) as the
+> `k1 = 2·⌈par/10⌉` regression** (with the per-par-band falsification bands quoted there) · 1★-vs-quit
+> correlation — plus the **M5/M6 counter-check** so a chase is never mistaken for a thrash. **Zero new
+> instrumentation:** `ps.echoGrid/stars@1` already stores **MOVES** per level and the star count is
+> *derived* (`src/game/systems/stars.ts`), so `best − par` is computable from the key the game already
+> writes with `par` Solver-proved in the sidecar. Every row is `NOT TESTABLE` until the cohort runs — and
+> **strictly**, until a **deployed** build carries GAME-004 (the site is down and the last-served artifact
+> was the train-3 15-level set, pre-stars).
+> **RF-3 grounds (declared, because this commit edits two instrument files** — `docs/playtest-log.md`,
+> `docs/playtest-analysis/stage2-v06-cohort-runbook.md`): (1) §6 still reads "No session has been run …
+> every cell below is empty on purpose" — **re-verified here** — so **n = 0 stands and re-freezing voids no
+> datum** (RF-1/RF-2 precedent, §11.0 item 3); (2) the only §11 edit is the **Entry-row URL fact**
+> (items 89 / ITER-0021) — **no threshold, probe string, level index or coding rule moves**; **§9 is
+> byte-unchanged**; the new §6a carries **no threshold at all**; (3) the objects (GAME-004 stars; the
+> offline Pages state) **post-date the V0.6 freeze**. **Manifest debt carried openly:**
+> `stage2-v06-manifest.sha256` is stale for **RF-2 and RF-3** → **one fresh manifest + note before
+> cohort-v2 session 1 (blocking)**; until it exists, no document may quote a current instrument hash.
+> **PA-003 pointer kept current:** `docs/playtest-analysis/PA-003-l20-sealed-landing-risk-protocol.md` §10
+> (addendum, **RF-3s**, this file's RF-3 disambiguated by suffix + file) records that **P-0's precondition
+> is MET** (L20 registered at R-003d, item 98), **P-1 is ANSWERED** by enumeration (0/252 par routes
+> re-land ⇒ **PL-3 is the §4 structural guard**), and that after **R-004** registers L21–L25 the
+> protocol's *family* meets the **act-open relief rung** (ADR design-0005 Ruling B: a labelled `ΔM = 0`
+> plateau) — **as a pointer only: extending its thresholds to a new pair (L20/L21) is a fresh
+> pre-registration, never a re-label.**
 
 > **V0.7 (PA-003, Playtest Analyst):** **New companion pre-registration — the L20 SEALED-LANDING risk
 > protocol (GD-007 handoff, ADR-design-0004 decision 8); declares re-freeze event RF-2.** decision 8 and
@@ -28,6 +79,9 @@
 > **V0.6 (PA-006, Playtest Analyst):** **Stage-2 instrument RE-FROZEN against the shipped ladder
 > L1–L10 — re-freeze event RF-1, §11.0.** The V0.5 BUT (`41d5a4b`) predates the L6–L10 unlock
 > (`c6af636`) and the public Pages release (`3601935`, `https://pepsico24.github.io/AI-Native-GameCpt/`):
+> **[RF-3 tag, 2026-10-17 — the URL above is OFFLINE now (user freeze order, `docs/project-status.md`
+> item 89; ITER-0021 take-down, 404 at both planes). The sentence is left as the frozen V0.6 record;
+> §11.1's Entry row carries the corrected, operative rule.]**
 > frozen as-is, V0.5 would test a five-level prototype that no longer exists. **No session ever ran
 > (n = 0 stands), so no datum is voided by the re-freeze.** §9's text is **unedited** (T6 respected) and
 > remains the frozen record of the M0-only round design; **§11 (new) is the V0.6 instrument**: scope
@@ -214,6 +268,64 @@ appears (pre-registration, §9.2 T6). Filling a row requires a completed Table A
 | P5 | P | | | | L1–L6 | | | |
 | PR1–PR3 | P (replacements, cap 3) | | | | | | | only for INVALID sessions — never used to drop n below 5 |
 | V1–V5 | V (fresh viewers, **disjoint from P**) | | | | §3.3 tests 5/6/7/8 | | | screenshots only, no play |
+
+## 6a. U-001 — single-seat developer-player session (2026-10-17) · **NOT COHORT DATA**
+
+> **Label (binding on every citation of this row):** **single seat · developer/owner class · not a
+> cohort · no N.** This section exists so the session is **booked rather than lost**, and so nobody later
+> reads it as a playtest result. It contributes **no participant, no cell and no number** to §6's tables,
+> §7, §10, §11's thresholds or PA-003's rows. `seats = 1` · `cohort participants = 0` ·
+> `recruited humans = 0` · `sessions with consent / recording / Table A = 0`; §11.9's standing
+> disclosure (**n = 0**) is **unchanged and re-verified** at this commit. **No inference about players may
+> be drawn here** (§9.10.6: the analyst's — or the owner's — own impression is not data).
+
+### 6a.1 What happened, as recorded by the receipts (not by the analyst)
+
+| Field | Value |
+|---|---|
+| Date | **2026-10-17** |
+| Seat | **1** — the **user** (owner / developer). Not recruited, **not** a §9.4 non-developer, not moderated, not coded. |
+| Build | **dev build `:5173`**, develop tip carrying **20 registered levels** (R-003d, item 98; `l021`–`l025` proven on the shelf, **R-004 registration pending**) + **GAME-003** art/motion (certified QA-017, `5317150`) + **GAME-004** stars (certified QA-019, `147fba6`). |
+| Build-label caveat | **This is NOT a round BUT.** §11.1's Entry is the **live public build**, which is **offline** (item 89 / ITER-0021); a dev-server session can therefore never be, and is not, a scored cohort-v2 session. |
+| Consent · recording · Table A | **none** — single seat; nothing was coded. |
+| M1–M16 | **`NOT COLLECTED`** — never blank-as-zero, never imputed (§9.10.1–2). **Quit Level, Continue Intent (CI-self / CI-beh), Fail/Restart/Undo/Misclick/Hint counts: not collected**, for the same reason. |
+| Words | The user's own, **verbatim** — §6a.2. |
+
+### 6a.2 The user's own words (verbatim — quoted from the Orchestrator's receipt, `docs/project-status.md` item 106)
+
+The analyst **was not in the room**; these are the words as filed by the Orchestrator (item 106), quoted
+here without smoothing. The right-hand column is the **ledger's** order-label, i.e. a restatement, **not**
+the user's spelling:
+
+| # | The user's words (verbatim) | Orchestrator's order-label (item 106) |
+|---|---|---|
+| 1 | 「动效/素材没全部用上」 | order (1) 动效 + 素材用尽 |
+| 2 | 「moves 步数没有限制之类的」 | order (2) 步数深度 |
+| 3 | 「开发到100关」 | order (3) 100 关 |
+
+### 6a.3 The receipts the seat produced (build / design facts — **not** player measurements)
+
+| Receipt | What the seat actually produced | Where it landed |
+|---|---|---|
+| **The discovery:** the portal pair was **delivered but never mounted** — `portal_a` / `portal_b` PNGs on disk, while levels from L11 drew placeholder circles | a **disk audit** (a build fact), **not** an opinion about the game | **UA-002** spec `e4821a2` (mount ruled by measured contrast, portals swapped) → **GAME-003** merge `91a6e0a`, certified **QA-017** `5317150` |
+| **GD-008** — the move economy | the **mandate to rule** (star thresholds vs a hard cap) | **ADR design-0005 Ruling A** (item 107): stars IN (`k1 = 2·⌈par/10⌉`, post-win only), **hard cap REFUSED in writing** on the measured identity `T ≡ R ≡ 0 ⇒ D_exec = par + 3·B` |
+| **GD-009** — the dataset tail | the **mandate to plan 20 → 100** | **ADR design-0005 Ruling B** (item 107): five acts × 20, the act-peak tail law, the P10 sampling policy; **Act II batch 1** proven (items 111/114, merged `3b05541`), **R-004** registration pending |
+
+### 6a.4 What may — and may not — be said afterwards
+
+- **MAY:** "a single developer-class seat reported that the move economy felt unpriced and that not all
+  delivered art was in use; both claims were checked against the disk and routed to rulings."
+- **MAY NOT:** any rate, share, median, distribution or "player feedback" phrasing. `1/1 ≠ 5/5`, and a
+  developer's read of their own build is **not comprehension evidence** (§9.4's non-developer rule exists
+  precisely for this). The **star-era asks** (`docs/playtest-analysis/star-era-asks-readiness.md`) are
+  **NOT TESTABLE** on this row.
+- **Replay behaviour: NOT OBSERVED.** No recording exists, and none of the three verbatim orders is a
+  statement about replay (the closest signal is order 2, about the *absence of a move constraint* — a
+  design mandate, not a replay measurement). If U-001's own replay behaviour is ever recorded, it goes in
+  as **`ANECDOTE (single seat, developer class)`**, stated as such **in the cell**, never as a
+  measurement and never in a denominator.
+- **Anecdote-grade is a ceiling, not a licence:** the two U-001 reads that touch a metric (move economy,
+  art coverage) may be cited **only** with the label `ANECDOTE (single seat, developer class)`.
 
 ## 7. Findings
 
@@ -663,6 +775,11 @@ opened → attached table paths. A verdict recorded before its tables exist is v
    **R-002/R-002b `c6af636` unlocked L6–L10 in the playable registry** (`src/game/levels/level-registry.ts`
    imports `l006`…`l010`; `README.md` "Current status"), and the public build **`3601935`** serves
    **L1–L10** at `https://pepsico24.github.io/AI-Native-GameCpt/` with `?level=N` deep links.
+   **[RF-3 supersession tag, 2026-10-17: this sentence is a historical statement of what served at the
+   V0.6 freeze. The URL is now OFFLINE — user freeze order (`docs/project-status.md` item 89) + the
+   ITER-0021 take-down; see §11.1's Entry row for the corrected, operative entry rule. Nothing above is
+   rewritten; ITER-0021's law — no document may describe this game as playable at a URL — is honoured by
+   this tag, not by editing the frozen record.]**
 2. A round run "as frozen" on V0.5 would therefore test **a five-level prototype that no longer exists**:
    its (a′) release condition — "the D3 door+switch set L6–L10 ships and passes the Solver gate" (§9.1/§9.6) —
    is **now met** (committed evidence: `src/levels/README.md` §0/§0b — `scripts/solve-levels.ts` **10/10 PASS**,
@@ -683,12 +800,21 @@ edited at all (T6 semantics carried over verbatim); mid-round corrections go to 
 next round only. The round's BUT-commit row (§11.1) is **appended** at round start — filling in a build id
 is not a threshold edit.
 
+**RF-2 / RF-3 landing status (appended 2026-10-17, PA-004 — a status note, no threshold).** RF-2 was
+declared by **PA-003** (the L20 sealed-landing protocol, banner V0.7) and RF-3 by **PA-004** (banner V0.8:
+§6a's U-001 booking — no thresholds — plus §11.1's Entry-row **URL fact**, required by ITER-0021). Both
+are declared with dated grounds in their banners, as RF-1 requires. **The remaining landing step is
+shared and OUTSTANDING: one fresh `stage2-v06-manifest.sha256` + freeze note covering the current bytes of
+all five instrument files, which is a BLOCKING precondition of cohort-v2 session 1.** Until that exists,
+**no document may quote a current instrument hash** — the only published manifest hash belongs to the
+V0.6 byte state and is stale for both events. Recorded here rather than left to memory.
+
 ### 11.1 Round definition, BUT rule, and build-defect neutrality
 
 | Field | Rule (frozen) |
 |---|---|
 | Round | **Cohort v2** — P = 5 players (L1–L10 sessions) + V = 5 fresh viewers, disjoint people (§9.4 carries over verbatim, incl. non-developer definition, ≥ 1/5 "I don't play puzzle games", individually run, no compliance pressure, consent, colour vision recorded-never-excluded). Total recruited humans: **10**. Device mix: **≥ 5 of the 10 sessions on a mobile browser** (Safari/Chrome, ≈ 390 px class), of which **≥ 3 are cohort-P sessions**. |
-| Entry | The **live public build** `https://pepsico24.github.io/AI-Native-GameCpt/`. A scored P session **starts at `?level=1`** (the deep link resolves to the identical L1 board state as a no-query start; the exact URL is recorded in Table A). Any other `?level=` use inside a scored session = script deviation on a scored item (T7 semantics carried). `?level=N` for N = 2…10 is a **setup entrance only** (pre-session verification below; never mid-session). |
+| Entry | **RF-3 URL correction (2026-10-17) — the entry is the *restored* live public build, not a 404.** `https://pepsico24.github.io/AI-Native-GameCpt/` is **OFFLINE**: workflow `385460470` `disabled_manually` by the **user freeze order** (`docs/project-status.md` item 89) and the Pages site taken down on the user's instruction (**ITER-0021**: `GET /pages` → **404**, edge → **404**; nothing is served). **"live URL restored post-unfreeze"** is therefore a **round precondition** — cohort v2 cannot open a scored session until the site is back (ITER-0021's three commands) **and** the deploy is confirmed (deployed bundle hash ≠ `index-r6pZvEiE.js`), with the **booked post-deploy step** of items 102c / 104c: the **live-lane re-baseline runs ONLY after deploy**, because that lane's expectations derive from the checked-out dataset and go RED against a stale artifact **by design**. Until then the honest state is **`NOT TESTABLE ON THIS BUILD`** (§9.10.4) — never a partial round. **Once restored,** the rule is unchanged: a scored P session **starts at `?level=1`** (the deep link resolves to the identical L1 board state as a no-query start; the exact URL is recorded in Table A). Any other `?level=` use inside a scored session = script deviation on a scored item (T7 semantics carried). `?level=N` for N = 2…10 is a **setup entrance only** (pre-session verification below; never mid-session). Offline-readable repo-document path (frozen instrument + runbook): `docs/playtest-log.md` §11 · `docs/playtest-analysis/stage2-v06-cohort-runbook.md` · `stage2-v06-freeze-note.md`. |
 | Round BUT row (append before session 1) | The **`main` commit whose GitHub Pages deploy is live at session-1 start** — recorded from the Actions deploy run (commit sha + run URL), not guessed. Art status: **`placeholder art`** (program-drawn vector tokens, R-P7 — unchanged). **Same-BUT rule:** all 10 sessions of cohort v2 run on this one commit; a deploy landing mid-round **stops the round** — either finish every remaining session pinned to the old commit's deployed bundle or void the round and restart on the new one (a mid-round build change invalidates comparability; T7 class). |
 | Pre-session verification (moderator, unrecorded setup pass, once per round + once per device) | (1) `?level=1` … `?level=10` each render a playable board (spot-check all ten; record ✓/✗). (2) Play L10 to the win panel and **transcribe its title + body copy verbatim** into the BUT row (this is the stale-copy defect observation, BD-2 below — the protocol records the state, it does not assume it). (3) Play L5 to the win panel; transcribe title/body and record **panel state**: **N** (a Next control is visible) or **E** (no Next control). Both states are handled by §11.4's CI-beh rule; neither is assumed. |
 | Known production defects (ticket **R-004b**, in flight at V0.6 freeze) | Two defects are pinned as `test.fail()` in the standing e2e suite (QA-005): **(i)** the keyboard frame-window multi-move (`tests/e2e/input-replay.spec.ts` — one task-window burst applies extra moves) and **(ii)** the stale end-panel copy `L1–L5 cleared · …` (`tests/e2e/playthrough.spec.ts`). **V0.6 neither assumes their presence nor their absence.** The BUT row records the deployed commit and the verbatim copy observations; whether R-004b has landed is a property *of that commit*, disclosed in the round report. Sessions measure the player; defects are coded as build events (below), never as participant errors. |

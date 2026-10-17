@@ -60,7 +60,7 @@
  */
 
 import Phaser from "phaser";
-import type { Level } from "@/core/level";
+import type { Coord, Level } from "@/core/level";
 import { isPlayerEmbedded } from "@/core/rules/solid";
 import type { Direction } from "@/core/state/move";
 import type { Phase } from "@/core/state/phase";
@@ -105,6 +105,7 @@ import type { ObservedLayer } from "@/game/renderer/layers";
 import { mixTheme } from "@/game/renderer/theme-mix";
 import { WallTileView, staggerFor } from "@/game/renderer/wall-tiles";
 import { isArtMounted, slotKey } from "@/game/theme/art";
+import { portalSlotFor } from "@/game/theme/assets";
 import { flipTimings, theme, toInt } from "@/game/theme/tokens";
 import type { FlipTimings, ThemeTokens } from "@/game/theme/tokens";
 
@@ -119,6 +120,22 @@ const SPIRIT_B_KEY = slotKey("echo_spirit_b");
 const BG_A_KEY = slotKey("bg_phase_a");
 const BG_B_KEY = slotKey("bg_phase_b");
 const GOAL_KEY = slotKey("goal");
+
+/**
+ * **B7/B10 (§6.6)** — the goal attract's one-shot window and peak.
+ *
+ * `≤ 200 ms` and `≤ +2 %` are the spec's hard numbers: the attract adds at most
+ * `0.02` to R-C8's `±0.06` envelope (hard ceiling 8 %), then returns. `B10`'s
+ * hysteresis is a state rule (the view's `goalNear`, one-cell Chebyshev ring), not
+ * a motion, so it has no duration here.
+ */
+const GOAL_ATTRACT_MS = 200;
+const GOAL_ATTRACT_PEAK = 0.02;
+
+/** B10 — the goal's neighbourhood is its own cell plus the one-cell ring. */
+function isInGoalNeighbourhood(player: Vec, goal: Coord): boolean {
+  return Math.max(Math.abs(player.x - goal[0]), Math.abs(player.y - goal[1])) <= 1;
+}
 
 /**
  * The drawn weight of **Phase B** in a pair of stacked sprites: `0` = pure A,
@@ -242,23 +259,34 @@ export class BoardView {
   /** The registry seam: each painter and the L4 container its slot owns. */
   private readonly l4Painters: readonly L4Painter[];
   /**
-   * Delivered art drawn at L4 (R-005a), by texture key: **at most one object per
-   * slot**, created once when the texture mounted and destroyed with the view. An
-   * empty map is the pre-integration state, not an error — every painter then draws
-   * its vector placeholder exactly as it did before.
+   * Delivered art drawn at L4 (R-005a), keyed by **the single image's slot** or —
+   * for a class whose two instances share one texture key — by
+   * `${textureKey}@${x},${y}` (the portal pair, §3.1e). Created once when the
+   * texture mounted and destroyed with the view. An empty map is the pre-integration
+   * state, not an error — every painter then draws its vector placeholder exactly as
+   * it did before.
    */
   private readonly l4Art = new Map<string, Phaser.GameObjects.Image>();
   /**
    * The port every L4 painter receives (`objects/registry.ts`): the painter resolves
    * the geometry, this view owns the display object. `has` is what makes the texture
-   * and the vector placeholder mutually exclusive rather than layered.
+   * and the vector placeholder mutually exclusive rather than layered — it asks the
+   * **mount measurement** (`isArtMounted`), because the portal pair is keyed per end
+   * and a plain key lookup would answer "no art" for a mounted portal.
    */
   private readonly artPort: TileObjectArtPort = {
-    has: (key) => this.l4Art.has(key),
-    draw: (key, cx, cy, w, h) => {
-      // A no-op for an unmounted key, and a resize **in place** for a mounted one:
-      // the goal's R-C8 pulse is a per-frame `setDisplaySize`, never a new object.
-      this.l4Art.get(key)?.setPosition(cx, cy).setDisplaySize(w, h);
+    has: (key) => isArtMounted(key),
+    draw: (key, cx, cy, w, h, opts) => {
+      // The per-end instance when one is named (the portal pair), else the slot's one
+      // image (the goal). A no-op for an unmounted key, and a resize **in place** for
+      // a mounted one: the goal's R-C8 pulse is a per-frame `setDisplaySize`, never a
+      // new object. Alpha/rotation are §6.6's transform-only beats (R-M2).
+      const image =
+        opts?.instance === undefined ? this.l4Art.get(key) : this.l4Art.get(opts.instance);
+      if (image === undefined) return;
+      image.setPosition(cx, cy).setDisplaySize(w, h);
+      image.setAlpha(opts?.alpha ?? 1);
+      image.setRotation(opts?.rotation ?? 0);
     },
   };
   /**
@@ -296,6 +324,15 @@ export class BoardView {
   private deny: DenyAnimation | null = null;
   private winAt: number | null = null;
   private hover: Vec | null = null;
+
+  /**
+   * **B10 (§6.6)** — is the player inside the goal's neighbourhood (its own cell or
+   * the one-cell ring)? The attract may re-fire **only** on a `false → true`
+   * transition, so a boundary cell cannot chatter it (the state rule, not motion).
+   */
+  private goalNear: boolean;
+  /** **B7** — when the running one-shot attract started, or `null` at rest. */
+  private attractAt: number | null = null;
 
   private groundDirty = true;
   private wallsDirty = true;
@@ -360,6 +397,24 @@ export class BoardView {
     const goalArt = this.createArtImage(GOAL_KEY, l4Depth(L4_SLOT.goal));
     if (goalArt !== null) this.l4Art.set(GOAL_KEY, goalArt);
 
+    // L4 slot `portal` (§3.1d rank 1) — the signed A-06 raster pair (§3.1e). The two
+    // ends of one pair share **one texture key per phase** (both live in the portal's
+    // own `activePhase`), so the single-image-per-key map cannot place both: each end
+    // gets its own instance under `${key}@${x},${y}`, at the slot's own depth (R-PM3:
+    // §3.1d occlusion unchanged, actor always above). The dormant figure is the
+    // §3.1c vector, drawn by the painter — never an image, never dimmed.
+    for (const portal of this.level.portals) {
+      const key = portalSlotFor(portal.activePhase)?.assetName;
+      if (key === undefined || !isArtMounted(key)) continue;
+      for (const [x, y] of portal.pair) {
+        const image = this.scene.add
+          .image(0, 0, key)
+          .setOrigin(0.5, 0.5)
+          .setDepth(l4Depth(L4_SLOT.portal));
+        this.l4Art.set(`${key}@${x},${y}`, image);
+      }
+    }
+
     // L5 — one container at `DEPTH.actor`, children in the fixed order the actor's
     // own module documents. The container is what the §5.2 stack guard sees, and
     // what R-C13.1's "above every L4 layer" is asserted against.
@@ -423,6 +478,9 @@ export class BoardView {
     this.wallTiles = wallTilesOf(this.level);
     this.shown = { phase: initial.phase, player: initial.playerPosition };
     this.lastState = initial;
+    // B10 — the neighbourhood is a *state*, established at build time (level entry is
+    // not an event, R-M6): entering a level already inside the ring arms nothing.
+    this.goalNear = isInGoalNeighbourhood(initial.playerPosition, this.level.goal);
     this.walls = this.buildWallViews(initial);
     onLayout?.(cellSizeCss(this.layout));
   }
@@ -516,6 +574,10 @@ export class BoardView {
     this.flip = null;
     this.deny = null;
     this.winAt = null;
+    // R-M6 — level entry / Undo / Restart are state restoration, not events: the
+    // attract is dropped and the neighbourhood is re-read **without firing**.
+    this.attractAt = null;
+    this.goalNear = isInGoalNeighbourhood(gs.playerPosition, this.level.goal);
     // No flip ⇒ nothing to cross-fade from: every painter takes its "settled"
     // branch (`mix(from, to, 1) === to`), so undo/restart repaint exactly.
     this.prevState = null;
@@ -553,6 +615,14 @@ export class BoardView {
     this.prevState = this.lastState;
     this.lastState = gs;
     this.shown = { phase: gs.phase, player: gs.playerPosition };
+
+    // **B7/B10 (§6.6)** — the goal attract fires on the one-shot `false → true`
+    // transition into the goal's neighbourhood, and only inside a *move* (a
+    // restoration never reaches here). Staying inside the ring cannot re-fire it;
+    // leaving and returning does. A per-frame scalar, 0 new tweens.
+    const near = isInGoalNeighbourhood(gs.playerPosition, this.level.goal);
+    if (near && !this.goalNear) this.attractAt = time;
+    this.goalNear = near;
 
     // §6.4 — a new move supersedes a running refusal animation. The deny nudge is
     // the response to a *refused* input (no movement, no flip); letting it ride
@@ -681,6 +751,21 @@ export class BoardView {
     return progress(time, flip.startAt + flip.timings.occupied.start, flip.timings.occupied.dur);
   }
 
+  /**
+   * **B7 (§6.6)** — the goal attract's one-shot scale, `0` at rest.
+   *
+   * A `sin(πp)` bell over `GOAL_ATTRACT_MS`, peaking at `GOAL_ATTRACT_PEAK` (≤ +2 %)
+   * and returning to `0` at both ends, so the R-C8 envelope gains at most 2 % and the
+   * hard ceiling stays exactly 8 %. Reuses the R-C8 scalar channel (`pulseScale`), so
+   * it is 0 new tweens. Never a loop, never a colour change (R-M1/R-M5).
+   */
+  private goalAttractAt(time: number): number {
+    const startAt = this.attractAt;
+    if (startAt === null) return 0;
+    const p = progress(time, startAt, GOAL_ATTRACT_MS);
+    return GOAL_ATTRACT_PEAK * Math.sin(Math.PI * p);
+  }
+
   update(time: number): void {
     const timings = flipTimings(this.reducedMotion);
     if (this.flip !== null && time >= this.flip.startAt + this.flip.timings.total) {
@@ -694,6 +779,9 @@ export class BoardView {
       this.wallsDirty = true;
     }
     if (this.deny !== null && time >= this.deny.startAt + timings.deny.dur) this.deny = null;
+    // B7 — the attract is a one-shot: drop it once its window has elapsed so a
+    // settled board cannot hold a stale scale (§6.4) and `goalAttractAt` reads 0.
+    if (this.attractAt !== null && time >= this.attractAt + GOAL_ATTRACT_MS) this.attractAt = null;
     if (this.winAt !== null && time >= this.winAt + timings.winTint.dur) {
       this.winAt = null;
       this.groundDirty = true;
@@ -762,6 +850,13 @@ export class BoardView {
    * (§6.4) — and a settled board takes the `flip === null` branch, i.e. exactly
    * `w = 1` or `0`, never a stale mid-dissolve alpha.
    *
+   * **B4 (§6.6) — "A-04 ↔ A-05 alpha, linear constant-sum".** The row is deliberately
+   * **linear**: the A/B pair is drawn as "A opaque underneath, B faded in on top", so
+   * the composite is a true colour cross-fade (`B·w + A·(1−w)`) for every `w`. An
+   * ease on `w` would only re-time a beat that is *already* constant-sum; the constant
+   * the spec names is the **total coverage** (the two sprites' alphas sum to 1 with no
+   * mid-beat dimming, which the stacking rule guarantees), never the *rate*.
+   *
    * Cover-fit is recomputed here, not cached: this runs only when the ground is
    * dirty (resize, level change, flip), and `layout` is what R-L7 recomputes.
    */
@@ -778,11 +873,7 @@ export class BoardView {
             flip.startAt + flip.timings.background.start,
             flip.timings.background.dur,
           );
-    const w = phaseWeight(
-      flip?.fromPhase ?? this.shown.phase,
-      this.shown.phase,
-      easeOutQuad(raw),
-    );
+    const w = phaseWeight(flip?.fromPhase ?? this.shown.phase, this.shown.phase, raw);
 
     const width = this.scene.scale.width;
     const height = this.scene.scale.height;
@@ -860,11 +951,17 @@ export class BoardView {
       for (const tile of spec.tilesOf(this.level)) {
         // `prevState` is `null` exactly when no flip runs, and both mixes are `1`
         // then — so a painter's `mix(prev, now, mix)` collapses to `now` and undo,
-        // restart and resize all repaint the committed state bit-exactly.
+        // restart and resize all repaint the committed state bit-exactly. One scalar
+        // per tile, recomputed per frame, never a tween queue (§6.4).
+        const objectMix = this.objectMixFor(tile, time);
         const transition: TileObjectTransition = {
           prev: this.prevState,
-          objectMix: this.objectMixFor(tile, time),
+          objectMix,
           occupied: this.occupiedProgress(time),
+          // B6 — the arrival turn rides the `walls` row but is a *reduced-motion
+          // "dies"* beat: 0 when motion is suppressed, else the same scalar the state
+          // swap uses (per-frame, 0 new tweens).
+          swirlTurn: !this.reducedMotion && this.flip !== null ? objectMix : 0,
         };
         spec.paint({
           g: gfx,
@@ -886,9 +983,14 @@ export class BoardView {
           // from the same mixed map `paintGround` filled it with, so the punch is
           // exact at every frame of the `tokens` cross-fade.
           knockout: this.knockoutFor(tile.x, tile.y, tokens),
-          // R-005a — every painter gets the same port; only the goal stands in for
-          // delivered art today, and a class with no asset simply never asks.
+          // R-005a — every painter gets the same port; the goal and the portal pair
+          // stand in for delivered art today, and a class with no asset never asks.
           art: this.artPort,
+          // §6.4/MV-4 — the goal's idle pulse is the one idle animation, and
+          // suppressing it under reduced motion is a data flip (pulseScale = 1).
+          reducedMotion: this.reducedMotion,
+          // B7 — the goal attract's one-shot value; every other class ignores it.
+          goalAttract: this.goalAttractAt(time),
         });
       }
     }

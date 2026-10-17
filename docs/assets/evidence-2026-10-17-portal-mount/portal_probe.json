@@ -1,0 +1,320 @@
+{
+  "generated_by": "docs/assets/evidence-2026-10-17-portal-mount/portal_probe.py",
+  "apertures": {
+    "ink": "alpha >= 128",
+    "core": "mean RGB over the ink mask",
+    "outer": "half the max side of the ink bbox",
+    "swirl": "ink with r < 0.62 * outer"
+  },
+  "portal_a": {
+    "file_size": [
+      512,
+      512
+    ],
+    "ink_bbox": [
+      47,
+      25,
+      450,
+      429
+    ],
+    "ink_bbox_px": [
+      403,
+      404
+    ],
+    "framing": [
+      0.787109375,
+      0.7890625
+    ],
+    "framing_pct": [
+      78.7109375,
+      78.90625
+    ],
+    "framing_mean": 0.7880859375,
+    "outer": 202.0,
+    "centre": [
+      248.0,
+      226.5
+    ],
+    "ink_px": 74713,
+    "core_alpha200_px": 74106,
+    "core_alpha200_share": 0.9918755772087856,
+    "mean_ink_core": [
+      69,
+      186,
+      209
+    ],
+    "mean_ink_core_hex": "#45BAD1",
+    "mean_ink_core_hue": 190.01409446764492,
+    "swirl": {
+      "aperture": "r < 0.62 * outer (125.24 px from the ink bbox centre)",
+      "n": 2770,
+      "share_of_ink": 0.03707520779516282,
+      "mean_r": 120.14206319534075,
+      "mean_r_over_outer": 0.5947626890858453,
+      "sigma_r": 3.356333725436136,
+      "r_min": 110.20548988140291,
+      "r_max": 125.22879061940988,
+      "r_range": 15.023300738006967,
+      "centroid_bearing_deg": -177.29212502254484,
+      "all_ink_r_min": 110.20548988140291,
+      "all_ink_r_max": 202.13423757493433
+    },
+    "inner_edge_by_bearing": [
+      {
+        "bearing_bin_deg": "[0,30)",
+        "r_min": 124.84490378065098,
+        "r_max": 201.5223312687703
+      },
+      {
+        "bearing_bin_deg": "[30,60)",
+        "r_min": 127.16622979391974,
+        "r_max": 198.34628809231597
+      },
+      {
+        "bearing_bin_deg": "[60,90)",
+        "r_min": 135.64014892353958,
+        "r_max": 201.8000247770054
+      },
+      {
+        "bearing_bin_deg": "[90,120)",
+        "r_min": 119.13542714071244,
+        "r_max": 202.13423757493433
+      },
+      {
+        "bearing_bin_deg": "[120,150)",
+        "r_min": 113.51761977772438,
+        "r_max": 200.05311794620948
+      },
+      {
+        "bearing_bin_deg": "[150,180)",
+        "r_min": 113.9879379583647,
+        "r_max": 201.9436802675439
+      },
+      {
+        "bearing_bin_deg": "[180,210)",
+        "r_min": 115.72920979597156,
+        "r_max": 201.67610170766392
+      },
+      {
+        "bearing_bin_deg": "[210,240)",
+        "r_min": 110.20548988140291,
+        "r_max": 199.03077651458833
+      },
+      {
+        "bearing_bin_deg": "[240,270)",
+        "r_min": 113.30600160626973,
+        "r_max": 201.98576682528895
+      },
+      {
+        "bearing_bin_deg": "[270,300)",
+        "r_min": 138.36274787673162,
+        "r_max": 201.98576682528895
+      },
+      {
+        "bearing_bin_deg": "[300,330)",
+        "r_min": 129.39571090264158,
+        "r_max": 198.5251873188891
+      },
+      {
+        "bearing_bin_deg": "[330,360)",
+        "r_min": 125.00099999600003,
+        "r_max": 201.17964608776902
+      }
+    ]
+  },
+  "portal_b": {
+    "file_size": [
+      512,
+      512
+    ],
+    "ink_bbox": [
+      47,
+      25,
+      450,
+      429
+    ],
+    "ink_bbox_px": [
+      403,
+      404
+    ],
+    "framing": [
+      0.787109375,
+      0.7890625
+    ],
+    "framing_pct": [
+      78.7109375,
+      78.90625
+    ],
+    "framing_mean": 0.7880859375,
+    "outer": 202.0,
+    "centre": [
+      248.0,
+      226.5
+    ],
+    "ink_px": 74713,
+    "core_alpha200_px": 74106,
+    "core_alpha200_share": 0.9918755772087856,
+    "mean_ink_core": [
+      56,
+      95,
+      139
+    ],
+    "mean_ink_core_hex": "#385F8B",
+    "mean_ink_core_hue": 212.03883700694897,
+    "swirl": {
+      "aperture": "r < 0.62 * outer (125.24 px from the ink bbox centre)",
+      "n": 2770,
+      "share_of_ink": 0.03707520779516282,
+      "mean_r": 120.14206319534075,
+      "mean_r_over_outer": 0.5947626890858453,
+      "sigma_r": 3.356333725436136,
+      "r_min": 110.20548988140291,
+      "r_max": 125.22879061940988,
+      "r_range": 15.023300738006967,
+      "centroid_bearing_deg": -177.29212502254484,
+      "all_ink_r_min": 110.20548988140291,
+      "all_ink_r_max": 202.13423757493433
+    },
+    "inner_edge_by_bearing": [
+      {
+        "bearing_bin_deg": "[0,30)",
+        "r_min": 124.84490378065098,
+        "r_max": 201.5223312687703
+      },
+      {
+        "bearing_bin_deg": "[30,60)",
+        "r_min": 127.16622979391974,
+        "r_max": 198.34628809231597
+      },
+      {
+        "bearing_bin_deg": "[60,90)",
+        "r_min": 135.64014892353958,
+        "r_max": 201.8000247770054
+      },
+      {
+        "bearing_bin_deg": "[90,120)",
+        "r_min": 119.13542714071244,
+        "r_max": 202.13423757493433
+      },
+      {
+        "bearing_bin_deg": "[120,150)",
+        "r_min": 113.51761977772438,
+        "r_max": 200.05311794620948
+      },
+      {
+        "bearing_bin_deg": "[150,180)",
+        "r_min": 113.9879379583647,
+        "r_max": 201.9436802675439
+      },
+      {
+        "bearing_bin_deg": "[180,210)",
+        "r_min": 115.72920979597156,
+        "r_max": 201.67610170766392
+      },
+      {
+        "bearing_bin_deg": "[210,240)",
+        "r_min": 110.20548988140291,
+        "r_max": 199.03077651458833
+      },
+      {
+        "bearing_bin_deg": "[240,270)",
+        "r_min": 113.30600160626973,
+        "r_max": 201.98576682528895
+      },
+      {
+        "bearing_bin_deg": "[270,300)",
+        "r_min": 138.36274787673162,
+        "r_max": 201.98576682528895
+      },
+      {
+        "bearing_bin_deg": "[300,330)",
+        "r_min": 129.39571090264158,
+        "r_max": 198.5251873188891
+      },
+      {
+        "bearing_bin_deg": "[330,360)",
+        "r_min": 125.00099999600003,
+        "r_max": 201.17964608776902
+      }
+    ]
+  },
+  "pair": {
+    "alpha_channel_identical": true,
+    "rgb_differing_px": 77543,
+    "note": "the signed pair differs in RGB only; alpha geometry is shared, so the phase mapping can never be derived from the alpha/geometry"
+  },
+  "mapping": {
+    "as_named_A": {
+      "portal_a_on_A_cell": 2.2447028615537867,
+      "portal_a_on_A_cellAlt": 1.9100695630729618
+    },
+    "as_named_B": {
+      "portal_b_on_B_cell": 2.161192089316863,
+      "portal_b_on_B_cellAlt": 1.8967742280402304
+    },
+    "swapped_A": {
+      "portal_b_on_A_cell": 6.496590627993558,
+      "portal_b_on_A_cellAlt": 5.528099168406667
+    },
+    "swapped_B": {
+      "portal_a_on_B_cell": 6.254894807338098,
+      "portal_a_on_B_cellAlt": 5.489619977931591
+    },
+    "verdict": "as-named FAILS R-C3 (>= 3.0); swapped PASSES — M-1"
+  },
+  "token_cross_check": {
+    "obj.portal_A_vs_cell": 5.729602606916203,
+    "obj.portal_B_vs_cell": 8.593194033205709
+  },
+  "subordination": {
+    "mute_live_A": {
+      "pair": "#385F8B (live raster) vs #4C8B91 (obj.portalEcho)",
+      "cr": 1.7021614756192807,
+      "dLstar": 14.682541357001284
+    },
+    "mute_live_B": {
+      "pair": "#45BAD1 (live raster) vs #6CB5B5 (obj.portalEcho)",
+      "cr": 1.0317324476220835,
+      "dLstar": 1.0027829862169284
+    },
+    "vector_pair_reference": {
+      "A": {
+        "cr": 1.5012041525406443,
+        "dLstar": 11.288130898168895
+      },
+      "B": {
+        "cr": 1.4174302503648133,
+        "dLstar": 11.673896813250906
+      },
+      "note": "§3.1c's published 1.50 / 1.42, ΔL* 11.3 / 11.7 — the VECTOR pair"
+    },
+    "live_flip_A_to_B": {
+      "pair": "#385F8B -> #45BAD1",
+      "cr": 2.894187350702003,
+      "dLstar": 30.773130602613676
+    },
+    "ink_mass": {
+      "art_box_x_cell": 0.8882280049566295,
+      "implied_raster_cell_px": 576.4285714285714,
+      "portal_ink_over_cell2": 0.22485636062397024,
+      "wall_solid_over_cell2": 0.7744
+    }
+  },
+  "goal": {
+    "framing_pct": [
+      78.90625,
+      79.1015625
+    ],
+    "mean_ink_core": [
+      212,
+      161,
+      69
+    ],
+    "mean_ink_core_hex": "#D4A145",
+    "mean_ink_cr_on_A_cell": 2.2981767531561843,
+    "ink_px": 68423,
+    "ink_inside_062_outer": 0,
+    "inner_r_over_outer": 0.6773222512945853,
+    "verdict": "ZERO ink inside r < 0.62 * outer -> no centre dot in the delivered art (M-5); the shipped comment's 3.26:1 is a single-token number, the mean-ink method reads 2.30:1 -> method question routed to QA, no verdict here"
+  }
+}

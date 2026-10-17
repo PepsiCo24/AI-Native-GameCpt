@@ -27,10 +27,12 @@
  * is a **test** file, so this is not a second production path.
  *
  * The file list is discovered from the directory; the hand-pinned count is
- * {@link EXPECTED_LEVEL_COUNT} (the dataset's **20**-level ladder — R-002 tree →
+ * {@link EXPECTED_LEVEL_COUNT} (the dataset's **25**-level ladder — R-002 tree →
  * R-003's L11 unlock at `f484e23` → LV-009-B's L12–L15 block, ADR-design-0003 §8 →
  * R-003c's L16–L19 registration at `208c5eb`/`a75b420` → LV-011/R-003d's L20 sealed
- * landing, registered at `4deeb50`), which `playthrough.spec.ts`
+ * landing, registered at `4deeb50` → **R-004a's Act II batch 1** (`l021`–`l025`,
+ * registered at `50e9ac0`/`178d9d8`, `docs/level-difficulty.md` §5.2 + the sidecar's
+ * 25 records), which `playthrough.spec.ts`
  * compares the discovered set against. **Every other inventory is derived**
  * (QA-005c OQ2): {@link datasetIds}, {@link doorLevelIds}, {@link discoveredFileIds}
  * and {@link inventoryViolation} — so an unlock costs one pin, not three, while a
@@ -45,8 +47,14 @@ import { fileURLToPath } from "node:url";
 import type { Coord, Level } from "@/core/level";
 import { LevelSchema, validateLevel } from "@/core/level";
 import { applyMove, isLegalMove } from "@/core/rules";
-import { doorAt, isClosedDoorAt, portalExit } from "@/core/rules/solid";
-import { explore, forEachParRoute, solve } from "@/core/solver/bfs";
+import {
+  doorAt,
+  inBounds,
+  isClosedDoorAt,
+  isWallSolidAt,
+  portalExit,
+} from "@/core/rules/solid";
+import { analyse, explore, forEachParRoute, solve } from "@/core/solver/bfs";
 import type { ReachableGraph } from "@/core/solver/bfs";
 import type { Direction } from "@/core/state/move";
 import { DIRECTIONS, move, step } from "@/core/state/move";
@@ -68,6 +76,10 @@ import { sameVec } from "@/core/state/types";
  * **QA-014 re-pinned 19 → 20** one batch later, when GAME-002 registered LV-011's
  * sealed landing at the dataset root (`src/levels/l020.json` + registry row 20 at
  * `4deeb50`; `npm run levels` = 20/20 PASS, the sidecar regenerated to 20 records).
+ * **R-004c re-pinned 20 → 25** when R-004a registered the Act II batch 1 at the
+ * dataset root (`src/levels/l021.json … l025.json`, registered at `50e9ac0` and
+ * published at `178d9d8`; `npm run levels` = 25/25 PASS, the sidecar regenerated to
+ * 25 records).
  * The pin moves **only** with a registration commit — it is the alarm, and the
  * registration is the event the alarm is *for*.
  *
@@ -85,13 +97,18 @@ import { sameVec } from "@/core/state/types";
  * ⚠ The pin names the **dataset**, and the dataset is what it is checked against.
  * The *playable* registry (`src/game/levels/level-registry.ts`) is a second,
  * independent list; R-003b registered L12–L15 (`3cd643e`), R-003c/GAME-001 the
- * L16–L19 rows (`a75b420`) and GAME-002 the L20 row (`4deeb50`), so it now ships the
- * same twenty, and the UI-walk specs (playthrough rows for every level, the
- * L1→L20 unlock chain, `?level=16..20`) resolve off it and run green. The dataset pin
- * stays independent on purpose: it is the alarm that fires when the files move,
- * whether or not the registry follows.
+ * L16–L19 rows (`a75b420`), GAME-002 the L20 row (`4deeb50`) and **R-004b the
+ * L21–L25 rows** (`agent/gameplay/r-004b-serve25`, `1f72420`, the GAME-002
+ * precedent). With that row stacked the registry ships the same twenty-five, and the
+ * UI-walk specs (playthrough rows for every level, the `L1→L25` unlock chain,
+ * `?level=21..25`) resolve off it and run green. Until it is stacked, the two
+ * registry-dependent unit rows and the chain spec read 20 and stay red — a
+ * *dependency* this dossier names rather than a pin this file may paper over. The
+ * dataset pin stays independent on purpose: it is the alarm that fires when the files
+ * move, whether or not the registry follows — and that independence is exactly what
+ * keeps the registry rows *measurable* instead of self-fulfilling.
  */
-export const EXPECTED_LEVEL_COUNT = 20;
+export const EXPECTED_LEVEL_COUNT = 25;
 
 /**
  * The dataset directory — resolved **lazily**, at call time, so importing this
@@ -115,7 +132,9 @@ interface DiscoveredLevelFile {
  * One discovery path for everything below: the loader and the inventory checks
  * must never disagree about what "the dataset" is.
  */
-function discoveredLevelFiles(dir: string = levelsDir()): readonly DiscoveredLevelFile[] {
+function discoveredLevelFiles(
+  dir: string = levelsDir(),
+): readonly DiscoveredLevelFile[] {
   return readdirSync(dir)
     .map((name) => {
       const match = /^l(\d{3})\.json$/.exec(name);
@@ -132,7 +151,9 @@ function discoveredLevelFiles(dir: string = levelsDir()): readonly DiscoveredLev
  * mutation probe of `tests/unit/level-inventory-derivation.test.ts` points it at a
  * scratch directory. A file that is added, removed or renamed moves this list.
  */
-export function discoveredFileIds(dir: string = levelsDir()): readonly number[] {
+export function discoveredFileIds(
+  dir: string = levelsDir(),
+): readonly number[] {
   return discoveredLevelFiles(dir).map((entry) => entry.id);
 }
 
@@ -178,7 +199,10 @@ export function doorLevelIds(refs: readonly LevelRef[]): readonly number[] {
  * the ladder discontinuous. The specs call this; the unit probe mutates a scratch
  * copy of the real files and requires it to fire both ways.
  */
-export function inventoryViolation(ids: readonly number[], expected: number): string | null {
+export function inventoryViolation(
+  ids: readonly number[],
+  expected: number,
+): string | null {
   if (ids.length !== expected) {
     return `the discovered dataset has ${String(ids.length)} levels, the pinned registry ships ${String(expected)}`;
   }
@@ -248,7 +272,9 @@ function vecOf(tile: Coord): Vec {
  * the *real* loader — parse, validate, solve — is what the inventory gate is
  * proved against, not a stand-in.
  */
-export function loadReferenceLevels(dir: string = levelsDir()): readonly LevelRef[] {
+export function loadReferenceLevels(
+  dir: string = levelsDir(),
+): readonly LevelRef[] {
   const files = discoveredLevelFiles(dir);
 
   const refs: LevelRef[] = [];
@@ -256,7 +282,9 @@ export function loadReferenceLevels(dir: string = levelsDir()): readonly LevelRe
     const raw: unknown = JSON.parse(readFileSync(join(dir, file), "utf8"));
     const verdict = validateLevel(raw);
     if (!verdict.ok) {
-      throw new Error(`[e2e] ${file} rejected by validateLevel: ${verdict.errors.join(" | ")}`);
+      throw new Error(
+        `[e2e] ${file} rejected by validateLevel: ${verdict.errors.join(" | ")}`,
+      );
     }
     const level: Level = LevelSchema.parse(raw);
     refs.push(buildRef(level));
@@ -269,7 +297,9 @@ function buildRef(level: Level): LevelRef {
   const solved = solve(level);
   const par = solved.shortestSolution;
   if (par === null) {
-    throw new Error(`[e2e] level ${String(level.id)} is not solvable — no e2e route exists`);
+    throw new Error(
+      `[e2e] level ${String(level.id)} is not solvable — no e2e route exists`,
+    );
   }
 
   // The visitor may be called many times (the walk enumerates every par route);
@@ -282,15 +312,21 @@ function buildRef(level: Level): LevelRef {
     found = true;
   });
   if (!found) {
-    throw new Error(`[e2e] level ${String(level.id)} has no par route at par=${String(par)}`);
+    throw new Error(
+      `[e2e] level ${String(level.id)} has no par route at par=${String(par)}`,
+    );
   }
 
   const legs: RouteLeg[] = [];
   let state: SearchState = toSearchState(initialState(level));
-  const refusedAtStart = DIRECTIONS.filter((dir) => !isLegalMove(level, state, move(dir)));
+  const refusedAtStart = DIRECTIONS.filter(
+    (dir) => !isLegalMove(level, state, move(dir)),
+  );
   let count = 0;
   for (const direction of route) {
-    const refused = DIRECTIONS.filter((dir) => !isLegalMove(level, state, move(dir)));
+    const refused = DIRECTIONS.filter(
+      (dir) => !isLegalMove(level, state, move(dir)),
+    );
     state = applyMove(level, state, move(direction));
     count += 1;
     legs.push({
@@ -367,14 +403,23 @@ export interface DoorFixture {
 }
 
 /** Shortest legal move sequence from the start to node `index` (parent pointers). */
-function routeToNode(graph: ReachableGraph, index: number): readonly Direction[] {
+function routeToNode(
+  graph: ReachableGraph,
+  index: number,
+): readonly Direction[] {
   const reversed: Direction[] = [];
   let cursor = index;
   // Bounded by the tree depth; a malformed graph would otherwise spin forever.
   for (let guard = 0; guard <= graph.nodes.length; guard += 1) {
     const parent = graph.parentIndex[cursor];
     const direction = graph.parentDirection[cursor];
-    if (parent === undefined || parent < 0 || direction === null || direction === undefined) break;
+    if (
+      parent === undefined ||
+      parent < 0 ||
+      direction === null ||
+      direction === undefined
+    )
+      break;
     reversed.push(direction);
     cursor = parent;
   }
@@ -400,7 +445,10 @@ export function doorFixtures(ref: LevelRef): readonly DoorFixture[] {
 
     // (1) R-D7 occupancy — the player stands on a door that is closed right now.
     // Goal nodes are excluded: those are the win latch, not a walkable fixture.
-    if (!sameVec(state.player, goal) && isClosedDoorAt(ref.level, state.doorsOpen, state.player)) {
+    if (
+      !sameVec(state.player, goal) &&
+      isClosedDoorAt(ref.level, state.doorsOpen, state.player)
+    ) {
       const door = doorAt(ref.level, state.player);
       if (door !== undefined) {
         found.push({
@@ -468,7 +516,8 @@ export function cheapestDoorFixtures(ref: LevelRef): {
   readonly refusedEntry: DoorFixture | null;
 } {
   const all = doorFixtures(ref);
-  const occupancy = all.find((fixture) => fixture.kind === "closed-door-occupancy") ?? null;
+  const occupancy =
+    all.find((fixture) => fixture.kind === "closed-door-occupancy") ?? null;
   if (occupancy === null) return { occupancy: null, refusedEntry: null };
 
   const arrival = occupancy.route[occupancy.route.length - 1] ?? null;
@@ -486,8 +535,10 @@ export function cheapestDoorFixtures(ref: LevelRef): {
   return { occupancy, refusedEntry };
 }
 
-/** Levels that ship at least one door — the dataset's latch levels (L6–L20). */
-export function levelsWithDoors(refs: readonly LevelRef[]): readonly LevelRef[] {
+/** Levels that ship at least one door — the dataset's latch levels (L6–L25). */
+export function levelsWithDoors(
+  refs: readonly LevelRef[],
+): readonly LevelRef[] {
   return refs.filter((ref) => ref.level.doors.length > 0);
 }
 
@@ -547,7 +598,9 @@ export function portalFixtures(ref: LevelRef): readonly PortalFixture[] {
       if ((mask & (1 << bit)) === 0) return; // refused — not a crossing
       const clicked = step(state.player, direction);
       const portal = ref.level.portals.find((candidate) =>
-        candidate.pair.some((end) => end[0] === clicked.x && end[1] === clicked.y),
+        candidate.pair.some(
+          (end) => end[0] === clicked.x && end[1] === clicked.y,
+        ),
       );
       if (portal === undefined) return;
       const active = portal.activePhase === state.phase;
@@ -581,11 +634,16 @@ export function portalFixtures(ref: LevelRef): readonly PortalFixture[] {
 export function cheapestPortalFixtures(ref: LevelRef): {
   readonly teleport: PortalFixture | null;
   readonly inactive: PortalFixture | null;
-  readonly pair: { readonly teleport: PortalFixture; readonly inactive: PortalFixture } | null;
+  readonly pair: {
+    readonly teleport: PortalFixture;
+    readonly inactive: PortalFixture;
+  } | null;
 } {
   const all = portalFixtures(ref);
-  const teleport = all.find((fixture) => fixture.kind === "portal-teleport") ?? null;
-  const inactive = all.find((fixture) => fixture.kind === "portal-inactive-step") ?? null;
+  const teleport =
+    all.find((fixture) => fixture.kind === "portal-teleport") ?? null;
+  const inactive =
+    all.find((fixture) => fixture.kind === "portal-inactive-step") ?? null;
 
   let pair: { teleport: PortalFixture; inactive: PortalFixture } | null = null;
   for (const candidate of all) {
@@ -606,8 +664,10 @@ export function cheapestPortalFixtures(ref: LevelRef): {
   return { teleport, inactive, pair };
 }
 
-/** Levels that ship at least one portal — the dataset's M2 levels (L11–L20). */
-export function levelsWithPortals(refs: readonly LevelRef[]): readonly LevelRef[] {
+/** Levels that ship at least one portal — the dataset's M2 levels (L11–L25). */
+export function levelsWithPortals(
+  refs: readonly LevelRef[],
+): readonly LevelRef[] {
   return refs.filter((ref) => ref.level.portals.length > 0);
 }
 
@@ -616,10 +676,228 @@ export function levelsWithPortals(refs: readonly LevelRef[]): readonly LevelRef[
  * truth source). Used where a spec needs the *state* a searched route arrives in
  * (door openness, switch latch) rather than just the tiles it passes through.
  */
-export function resolveRoute(level: Level, route: readonly Direction[]): SearchState {
+export function resolveRoute(
+  level: Level,
+  route: readonly Direction[],
+): SearchState {
   let state: SearchState = toSearchState(initialState(level));
-  for (const direction of route) state = applyMove(level, state, move(direction));
+  for (const direction of route)
+    state = applyMove(level, state, move(direction));
   return state;
+}
+
+/* ──────────── the refusal *classes* (R-004d) — Act II's G-family rungs ──────── */
+
+/**
+ * **Why** a press was refused, not just *that* it was (R-004d).
+ *
+ * The locked rule has exactly two illegal conditions (`docs/architecture.md` §6.1,
+ * `applyMove.ts:63-68`): the destination is out of bounds, or it is solid **in the
+ * current phase** — and solid means *a wall active now* or *a door closed now*
+ * (ADR-0008 clause 5: "doors share the wall semantics", one predicate,
+ * `rules/solid.ts:155`). The classes below are that partition, named, because the
+ * Act II batch (`src/levels/l021.json … l025.json`, registered by R-004a) is the
+ * dataset's first **multi-pocket sealed landing** and its refusal surface is built
+ * out of two different kinds of blocker — the checkerboard phase-wall column and
+ * the switch-gated seal doors — which the earlier per-direction refusal rows
+ * counted but never *distinguished*.
+ *
+ * | class | solid because | the shipped case |
+ * |---|---|---|
+ * | `out-of-bounds` | the destination is off the board | the board edge (L21–L25 start) |
+ * | `phase-wall` | a wall is active in the current phase | the `x = 2` checkerboard column |
+ * | `door-without-switch` | a door tile is closed **and every switch that targets it is OFF** | F-L20-2's class: the seal door refuses because its latch has not been pressed |
+ * | `door-latch-on` | a door tile is closed while a switch targeting it is ON | a latch that closes the gate it drives (an ON switch *inverts* the colour base, `solid.ts:93`) |
+ *
+ * The last class is carried so the partition is **total** on the boards this suite
+ * walks: every refused press is counted, and "the classes cover the surface" is an
+ * assertion (`refusedPresses === Σ byClass`) rather than a hope. On the five Act II
+ * rungs `door-latch-on` is measured **0** — the refusal the player meets at a seal
+ * door is always the *un-pressed* latch (see `docs/ai-native-pipeline.md` §8.18's
+ * `refusedThenEnteredTiles` census and §8.16's device law: the ordered plan
+ * `s1 → d1 → s2 → d2 → sg → d3` means the doors are met closed first).
+ */
+export type RefusalClass =
+  "out-of-bounds" | "phase-wall" | "door-without-switch" | "door-latch-on";
+
+/** Every class, in census order — the partition the census sums over. */
+export const REFUSAL_CLASSES: readonly RefusalClass[] = [
+  "out-of-bounds",
+  "phase-wall",
+  "door-without-switch",
+  "door-latch-on",
+];
+
+/**
+ * Why `direction` is refused from `state`, or `null` when it is legal.
+ *
+ * Reads the shipped rules only: `isLegalMove` decides *whether*, and this function
+ * only asks the same solidity predicate *why* (`isWallSolidAt` first, then the door
+ * covering the tile) — a second rule path is never created, and a rules change that
+ * makes a press legal cannot leave a stale class behind.
+ */
+export function refusalClassOf(
+  level: Level,
+  state: SearchState,
+  direction: Direction,
+): RefusalClass | null {
+  if (isLegalMove(level, state, move(direction))) return null;
+  const target = step(state.player, direction);
+  if (!inBounds(level, target)) return "out-of-bounds";
+  if (isWallSolidAt(level, state.phase, target)) return "phase-wall";
+  const door = doorAt(level, target);
+  // `solidAt` is wall ∨ door, so the only remaining reason is a closed door.
+  if (door === undefined) return null;
+  const targeting = level.switches.filter((sw) => sw.targets.includes(door.id));
+  return targeting.some((sw) => state.switchesOn[sw.id] === true)
+    ? "door-latch-on"
+    : "door-without-switch";
+}
+
+/**
+ * One refused press the level's **state graph** really reaches, with the two things
+ * a UI row needs to drive it: the legal route to the state it starts from, and the
+ * legal move that was *due* — so the walk can show the refusal did not disturb the
+ * continuation (`refusal.spec.ts`'s own contract).
+ */
+export interface RefusalFixture {
+  readonly kind: RefusalClass;
+  /** Shortest legal route from the level's start to {@link player}. */
+  readonly route: readonly Direction[];
+  readonly player: Vec;
+  readonly phase: Phase;
+  /** The press the rules refuse. */
+  readonly direction: Direction;
+  /** The tile that press would enter — solid in {@link phase}. */
+  readonly target: Vec;
+  /** `"wall"`, or the id of the closed door that blocks the entry. */
+  readonly blockedBy: string;
+  readonly depth: number;
+  /** The first legal press from this state (never the refused one) and where it lands. */
+  readonly resume: { readonly direction: Direction; readonly arrival: Vec };
+}
+
+/**
+ * Every reachable refusal on the board, classified, shallowest first.
+ *
+ * Found with `explore()` — the solver's own BFS — so a level edit that removes a
+ * refusal, or moves it into another class, fails the run instead of leaving a typed
+ * route behind; and the arrival of {@link RefusalFixture.resume} is `applyMove`'s own
+ * answer, the single movement truth source (AGENTS.md §3).
+ */
+export function refusalFixtures(ref: LevelRef): readonly RefusalFixture[] {
+  const graph = explore(ref.level);
+  const found: RefusalFixture[] = [];
+
+  graph.nodes.forEach((state, index) => {
+    const mask = graph.legalMask[index] ?? 0;
+    DIRECTIONS.forEach((direction, bit) => {
+      if ((mask & (1 << bit)) !== 0) return;
+      const kind = refusalClassOf(ref.level, state, direction);
+      if (kind === null) return;
+      const target = step(state.player, direction);
+      const door = doorAt(ref.level, target);
+      const resumeDirection = DIRECTIONS.find((candidate) =>
+        isLegalMove(ref.level, state, move(candidate)),
+      );
+      found.push({
+        kind,
+        route: routeToNode(graph, index),
+        player: state.player,
+        phase: state.phase,
+        direction,
+        target,
+        blockedBy: door === undefined ? "wall" : door.id,
+        depth: graph.depths[index] ?? 0,
+        resume:
+          resumeDirection === undefined
+            ? { direction, arrival: state.player }
+            : {
+                direction: resumeDirection,
+                arrival: applyMove(ref.level, state, move(resumeDirection))
+                  .player,
+              },
+      });
+    });
+  });
+
+  found.sort((a, b) => a.depth - b.depth);
+  return found;
+}
+
+/** The cheapest fixture of each class — what a UI row drives, one session each. */
+export function cheapestRefusalFixtures(
+  ref: LevelRef,
+): Readonly<Record<RefusalClass, RefusalFixture | null>> {
+  const all = refusalFixtures(ref);
+  const out: Record<RefusalClass, RefusalFixture | null> = {
+    "out-of-bounds": null,
+    "phase-wall": null,
+    "door-without-switch": null,
+    "door-latch-on": null,
+  };
+  for (const kind of REFUSAL_CLASSES)
+    out[kind] = all.find((fixture) => fixture.kind === kind) ?? null;
+  return out;
+}
+
+/**
+ * The board's refusal **census**: the published `refusedThenEnteredTiles` set (the
+ * metric the level lane books per rung — `docs/ai-native-pipeline.md` §8.16's ladder
+ * and §8.18's re-measure, `REFUSAL_CLASSES`' full tile list is pinned in
+ * `tests/solver/ordered-companion.test.ts`) plus the class partition of **every**
+ * refused press over the reachable set, so the two lanes cannot disagree about what
+ * the refusal surface is made of.
+ */
+export interface RefusalCensus {
+  /** Tiles whose click is refused in one reachable state and accepted in another. */
+  readonly refusedThenEntered: readonly string[];
+  /** Its ordered companion — equal on the Act II rungs (the `T ≡ R ≡ 0` reading). */
+  readonly refusedBeforeEntered: readonly string[];
+  /** Every refused press on the board, by class. */
+  readonly byClass: Readonly<Record<RefusalClass, number>>;
+  /** Refused presses whose clicked tile is a portal end — `0` on the Act II rungs. */
+  readonly refusedAtPortalEnds: number;
+  readonly refusedPresses: number;
+  /** Reachable states explored (the census denominator, for messages). */
+  readonly reachableStates: number;
+}
+
+export function refusalCensus(ref: LevelRef): RefusalCensus {
+  const graph = explore(ref.level);
+  const result = analyse(ref.level, graph);
+  const byClass: Record<RefusalClass, number> = {
+    "out-of-bounds": 0,
+    "phase-wall": 0,
+    "door-without-switch": 0,
+    "door-latch-on": 0,
+  };
+  let refusedAtPortalEnds = 0;
+  let refusedPresses = 0;
+
+  graph.nodes.forEach((state, index) => {
+    const mask = graph.legalMask[index] ?? 0;
+    DIRECTIONS.forEach((direction, bit) => {
+      if ((mask & (1 << bit)) !== 0) return;
+      refusedPresses += 1;
+      const kind = refusalClassOf(ref.level, state, direction);
+      if (kind !== null) byClass[kind] += 1;
+      const target = step(state.player, direction);
+      const onPortalEnd = ref.level.portals.some((portal) =>
+        portal.pair.some((end) => end[0] === target.x && end[1] === target.y),
+      );
+      if (onPortalEnd) refusedAtPortalEnds += 1;
+    });
+  });
+
+  return {
+    refusedThenEntered: result.refusedThenEnteredTileList,
+    refusedBeforeEntered: result.refusedBeforeEnteredTileList,
+    byClass,
+    refusedAtPortalEnds,
+    refusedPresses,
+    reachableStates: result.reachableStates,
+  };
 }
 
 /* ─────────────── the refusal-row CI envelope (QA-013, item 77(d)) ──────────── */
@@ -692,10 +970,31 @@ export function resolveRoute(level: Level, route: readonly Direction[]): SearchS
  * the derivation was written *for* is the rung that proves it, and **no constant was
  * touched for this migration**.
  *
- * The cap binds from par 22 on. That is **deliberate and loud**: a future rung
- * that reaches it is a *named* re-derivation, not a silently clamped number
- * (item 84 / item 95 doctrine). This is wall clock only — every assertion in the
- * spec is untouched.
+ * ── The cap binds from par 22 on, and R-004c's new rung is the first to bind it ──
+ * The Act II batch 1 walk takes the refusal family to **par 23** (L25, registered by
+ * R-004a), and par 23 is the first rung whose *uncapped* envelope exceeds the cap. So
+ * it is registered here as a **named cap-binding row**, evaluated from the formula
+ * above, rather than quietly clamped:
+ *
+ * ```
+ * cloudUpperS(23, capped)   = 5.9 × (1.17 × 23 − 1.28 + 3.0)   = 5.9 × 28.63  = 168.917 s
+ * uncapped envelope (23)    = ceil(1.5 × 168.917) × 1000      = ceil(253.3755) × 1000 = 254_000 ms
+ * refusalRouteEnvelopeMs(23)= min(240_000, max(90_000, 254_000))                     = 240_000 ms
+ * exceedance over the cap   = 254_000 − 240_000                                       = +14_000 ms (+5.8 %)
+ * ```
+ *
+ * The **same cap already binds at par 22** (the pre-existing 20-row rung):
+ * `ceil(1.5 × 5.9 × (1.17 × 22 − 1.28 + 3.0)) = ceil(1.5 × 162.014) = ceil(243.021) = 244_000 ms`
+ * — also above the cap (by +4 s), so that rung also reads 240 s and needed **no**
+ * re-migration for this batch. Both rungs therefore hold 240 s, and **no number in the
+ * table above was changed** by the migration: this is the named re-derivation the cap
+ * requires (item 84 / item 95 doctrine), not a silent widening.
+ *
+ * ⚠ The standing consequence, stated so it stays loud: from par 22 on the derived form
+ * has **stopped growing** — every further rung reads the cap. That is the signal for a
+ * *named* re-derivation of the envelope itself (its cloud factor, or the cap), and this
+ * row exists so the signal cannot be missed. This is wall clock only — every assertion in
+ * the spec is untouched.
  */
 export function refusalRouteEnvelopeMs(par: number): number {
   /** Least-squares slope of the five local rows against par. */
@@ -714,7 +1013,11 @@ export function refusalRouteEnvelopeMs(par: number): number {
   const CAP_MS = 240_000;
 
   const cloudUpperS =
-    CLOUD_FACTOR * (LOCAL_S_PER_PAR * par + LOCAL_INTERCEPT_S + LOCAL_WORST_RESIDUAL_S);
+    CLOUD_FACTOR *
+    (LOCAL_S_PER_PAR * par + LOCAL_INTERCEPT_S + LOCAL_WORST_RESIDUAL_S);
 
-  return Math.min(CAP_MS, Math.max(FLOOR_MS, Math.ceil(SAFETY * cloudUpperS) * 1000));
+  return Math.min(
+    CAP_MS,
+    Math.max(FLOOR_MS, Math.ceil(SAFETY * cloudUpperS) * 1000),
+  );
 }

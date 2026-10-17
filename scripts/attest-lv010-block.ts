@@ -61,6 +61,7 @@ import { analyse, explore } from "@/core/solver/bfs";
 import { analyseDifficulty } from "@/core/solver/difficulty";
 import type { PolicyViolationCode } from "@/core/solver/policy";
 import {
+  ACT_II_B1_IDS,
   BLOCK_L1619_B_BAND,
   BLOCK_L1619_CUT_FLOOR,
   BLOCK_L1619_IDS,
@@ -265,7 +266,10 @@ console.log("");
 // 2. the law's basis, re-derived from the live L1–L15 files
 // ─────────────────────────────────────────────────────────────────────────────
 
-const basis = shipped().filter((s) => !BLOCK_L1619_IDS.includes(s.id));
+const basis = shipped().filter(
+  (s) =>
+    !BLOCK_L1619_IDS.includes(s.id) && !ACT_II_B1_IDS.includes(s.id),
+);
 const basisMetrics = basis.map((s) => ({
   id: s.id,
   diff: analyseDifficulty(s.level, explore(s.level)),
@@ -300,9 +304,10 @@ check(
     `[${BLOCK_L1619_B_BAND[0].toFixed(4)}, ${BLOCK_L1619_B_BAND[1].toFixed(4)}]`,
 );
 check(
-  "the registered set is the 15-level basis + the 5 rungs",
-  shipped().length === 20 && basis.length === 15,
-  `root ${String(shipped().length)} files = ${String(basis.length)} basis + ${String(BLOCK_L1619_IDS.length)} rungs`,
+  "the registered set is the 15-level basis + the 5 rungs (+ R-004a's registered Act II batch)",
+  shipped().length === 25 && basis.length === 15,
+  `root ${String(shipped().length)} files = ${String(basis.length)} basis + ${String(BLOCK_L1619_IDS.length)} rungs + ` +
+    `${String(ACT_II_B1_IDS.length)} Act II batch-1 rungs (R-004a; excluded from this block's basis so the cut stays L1–L15)`,
 );
 console.log("");
 
