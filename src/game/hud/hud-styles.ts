@@ -36,6 +36,26 @@
  * collapse under `prefers-reduced-motion` is a **data flip** (R-M4), not a branch: the
  * press scale and the panel offset are variables, and the panel's alpha fade is the
  * one beat MV-4 keeps.
+ *
+ * ─── §5.5 the post-win star field (GAME-004) ─────────────────────────────────
+ * One added grid row inside `.ps-dialog`, between the body and the actions. The whole
+ * field is **program-drawn geometry**: a 5-point `clip-path` polygon computed from the
+ * two declared radii ({@link STAR_CLIP_PATH}), never a raster (REFUSED by the ASSET
+ * GATE) and never a text glyph (`★` / `☆` — a glyph is not a figure: it has no declared
+ * 2 px wall, no ink contract and no token colour, the prototype ships no webfont, and it
+ * would enter the accessibility tree as a font-dependent character name where §5.5
+ * declares the accessible name exactly). The colours are the **shipped tokens** read
+ * through `--ps-*` like every other surface (§5.4 / R-C11): `obj.goal` for both star
+ * states, `ground.plate` for the knock-out, `text.secondary` for the empty dot — **no
+ * new colour token exists for this field**.
+ *
+ * Its one added motion is the stars' fill-in, and it is a **child of B13's card**: the
+ * keyframes run from the node's own render, which is the overlay's unhide instant
+ * (`flipTimings.total`), so no beat ID, no tween instance and no input gate is added.
+ * The reduced form is the data flip of `--ps-star-scale-from` → 1 (see the media query
+ * note at the bottom of this file) — the field is deliberately **not** in the
+ * `animation: none` list, because a media-query kill would be a second code path where
+ * §5.5 SF-7 declares one variable.
  */
 
 /** `<style>` element id — the injection is idempotent (never two copies). */
@@ -44,6 +64,48 @@ export const HUD_STYLE_ID = "ps-hud-styles";
 /** The §5.3 font stack: system fonts only, **no webfont** in the prototype. */
 export const FONT_STACK =
   'system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif';
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * §5.5 — the star field's geometry (GAME-004), computed from the declared numbers.
+ *
+ * The polygon is **computed, not typed**: R = {@link STAR_OUTER_RATIO} of the box and
+ * r = {@link STAR_INNER_RATIO} × R, centre-pivoted, no rotation — so a box-size change
+ * or a ratio ruling moves the figure and nothing else. Emitted in **percentages**, which
+ * is what makes the same string valid in CSS at any box size, and rounded to 3 decimals
+ * (sub-pixel at every shipped pitch — the box is 20 CSS px).
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** §5.5 SF-2: the star box, in CSS px — 3 slots + 2 × `--ps-gap` ⇒ the 76 px row. */
+export const STAR_BOX_PX = 20;
+/** §5.5 SF-1: outer circumradius as a fraction of the box (`R = 50 %`). */
+export const STAR_OUTER_RATIO = 0.5;
+/** §5.5 SF-1: inner radius as a fraction of the outer (`r = 0.382 R`, the ★ proportion). */
+export const STAR_INNER_RATIO = 0.382;
+/** §5.5 SF-3: the hollow form's knock-out scale — R − 0.8R = **2 px** of wall (§3.1a). */
+export const STAR_KNOCKOUT_SCALE = 0.8;
+/** §5.5 SF-3: the `empty` slot's dot diameter, `0.25 ×` the box. */
+export const STAR_DOT_PX = 5;
+
+/** 5 outer points, 5 inner, 36° apart, first point straight up (`-90°`). */
+export const STAR_POINTS = 10;
+
+/** One `x% y%` pair, centre-relative and rounded so the CSS string stays readable. */
+function starPoint(box: number, index: number): string {
+  const centre = box / 2;
+  const outer = box * STAR_OUTER_RATIO;
+  const radius = index % 2 === 0 ? outer : outer * STAR_INNER_RATIO;
+  const angle = ((-90 + index * (360 / STAR_POINTS)) * Math.PI) / 180;
+  const x = ((centre + radius * Math.cos(angle)) / box) * 100;
+  const y = ((centre + radius * Math.sin(angle)) / box) * 100;
+  const pct = (value: number): string => `${String(Number(value.toFixed(3)))}%`;
+  return `${pct(x)} ${pct(y)}`;
+}
+
+/** §5.5 SF-1 — the filled star's silhouette, as the `clip-path` both states share. */
+export const STAR_CLIP_PATH = `polygon(${Array.from(
+  { length: STAR_POINTS },
+  (_, index) => starPoint(STAR_BOX_PX, index),
+).join(", ")})`;
 
 /**
  * The stylesheet. Values that belong to the spec's numbers (bar heights, target
@@ -222,6 +284,84 @@ export const HUD_CSS = `
 
 .ps-dialog-title { margin: 0; font-size: 28px; font-weight: 700; }
 .ps-dialog-body { margin: 0; font-size: 15px; color: var(--ps-text-secondary); font-variant-numeric: tabular-nums; }
+
+/* §5.5 — the post-win star field. ONE added grid row between the body and the
+   actions, so its vertical rhythm is the panel's own --ps-gap and there is no new
+   padding / gap / offset / z-index constant anywhere here. Three slots, ALWAYS (a
+   rating-dependent width would reflow the card under B13's offset entrance): 3 × 20 px
+   + 2 × --ps-gap = the 76 px row, centred by the panel's own justify-items.
+
+   The ground is the panel's own ground.plate (--ps-ground-plate) — never
+   ground.cellAlt (A-2's lesson: the panel is not a checker cell).
+
+   The field is aria-hidden (set in hud.ts): it carries no text and no name, and the
+   rating is announced by the panel's existing live-region line. There is **no idle
+   motion** on any slot in any state (§5.5 SF-8): the only keyframe below is the one-shot
+   fill-in, and it is both-filled so a settled panel is a constant. */
+.ps-stars {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-gap);
+  height: ${STAR_BOX_PX}px;
+}
+
+.ps-star { position: relative; width: ${STAR_BOX_PX}px; height: ${STAR_BOX_PX}px; flex: 0 0 auto; }
+
+/* Filled star (earned) and hollow star (held) share the ONE silhouette: the hollow
+   form is the same figure knocked out — never a stroke outline (SF-1/SF-3). Both are
+   obj.goal (--ps-goal): there is no second colour and the colour step is not a
+   declared channel (§5.5's measured 1.530:1 / 1.295:1 is below R-E2's criterion). */
+.ps-star[data-state="earned"]::before,
+.ps-star[data-state="held"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ps-goal);
+  clip-path: ${STAR_CLIP_PATH};
+  /* R = 50 % of the box, r = 0.382 R — computed in hud-styles.ts, never typed here. */
+}
+
+/* The knock-out, in the field's own ground: the door-medallion device (§3.1b), which
+   reads as a 2 px wall and yields the analytic 36.0 % ink share / 2.78:1 fill ratio. */
+.ps-star[data-state="held"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ps-ground-plate);
+  clip-path: ${STAR_CLIP_PATH};
+  transform: scale(${STAR_KNOCKOUT_SCALE});
+}
+
+/* Nobody has it: a filled disc of text.secondary, 5 px Ø = 0.25 × the box. */
+.ps-star[data-state="empty"]::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: ${STAR_DOT_PX}px;
+  height: ${STAR_DOT_PX}px;
+  margin: ${String(-STAR_DOT_PX / 2)}px 0 0 ${String(-STAR_DOT_PX / 2)}px;
+  border-radius: 50%;
+  background: var(--ps-text-secondary);
+}
+
+/* §5.5 SF-6 / §6.6 B13 — the field's ONE added motion, on the earned marks only ("scale
+   0.86 → 1.00, fill-only"): ≤ 120 ms, delay 0 — no colour flash, no rotation, no overshoot
+   and **no per-star stagger** (§5.5: three staggered beats in a 160 ms window is chatter).
+   It rides B13 because it is a child of the same card, so it starts on the unhide frame
+   and settles by ≈ 340 ms inside the 380–400 ms flourish.
+
+   There is **no opacity channel**: under reduced motion the star's only appearance
+   channel must be the panel's own kept alpha fade (SF-7), which the data flip
+   (--ps-star-scale-from = 1) leaves as a constant-value animation — no pop, no branch,
+   and no second code path in the media query at the bottom of this file. */
+@keyframes ps-star-in {
+  from { transform: scale(var(--ps-star-scale-from)); }
+  to { transform: scale(1); }
+}
+
+.ps-star[data-state="earned"] { animation: ps-star-in var(--ps-star-ms) ease-out both; }
+
 .ps-dialog-actions { display: flex; flex-wrap: wrap; gap: var(--ps-control-gap); justify-content: center; }
 
 /* R-P3 — dev-only placeholder honesty label. Lives inside a bar, never over the board. */
@@ -248,9 +388,11 @@ export const HUD_CSS = `
 }
 
 /* §6.4 — reduced motion: the token swap stays, the transition goes. B12's press
-   scale and B13's panel offset die as *data* (--ps-press-scale / --ps-panel-offset
-   are set to 1 / 0px by hud.ts); the panel's own alpha fade is kept (MV-4), so
-   .ps-dialog is deliberately NOT in the animation: none list below. */
+   scale, B13's panel offset and the §5.5 star fill-in's pop all die as *data*
+   (--ps-press-scale / --ps-panel-offset / --ps-star-scale-from are set to 1 / 0px / 1
+   by hud.ts); the panel's own alpha fade is kept (MV-4), so .ps-dialog — and the star
+   field with it — is deliberately NOT in the animation: none list below: killing the
+   keyframes here would be a second code path where SF-7 declares one variable. */
 @media (prefers-reduced-motion: reduce) {
   .ps-shell, .ps-bar, .ps-play, .ps-chip, .ps-btn, .ps-dialog {
     transition: none;

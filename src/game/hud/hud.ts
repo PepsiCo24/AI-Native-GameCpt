@@ -2,8 +2,9 @@
  * HUD — the DOM half of `docs/ui-ux.md` §7 (V0.5).
  *
  * Owns: level label, move counter, phase chip, Undo / Restart, the win dialog,
- * the R-T5 swipe hint, the R-P3 dev placeholder labels, the §7.4 `aria-live`
- * region. Owns **no** board state and **no** colour of its own.
+ * the §5.5 post-win star field, the R-T5 swipe hint, the R-P3 dev placeholder
+ * labels, the §7.4 `aria-live` region. Owns **no** board state and **no** colour
+ * of its own.
  *
  * Three contracts bind this file:
  *
@@ -37,6 +38,8 @@ import type { AppIntents } from "@/game/systems/app-intents";
 import type { GameSession } from "@/game/systems/session";
 import { unresolvedSlots } from "@/game/theme/assets";
 import type { PlaceholderSlot } from "@/game/theme/assets";
+import type { StarCount } from "@/game/systems/stars";
+import { recordWinStars, STAR_SLOTS } from "@/game/systems/stars";
 import { cssVars, flipTimings, HUD_FLAGS, LAYOUT, theme } from "@/game/theme/tokens";
 
 /** R-P3's badge copy — one string, so the label cannot drift from its spec line. */
@@ -61,6 +64,29 @@ const PRESS_SCALE = 0.97;
 const PANEL_MS = 160;
 /** B13 — the fixed entrance offset; 0 under reduced motion leaves the alpha fade. */
 const PANEL_OFFSET_PX = 8;
+/** §5.5 SF-6 — the star fill-in's window: ≤ 120 ms, delay 0 (the entrance's instant). */
+const STAR_FILL_MS = 120;
+/** §5.5 SF-6/SF-7 — the fill-in's pop, `0.86 → 1.00`; under reduced motion it is **1**. */
+const STAR_SCALE_FROM = 0.86;
+
+/**
+ * §5.5 SF-3 — one mark per slot, as one pure position rule.
+ *
+ * `earned` = this run earned it · `held` = the stored best holds it, this run did not ·
+ * `empty` = nobody has it. Because the field renders from the **post-write** best
+ * (`max(previous, this run)`), `held` can only ever mean "this run's shortfall against
+ * the record" — a new best, a first clear and a corrupt/absent store all draw zero
+ * hollow marks, so the field can never claim a record the storage does not hold.
+ */
+export function starStateAt(
+  position: number,
+  run: StarCount,
+  best: StarCount,
+): "earned" | "held" | "empty" {
+  if (position <= run) return "earned";
+  if (position <= best) return "held";
+  return "empty";
+}
 
 /** The three actions the DOM can dispatch, plus two flow queries. */
 export interface HudHooks extends AppIntents {
@@ -134,6 +160,9 @@ export class Hud {
   private readonly overlay: HTMLDivElement;
   private readonly dialogTitle: HTMLHeadingElement;
   private readonly dialogBody: HTMLParagraphElement;
+  /** §5.5 — the star field: one node, three fixed slots, `aria-hidden`. */
+  private readonly starRow: HTMLDivElement;
+  private readonly starSlots: readonly HTMLSpanElement[];
   private readonly dialogActions: HTMLDivElement;
   private readonly nextButton: HTMLButtonElement;
   private readonly replayButton: HTMLButtonElement;
@@ -215,13 +244,23 @@ export class Hud {
     this.dialogTitle = el("h2", "ps-dialog-title");
     this.dialogTitle.id = "ps-dialog-title";
     this.dialogBody = el("p", "ps-dialog-body");
+    // §5.5 — ONE added grid row between the body and the actions. Program-drawn
+    // geometry only (no raster, no text glyph — SF-1), three slots always (SF-2), and
+    // `aria-hidden`: the panel's live-region line is the announced channel (SF-5), so a
+    // second announcement is never made for the same fact.
+    this.starRow = el("div", "ps-stars");
+    this.starRow.setAttribute("aria-hidden", "true");
+    this.starSlots = Array.from({ length: STAR_SLOTS }, () => el("span", "ps-star"));
+    this.starRow.append(...this.starSlots);
     this.nextButton = button("ps-btn ps-btn-primary", "Next");
     this.nextButton.addEventListener("click", () => this.hooks.next());
     this.replayButton = button("ps-btn ps-btn-ghost", "Replay");
     this.replayButton.addEventListener("click", () => this.hooks.restart());
     this.dialogActions = el("div", "ps-dialog-actions");
     this.dialogActions.append(this.nextButton, this.replayButton);
-    dialog.append(this.dialogTitle, this.dialogBody, this.dialogActions);
+    // One implementation for both panel instances (§5.5: the per-level dialog and the
+    // prototype-end panel are the same dialog with one copy difference).
+    dialog.append(this.dialogTitle, this.dialogBody, this.starRow, this.dialogActions);
     this.overlay.append(dialog);
 
     this.shell.append(topBar);
@@ -301,6 +340,13 @@ export class Hud {
       "--ps-panel-offset",
       reducedMotion ? "0px" : `${String(PANEL_OFFSET_PX)}px`,
     );
+    // §5.5 SF-7 — the star fill-in is a **data flip**, not a branch: the keyframes keep
+    // running and read `scale(1)` from start to end, so the only appearance channel left
+    // is the panel's own kept alpha fade. Legibility is identical with motion removed.
+    this.shell.style.setProperty(
+      "--ps-star-scale-from",
+      reducedMotion ? "1" : String(STAR_SCALE_FROM),
+    );
   }
 
   destroy(): void {
@@ -328,6 +374,8 @@ export class Hud {
     style.setProperty("--ps-press-in-ms", `${String(PRESS_IN_MS)}ms`);
     style.setProperty("--ps-press-out-ms", `${String(PRESS_OUT_MS)}ms`);
     style.setProperty("--ps-panel-ms", `${String(PANEL_MS)}ms`);
+    // §5.5 SF-6 — the fill-in's window, as data (the reduced form is the scale flip).
+    style.setProperty("--ps-star-ms", `${String(STAR_FILL_MS)}ms`);
   }
 
   /** One attribute + the token map: the whole §5.4 flip on the DOM side. */
@@ -414,6 +462,14 @@ export class Hud {
     const hasNext = this.hooks.hasNextLevel();
     const moves = movesLabelOf(moveCount, level.par);
 
+    // §5.5 SF-5 — the field renders from the **post-write** stored best, and this call
+    // is the write. It is the only write site in the repository, and it sits in the
+    // win-only path (`levelWon` → this method), so Undo, Restart and level entry cannot
+    // touch the key family: those paths call `hideDialog`, which stores nothing. The
+    // monotone rule itself lives with the data (`systems/stars.ts`).
+    const stars = recordWinStars(level.id, moveCount, level.par);
+    this.renderStars(stars.run, stars.best);
+
     // End of the playable slice reuses the same dialog with different copy — §0.5
     // forbids adding a screen, and §1's inventory is 1 screen + 1 dialog. The
     // ladder range is read from the registry's own list, so the panel cannot claim
@@ -427,9 +483,26 @@ export class Hud {
     this.nextButton.hidden = !hasNext;
 
     this.overlay.hidden = false;
-    this.live.textContent = `${title}. ${body}`;
+    // §5.5 SF-5 a11y parity without a second announcement: the field is `aria-hidden`,
+    // and the panel's existing live line is **extended, not replaced** — `, best {B} of
+    // 3` only when the record is ahead of this run, so the worse-run case is announced
+    // too and the visual best is never silent for an AT player.
+    this.live.textContent =
+      `${title}. ${body}. stars ${String(stars.run)} of 3` +
+      (stars.best > stars.run ? `, best ${String(stars.best)} of 3` : "");
     // Focus the primary control: keyboard players must not have to hunt for it.
     (hasNext ? this.nextButton : this.replayButton).focus();
+  }
+
+  /**
+   * §5.5 SF-3 — paint the three states, one mark per slot, **before** the overlay
+   * unhides (the fill-in starts on that frame, so a stale state would be a visible
+   * contradiction for one beat).
+   */
+  private renderStars(run: StarCount, best: StarCount): void {
+    this.starSlots.forEach((slot, index) => {
+      slot.dataset["state"] = starStateAt(index + 1, run, best);
+    });
   }
 
   private hideDialog(): void {
