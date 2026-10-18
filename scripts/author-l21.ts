@@ -168,8 +168,10 @@
  *    (7 × 6, `--cx=2`, `--pocketsize=4`, `--qmax=4`, the shape filters above); nothing
  *    outside it is claimed, in either direction, and a re-run with a wider axis would
  *    have to print its own counters. The band is a **filter, not a truncation**: every
- *    judged tuple is accounted for (the par census prints the out-of-band members too,
- *    e.g. the 1178 `par-out-of-band` refusals).
+ *    judged tuple is accounted for, and the accounting is what says so —
+ *    `accepts + par-out-of-band + unsolvable + g5-identity-broken = judged` closes exactly
+ *    (F-L36-2 item 3), while the par histogram is an **out-of-band** view only, printed
+ *    beside the in-band readings rather than instead of them.
  *
  * ── LV-015 · THE 4-POCKET SUB-LATTICE (`--pockets=4`, Act II batch 3 = L31–L35) ──
  *
@@ -1904,7 +1906,7 @@ function stageLattice(cut: { floor: number; actI: number; l15Par: number }, only
   console.log("rejection histogram:");
   for (const [k, v] of [...histogram.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${k}: ${String(v)}`);
   console.log(
-    `par census over every judged candidate: ` +
+    `par census over the OUT-OF-BAND judged candidate(s) (the histogram counts only the members the par band refused; in-band members are enumerated by "accepts by par" and by the in-band refusal list — F-L36-2): ` +
       `${[...parHist.entries()].sort((a, b) => a[0] - b[0]).map(([k, v]) => `${String(k)}:${String(v)}`).join(" ")}`,
   );
   console.log("accepts by par:");
@@ -1948,9 +1950,11 @@ function stageLattice(cut: { floor: number; actI: number; l15Par: number }, only
  *
  * - the **accept count is a floor** (`--paircap` / `--budget` truncate the enumeration;
  *   both counters are printed), and the refusal census is complete *within the prefix*;
- * - the **par census over every judged tuple** (not only the in-band ones) — a 4-press
- *   chain in a 7 × 6 frame is longer than a 3-press one, so "the class sits above the
- *   band" is a real possible outcome and the histogram is how it is read;
+ * - the **par histogram over the OUT-OF-BAND judged tuple(s)** — a 4-press chain in a
+ *   7 × 6 frame is longer than a 3-press one, so "the class sits above the band" is a
+ *   real possible outcome and this histogram is how it is read; the **in-band** members
+ *   are read from *"accepts by par"* and the in-band refusal list (F-L36-2 — the
+ *   histogram counts only what the par band refused, and its label now says so);
  * - the shape-filter counters of the header's published restrictions, including the
  *   `R3`-adjacent-to-`R2` counter that the seal law forces to 0.
  */
@@ -2250,7 +2254,7 @@ function stageLattice3(cut: { floor: number; actI: number; l15Par: number }, onl
   console.log("rejection histogram:");
   for (const [k, v] of [...histogram.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${k}: ${String(v)}`);
   console.log(
-    `par census over every judged candidate (in band and out): ` +
+    `par census over the OUT-OF-BAND judged candidate(s) (the histogram counts only the members the par band refused; in-band members are enumerated by "accepts by par" and by the in-band refusal list — F-L36-2): ` +
       `${[...parHist.entries()].sort((a, b) => a[0] - b[0]).map(([k, v]) => `${String(k)}:${String(v)}`).join(" ")}`,
   );
   console.log("accepts by par:");
@@ -2296,9 +2300,9 @@ function stageLattice3(cut: { floor: number; actI: number; l15Par: number }, onl
  *
  * - the **accept count is a floor** if `--paircap` / `--budget` truncate (both counters are
  *   printed), and the refusal census is complete *within the prefix*;
- * - the **par census over every judged tuple**, in band and out — the band is a filter, not
- *   a truncation, and this run exists to measure whether `par 24` (§7.8 item 3) is
- *   reachable in this family;
+ * - the **par histogram over the OUT-OF-BAND judged tuple(s)**, printed beside the in-band
+ *   readings rather than instead of them — the band is a filter, not a truncation, and this
+ *   run exists to measure whether `par 24` (§7.8 item 3) is reachable in this family;
  * - the **shape-filter counters** of the published restrictions: no `R3` tile adjacent to an
  *   `R2` tile (batch 2's filter #1, 0 by the seal law) and no `R4` tile adjacent to an `R2`
  *   or `R3` tile (filter #2, the same argument one level down: every neighbour of a sealed
@@ -2635,7 +2639,7 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
   console.log("rejection histogram:");
   for (const [k, v] of [...histogram.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${k}: ${String(v)}`);
   console.log(
-    `par census over every judged candidate (in band and out): ` +
+    `par census over the OUT-OF-BAND judged candidate(s) (the histogram counts only the members the par band refused; in-band members are enumerated by "accepts by par" and by the in-band refusal list — F-L36-2): ` +
       `${[...parHist.entries()].sort((a, b) => a[0] - b[0]).map(([k, v]) => `${String(k)}:${String(v)}`).join(" ")}`,
   );
   console.log("accepts by par:");
