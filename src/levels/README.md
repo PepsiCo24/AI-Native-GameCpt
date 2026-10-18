@@ -879,6 +879,130 @@ derived Δ and the verbatim label anchors · the §7.9 headroom arithmetic) and,
 `LADDER RESULT` line quoted here is that instrument's own stdout rather than a quote copied into
 this file. Transcript: `scripts/attest-r005a-reg35.transcript.md` (exit 0, `RESULT: REGISTERED-MATCH`).
 
+### 2h. L36–L40 — Act II batch 4 (the act's **closing** batch), **REGISTERED** (R-006a)
+
+The five rungs LV-017 authored and proved (`docs/level-design.md` §7.4 stage G, on the batch-4 rule
+published in that ticket's step 0) were moved from the shelf to the dataset root by the same
+register-verbatim precedent as every registration before it: `git mv`, **no content edit during the
+move**, blob identity proven *and* the file `sha256` re-measured, and the root re-measured **before**
+any law edit, so once again the law was fitted to the boards and never the reverse.
+
+| | |
+|---|---|
+| files | `l036.json` … `l040.json` (were `candidates/l036.json` …; `git mv`, rename 100 %, 5 files / 0 insertions / 0 deletions) |
+| byte identity | root blob == `e30bbaccf:src/levels/candidates` blob **5/5**: `adff8c1e…` · `c0eb8660…` · `76dcc3e0…` · `241d669d…` · `e6f7359d…` — and the file `sha256` was **the same bytes before and after the move** (`5b23e8ee…` · `cd4c8edb…` · `a65ab804…` · `e5f9e8be…` · `701e46ee…`). The shelf `src/levels/candidates/` now holds **no level file at all** |
+| device | **batch 3's device class, unchanged** — the 4-pocket / 5-door / **forced 5-press** chain (`p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4 < p4 < d5`), one portal pair whose far end is a walk-sealed landing. What changes is the **frame**: this batch reads §7.4's **second, unused** frame `7 × 7` at `CX = 1` (batch 3 read `7 × 6`), and the portal pair here is `(0,1) ↔ (4,0)` at phase A. §6 does not fire: `ΔM = 0` — no mechanic is introduced |
+| skeleton | batch 3's skeleton, carried onto the taller frame: the `x = 1` alternating wall column (A `(1,0)`, `(1,2)`, `(1,4)`, `(1,6)` / B `(1,1)`, `(1,3)`, `(1,5)`) with five doors and five switches |
+| measured (ROOT bytes) | **par 18 / 20 / 22 / 24 / 24** — solver-stamped, `parMatch` 5/5 · `D_exec` **22.301282 / 24.252174 / 26.200000 / 28.185897 / 28.455319** · `B` **1.4338 / 1.4174 / 1.4000 / 1.3953 / 1.4851** (in band 5/5) · `T ≡ R ≡ 0` ×5 · `M` 4 ×5 · coverage **49/49 ×5** · `dualPhaseTiles` **7 ×5** · `refusedBeforeEnteredTiles` **25 / 25 / 25 / 25 / 24** · every `par` route press-then-cross (**36/36 · 72/72 · 48/48 · 162/162 · 30/30**) · all-OFF **UNSATISFIABLE ×5** (`11/936 · 11/920 · 11/920 · 11/936 · 11/940` reachable states keep every switch OFF, and no goal state among them) |
+| the cut | still **frozen L1–L15 at `14.969697`**, now measured on **40** files with basis ids `[1 … 15]` — the L16–L20 block *and* all four Act II batches are excluded from their own filter |
+
+**The registered ladder row set** (`ACT_II_B4_LADDER`, re-measured from the **root** bytes — the
+table is the human mirror of that stdout):
+
+| rung | `par` | `D_exec` | `B` | `Δpar` (step) | `ΔD_exec` (step) | note |
+|---|---|---|---|---|---|---|
+| L36 `l036.json` | 18 | 22.301282 | 1.4338 | — (batch open) | — | the **labelled seam** — `−6.038144` below L35 (§7.3.1 instance 4) |
+| L37 `l037.json` | 20 | 24.252174 | 1.4174 | +2 | +1.950892 | |
+| L38 `l038.json` | 22 | 26.200000 | 1.4000 | +2 | +1.947826 | |
+| L39 `l039.json` | 24 | 28.185897 | 1.3953 | +2 | +1.985897 | the batch's widest route set (162 shortest routes) |
+| L40 `l040.json` | 24 | 28.455319 | 1.4851 | +0 | +0.269422 | the **act's registered tail** — the within-par **maximum**, so §7.3.2's peak rides as late as the family permits |
+
+`ΔD_exec` is **strictly positive on 4/4** adjacent steps and every registered step keeps `D_exec`
+inside the act band; `Δpar ≥ 2` holds on only **3 of 4** — both columns are printed by the instrument
+on the same run, so the pleasant column cannot be quoted without the honest one. The fourth step is
+`24 → 24`, which P2's window cannot cover once a five-member ladder is derived off a band that
+supports four pars: the ladder is **derived, not re-picked to look smooth**, and the same instrument
+prints it that way.
+
+**Nothing was re-stamped, and the growth is the only thing that moved.** `concat`ing batch 4 onto
+the act widens `ACT_II_REGISTERED_IDS` to `[21 … 40]`; R-005a's basis survives as its own constant
+(`ACT_II_R005A_ERA_IDS`, ids 21–35), because a clause that *records what a registration did* must
+not follow the dataset while a clause that *states a property of the act* must. Measured on the
+landed bytes: of the 482 shipped lines that are the documented-lesson table plus every R-004a /
+R-005a constant declaration plus every registered ladder row 21–35, this registration touches
+**zero**.
+
+| constant | value | meaning |
+|---|---|---|
+| `ACT_II_PRE_R006A_REGISTERED_TAIL_LEVEL_ID` / `_EXEC` | 35 / 28.339426 | the registered tail **as it stood** before this ticket — **alias-typed** to R-005a's constants, so the standard cannot drift from the tail the previous registration left |
+| `ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID` / `_EXEC` | 40 / 28.455319 | the registered tail **after** this ticket — re-derived as the maximum over the whole registered act (`ACT_II_REGISTERED_IDS`, 21–40) |
+| `ACT_II_R006A_TAIL_ADVANTAGE` | 0.115893 | the measured rise between them |
+| `ACT_II_R006A_REGISTERED_PEAK_ADVANTAGE_VS_ACT_I` | 3.725907 | §7.3's across-act clause, read over the **whole** registered act (28.455319 − 24.729412); batch 1's own identity (2.875239) stays in clause 2 and R-005a's act-level record (3.610014) stays pinned in clause 14 |
+| `ACT_II_R006A_TAIL_HEADROOM_TO_EXEC_CEILING` | 0.607181 | `29.0625 − 28.455319`, derived-exact (§7.9); the printed operand `29.06` would give `0.604681`, which is why the rounding is retired |
+
+**The act's maximum moved at the last rung, and the clause that says so is a *reading*.** R-005a
+discharged §7.3.2's act-close obligation at L35, so this registration owes **no** peak and re-runs no
+obligation — a refusal branch invented now would be a gate built to be passed. The registerable fact
+is that the act's registered maximum is now **L40 / 28.455319**: `+0.115893` over the R-005a tail it
+supersedes, `+3.725907` over Act I's registered peak, `+0.850668` over the registered batch-1 peak,
+with **0.607181** of derived-exact headroom to `ACT_II_EXEC_BAND[1] = 29.0625`. Note that L39
+(`28.185897`) sits **below** the R-005a tail by `−0.153529`: the maximum did not move at the batch's
+opening or its interior rungs, it moved at its **closing** rung, which is the within-par maximum of
+its par. §7.3.1's **fourth** instance is that seam, registered verbatim with its provenance — the
+label was published in rule commit `b9dac54` **before** the census (`da0e3ac`) and before the bytes,
+which is the only thing that makes a relief registrable at all.
+
+**Sixteen clauses, split by owner, partition asserted.** R-004a's six are unchanged
+(`ACT_TAIL_R004A_CLAUSE_IDS`); R-005a's five are unchanged in *value and verdict*
+(`ACT_TAIL_R005A_CLAUSE_IDS`, now reading the frozen era basis); R-006a adds five
+(`ACT_TAIL_R006A_CLAUSE_IDS`: `act-tail-r006a-registered-rows`, `-tail-pin`, `-pre-standard`,
+`-exec-headroom`, `-seam-reliefs`). A coverage reading asserts the three lists **partition** the
+reported set — measured **6 + 5 + 5 = 16 = the report, 0 unclaimed** — so a seventeenth clause added
+later has to be given a home rather than silently left without a control. Exactly **one** shipped
+clause's pin expression moved (R-004a's live across-act clause, `act-tail-peak-advantage`), for the
+reason R-005a had already moved it once: a clause about the act's maximum that kept reading the
+previous registration's tail would publish a **stale act maximum**, which is the failure it exists
+to catch. No shipped clause's *value* moved and no R-004a / R-005a constant was re-typed.
+
+**The seam clause's tight margins are printed, not smoothed.** The derived `ΔD_exec` of instance 4
+differs from the published `−6.038144` by `4.6381e-7`, and the L35 end by `4.1253e-7`, against
+`LAW_PRECISION = 5e-7`. Both are inside it and both are determined by bytes frozen at a `sha256` the
+sidecar re-verifies, so the pass is a measurement rather than a coin flip — the same class as R-005a's
+shipped instance 3, whose L31 end sat at 0.67 of the tolerance. The reading prints both numbers on
+every run.
+
+**Six per-member gates, reused not re-derived.** These five rungs are judged by the same `act2-*`
+family R-004a opened (`act2-registered-rung`, `act2-exec-band`, `act2-b-band`, `act2-exec-identity`,
+`act2-coverage`, `act2-act-peak`, plus the unchanged
+`shortest-solution-presses-switch-and-crosses-door`) — the act's device and gate set did not change,
+so no new code was invented, and the registered set reports **0** act2 violations.
+
+**Named gate-family gap (measured, booked, not papered over — and now with a second, harder reason).**
+`auditLevel` dispatches a rung's per-member gate family from its **documented lesson row**. These five
+rungs now have their rows (`l036`–`l040`, `switchRequired: "required"` measured on the all-OFF world,
+`obligation: null`), but they carry **no registered per-rung gate family**, for the same structural
+reason batches 2–3 do not: `act2Batch1Gates` keys its rung on `ACT_II_B1_IDS` and reads
+`ACT_II_B1_LADDER`, so a dispatched value would either mis-key these boards (batch 1's ladder ends at
+par 23 while `l036` is par 18 — a FAIL on registered bytes) or graft an Act II rung onto another
+block's law. A **second, measurable** blocker exists beyond the missing reader: the QA-owned pin
+`tests/solver/l16-l20-candidates.test.ts:285` asserts that the **last shipped row's** obligation is
+`null`, so writing `act-2-batch-4` onto L40 would redden a green test rather than reveal a fault. The
+honest value until the family-keyed dispatch exists is therefore `null` **with the gap named in the
+rows themselves**; the remedy (a `LADDER`-keyed reader behind the `act-2-batch-4` obligation, plus
+QA's one-control-per-code table and the re-pin) stays booked, and this registration does not fabricate
+an obligation to make a gate look discharged.
+
+**Two instrument findings stand beside the accepts, as LV-017 published them before their fixes.**
+F-L36-1 (the generator's cut floor had been raised by the registered Act II rungs, so a `par ≥ 24`
+ladder was silently reachable — fixed to read the frozen L1–L15 basis, with the divergence printed on
+every run) and F-L36-2 (a census line claimed coverage it did not measure — label repaired with the
+blast radius re-measured rather than asserted). Both are recorded in `docs/ai-native-pipeline.md`
+§8.24 and in `scripts/author-l36-l40.transcript.md` / `scripts/prove-candidate-l3640.transcript.md`;
+neither was smoothed, and the bytes they describe are the bytes registered here.
+
+**What R-006a did *not* do.** It re-stamped **no** earlier row (the fifteen L21–L35 rows and every
+R-004a / R-005a clause survive byte-identical and are re-measured as such), it did **not** graft any
+Act II id onto `BLOCK_L1619_IDS` (still `[16 … 20]`, `block-l1619-tail-ceiling` still judges **L20 at
+par 20 / `D_exec` 24.729412`**), it did **not** widen the cut, and it did **not** touch `tests/**`
+(`EXPECTED_LEVEL_COUNT` and every count-derived pin still read 35 and are RED until QA re-books them —
+R-006c) or the registry (R-006b).
+
+**Re-verification, on demand, without trusting this file.** `npx tsx scripts/validate-levels.ts`
+(40/40, 0 errors) and `npx tsx scripts/solve-levels.ts --audit src/levels` (40/40 PASS, `par`
+verified 40/40) re-derive the measured rows; the act-scale clauses are re-derived by
+`measureActScaleReading` / `actScaleTailGuards` on any set of levels, and this registration's
+attest instrument is named in §6.
+
 ## 3. The parity structure, and why M0-only content is a *static* maze
 
 Both facts used above are short proofs, not opinions.
