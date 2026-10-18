@@ -442,6 +442,74 @@
  *          --accepts=<c's dump>
  * ```
  *
+ * ── AMENDMENT — FINDING F-L36-1, published BEFORE the fix byte and before any board byte ──
+ *
+ * The commands above were run, and their readings **contradict the rule published above them**:
+ * batch 4's census returned accepts at **`par 24` only** (STEP 1b `185` accepts of `8000` judged;
+ * STEP 2 `234` of `20000`), i.e. the derived P2-exact ladder `[16, 18, 20, 22, 24]` is reported
+ * with **four empty pools** and rule 3 pads it to `[24, 24, 24, 24, 24]` — while rule 9 (written
+ * before the run) *predicts* that `L36` sits **below** `28.339426` and that §7.8 item 5 therefore
+ * fires. A rule that predicts a low opening rung and a census that can only produce the ceiling
+ * cannot both be describing the same instrument. It is the **instrument** that is wrong, and the
+ * fault is named here rather than absorbed into the batch.
+ *
+ * 1. **What is wrong.** `measureCut()` (this file) excludes `BLOCK_L1619_IDS` and
+ *    **`ACT_II_B1_IDS` only**, so with `L26`–`L35` in the root the cut basis became
+ *    `[1…15, 26…35]` and `cut.floor` became **28.339426** (= `L35`). The header line prints that
+ *    number as *"D_exec max over the L1–L15 basis"* while the same line prints the basis ids —
+ *    **the label and the measurement disagree on screen**, which is why the fault was findable
+ *    without reading the code.
+ * 2. **Why it is a defect and not a rule.** The cut is defined as *the world the candidate climbs
+ *    out of*, frozen at `L1–L15 = 14.969697`; §7.3's own escalation for an act is the `act-peak`
+ *    clause, **never the cut**. `scripts/prove-candidate.ts`'s `measureCut()` already excludes
+ *    **`ACT_II_REGISTERED_IDS`** and carries an R-005a doc note describing *exactly this failure*:
+ *    *"the cut basis read 28.339426 and EVERY new rung was refused by `escalation D_exec > CUT
+ *    28.339426`"*. So **R-005a applied the fix to the prover and not to the generator** — one
+ *    instrument, two call sites, one of them left behind. (Third occurrence of one mechanism: the
+ *    R-003c/R-003d lesson, then the R-004a lesson, now R-005a's.)
+ * 3. **The measured consequence, which is what makes it batch-fatal rather than cosmetic.** The
+ *    `escalation` gate is `dexec > ctx.cut.floor`, so pre-fix it silently means
+ *    *"`D_exec` > the registered Act II tail `28.339426`"*. With §7.5 item 1's measured collapse
+ *    `D_exec = par + 3·B` and `B ≤ 1.6875`, the gate forces `par > 28.339426 − 3·1.6875 =
+ *    23.276374`, i.e. **`par ≥ 24`** — the census's accept pool is truncated to the band ceiling
+ *    **by filter**, and nothing about the `7×7` frame is being measured at all:
+ *    - **`7×7`, band `16–24`, batch-4 ids** → `234` accepts of `20000` judged, **all `par 24`**;
+ *      refusals `par-out-of-band 9989 · unsolvable 6643 · escalation 1857 ·
+ *      escalation+g5-identity-broken 1232 · g5-identity-broken 45`.
+ *    - **`7×6`, band `16–24`, batch-4 ids** (the identical command that produced batch 3) →
+ *      **`0 accept(s)` of `20000` judged**, `in-band candidates refused by a gate: 1218`, every
+ *      listed one `[escalation]`, and the histogram's `escalation: 498`.
+ *    - **That `498` is the receipt.** Batch 3's LV-015 record for the *identical* command with
+ *      only the batch id changed (`--batch=3`) is **`498 accepts` of `20000` judged**. The same 498
+ *      boards, accepted at `L31`'s ids and refused at `L36`'s ids, by the cut floor alone — a
+ *      one-to-one A/B, not an argument.
+ * 4. **The counter-reading, and why it loses.** One could call the truncation *correct* on the
+ *    ground that a shelf rung must sit above the registered root max. It is not: that relation is
+ *    an **id** relation, and the machine pin says so — `tests/solver/l16-l20-candidates.test.ts`
+ *    asserts `expect(id, "…sits at or below the registered root max…").toBeGreaterThan(rootMax)`
+ *    over the shelf's **file names**, and its sibling row compares `maxShipped` to the *pinned
+ *    count*. Batch 3's own lawfully registered `L31` sits at `23.204167`, **below** the
+ *    then-registered root max `27.604651` — so no rule, pin or precedent makes a shelf rung's
+ *    `D_exec` exceed the registered max. A `D_exec` floor at the act tail would be a **new
+ *    obligation invented by an instrument accident**, and inventing one here is exactly the class
+ *    of fault `--pocketsize ≥ 11`'s ceiling wording (item 114) forbids.
+ * 5. **The fix, in the next commit, is one line and it is not a tuning.** `measureCut()` excludes
+ *    `ACT_II_REGISTERED_IDS` — the same named law constant `prove-candidate.ts` reads — restoring
+ *    the floor to `14.969697` and making the generator and the prover judge against the **same**
+ *    cut. **Revert path:** restoring `ACT_II_B1_IDS` restores `28.339426` and re-truncates the pool
+ *    to `par 24`; both directions are re-measured, never remembered.
+ * 6. **What is published, and in what order.** This finding is a docstring-only commit, so
+ *    *"the fault was written down before the line that fixes it moved"* is checkable in
+ *    `git log -p`; the fix commit follows, then the post-fix census, then the dossier and the
+ *    §7.3.1 relief label of rule 9, and **only then** the bytes. Every pre-fix reading quoted
+ *    above is kept in the dossier **beside** its post-fix counterpart: a batch that reports only
+ *    the census taken after the instrument was repaired is reporting the half it likes.
+ * 7. **What the finder must not do.** The finding does **not** license a rule change: rule 2's
+ *    P2-exact derivation, rule 3's empty-pool clause, rule 4's closing-rung maximum and rule 9's
+ *    relief are unchanged, and no par, band, gate or registered number is touched. If the post-fix
+ *    census still supports only the ceiling par, that stands as the act's measured shape — and the
+ *    section 7.8 item 2 obligation it would leave is a Game Designer question, not a solver's.
+ *
  * Stages:
  *
  *   0.  **preflight law** — the parity/judging-phase rule re-derived from the shipped
