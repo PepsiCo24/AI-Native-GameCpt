@@ -488,8 +488,12 @@ import {
   ACT_II_B1_IDS,
   ACT_II_B1_LADDER,
   ACT_II_B1_REGISTERED_PEAK_EXEC,
+  ACT_II_B2_B3_LADDER,
   ACT_II_EXEC_BAND,
   ACT_II_PAR_BAND,
+  ACT_II_PAR_CEILING,
+  ACT_II_PAR_FLOOR,
+  ACT_II_R005A_REGISTERED_TAIL_EXEC,
   ACT_I_REGISTERED_PEAK_EXEC,
   BLOCK_L1619_B_BAND,
   BLOCK_L1619_IDS,
@@ -520,7 +524,13 @@ const STAGE = argOf("stage") ?? "g";
  * transcript).
  */
 const BATCH = Number(argOf("batch") ?? "1");
-/** `--pockets=2` = batch 1's device (P + Q + goal seal, 3 presses); `3` = the chained sub-lattice (P + R2 + R3 + goal seal, 4 presses). */
+/**
+ * `--pockets=2` = batch 1's device (P + Q + goal seal, 3 presses); `3` = the chained sub-lattice
+ * (P + R2 + R3 + goal seal, 4 presses); `4` = the family ceiling (P + R2 + R3 + R4 + goal seal,
+ * 5 presses) — **batches 3 and 4 share this device class**, and what separates them is the
+ * **frame** (§7.4's `7×6 → 7×7`; batch 4 takes the second member) and the **par derivation**
+ * (batch 4's own P2-exact ladder, header rule 2).
+ */
 const POCKETS = Number(argOf("pockets") ?? "2");
 const ACCEPTS =
   argOf("accepts") ??
@@ -547,7 +557,7 @@ const PAR_MIN = Number(argOf("parmin") ?? "17");
  * batch 2 = **L26–L30** (this ticket, shelf candidates only — registration is a later
  * train, so nothing here widens a registered ceiling).
  */
-const BATCH_FIRST_ID = BATCH === 3 ? 31 : BATCH === 2 ? 26 : 21;
+const BATCH_FIRST_ID = BATCH === 4 ? 36 : BATCH === 3 ? 31 : BATCH === 2 ? 26 : 21;
 const RUNG_COUNT = 5;
 const PAR_MAX = Number(argOf("parmax") ?? "23");
 /** The Act II `D_exec` band (§7.2, derived from the measured `B` band).
@@ -2705,6 +2715,62 @@ function batch3ParMultiset(byPar: ReadonlyMap<number, readonly Accept[]>): numbe
   return out.sort((a, b) => a - b);
 }
 
+/**
+ * **Batch 4's own par ladder** — the published rule (header, rules 1–4), executed as a
+ * **derivation**, never a search:
+ *
+ * 1. `DERIVED := [ACT_II_PAR_CEILING − 2·k for k = 0 … RUNG_COUNT − 1]`, kept where it is
+ *    `≥ ACT_II_PAR_FLOOR` — **read from the law module's band endpoints, never typed**. With
+ *    `[16, 24]` and 5 rungs this is `[16, 18, 20, 22, 24]`, the **unique** five-member ladder
+ *    whose every step is exactly §6.1.1's P2 minimum `Δpar = 2`: `4 × 2 = 8` is the band's own
+ *    width, so the ladder must use both endpoints and no step can exceed 2. The span check is
+ *    printed beside it — if a future band edit broke the identity, the printed deviation says so
+ *    (anchored at the ceiling, truncated at the floor) instead of a silently different ladder.
+ * 2. Restricted to the pars **this census's accept pool actually supports**; a par with an empty
+ *    pool is **ABSENT** and is never substituted (batch 3's clause, kept).
+ * 3. Padded to five rungs (§7.2) by repeating the ladder's **own highest supported pars,
+ *    descending** — the act's ceiling first, because §7.3.2 asks the act's maximum to be carried
+ *    late. Every repeat prints its reason.
+ */
+function batch4ParMultiset(byPar: ReadonlyMap<number, readonly Accept[]>): number[] {
+  const derived: number[] = [];
+  for (let k = 0; k < RUNG_COUNT; k += 1) {
+    const p = ACT_II_PAR_CEILING - 2 * k;
+    if (p >= ACT_II_PAR_FLOOR) derived.push(p);
+  }
+  derived.sort((a, b) => a - b);
+  const bandWidth = ACT_II_PAR_CEILING - ACT_II_PAR_FLOOR;
+  const span = (RUNG_COUNT - 1) * 2;
+  console.log(
+    `selection: batch 4 P2-exact ladder (header rule 2) — anchored at the act's ceiling ${String(ACT_II_PAR_CEILING)} and stepping down ` +
+      `by §6.1.1's P2 minimum 2: [${derived.join(", ")}] (derived from Act II's band endpoints ` +
+      `[${String(ACT_II_PAR_FLOOR)}, ${String(ACT_II_PAR_CEILING)}] read from the law module; ` +
+      `${String(RUNG_COUNT)} rungs × step 2 spans ${String(span)}, the band's own width ${String(bandWidth)} — ` +
+      `${span === bandWidth ? "the derivation is UNIQUE and every step is exactly 2" : "the ladder does NOT span the band: printed as a deviation, anchored at the ceiling and truncated at the floor, never smoothed"})`,
+  );
+  const supported = derived.filter((p) => (byPar.get(p) ?? []).length > 0);
+  const absent = derived.filter((p) => !supported.includes(p));
+  if (absent.length > 0)
+    console.log(
+      `selection: ABSENT (empty pool, never substituted): [${absent.join(", ")}] — a par the census does not support is dropped, ` +
+        `and no registered ladder's par is borrowed to fill it (§7.8 item 4)`,
+    );
+  if (supported.length === 0) return [];
+  const out = [...supported];
+  const pool = [...supported].sort((a, b) => b - a);
+  let i = 0;
+  while (out.length < RUNG_COUNT) {
+    const p = pool[i % pool.length] as number;
+    out.push(p);
+    console.log(
+      `selection: repeat #${String(out.length - supported.length)} — par ${String(p)} used again (the P2-exact ladder supports ` +
+        `${String(supported.length)} of the ${String(RUNG_COUNT)} rungs §7.2 asks for; repeats run down from the act's ceiling, §7.3.2)`,
+    );
+    i += 1;
+  }
+  return out.sort((a, b) => a - b);
+}
+
 function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept }[] {
   const requireRise = BATCH === 1;
   /**
@@ -2749,7 +2815,7 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
       acc.pop();
     }
   };
-  if (mirror === null && BATCH !== 3) {
+  if (mirror === null && BATCH !== 3 && BATCH !== 4) {
     pick(0, []);
   } else if (mirror !== null) {
     // The published mirror: exactly ONE combo, and it is the law's par list — never a search.
@@ -2768,6 +2834,24 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
         `and the only rule inside it is the within-par tie-break (minimal D_exec, then enumeration order)`,
     );
     combos.push(mirror);
+  } else if (BATCH === 4) {
+    // Batch 4's own P2-exact ladder (published rule 2): derived, then executed as ONE combo.
+    const own = batch4ParMultiset(byPar);
+    if (own.length !== RUNG_COUNT) {
+      console.log(
+        `selection: batch 4's derived ladder is [${own.join(", ")}] — the census supports no usable par at all on this frame, so no rung ` +
+          `is fabricated and NO par is borrowed from a registered ladder (published rule 8). The census is reported as a NAMED ACT ` +
+          `LIMITATION and the only published fallback is re-running the same device + ladder on the other frame this device has been ` +
+          `non-empty on (CX = 1, 7×6) — this tool does not silently switch frames.`,
+      );
+      return [];
+    }
+    console.log(
+      `selection: batch 4 par multiset [${own.join(", ")}] · ascending par, the closing-par rungs ordered by ascending D_exec; the ` +
+        `batch's LAST rung takes the within-par MAXIMUM D_exec (published departure, header rule 4, so the act's maximum is carried as ` +
+        `late as the family permits); the ladder is DERIVED from the band endpoints + P2, never mirrored (§7.8 item 4)`,
+    );
+    combos.push(own);
   } else {
     // Batch 3's OWN par set (published rule 1–3): derived, then executed as ONE combo.
     const own = batch3ParMultiset(byPar);
@@ -2810,12 +2894,12 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
       const all = byPar.get(p) ?? [];
       const pool = requireRise ? all.filter((a) => a.dexec > prev) : all;
       /**
-       * Batch 3's published tie-break **departure** (header rule 4): the batch's LAST rung
-       * takes the within-par **maximum** `D_exec` (every other rung keeps batch 1/2's
-       * minimal-`D_exec` rule), so §7.3.2's `act-close` maximum is carried by the batch's
-       * last rung rather than by its interior. Printed per rung, never silent.
+       * Batch 3's and batch 4's published tie-break **departure** (header rule 4): the batch's
+       * LAST rung takes the within-par **maximum** `D_exec` (every other rung keeps batch 1/2's
+       * minimal-`D_exec` rule), so §7.3.2's maximum is carried by the batch's last rung rather
+       * than by its interior. Printed per rung, never silent.
        */
-      const takeMax = BATCH === 3 && rungIndex === combo.length - 1;
+      const takeMax = (BATCH === 3 || BATCH === 4) && rungIndex === combo.length - 1;
       const ordered = takeMax ? [...pool].reverse() : pool;
       let candidate: Accept | undefined;
       let skippedByKey = 0;
@@ -2961,6 +3045,58 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
       `  anti-mirror check: ${equalPar.length === 0 ? "0 rungs share a par with the registered batch-1 ladder — the batch carries its OWN par set (§7.8 item 4), so no equal-par comparator exists on purpose" : `${String(equalPar.length)} rung(s) DO share a batch-1 par — the anti-mirror clause is violated`}`,
     );
   }
+  if (BATCH === 4) {
+    // Published rule 9: batch 4 has NO act-close refusal branch. §7.3.2's obligation was
+    // discharged inside batches 2–3 (L35 = 28.339426), so this batch prints its measured
+    // maximum as a READING against the three registered data — it neither re-carries the
+    // clause nor invents a second one to fail.
+    if (best.keySkips.length > 0) {
+      console.log(
+        "\nbatch-4 note — every departure from batch 1/2's within-par tie-break, printed (a filter is never silent):",
+      );
+      for (const s of best.keySkips) console.log(`  ${s}`);
+    }
+    const last = best.levels[best.levels.length - 1] as { level: Level; accept: Accept };
+    const maxRung = best.levels.reduce(
+      (acc, c) => (c.accept.dexec > acc.accept.dexec ? c : acc),
+      best.levels[0] as { level: Level; accept: Accept },
+    );
+    console.log(
+      `\nact-close READING (§7.3.2, obligation already discharged at L35 — no refusal branch on this batch) — batch 4's measured MAXIMUM is ` +
+        `L${String(BATCH_FIRST_ID + best.levels.indexOf(maxRung))} at D_exec ${maxRung.accept.dexec.toFixed(6)} (par ${String(maxRung.accept.par)}, ` +
+        `B ${maxRung.accept.b.toFixed(4)}, chain ${String(maxRung.accept.pressThenCross)}/${String(maxRung.accept.routes)}): ` +
+        `vs the registered Act II tail ${ACT_II_R005A_REGISTERED_TAIL_EXEC.toFixed(6)} (L35) → Δ ${(maxRung.accept.dexec - ACT_II_R005A_REGISTERED_TAIL_EXEC).toFixed(6)}; ` +
+        `vs the registered batch-1 peak ${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} → Δ ${(maxRung.accept.dexec - ACT_II_B1_REGISTERED_PEAK_EXEC).toFixed(6)}; ` +
+        `vs Act I's measured peak ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} → Δ ${(maxRung.accept.dexec - ACT_I_REGISTERED_PEAK_EXEC).toFixed(6)}`,
+    );
+    console.log(
+      `  reading, not a clause: this batch does NOT carry §7.3.2's obligation (L35 holds it) and the tool has no act-close REFUSAL branch here. ` +
+        `${maxRung.accept.dexec < ACT_II_R005A_REGISTERED_TAIL_EXEC ? "The act's registered maximum therefore stays at L35 — a deep family on a larger frame measures a LOWER B, which is the shape finding this batch reports rather than pads" : "the batch's maximum meets or exceeds the registered tail — also reported as a reading, since a shelf file moves no constant"}`,
+    );
+    console.log(
+      `  last rung L${String(BATCH_FIRST_ID + best.levels.length - 1)} par=${String(last.accept.par)} D_exec=${last.accept.dexec.toFixed(6)} ` +
+        `(the pre-published rule put the batch's maximum on the closing rung: ${last.accept.dexec === maxRung.accept.dexec ? "HOLDING" : "NOT holding — the pool's other rows carry it, printed as a measurement, never re-picked"})`,
+    );
+    // §7.8 item 5 relief seam: L36 sits under the same-family registered tail L35.
+    const l35 = ACT_II_R005A_REGISTERED_TAIL_EXEC;
+    const l36 = best.levels[0] as { level: Level; accept: Accept };
+    const dPar = l36.accept.par - 24; // L35's registered par, the act's ceiling
+    console.log(
+      `  §7.8 item 5 relief check (L35 → L36 seam): L36 D_exec ${l36.accept.dexec.toFixed(6)} · par ${String(l36.accept.par)} · B ${l36.accept.b.toFixed(4)} vs ` +
+        `shelf L35 ${l35.toFixed(6)} · par 24 · B 1.4465 → Δpar ${dPar >= 0 ? "+" : ""}${String(dPar)}, ΔB ${(l36.accept.b - 1.4465).toFixed(4)}, ` +
+        `ΔD_exec ${(l36.accept.dexec - l35).toFixed(6)} ${l36.accept.dexec < l35 ? "(BELOW — §7.8 item 5 fires and the §7.3.1-form label with this decomposition must be published in the dossier BEFORE --write)" : "(at or above — the seam does not fire; recorded as not fired)"}`,
+    );
+    // §7.8 item 4, in spirit: the batch's par SET, vs every registered Act II par.
+    const registered = new Set<number>([...ACT_II_B1_LADDER, ...ACT_II_B2_B3_LADDER].map((r) => r.par));
+    const shared = [...new Set(best.levels.map((c) => c.accept.par))].filter((p) => registered.has(p));
+    console.log(
+      `  anti-mirror check (§7.8 item 4, in spirit — a THIRD mirror is forbidden): registered Act II pars ` +
+        `= {${[...registered].sort((a, b) => a - b).join(", ")}} (batch 1 ∪ batches 2–3, read from the law module). This batch's par multiset is ` +
+        `[${best.levels.map((c) => String(c.accept.par)).join(", ")}] ⇒ ${String(shared.length)} of its distinct par(s) coincide with a registered one` +
+        `${shared.length === 0 ? " — the batch carries its own pars and borrows none" : ` (${shared.join(", ")}) — a coincidence of the band's finite integer range, printed so it is never implied away; no par was chosen to avoid or to match a registered rung`}. ` +
+        `The multiset is DERIVED (anchored at the ceiling, stepped by P2's minimum, header rule 2), never mirrored from any registered ladder.`,
+    );
+  }
   return best.levels;
 }
 
@@ -2989,8 +3125,12 @@ function stageSelect(): void {
   mkdirSync(OUT_DIR, { recursive: true });
   for (let i = 0; i < chosen.length; i += 1) {
     const level: Level = { ...(chosen[i] as { level: Level }).level, id: BATCH_FIRST_ID + i };
-    if (BATCH === 3 && (level.id < 31 || level.id > 35)) {
-      console.log(`REFUSED to write l${String(level.id)}: batch 3's ids are L31–L35 only (nothing outside its own slot is touched)`);
+    const lastId = BATCH_FIRST_ID + RUNG_COUNT - 1;
+    if (level.id < BATCH_FIRST_ID || level.id > lastId) {
+      console.log(
+        `REFUSED to write l${String(level.id)}: batch ${String(BATCH)}'s ids are L${String(BATCH_FIRST_ID)}–L${String(lastId)} only ` +
+          `(nothing outside its own slot is touched)`,
+      );
       continue;
     }
     const file = join(OUT_DIR, `l${String(level.id).padStart(3, "0")}.json`);
@@ -3006,11 +3146,13 @@ function stageSelect(): void {
 const cut = measureCut();
 console.log(
   `author-l21 (G lattice, Act II batch ${String(BATCH)}${
-    BATCH === 3
-      ? " — the 4-pocket sub-lattice, L31–L35"
-      : BATCH === 2
-        ? " — the 3-pocket chained sub-lattice, L26–L30"
-        : " — L21–L25"
+    BATCH === 4
+      ? " — the family-ceiling 4-pocket sub-lattice on §7.4's second frame (7×7, CX=1), L36–L40"
+      : BATCH === 3
+        ? " — the 4-pocket sub-lattice, L31–L35"
+        : BATCH === 2
+          ? " — the 3-pocket chained sub-lattice, L26–L30"
+          : " — L21–L25"
   }) — ` +
     `CUT re-measured from the shipped set: D_exec max over the L1–L15 basis = ${cut.floor.toFixed(6)} · ` +
     `Act I measured peak (ids 1–20) = ${cut.actI.toFixed(6)} · par(L15) = ${String(cut.l15Par)} · ` +
