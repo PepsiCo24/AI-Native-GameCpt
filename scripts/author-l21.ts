@@ -168,8 +168,10 @@
  *    (7 × 6, `--cx=2`, `--pocketsize=4`, `--qmax=4`, the shape filters above); nothing
  *    outside it is claimed, in either direction, and a re-run with a wider axis would
  *    have to print its own counters. The band is a **filter, not a truncation**: every
- *    judged tuple is accounted for (the par census prints the out-of-band members too,
- *    e.g. the 1178 `par-out-of-band` refusals).
+ *    judged tuple is accounted for, and the accounting is what says so —
+ *    `accepts + par-out-of-band + unsolvable + g5-identity-broken = judged` closes exactly
+ *    (F-L36-2 item 3), while the par histogram is an **out-of-band** view only, printed
+ *    beside the in-band readings rather than instead of them.
  *
  * ── LV-015 · THE 4-POCKET SUB-LATTICE (`--pockets=4`, Act II batch 3 = L31–L35) ──
  *
@@ -287,6 +289,271 @@
  * its `--paircap` / `--budget` counters as a **prefix**, never as a completed class
  * (`docs/architecture.md` §15.5).
  *
+ * ── LV-017 · THE CLOSING BATCH (`--batch=4`, Act II finale = L36–L40) ─────────────
+ *
+ * Law this pass implements, quoted not paraphrased:
+ *
+ * - **§7.2** fixes Act II's family as *"**Portal orchestration**: multi-pocket sealed landings
+ *   (**2–4 pockets**), ordered multi-switch chains, portal-repriced latches; the walk-only world
+ *   deleted from the outset"*, with par band **16–24** and the derived `D_exec` band
+ *   **`[19.75, 29.0625]`** (printed `[19.75, 29.06]`; §7.9's notation law — the derived-exact
+ *   value is the value, the printed form is display text and is never a comparison operand).
+ * - **§7.4** publishes stage `G`'s lattice axes for Act II — *"multi-pocket: **pocket count 1–4**
+ *   × **portal pairs 1–2** × **door arity 2–5** × **landing position**, on **7×6 → 7×7**"* — and
+ *   names this batch's feed: *"Act II batches 3–4"*.
+ * - **§7.8** is the handoff this batch answers. **Item 4** (anti-mirror): *"Batch 3 must **not**
+ *   mirror batch 1's ladder again, and must not copy batch 2's device. … repeating it converts a
+ *   measurement into a formula and yields a **third indistinct rung set**."* — the clause is
+ *   about the **ladder**, and this batch derives its own (rule 2 below) rather than mirroring a
+ *   third time. **Item 1** + **§7.3.2** (`act-close`): *"An act's registered maximum `D_exec`
+ *   must be carried by its **last two batches**"* — for Act II that is **L31–L40**, and R-005a
+ *   registered the carrier at **L35 = 28.339426 > 27.604651** (`ACT_II_R005A_REGISTERED_TAIL_EXEC`,
+ *   read from the law module, never typed), i.e. **the obligation is already DISCHARGED** and this
+ *   batch **owes no peak**. **Item 5**: a seam below the shelf's tail takes a **§7.3.1-form
+ *   label published before `--write`**. **Item 6**: report the refusal census with the accepts,
+ *   hand the batch to QA for the §7.6 stratum before registry, report the act's measured maximum.
+ * - **§6.2.3**, the sealed-landing lattice law, VERBATIM obligations, read against a **5-door**
+ *   device: (1) *"Exactly one opposite-colour portal pair … both ends visible from the start"*;
+ *   (2) *"The landing end resolves into a pocket that is **not on-foot reachable** in the needed
+ *   phase without the portal"*; (3) *"The pocket's only exit is a door (M1). **No phase wall may
+ *   form the exit** — F-L19-2 … every blocker in this device MUST be an **openable door**"*;
+ *   (4) *"at least one shortest route executes **≥ 2 presses in a fixed order**, the second switch
+ *   reachable only after the first door opens"*; (5) `par(L20) = 20` is **cited, not inherited**
+ *   (no batch-4 id is 20); (6) *"`T ≡ R ≡ 0` and P4 coverage: the pocket is a **through-station**,
+ *   never a dead pocket"*; (7) *"`switchRequired = "required"` is **expected but not decreed** — it
+ *   is a **measurement** obligation on the candidate"*. `T ≡ R ≡ 0`, determinism, entry-only
+ *   solidity and never-crushed (ADR-0008 rules 1–7) are unchanged and are gates, not prose.
+ *
+ * ── WHAT THIS BATCH IS, AND WHY THE ACT CLOSES HERE (the finale proposal) ─────────
+ *
+ * Act II's catalogue names exactly **one** sealed-landing family — *multi-pocket sealed landings
+ * (2–4 pockets)* — and batches 1, 2 and 3 built it at pocket counts **2, 3, 4**: the **4-pocket
+ * member is the family's ceiling** (§7.2's own range, §7.4's `pocket count 1–4` top, and the
+ * deepest ordered chain the act's vocabulary admits — `5 doors / 5 presses`,
+ * `p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4 < p4 < d5`). A **5-pocket** device is therefore
+ * **refused by §7.2's published family text, not by authoring weakness** — and it is **not
+ * censused**: a census of a device the act's own family forbids is an invitation to a family
+ * change, which is a Game Designer decision (ADR + §7.2 edit) that no level ticket may take.
+ *
+ * The finale's character is taken on the axes that are still open **and published**:
+ *
+ * 1. **The frame axis** (§7.4: *"on 7×6 → 7×7"*). Every Act II batch so far sits on **7×6**:
+ *    batch 1/2 at `CX = 2`, batch 3 at `CX = 1`. **7×7 is the axis's second member and has never
+ *    been used by any Act II rung**, and at the only `7×7` frame LV-015 measured for this device
+ *    (`CX = 2`) the class is **EMPTY** — 0 judged of 0, with the frame's measured room capacity
+ *    beside it (`--stage=roomcap`: 6 / 4 / 4 / 6 disjoint rooms; F-L31-1, `§8.20`). So the finale's
+ *    claim is a **census question**, never a wish: *does 7×7 at `CX = 1` admit the 4-pocket device
+ *    at all, and inside the act's par band?*
+ * 2. **The par axis**: the act's **band-ceiling `par 24`** (§7.8 item 2) carried by the **closing
+ *    rung**, with the batch's own **P2-exact** ladder (rule 2) — a property no Act II batch has.
+ *
+ * Stated as a sentence, the act's close reads: **it closes on the act's deepest lawful ordered
+ * chain, on the act's largest lawful board (49 tiles), at the act's own band-ceiling par.**
+ * Whether that close **also** carries the act's `D_exec` maximum is a **measurement reported
+ * either way** — `D_exec = par + 3·B` (§7.5 item 1's measured theorem) and the deeper families
+ * measure a **lower** `B` centre (batch 3: `1.3500 … 1.4465`), so a finale that does not exceed
+ * `28.339426` is an honest, likely outcome: it is then reported as a **named act-shape finding**
+ * (`act-close` already discharged at L35, inside the last two batches), **never** repaired by
+ * padding a par or re-banding a rung.
+ *
+ * ── THE DEVICE (the named plan shape, written before the search) ──────────────────
+ *
+ * ```
+ *   P   landing pocket   exit d1 (its whole boundary)         press s1 ∈ P
+ *   F   free band        press s2 ∈ F  → drives d2             [reachable once d1 opens]
+ *   R2  second pocket    exit/entrance = d2 (whole boundary)   press s3 ∈ R2 → drives d3
+ *   R3  third pocket     exit/entrance = d3 (whole boundary)   press s4 ∈ R3 → drives d4
+ *   R4  fourth pocket    exit/entrance = d4 (whole boundary)   press s5 ∈ R4 → drives d5
+ *   G   the goal         every walk-neighbour is a d5 tile
+ * ```
+ *
+ * Identity with batch 3's **device class** is stated rather than implied: the class is §7.2's
+ * family ceiling and batch 3 already proved it on 7×6 — what this batch changes is the **frame**
+ * (§7.4's second member), the **par derivation** (P2-exact, rule 2) and the rungs themselves.
+ * The rungs are still censused against the §6.1.4 **seal-inclusive key** of **every registered
+ * file**, so no rung may re-stamp a shipped board (the guard is a filter, and its collisions are
+ * printed, never hidden).
+ *
+ * ── BATCH 4'S SELECTION RULE — published here before any census or any byte ──────
+ *
+ * 1. **Frame and device.** §7.4's `7×7` (the axis's second member) at `CX = 1`, the **4-pocket /
+ *    5-door / 5-press** member (§7.2's family ceiling). The `--pocketsize=4`, `--qmax=4`,
+ *    `--paircap` / `--budget` / `--cap` bounds of the earlier passes are kept unchanged so the
+ *    class stays comparable; every counter is printed beside every count.
+ * 2. **The par ladder is DERIVED, and it is the P2-exact one.** §7.2's batch size is **5** and
+ *    §7.2/§7.9 give the par band's integer endpoints as `[ACT_II_PAR_FLOOR, ACT_II_PAR_CEILING] =
+ *    [16, 24]` (inclusive). §6.1.1's **P2** is the only published clause that makes an in-block
+ *    rise a *guarantee* rather than a measurement: `Δpar ≥ 2`, because `3·B`'s measured spread is
+ *    `1.3125 < 2`. A five-member ladder whose every step is exactly P2's minimum spans
+ *    `4 × 2 = 8 = 24 − 16` — the band's own width — so it must **be** the band's two endpoints with
+ *    every step 2: **`[16, 18, 20, 22, 24]`**, and this is **UNIQUE** (any five members with all
+ *    steps `≥ 2` inside the band have span `≥ 8`, hence use both endpoints and leave no room for a
+ *    step above 2; a member outside the band is refused by the band gate, §7.5 item 1). Adopted as
+ *    **derived** (the §6.1.1 uniqueness style — `4, 6, 8, 10` was adopted the same way), never
+ *    approved by taste. This closes §7.8 item 4's anti-mirror clause **by construction**: the batch
+ *    does not mirror a registered ladder, it recomputes one from the band and P2.
+ * 3. **Pool filter (batch 3's clause, kept).** A par with an **empty** accept pool is **ABSENT**
+ *    from the ladder and is **never substituted**; the remaining rungs are filled by repeating the
+ *    ladder's **own highest supported par, descending** — the act's ceiling first, because §7.3.2
+ *    asks the act's maximum to be carried **late**. Every repeat prints its reason.
+ * 4. **Ordering and tie-break.** Ascending par; within a par, minimal `D_exec` then enumeration
+ *    order (batch 1/2/3's rule), with the same **published departure**: the batch's **last rung
+ *    takes the within-par maximum `D_exec`** so the act's maximum is carried by the closing rung
+ *    (§7.3.2 read as a selection rule). Every departure is printed beside the ladder.
+ * 5. **Bands and gates are filters, never preferences** (§7.5 item 1): `par ∈ [16, 24]`,
+ *    `D_exec ∈ [19.75, 29.0625]` **derived-exact** (§7.9 — compared against the law module's
+ *    constants, never against a printed form), `B ∈ [1.2500, 1.6875]`, `T ≡ R ≡ 0`, coverage
+ *    `49/49` on the 7×7 frame, `switchRequired` **measured** as the all-OFF world, and the `g0`–`g6`
+ *    family gates by name.
+ * 6. **§6.1.4 clone filter.** Each rung's seal-inclusive key must be free of **every registered
+ *    key** and of its four siblings'; the census prints the distinct-key count and every collision
+ *    (there is no silent filter). The five rungs must carry five distinct keys.
+ * 7. **No fabricated `act-close` branch.** §7.3.2's obligation is already satisfied inside the last
+ *    two batches (L35), so this ticket adds **no** refusal clause — a clause here would be a gate
+ *    invented to be passed. The measured maximum is **printed as a reading** (vs the registered
+ *    tail, vs batch 1's peak, vs Act I's peak) and reported per batch (§7.8 item 6).
+ * 8. **Empty-pool honesty (published fallback, in order).** If the 7×7 frame yields **no** in-band
+ *    accept at all, the batch is **not** padded: the census is reported as a named **act
+ *    limitation**, and the *only* published fallback is to re-run the **same derived ladder and
+ *    device on the only other frame this device has ever been non-empty on** (`CX = 1`, `7×6` —
+ *    batch 3's frame), with every key re-checked against the registered set; if that too is empty,
+ *    nothing is written and the Game Designer is briefed. A borrowed par, a re-banded act or a
+ *    copied ladder is not a remedy.
+ * 9. **Relief label before bytes.** L36's `D_exec` will sit below the registered tail
+ *    `ACT_II_R005A_REGISTERED_TAIL_EXEC` (28.339426) on any plausible ladder, so §7.8 item 5 fires:
+ *    the `L35 → L36` seam takes a **§7.3.1-form** label published in the census dossier **before
+ *    `--write`**, with `Δpar` / `3·ΔB` / `ΔD_exec` decomposed so it cannot be read as a designed dip.
+ * 10. **Deferred, with its scope stated.** The `--pocketsize ≥ 11` probe stays **DEFERRED**:
+ *    `≤ 10` was closed by measurement (`scripts/author-l20-p10.transcript.md` §10), **`≥ 11` remains
+ *    unmeasured**, and **no ceiling wording is published in either direction** (item 114's law).
+ *
+ * The census commands, also published before the run (they are what the dossier quotes):
+ *
+ * ```
+ *   STEP 1 — the frame's capacity and the par-24 obligation at the NEW frame:
+ *     a) npx tsx scripts/author-l21.ts --stage=roomcap --cx=1 --h=7 --maxsize=4
+ *     b) npx tsx scripts/author-l21.ts --stage=g --batch=4 --pockets=4 --cx=1 --h=7 \
+ *          --pocketsize=4 --qmax=4 --paircap=40 --budget=8000 --cap=400 --parmin=24 --parmax=24
+ *   STEP 2 — the batch's own pool over the full act band, on its own frame:
+ *     c) npx tsx scripts/author-l21.ts --stage=g --batch=4 --pockets=4 --cx=1 --h=7 \
+ *          --pocketsize=4 --qmax=4 --paircap=40 --budget=20000 --cap=400 --parmin=16 --parmax=24
+ *   STEP 3 — the selection (dry run, then --write):
+ *     d) npx tsx scripts/author-l21.ts --stage=s --batch=4 --parmin=16 --parmax=24 \
+ *          --accepts=<c's dump>
+ *     e) npx tsx scripts/author-l21.ts --stage=s --batch=4 --parmin=16 --parmax=24 --write \
+ *          --accepts=<c's dump>
+ * ```
+ *
+ * ── AMENDMENT — FINDING F-L36-1, published BEFORE the fix byte and before any board byte ──
+ *
+ * The commands above were run, and their readings **contradict the rule published above them**:
+ * batch 4's census returned accepts at **`par 24` only** (STEP 1b `185` accepts of `8000` judged;
+ * STEP 2 `234` of `20000`), i.e. the derived P2-exact ladder `[16, 18, 20, 22, 24]` is reported
+ * with **four empty pools** and rule 3 pads it to `[24, 24, 24, 24, 24]` — while rule 9 (written
+ * before the run) *predicts* that `L36` sits **below** `28.339426` and that §7.8 item 5 therefore
+ * fires. A rule that predicts a low opening rung and a census that can only produce the ceiling
+ * cannot both be describing the same instrument. It is the **instrument** that is wrong, and the
+ * fault is named here rather than absorbed into the batch.
+ *
+ * 1. **What is wrong.** `measureCut()` (this file) excludes `BLOCK_L1619_IDS` and
+ *    **`ACT_II_B1_IDS` only**, so with `L26`–`L35` in the root the cut basis became
+ *    `[1…15, 26…35]` and `cut.floor` became **28.339426** (= `L35`). The header line prints that
+ *    number as *"D_exec max over the L1–L15 basis"* while the same line prints the basis ids —
+ *    **the label and the measurement disagree on screen**, which is why the fault was findable
+ *    without reading the code.
+ * 2. **Why it is a defect and not a rule.** The cut is defined as *the world the candidate climbs
+ *    out of*, frozen at `L1–L15 = 14.969697`; §7.3's own escalation for an act is the `act-peak`
+ *    clause, **never the cut**. `scripts/prove-candidate.ts`'s `measureCut()` already excludes
+ *    **`ACT_II_REGISTERED_IDS`** and carries an R-005a doc note describing *exactly this failure*:
+ *    *"the cut basis read 28.339426 and EVERY new rung was refused by `escalation D_exec > CUT
+ *    28.339426`"*. So **R-005a applied the fix to the prover and not to the generator** — one
+ *    instrument, two call sites, one of them left behind. (Third occurrence of one mechanism: the
+ *    R-003c/R-003d lesson, then the R-004a lesson, now R-005a's.)
+ * 3. **The measured consequence, which is what makes it batch-fatal rather than cosmetic.** The
+ *    `escalation` gate is `dexec > ctx.cut.floor`, so pre-fix it silently means
+ *    *"`D_exec` > the registered Act II tail `28.339426`"*. With §7.5 item 1's measured collapse
+ *    `D_exec = par + 3·B` and `B ≤ 1.6875`, the gate forces `par > 28.339426 − 3·1.6875 =
+ *    23.276374`, i.e. **`par ≥ 24`** — the census's accept pool is truncated to the band ceiling
+ *    **by filter**, and nothing about the `7×7` frame is being measured at all:
+ *    - **`7×7`, band `16–24`, batch-4 ids** → `234` accepts of `20000` judged, **all `par 24`**;
+ *      refusals `par-out-of-band 9989 · unsolvable 6643 · escalation 1857 ·
+ *      escalation+g5-identity-broken 1232 · g5-identity-broken 45`.
+ *    - **`7×6`, band `16–24`, batch-4 ids** (the identical command that produced batch 3) →
+ *      **`0 accept(s)` of `20000` judged**, `in-band candidates refused by a gate: 1218`, every
+ *      listed one `[escalation]`, and the histogram's `escalation: 498`.
+ *    - **That `498` is the receipt.** Batch 3's LV-015 record for the *identical* command with
+ *      only the batch id changed (`--batch=3`) is **`498 accepts` of `20000` judged**. The same 498
+ *      boards, accepted at `L31`'s ids and refused at `L36`'s ids, by the cut floor alone — a
+ *      one-to-one A/B, not an argument.
+ * 4. **The counter-reading, and why it loses.** One could call the truncation *correct* on the
+ *    ground that a shelf rung must sit above the registered root max. It is not: that relation is
+ *    an **id** relation, and the machine pin says so — `tests/solver/l16-l20-candidates.test.ts`
+ *    asserts `expect(id, "…sits at or below the registered root max…").toBeGreaterThan(rootMax)`
+ *    over the shelf's **file names**, and its sibling row compares `maxShipped` to the *pinned
+ *    count*. Batch 3's own lawfully registered `L31` sits at `23.204167`, **below** the
+ *    then-registered root max `27.604651` — so no rule, pin or precedent makes a shelf rung's
+ *    `D_exec` exceed the registered max. A `D_exec` floor at the act tail would be a **new
+ *    obligation invented by an instrument accident**, and inventing one here is exactly the class
+ *    of fault `--pocketsize ≥ 11`'s ceiling wording (item 114) forbids.
+ * 5. **The fix, in the next commit, is one line and it is not a tuning.** `measureCut()` excludes
+ *    `ACT_II_REGISTERED_IDS` — the same named law constant `prove-candidate.ts` reads — restoring
+ *    the floor to `14.969697` and making the generator and the prover judge against the **same**
+ *    cut. **Revert path:** restoring `ACT_II_B1_IDS` restores `28.339426` and re-truncates the pool
+ *    to `par 24`; both directions are re-measured, never remembered.
+ * 6. **What is published, and in what order.** This finding is a docstring-only commit, so
+ *    *"the fault was written down before the line that fixes it moved"* is checkable in
+ *    `git log -p`; the fix commit follows, then the post-fix census, then the dossier and the
+ *    §7.3.1 relief label of rule 9, and **only then** the bytes. Every pre-fix reading quoted
+ *    above is kept in the dossier **beside** its post-fix counterpart: a batch that reports only
+ *    the census taken after the instrument was repaired is reporting the half it likes.
+ * 7. **What the finder must not do.** The finding does **not** license a rule change: rule 2's
+ *    P2-exact derivation, rule 3's empty-pool clause, rule 4's closing-rung maximum and rule 9's
+ *    relief are unchanged, and no par, band, gate or registered number is touched. If the post-fix
+ *    census still supports only the ceiling par, that stands as the act's measured shape — and the
+ *    section 7.8 item 2 obligation it would leave is a Game Designer question, not a solver's.
+ *
+ * ── AMENDMENT — FINDING F-L36-2, published BEFORE the label that contradicts it moves ──────────
+ *
+ * Found the same way F-L36-1 was: by reading a printed line against the run that printed it, with
+ * no source reading. The three G-lattice stages end their census with
+ * *"par census over every judged candidate (in band and out): …"* (`stageLattice` asserts the same
+ * without the parenthesis). **The parenthesis is false**: `parHist` is incremented **only inside
+ * the out-of-band branch** (`if (probe.par < PAR_MIN || probe.par > PAR_MAX) { …; continue; }`), so
+ * an **in-band** tuple is never counted there — it is accounted for by *"accepts by par"* (when it
+ * is accepted) or by the **in-band refusal list** (when a gate refuses it; for this device class
+ * the only such gate is `g5-identity-broken`).
+ *
+ * 1. **Two receipts from logs that already exist — stronger than a re-run, because they are the
+ *    same pages the batch quotes.** (a) `post-par24.txt` runs at band `[24, 24]`, so its own
+ *    in-band par is `24`: the histogram reads `18:24 19:48 20:102 21:200 22:222 23:347 25:361 …`
+ *    — it lists every par **around** the band and **omits `24`** — while the same run's
+ *    *"accepts by par"* table reads `par 24: 293 accept(s)`. One page, two lines, disagreeing.
+ *    (b) `post-deep.txt` runs at band `16–24`: the histogram **starts at `25`**, i.e. exactly
+ *    `ACT_II_PAR_CEILING + 1`, while the same run's accept table lists `par 18 … par 24`. A
+ *    histogram that reports both sides of a band cannot report neither of its members.
+ * 2. **Why it is a defect and not a style choice.** This is the line rule 3's *empty-pool* clause
+ *    is read off. Read as labelled it licenses *"no judged candidate had `par 16` or `par 17`"* —
+ *    a claim about the whole enumerated class that the histogram never measures. The supported
+ *    sentence is narrower, and it is the one this batch publishes: **the accept pool's minimum
+ *    in-band par is `18`** (`par 18: 84 accept(s)` in the deep census, `par 18: 39` at the
+ *    published budget) — and *that* is what makes `par 16` ABSENT under rule 3.
+ * 3. **The blast radius, pre-registered before the repair and re-measured rather than asserted.**
+ *    No count, no accept, no gate, no band, no cut moves: the repair is confined to three
+ *    `console.log` label strings and two stage doc-lines, and the receipt is a re-run of the
+ *    identical `--parmin=24 --parmax=24 --budget=8000` census, which **must** return the same
+ *    `293` accepts and the same rejection histogram `5040 / 2655 / 12`. The census is otherwise
+ *    **complete within its prefix** by an accounting identity that closes **exactly** on every run
+ *    of this ticket — `accepts + par-out-of-band + unsolvable + g5-identity-broken = judged`
+ *    (deep `8920 + 58378 + 41158 + 11544 = 120000`; published budget `2091 + 9989 + 6643 + 1277 =
+ *    20000`; par-24 probe `293 + 5040 + 2655 + 12 = 8000`). That identity — not the histogram the
+ *    label points at — is where *"every judged tuple is accounted for"* is actually measured.
+ * 4. **What the finder must not do.** Not promote the label fix into a class claim: the corrected
+ *    text says **which** members the histogram covers and **where** the in-band readings live. It
+ *    does **not** say "this device cannot open below `par 18`" — that would be a claim about the
+ *    device class, and a **prefix** census of one frame's enumeration cannot make it (rule 10;
+ *    item 114's law). Nor is any earlier transcript re-stamped: batch-2/3's records are print
+ *    records of the instrument as it was, and repairing a label does not re-write history.
+ *
  * Stages:
  *
  *   0.  **preflight law** — the parity/judging-phase rule re-derived from the shipped
@@ -333,8 +600,13 @@ import {
   ACT_II_B1_IDS,
   ACT_II_B1_LADDER,
   ACT_II_B1_REGISTERED_PEAK_EXEC,
+  ACT_II_B2_B3_LADDER,
   ACT_II_EXEC_BAND,
   ACT_II_PAR_BAND,
+  ACT_II_PAR_CEILING,
+  ACT_II_PAR_FLOOR,
+  ACT_II_R005A_REGISTERED_TAIL_EXEC,
+  ACT_II_REGISTERED_IDS,
   ACT_I_REGISTERED_PEAK_EXEC,
   BLOCK_L1619_B_BAND,
   BLOCK_L1619_IDS,
@@ -365,7 +637,13 @@ const STAGE = argOf("stage") ?? "g";
  * transcript).
  */
 const BATCH = Number(argOf("batch") ?? "1");
-/** `--pockets=2` = batch 1's device (P + Q + goal seal, 3 presses); `3` = the chained sub-lattice (P + R2 + R3 + goal seal, 4 presses). */
+/**
+ * `--pockets=2` = batch 1's device (P + Q + goal seal, 3 presses); `3` = the chained sub-lattice
+ * (P + R2 + R3 + goal seal, 4 presses); `4` = the family ceiling (P + R2 + R3 + R4 + goal seal,
+ * 5 presses) — **batches 3 and 4 share this device class**, and what separates them is the
+ * **frame** (§7.4's `7×6 → 7×7`; batch 4 takes the second member) and the **par derivation**
+ * (batch 4's own P2-exact ladder, header rule 2).
+ */
 const POCKETS = Number(argOf("pockets") ?? "2");
 const ACCEPTS =
   argOf("accepts") ??
@@ -392,7 +670,7 @@ const PAR_MIN = Number(argOf("parmin") ?? "17");
  * batch 2 = **L26–L30** (this ticket, shelf candidates only — registration is a later
  * train, so nothing here widens a registered ceiling).
  */
-const BATCH_FIRST_ID = BATCH === 3 ? 31 : BATCH === 2 ? 26 : 21;
+const BATCH_FIRST_ID = BATCH === 4 ? 36 : BATCH === 3 ? 31 : BATCH === 2 ? 26 : 21;
 const RUNG_COUNT = 5;
 const PAR_MAX = Number(argOf("parmax") ?? "23");
 /** The Act II `D_exec` band (§7.2, derived from the measured `B` band).
@@ -482,12 +760,22 @@ function measureCut(): {
   l15Par: number;
   basis: readonly number[];
   bBand: readonly [number, number];
+  /**
+   * **F-L36-1's receipt, printed on every run.** The floor the *pre-fix* exclusion list
+   * produced — the registered L16–L20 ladder **and** only Act II batch 1 excluded, so the
+   * registered batches 2 + 3 fall into the basis. Kept as a printed reading rather than a
+   * comment because the two numbers must never be able to agree silently: they are equal
+   * exactly when no Act II rung above batch 1 is registered, and a future registration
+   * that forgets this instrument again makes the pair diverge **on screen**.
+   */
+  staleFloor: number;
 } {
   let floor = Number.NEGATIVE_INFINITY;
   let actI = Number.NEGATIVE_INFINITY;
   let l15Par = 0;
   let bMin = Number.POSITIVE_INFINITY;
   let bMax = Number.NEGATIVE_INFINITY;
+  let staleFloor = Number.NEGATIVE_INFINITY;
   const basis: number[] = [];
   for (const { level } of shipped()) {
     if (level.id <= 20) {
@@ -495,15 +783,34 @@ function measureCut(): {
       if (d.Dexec !== null && d.Dexec > actI) actI = d.Dexec;
     }
     if (BLOCK_L1619_IDS.includes(level.id)) continue;
-    if (ACT_II_B1_IDS.includes(level.id)) continue;
-    basis.push(level.id);
     const d = analyseDifficulty(level, explore(level));
+    // the pre-F-L36-1 basis: everything that is not the block and not batch 1
+    if (!ACT_II_B1_IDS.includes(level.id) && d.Dexec !== null && d.Dexec > staleFloor) {
+      staleFloor = d.Dexec;
+    }
+    /**
+     * **F-L36-1 (fixed).** This line used to exclude `ACT_II_B1_IDS` alone. R-005a then
+     * registered L26–L35, so the basis silently became `[1…15, 26…35]`, `floor` became
+     * L35's own `28.339426`, and the `escalation` gate below — `dexec > ctx.cut.floor` —
+     * became *"`D_exec` > the registered Act II tail"*: with `D_exec = par + 3·B` and
+     * `B ≤ 1.6875` that forces `par ≥ 24` and truncates the accept pool to the band
+     * ceiling **by filter**. It is the third occurrence of one mechanism (R-003c/R-003d,
+     * then R-004a, now R-005a) and R-005a had already applied the fix on the proving side:
+     * `scripts/prove-candidate.ts`'s `measureCut()` reads the law's own
+     * `ACT_II_REGISTERED_IDS` and carries a note describing this exact failure. The
+     * generator reads the same constant now, the floor is back to the frozen L1–L15 basis,
+     * and the two instruments judge against the **same** cut. Revert path: swapping this
+     * back to `ACT_II_B1_IDS` restores `28.339426` and re-truncates the census — both
+     * directions were re-measured, never remembered (see the header's FINDING block).
+     */
+    if (ACT_II_REGISTERED_IDS.includes(level.id)) continue;
+    basis.push(level.id);
     if (d.Dexec !== null && d.Dexec > floor) floor = d.Dexec;
     if (d.B < bMin) bMin = d.B;
     if (d.B > bMax) bMax = d.B;
     if (level.id === 15) l15Par = level.par;
   }
-  return { floor, actI, l15Par, basis, bBand: [bMin, bMax] };
+  return { floor, actI, l15Par, basis, bBand: [bMin, bMax], staleFloor };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1235,7 +1542,10 @@ function gatesOf(level: Level, graph: ReachableGraph, ctx: Context): readonly Ga
     {
       id: "escalation",
       ok: dexec !== null && dexec > ctx.cut.floor,
-      detail: `D_exec=${dexec === null ? "n/a" : dexec.toFixed(6)} > CUT ${ctx.cut.floor.toFixed(6)} (max over the L1–L15 basis; Act I's measured peak is ${ctx.cut.actI.toFixed(6)})`,
+      detail:
+        `D_exec=${dexec === null ? "n/a" : dexec.toFixed(6)} > CUT ${ctx.cut.floor.toFixed(6)} ` +
+        `(the FROZEN L1–L15 basis, F-L36-1; Act I's measured peak is ${ctx.cut.actI.toFixed(6)}) — the act's own ` +
+        `escalation is §7.3's act-peak, never this cut`,
     },
     // NOTE — the exact-rung ladder (`par = l15Par + 2·(id − 15)`, §6.1.1 P2 / the L16–L19
     // rung pin) is **deliberately NOT applied** inside an act: §7.2 makes Act II par band
@@ -1596,7 +1906,7 @@ function stageLattice(cut: { floor: number; actI: number; l15Par: number }, only
   console.log("rejection histogram:");
   for (const [k, v] of [...histogram.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${k}: ${String(v)}`);
   console.log(
-    `par census over every judged candidate: ` +
+    `par census over the OUT-OF-BAND judged candidate(s) (the histogram counts only the members the par band refused; in-band members are enumerated by "accepts by par" and by the in-band refusal list — F-L36-2): ` +
       `${[...parHist.entries()].sort((a, b) => a[0] - b[0]).map(([k, v]) => `${String(k)}:${String(v)}`).join(" ")}`,
   );
   console.log("accepts by par:");
@@ -1640,9 +1950,11 @@ function stageLattice(cut: { floor: number; actI: number; l15Par: number }, only
  *
  * - the **accept count is a floor** (`--paircap` / `--budget` truncate the enumeration;
  *   both counters are printed), and the refusal census is complete *within the prefix*;
- * - the **par census over every judged tuple** (not only the in-band ones) — a 4-press
- *   chain in a 7 × 6 frame is longer than a 3-press one, so "the class sits above the
- *   band" is a real possible outcome and the histogram is how it is read;
+ * - the **par histogram over the OUT-OF-BAND judged tuple(s)** — a 4-press chain in a
+ *   7 × 6 frame is longer than a 3-press one, so "the class sits above the band" is a
+ *   real possible outcome and this histogram is how it is read; the **in-band** members
+ *   are read from *"accepts by par"* and the in-band refusal list (F-L36-2 — the
+ *   histogram counts only what the par band refused, and its label now says so);
  * - the shape-filter counters of the header's published restrictions, including the
  *   `R3`-adjacent-to-`R2` counter that the seal law forces to 0.
  */
@@ -1942,7 +2254,7 @@ function stageLattice3(cut: { floor: number; actI: number; l15Par: number }, onl
   console.log("rejection histogram:");
   for (const [k, v] of [...histogram.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${k}: ${String(v)}`);
   console.log(
-    `par census over every judged candidate (in band and out): ` +
+    `par census over the OUT-OF-BAND judged candidate(s) (the histogram counts only the members the par band refused; in-band members are enumerated by "accepts by par" and by the in-band refusal list — F-L36-2): ` +
       `${[...parHist.entries()].sort((a, b) => a[0] - b[0]).map(([k, v]) => `${String(k)}:${String(v)}`).join(" ")}`,
   );
   console.log("accepts by par:");
@@ -1988,9 +2300,9 @@ function stageLattice3(cut: { floor: number; actI: number; l15Par: number }, onl
  *
  * - the **accept count is a floor** if `--paircap` / `--budget` truncate (both counters are
  *   printed), and the refusal census is complete *within the prefix*;
- * - the **par census over every judged tuple**, in band and out — the band is a filter, not
- *   a truncation, and this run exists to measure whether `par 24` (§7.8 item 3) is
- *   reachable in this family;
+ * - the **par histogram over the OUT-OF-BAND judged tuple(s)**, printed beside the in-band
+ *   readings rather than instead of them — the band is a filter, not a truncation, and this
+ *   run exists to measure whether `par 24` (§7.8 item 3) is reachable in this family;
  * - the **shape-filter counters** of the published restrictions: no `R3` tile adjacent to an
  *   `R2` tile (batch 2's filter #1, 0 by the seal law) and no `R4` tile adjacent to an `R2`
  *   or `R3` tile (filter #2, the same argument one level down: every neighbour of a sealed
@@ -2327,7 +2639,7 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
   console.log("rejection histogram:");
   for (const [k, v] of [...histogram.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${k}: ${String(v)}`);
   console.log(
-    `par census over every judged candidate (in band and out): ` +
+    `par census over the OUT-OF-BAND judged candidate(s) (the histogram counts only the members the par band refused; in-band members are enumerated by "accepts by par" and by the in-band refusal list — F-L36-2): ` +
       `${[...parHist.entries()].sort((a, b) => a[0] - b[0]).map(([k, v]) => `${String(k)}:${String(v)}`).join(" ")}`,
   );
   console.log("accepts by par:");
@@ -2550,6 +2862,62 @@ function batch3ParMultiset(byPar: ReadonlyMap<number, readonly Accept[]>): numbe
   return out.sort((a, b) => a - b);
 }
 
+/**
+ * **Batch 4's own par ladder** — the published rule (header, rules 1–4), executed as a
+ * **derivation**, never a search:
+ *
+ * 1. `DERIVED := [ACT_II_PAR_CEILING − 2·k for k = 0 … RUNG_COUNT − 1]`, kept where it is
+ *    `≥ ACT_II_PAR_FLOOR` — **read from the law module's band endpoints, never typed**. With
+ *    `[16, 24]` and 5 rungs this is `[16, 18, 20, 22, 24]`, the **unique** five-member ladder
+ *    whose every step is exactly §6.1.1's P2 minimum `Δpar = 2`: `4 × 2 = 8` is the band's own
+ *    width, so the ladder must use both endpoints and no step can exceed 2. The span check is
+ *    printed beside it — if a future band edit broke the identity, the printed deviation says so
+ *    (anchored at the ceiling, truncated at the floor) instead of a silently different ladder.
+ * 2. Restricted to the pars **this census's accept pool actually supports**; a par with an empty
+ *    pool is **ABSENT** and is never substituted (batch 3's clause, kept).
+ * 3. Padded to five rungs (§7.2) by repeating the ladder's **own highest supported pars,
+ *    descending** — the act's ceiling first, because §7.3.2 asks the act's maximum to be carried
+ *    late. Every repeat prints its reason.
+ */
+function batch4ParMultiset(byPar: ReadonlyMap<number, readonly Accept[]>): number[] {
+  const derived: number[] = [];
+  for (let k = 0; k < RUNG_COUNT; k += 1) {
+    const p = ACT_II_PAR_CEILING - 2 * k;
+    if (p >= ACT_II_PAR_FLOOR) derived.push(p);
+  }
+  derived.sort((a, b) => a - b);
+  const bandWidth = ACT_II_PAR_CEILING - ACT_II_PAR_FLOOR;
+  const span = (RUNG_COUNT - 1) * 2;
+  console.log(
+    `selection: batch 4 P2-exact ladder (header rule 2) — anchored at the act's ceiling ${String(ACT_II_PAR_CEILING)} and stepping down ` +
+      `by §6.1.1's P2 minimum 2: [${derived.join(", ")}] (derived from Act II's band endpoints ` +
+      `[${String(ACT_II_PAR_FLOOR)}, ${String(ACT_II_PAR_CEILING)}] read from the law module; ` +
+      `${String(RUNG_COUNT)} rungs × step 2 spans ${String(span)}, the band's own width ${String(bandWidth)} — ` +
+      `${span === bandWidth ? "the derivation is UNIQUE and every step is exactly 2" : "the ladder does NOT span the band: printed as a deviation, anchored at the ceiling and truncated at the floor, never smoothed"})`,
+  );
+  const supported = derived.filter((p) => (byPar.get(p) ?? []).length > 0);
+  const absent = derived.filter((p) => !supported.includes(p));
+  if (absent.length > 0)
+    console.log(
+      `selection: ABSENT (empty pool, never substituted): [${absent.join(", ")}] — a par the census does not support is dropped, ` +
+        `and no registered ladder's par is borrowed to fill it (§7.8 item 4)`,
+    );
+  if (supported.length === 0) return [];
+  const out = [...supported];
+  const pool = [...supported].sort((a, b) => b - a);
+  let i = 0;
+  while (out.length < RUNG_COUNT) {
+    const p = pool[i % pool.length] as number;
+    out.push(p);
+    console.log(
+      `selection: repeat #${String(out.length - supported.length)} — par ${String(p)} used again (the P2-exact ladder supports ` +
+        `${String(supported.length)} of the ${String(RUNG_COUNT)} rungs §7.2 asks for; repeats run down from the act's ceiling, §7.3.2)`,
+    );
+    i += 1;
+  }
+  return out.sort((a, b) => a - b);
+}
+
 function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept }[] {
   const requireRise = BATCH === 1;
   /**
@@ -2594,7 +2962,7 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
       acc.pop();
     }
   };
-  if (mirror === null && BATCH !== 3) {
+  if (mirror === null && BATCH !== 3 && BATCH !== 4) {
     pick(0, []);
   } else if (mirror !== null) {
     // The published mirror: exactly ONE combo, and it is the law's par list — never a search.
@@ -2613,6 +2981,24 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
         `and the only rule inside it is the within-par tie-break (minimal D_exec, then enumeration order)`,
     );
     combos.push(mirror);
+  } else if (BATCH === 4) {
+    // Batch 4's own P2-exact ladder (published rule 2): derived, then executed as ONE combo.
+    const own = batch4ParMultiset(byPar);
+    if (own.length !== RUNG_COUNT) {
+      console.log(
+        `selection: batch 4's derived ladder is [${own.join(", ")}] — the census supports no usable par at all on this frame, so no rung ` +
+          `is fabricated and NO par is borrowed from a registered ladder (published rule 8). The census is reported as a NAMED ACT ` +
+          `LIMITATION and the only published fallback is re-running the same device + ladder on the other frame this device has been ` +
+          `non-empty on (CX = 1, 7×6) — this tool does not silently switch frames.`,
+      );
+      return [];
+    }
+    console.log(
+      `selection: batch 4 par multiset [${own.join(", ")}] · ascending par, the closing-par rungs ordered by ascending D_exec; the ` +
+        `batch's LAST rung takes the within-par MAXIMUM D_exec (published departure, header rule 4, so the act's maximum is carried as ` +
+        `late as the family permits); the ladder is DERIVED from the band endpoints + P2, never mirrored (§7.8 item 4)`,
+    );
+    combos.push(own);
   } else {
     // Batch 3's OWN par set (published rule 1–3): derived, then executed as ONE combo.
     const own = batch3ParMultiset(byPar);
@@ -2655,12 +3041,12 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
       const all = byPar.get(p) ?? [];
       const pool = requireRise ? all.filter((a) => a.dexec > prev) : all;
       /**
-       * Batch 3's published tie-break **departure** (header rule 4): the batch's LAST rung
-       * takes the within-par **maximum** `D_exec` (every other rung keeps batch 1/2's
-       * minimal-`D_exec` rule), so §7.3.2's `act-close` maximum is carried by the batch's
-       * last rung rather than by its interior. Printed per rung, never silent.
+       * Batch 3's and batch 4's published tie-break **departure** (header rule 4): the batch's
+       * LAST rung takes the within-par **maximum** `D_exec` (every other rung keeps batch 1/2's
+       * minimal-`D_exec` rule), so §7.3.2's maximum is carried by the batch's last rung rather
+       * than by its interior. Printed per rung, never silent.
        */
-      const takeMax = BATCH === 3 && rungIndex === combo.length - 1;
+      const takeMax = (BATCH === 3 || BATCH === 4) && rungIndex === combo.length - 1;
       const ordered = takeMax ? [...pool].reverse() : pool;
       let candidate: Accept | undefined;
       let skippedByKey = 0;
@@ -2806,6 +3192,58 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
       `  anti-mirror check: ${equalPar.length === 0 ? "0 rungs share a par with the registered batch-1 ladder — the batch carries its OWN par set (§7.8 item 4), so no equal-par comparator exists on purpose" : `${String(equalPar.length)} rung(s) DO share a batch-1 par — the anti-mirror clause is violated`}`,
     );
   }
+  if (BATCH === 4) {
+    // Published rule 9: batch 4 has NO act-close refusal branch. §7.3.2's obligation was
+    // discharged inside batches 2–3 (L35 = 28.339426), so this batch prints its measured
+    // maximum as a READING against the three registered data — it neither re-carries the
+    // clause nor invents a second one to fail.
+    if (best.keySkips.length > 0) {
+      console.log(
+        "\nbatch-4 note — every departure from batch 1/2's within-par tie-break, printed (a filter is never silent):",
+      );
+      for (const s of best.keySkips) console.log(`  ${s}`);
+    }
+    const last = best.levels[best.levels.length - 1] as { level: Level; accept: Accept };
+    const maxRung = best.levels.reduce(
+      (acc, c) => (c.accept.dexec > acc.accept.dexec ? c : acc),
+      best.levels[0] as { level: Level; accept: Accept },
+    );
+    console.log(
+      `\nact-close READING (§7.3.2, obligation already discharged at L35 — no refusal branch on this batch) — batch 4's measured MAXIMUM is ` +
+        `L${String(BATCH_FIRST_ID + best.levels.indexOf(maxRung))} at D_exec ${maxRung.accept.dexec.toFixed(6)} (par ${String(maxRung.accept.par)}, ` +
+        `B ${maxRung.accept.b.toFixed(4)}, chain ${String(maxRung.accept.pressThenCross)}/${String(maxRung.accept.routes)}): ` +
+        `vs the registered Act II tail ${ACT_II_R005A_REGISTERED_TAIL_EXEC.toFixed(6)} (L35) → Δ ${(maxRung.accept.dexec - ACT_II_R005A_REGISTERED_TAIL_EXEC).toFixed(6)}; ` +
+        `vs the registered batch-1 peak ${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} → Δ ${(maxRung.accept.dexec - ACT_II_B1_REGISTERED_PEAK_EXEC).toFixed(6)}; ` +
+        `vs Act I's measured peak ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} → Δ ${(maxRung.accept.dexec - ACT_I_REGISTERED_PEAK_EXEC).toFixed(6)}`,
+    );
+    console.log(
+      `  reading, not a clause: this batch does NOT carry §7.3.2's obligation (L35 holds it) and the tool has no act-close REFUSAL branch here. ` +
+        `${maxRung.accept.dexec < ACT_II_R005A_REGISTERED_TAIL_EXEC ? "The act's registered maximum therefore stays at L35 — a deep family on a larger frame measures a LOWER B, which is the shape finding this batch reports rather than pads" : "the batch's maximum meets or exceeds the registered tail — also reported as a reading, since a shelf file moves no constant"}`,
+    );
+    console.log(
+      `  last rung L${String(BATCH_FIRST_ID + best.levels.length - 1)} par=${String(last.accept.par)} D_exec=${last.accept.dexec.toFixed(6)} ` +
+        `(the pre-published rule put the batch's maximum on the closing rung: ${last.accept.dexec === maxRung.accept.dexec ? "HOLDING" : "NOT holding — the pool's other rows carry it, printed as a measurement, never re-picked"})`,
+    );
+    // §7.8 item 5 relief seam: L36 sits under the same-family registered tail L35.
+    const l35 = ACT_II_R005A_REGISTERED_TAIL_EXEC;
+    const l36 = best.levels[0] as { level: Level; accept: Accept };
+    const dPar = l36.accept.par - 24; // L35's registered par, the act's ceiling
+    console.log(
+      `  §7.8 item 5 relief check (L35 → L36 seam): L36 D_exec ${l36.accept.dexec.toFixed(6)} · par ${String(l36.accept.par)} · B ${l36.accept.b.toFixed(4)} vs ` +
+        `shelf L35 ${l35.toFixed(6)} · par 24 · B 1.4465 → Δpar ${dPar >= 0 ? "+" : ""}${String(dPar)}, ΔB ${(l36.accept.b - 1.4465).toFixed(4)}, ` +
+        `ΔD_exec ${(l36.accept.dexec - l35).toFixed(6)} ${l36.accept.dexec < l35 ? "(BELOW — §7.8 item 5 fires and the §7.3.1-form label with this decomposition must be published in the dossier BEFORE --write)" : "(at or above — the seam does not fire; recorded as not fired)"}`,
+    );
+    // §7.8 item 4, in spirit: the batch's par SET, vs every registered Act II par.
+    const registered = new Set<number>([...ACT_II_B1_LADDER, ...ACT_II_B2_B3_LADDER].map((r) => r.par));
+    const shared = [...new Set(best.levels.map((c) => c.accept.par))].filter((p) => registered.has(p));
+    console.log(
+      `  anti-mirror check (§7.8 item 4, in spirit — a THIRD mirror is forbidden): registered Act II pars ` +
+        `= {${[...registered].sort((a, b) => a - b).join(", ")}} (batch 1 ∪ batches 2–3, read from the law module). This batch's par multiset is ` +
+        `[${best.levels.map((c) => String(c.accept.par)).join(", ")}] ⇒ ${String(shared.length)} of its distinct par(s) coincide with a registered one` +
+        `${shared.length === 0 ? " — the batch carries its own pars and borrows none" : ` (${shared.join(", ")}) — a coincidence of the band's finite integer range, printed so it is never implied away; no par was chosen to avoid or to match a registered rung`}. ` +
+        `The multiset is DERIVED (anchored at the ceiling, stepped by P2's minimum, header rule 2), never mirrored from any registered ladder.`,
+    );
+  }
   return best.levels;
 }
 
@@ -2834,8 +3272,12 @@ function stageSelect(): void {
   mkdirSync(OUT_DIR, { recursive: true });
   for (let i = 0; i < chosen.length; i += 1) {
     const level: Level = { ...(chosen[i] as { level: Level }).level, id: BATCH_FIRST_ID + i };
-    if (BATCH === 3 && (level.id < 31 || level.id > 35)) {
-      console.log(`REFUSED to write l${String(level.id)}: batch 3's ids are L31–L35 only (nothing outside its own slot is touched)`);
+    const lastId = BATCH_FIRST_ID + RUNG_COUNT - 1;
+    if (level.id < BATCH_FIRST_ID || level.id > lastId) {
+      console.log(
+        `REFUSED to write l${String(level.id)}: batch ${String(BATCH)}'s ids are L${String(BATCH_FIRST_ID)}–L${String(lastId)} only ` +
+          `(nothing outside its own slot is touched)`,
+      );
       continue;
     }
     const file = join(OUT_DIR, `l${String(level.id).padStart(3, "0")}.json`);
@@ -2851,15 +3293,33 @@ function stageSelect(): void {
 const cut = measureCut();
 console.log(
   `author-l21 (G lattice, Act II batch ${String(BATCH)}${
-    BATCH === 3
-      ? " — the 4-pocket sub-lattice, L31–L35"
-      : BATCH === 2
-        ? " — the 3-pocket chained sub-lattice, L26–L30"
-        : " — L21–L25"
+    BATCH === 4
+      ? " — the family-ceiling 4-pocket sub-lattice on §7.4's second frame (7×7, CX=1), L36–L40"
+      : BATCH === 3
+        ? " — the 4-pocket sub-lattice, L31–L35"
+        : BATCH === 2
+          ? " — the 3-pocket chained sub-lattice, L26–L30"
+          : " — L21–L25"
   }) — ` +
     `CUT re-measured from the shipped set: D_exec max over the L1–L15 basis = ${cut.floor.toFixed(6)} · ` +
     `Act I measured peak (ids 1–20) = ${cut.actI.toFixed(6)} · par(L15) = ${String(cut.l15Par)} · ` +
     `B band [${cut.bBand[0].toFixed(4)}, ${cut.bBand[1].toFixed(4)}] · basis ids [${cut.basis.join(", ")}]`,
+);
+/**
+ * **F-L36-1's receipt.** Printed unconditionally, so the pre-fix and post-fix floors are both
+ * on screen every run and can never agree silently: they coincide only when no Act II rung above
+ * batch 1 is registered, and any future registration that forgets this instrument makes the pair
+ * diverge where a reader can see it. `--pocketsize ≥ 11`'s ceiling-wording law (item 114) has a
+ * sibling here: a number that is *reported* may not be permitted to become a *filter* unnoticed.
+ */
+console.log(
+  cut.floor === cut.staleFloor
+    ? `CUT divergence receipt (F-L36-1): the FROZEN L1–L15 floor ${cut.floor.toFixed(6)} equals the pre-fix floor ` +
+        `${cut.staleFloor.toFixed(6)} — the two bases coincide, which is expected while no Act II rung above batch 1 is registered`
+    : `CUT divergence receipt (F-L36-1): FROZEN L1–L15 floor ${cut.floor.toFixed(6)} vs the pre-fix basis's ` +
+        `${cut.staleFloor.toFixed(6)} (Δ ${(cut.staleFloor - cut.floor).toFixed(6)}) — the pre-fix list let the registered Act II ` +
+        `rungs raise the floor and silently turned the escalation gate into "D_exec > the registered act tail"; the generator now ` +
+        `reads ACT_II_REGISTERED_IDS, the same law constant the prover's own measureCut() reads`,
 );
 const law = preflightLaw();
 console.log(
