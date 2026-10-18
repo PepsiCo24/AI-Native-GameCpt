@@ -562,6 +562,7 @@ import {
   ACT_II_PAR_CEILING,
   ACT_II_PAR_FLOOR,
   ACT_II_R005A_REGISTERED_TAIL_EXEC,
+  ACT_II_REGISTERED_IDS,
   ACT_I_REGISTERED_PEAK_EXEC,
   BLOCK_L1619_B_BAND,
   BLOCK_L1619_IDS,
@@ -715,12 +716,22 @@ function measureCut(): {
   l15Par: number;
   basis: readonly number[];
   bBand: readonly [number, number];
+  /**
+   * **F-L36-1's receipt, printed on every run.** The floor the *pre-fix* exclusion list
+   * produced — the registered L16–L20 ladder **and** only Act II batch 1 excluded, so the
+   * registered batches 2 + 3 fall into the basis. Kept as a printed reading rather than a
+   * comment because the two numbers must never be able to agree silently: they are equal
+   * exactly when no Act II rung above batch 1 is registered, and a future registration
+   * that forgets this instrument again makes the pair diverge **on screen**.
+   */
+  staleFloor: number;
 } {
   let floor = Number.NEGATIVE_INFINITY;
   let actI = Number.NEGATIVE_INFINITY;
   let l15Par = 0;
   let bMin = Number.POSITIVE_INFINITY;
   let bMax = Number.NEGATIVE_INFINITY;
+  let staleFloor = Number.NEGATIVE_INFINITY;
   const basis: number[] = [];
   for (const { level } of shipped()) {
     if (level.id <= 20) {
@@ -728,15 +739,34 @@ function measureCut(): {
       if (d.Dexec !== null && d.Dexec > actI) actI = d.Dexec;
     }
     if (BLOCK_L1619_IDS.includes(level.id)) continue;
-    if (ACT_II_B1_IDS.includes(level.id)) continue;
-    basis.push(level.id);
     const d = analyseDifficulty(level, explore(level));
+    // the pre-F-L36-1 basis: everything that is not the block and not batch 1
+    if (!ACT_II_B1_IDS.includes(level.id) && d.Dexec !== null && d.Dexec > staleFloor) {
+      staleFloor = d.Dexec;
+    }
+    /**
+     * **F-L36-1 (fixed).** This line used to exclude `ACT_II_B1_IDS` alone. R-005a then
+     * registered L26–L35, so the basis silently became `[1…15, 26…35]`, `floor` became
+     * L35's own `28.339426`, and the `escalation` gate below — `dexec > ctx.cut.floor` —
+     * became *"`D_exec` > the registered Act II tail"*: with `D_exec = par + 3·B` and
+     * `B ≤ 1.6875` that forces `par ≥ 24` and truncates the accept pool to the band
+     * ceiling **by filter**. It is the third occurrence of one mechanism (R-003c/R-003d,
+     * then R-004a, now R-005a) and R-005a had already applied the fix on the proving side:
+     * `scripts/prove-candidate.ts`'s `measureCut()` reads the law's own
+     * `ACT_II_REGISTERED_IDS` and carries a note describing this exact failure. The
+     * generator reads the same constant now, the floor is back to the frozen L1–L15 basis,
+     * and the two instruments judge against the **same** cut. Revert path: swapping this
+     * back to `ACT_II_B1_IDS` restores `28.339426` and re-truncates the census — both
+     * directions were re-measured, never remembered (see the header's FINDING block).
+     */
+    if (ACT_II_REGISTERED_IDS.includes(level.id)) continue;
+    basis.push(level.id);
     if (d.Dexec !== null && d.Dexec > floor) floor = d.Dexec;
     if (d.B < bMin) bMin = d.B;
     if (d.B > bMax) bMax = d.B;
     if (level.id === 15) l15Par = level.par;
   }
-  return { floor, actI, l15Par, basis, bBand: [bMin, bMax] };
+  return { floor, actI, l15Par, basis, bBand: [bMin, bMax], staleFloor };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1468,7 +1498,10 @@ function gatesOf(level: Level, graph: ReachableGraph, ctx: Context): readonly Ga
     {
       id: "escalation",
       ok: dexec !== null && dexec > ctx.cut.floor,
-      detail: `D_exec=${dexec === null ? "n/a" : dexec.toFixed(6)} > CUT ${ctx.cut.floor.toFixed(6)} (max over the L1–L15 basis; Act I's measured peak is ${ctx.cut.actI.toFixed(6)})`,
+      detail:
+        `D_exec=${dexec === null ? "n/a" : dexec.toFixed(6)} > CUT ${ctx.cut.floor.toFixed(6)} ` +
+        `(the FROZEN L1–L15 basis, F-L36-1; Act I's measured peak is ${ctx.cut.actI.toFixed(6)}) — the act's own ` +
+        `escalation is §7.3's act-peak, never this cut`,
     },
     // NOTE — the exact-rung ladder (`par = l15Par + 2·(id − 15)`, §6.1.1 P2 / the L16–L19
     // rung pin) is **deliberately NOT applied** inside an act: §7.2 makes Act II par band
@@ -3225,6 +3258,22 @@ console.log(
     `CUT re-measured from the shipped set: D_exec max over the L1–L15 basis = ${cut.floor.toFixed(6)} · ` +
     `Act I measured peak (ids 1–20) = ${cut.actI.toFixed(6)} · par(L15) = ${String(cut.l15Par)} · ` +
     `B band [${cut.bBand[0].toFixed(4)}, ${cut.bBand[1].toFixed(4)}] · basis ids [${cut.basis.join(", ")}]`,
+);
+/**
+ * **F-L36-1's receipt.** Printed unconditionally, so the pre-fix and post-fix floors are both
+ * on screen every run and can never agree silently: they coincide only when no Act II rung above
+ * batch 1 is registered, and any future registration that forgets this instrument makes the pair
+ * diverge where a reader can see it. `--pocketsize ≥ 11`'s ceiling-wording law (item 114) has a
+ * sibling here: a number that is *reported* may not be permitted to become a *filter* unnoticed.
+ */
+console.log(
+  cut.floor === cut.staleFloor
+    ? `CUT divergence receipt (F-L36-1): the FROZEN L1–L15 floor ${cut.floor.toFixed(6)} equals the pre-fix floor ` +
+        `${cut.staleFloor.toFixed(6)} — the two bases coincide, which is expected while no Act II rung above batch 1 is registered`
+    : `CUT divergence receipt (F-L36-1): FROZEN L1–L15 floor ${cut.floor.toFixed(6)} vs the pre-fix basis's ` +
+        `${cut.staleFloor.toFixed(6)} (Δ ${(cut.staleFloor - cut.floor).toFixed(6)}) — the pre-fix list let the registered Act II ` +
+        `rungs raise the floor and silently turned the escalation gate into "D_exec > the registered act tail"; the generator now ` +
+        `reads ACT_II_REGISTERED_IDS, the same law constant the prover's own measureCut() reads`,
 );
 const law = preflightLaw();
 console.log(
