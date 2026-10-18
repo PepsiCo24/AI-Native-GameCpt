@@ -510,6 +510,48 @@
  *    census still supports only the ceiling par, that stands as the act's measured shape — and the
  *    section 7.8 item 2 obligation it would leave is a Game Designer question, not a solver's.
  *
+ * ── AMENDMENT — FINDING F-L36-2, published BEFORE the label that contradicts it moves ──────────
+ *
+ * Found the same way F-L36-1 was: by reading a printed line against the run that printed it, with
+ * no source reading. The three G-lattice stages end their census with
+ * *"par census over every judged candidate (in band and out): …"* (`stageLattice` asserts the same
+ * without the parenthesis). **The parenthesis is false**: `parHist` is incremented **only inside
+ * the out-of-band branch** (`if (probe.par < PAR_MIN || probe.par > PAR_MAX) { …; continue; }`), so
+ * an **in-band** tuple is never counted there — it is accounted for by *"accepts by par"* (when it
+ * is accepted) or by the **in-band refusal list** (when a gate refuses it; for this device class
+ * the only such gate is `g5-identity-broken`).
+ *
+ * 1. **Two receipts from logs that already exist — stronger than a re-run, because they are the
+ *    same pages the batch quotes.** (a) `post-par24.txt` runs at band `[24, 24]`, so its own
+ *    in-band par is `24`: the histogram reads `18:24 19:48 20:102 21:200 22:222 23:347 25:361 …`
+ *    — it lists every par **around** the band and **omits `24`** — while the same run's
+ *    *"accepts by par"* table reads `par 24: 293 accept(s)`. One page, two lines, disagreeing.
+ *    (b) `post-deep.txt` runs at band `16–24`: the histogram **starts at `25`**, i.e. exactly
+ *    `ACT_II_PAR_CEILING + 1`, while the same run's accept table lists `par 18 … par 24`. A
+ *    histogram that reports both sides of a band cannot report neither of its members.
+ * 2. **Why it is a defect and not a style choice.** This is the line rule 3's *empty-pool* clause
+ *    is read off. Read as labelled it licenses *"no judged candidate had `par 16` or `par 17`"* —
+ *    a claim about the whole enumerated class that the histogram never measures. The supported
+ *    sentence is narrower, and it is the one this batch publishes: **the accept pool's minimum
+ *    in-band par is `18`** (`par 18: 84 accept(s)` in the deep census, `par 18: 39` at the
+ *    published budget) — and *that* is what makes `par 16` ABSENT under rule 3.
+ * 3. **The blast radius, pre-registered before the repair and re-measured rather than asserted.**
+ *    No count, no accept, no gate, no band, no cut moves: the repair is confined to three
+ *    `console.log` label strings and two stage doc-lines, and the receipt is a re-run of the
+ *    identical `--parmin=24 --parmax=24 --budget=8000` census, which **must** return the same
+ *    `293` accepts and the same rejection histogram `5040 / 2655 / 12`. The census is otherwise
+ *    **complete within its prefix** by an accounting identity that closes **exactly** on every run
+ *    of this ticket — `accepts + par-out-of-band + unsolvable + g5-identity-broken = judged`
+ *    (deep `8920 + 58378 + 41158 + 11544 = 120000`; published budget `2091 + 9989 + 6643 + 1277 =
+ *    20000`; par-24 probe `293 + 5040 + 2655 + 12 = 8000`). That identity — not the histogram the
+ *    label points at — is where *"every judged tuple is accounted for"* is actually measured.
+ * 4. **What the finder must not do.** Not promote the label fix into a class claim: the corrected
+ *    text says **which** members the histogram covers and **where** the in-band readings live. It
+ *    does **not** say "this device cannot open below `par 18`" — that would be a claim about the
+ *    device class, and a **prefix** census of one frame's enumeration cannot make it (rule 10;
+ *    item 114's law). Nor is any earlier transcript re-stamped: batch-2/3's records are print
+ *    records of the instrument as it was, and repairing a label does not re-write history.
+ *
  * Stages:
  *
  *   0.  **preflight law** — the parity/judging-phase rule re-derived from the shipped
