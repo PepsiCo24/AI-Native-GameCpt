@@ -1,6 +1,16 @@
 # ADR-design-0008 — the Act III EXEC band (derived-exact) · the L41–L45 opener rule · Act III par/star totality · the L40→L41 `act-open` relief pre-published
 
 - **Status:** ADOPTED (design ruling). Requires Orchestrator approval per AGENTS.md §4.
+- **Amendment 2026-10-18 (GD-012b, corrective — numbering only):** this record was written when
+  §7.3.1's register held instances `1–3`, and it numbered its own `L40→L41` relief **"instance 4"**.
+  That collided with the **`batch-seam` `L35→L36`** relief (`ΔD_exec = −6.038144`, band
+  `[19.75, 29.0625]`), which was **pre-published by LV-017's rule 9 before the census and before any
+  byte** (rule commit `b9dac54`, git-dated) and which **already registers as instance 4 with batch 4**
+  in in-flight R-006a's train. Because the register is ordered by **seam position**, the register now
+  reads **1 `L20→L21` · 2 `L25→L26` · 3 `L30→L31` · 4 `L35→L36` · 5 `L40→L41`**: this record's label
+  is **instance 5**, and every cross-reference below has been moved to match. **No ruling, number,
+  band, bound, constant or label text in this ADR changes** — only the instance number. Full
+  corrective record: `docs/level-design.md` changelog **V1.4b**.
 - **Date:** 2026-10-18
 - **Decider:** Game Designer (Agent 1, task **GD-012**)
 - **Owns:** `docs/level-design.md` **§7.10** (new), **§7.2**'s band-notation note (Act III
@@ -14,7 +24,8 @@
 - **Schedule refs:** `docs/level-design.md` §7.0 (integrity: `par` bands are law, `D_exec` bands
   are **derived**), **§7.2** (the acts table — **Act III = L41–L60, `par 20–28`, printed `D_exec`
   `[23.75, 33.06]`**), §7.3 (`act-peak`; interior freedom; the `ΔM = 0` plateau relaxation),
-  **§7.3.1** (relief-label **form** — instance 4 added), **§7.3.2** (`act-close`; Act III's carry
+  **§7.3.1** (relief-label **form** — this record's label is **instance 5**; instance **4** is the
+  `L35→L36` batch-seam, pre-published by LV-017's rule 9 and registering with batch 4), **§7.3.2** (`act-close`; Act III's carry
   window), §7.4 (lattice stage `H`, both-pair), §7.5 (proof obligations), §7.8 (the closing-peak
   handoff pattern re-used), **§7.9** (bands derived-exact, inclusive; **derive-from-formula, never
   compare against rounded text**); §6 / §6.1 (dip law; P1–P4), §6.2 (`ΔM = 0` precedent).
@@ -269,7 +280,7 @@ spends a tuple.
 
 ---
 
-## RULING E — the L40→L41 `act-open` seam relief, PRE-PUBLISHED now (§7.3.1 instance 4)
+## RULING E — the L40→L41 `act-open` seam relief, PRE-PUBLISHED now (§7.3.1 instance 5)
 
 **Original Hypothesis.** §7.3's interior freedom *permits* an act to open below the previous act's
 peak; §7.3.1's law makes the relief **registrable only against a pre-published label** (*"a relief
@@ -324,7 +335,7 @@ first rungs); decomposition always `ΔD_exec = Δpar + 3·ΔB`, with the `par` t
 `ACT_III_B1_OPEN_RELIEF_DELTA_RANGE = [−4.705319, −1.392819]` (the published bound), and the exact
 `ACT_III_B1_OPEN_RELIEF_EXEC` / `_DELTA` **filled only after selection and before the bytes**.
 
-**Evidence.** §7.3.1 (the form + instances 1–3); §7.3.3 / `star-era-asks-readiness.md` (`NOT
+**Evidence.** §7.3.1 (the form + instances 1–4 — instance 4 the `L35→L36` batch-seam, pre-published by LV-017's rule 9 at `b9dac54` before the census and the bytes); §7.3.3 / `star-era-asks-readiness.md` (`NOT
 TESTABLE, n = 0`); item 129 (RV-012: the un-published batch-2 label — the fault class this prevents);
 §7.8 item 5 (the same discipline one act earlier); `docs/ai-native-pipeline.md` §8.24 (LV-017's
 own before-`--write` publication, `ΔD_exec −6.038144`).
@@ -351,7 +362,7 @@ seam is derived rather than predicted.
 4. **RULING D — zero new mechanics, zero new board features, zero architect-impact.** Prefer the
    **`CX = 1`** frames and the proven 4-pocket device class; the XOR door is already shipped
    semantics (review-flagged). Anything beyond is architect-impact and needs its own ADR.
-5. **RULING E — the `L40→L41` `act-open` relief is PRE-PUBLISHED** as §7.3.1 instance 4, with the
+5. **RULING E — the `L40→L41` `act-open` relief is PRE-PUBLISHED** as §7.3.1 instance 5, with the
    published bound `ΔD_exec ∈ [−4.705319, −1.392819]`; the exact value is a fill-in before the
    bytes, never after.
 6. **No code, no constant, no dataset, no gate, no registered row, no Act I/II band moves.** The law
