@@ -243,6 +243,78 @@ const bMin = Math.min(...measured.map((m) => m.b));
 const bMax = Math.max(...measured.map((m) => m.b));
 const priorPeak = Math.max(...measured.filter((m) => m.level.id <= 15).map((m) => m.dexec));
 
+/**
+ * **The `B` band, read with the ONE named excursion (R-005a chore; booked by
+ * `docs/project-status.md` item 139, which proved the divergence pre-existing at base).**
+ *
+ * `l016.json` measures `B = 1.7000`, above the shipped band top `1.6875` — the **named**
+ * F-L16-2 excursion (`docs/level-difficulty.md` §3.3/§5.2, `src/levels/README.md` §2e, and
+ * `docs/level-design.md` §7.5's "or a named excursion in the F-L16-2 form (named, recorded,
+ * never smoothed)"). The old row demanded the strict reproduction
+ * `measured [1.2500, 1.7000] == law [1.25, 1.6875]` over **every** shipped board, so it
+ * reported a divergence on a corpus whose excursion is *lawful with its name attached* —
+ * and it kept doing so after every later registration (it read the same
+ * `measured [1.2500, 1.7000]` at L16, at L25 and at L35).
+ *
+ * The waiver is therefore **not** a loosening into "anything goes": it requires (a) the
+ * excursion set to be **exactly** the F-L16-2 register — the named rung and the measured
+ * value, nothing else; (b) no board below the band floor; and (c) the remaining in-band set
+ * to reproduce **both** published endpoints exactly. A second, unnamed excursion FAILs, and
+ * so does a widened one on the named rung. Both directions are probed below.
+ *
+ * ── revert path, and the PRE → POST byte diff ───────────────────────────────
+ * The chore is **one row plus its register** (`B_EXCURSION_RUNG` / `B_EXCURSION_VALUE` /
+ * `bandReading`); no published number, and no other row, is part of it. Bytes, base `dfd8f48`
+ * → this tree:
+ *
+ *   -    `B band [${LAW.bBand.join(", ")}] (§6.1.1 P2) is reproduced by the isolated set`,
+ *   -    bMin === LAW.bBand[0] && bMax === LAW.bBand[1],
+ *   -    `measured [${bMin.toFixed(4)}, ${bMax.toFixed(4)}] vs law [${LAW.bBand.join(", ")}]`,
+ *   +    `B band [${LAW.bBand.join(", ")}] (§6.1.1 P2) is reproduced by the isolated set, modulo the ONE named
+ *   +     F-L16-2 excursion (L${String(B_EXCURSION_RUNG)} at ${B_EXCURSION_VALUE.toFixed(4)}) — never widened, never smoothed`,
+ *   +    liveBand.ok,
+ *   +    `measured [${bMin.toFixed(4)}, ${bMax.toFixed(4)}] vs law [${LAW.bBand.join(", ")}]; excursion set {...}
+ *   +     (named register: L${String(B_EXCURSION_RUNG)} ${B_EXCURSION_VALUE.toFixed(4)}); below the floor [...]; the remaining
+ *   +     ${String(measured.length - liveBand.above.length)} board(s) reproduce the band as [${liveBand.inBandLo.toFixed(4)}, ${liveBand.inBandHi.toFixed(4)}]`,
+ *
+ * `git revert <the R-005a commit that carries this>` restores the strict predicate — and the
+ * attester then returns to **exit 1** on the registered tree (measured at base `dfd8f48`:
+ * `DIVERGENCE B band … measured [1.2500, 1.7000] vs law [1.25, 1.6875]`, `RESULT:
+ * STOP_AND_ROUTE`). To revert by hand: delete `B_EXCURSION_RUNG`/`B_EXCURSION_VALUE`/
+ * `bandReading` and the three direction probes below, and put back the three lines above.
+ */
+const B_EXCURSION_RUNG = 16;
+const B_EXCURSION_VALUE = 1.7;
+const bandReading = (
+  rows: readonly { readonly id: number; readonly b: number }[],
+): {
+  readonly above: readonly { readonly id: number; readonly b: number }[];
+  readonly below: readonly { readonly id: number; readonly b: number }[];
+  readonly reproduced: boolean;
+  readonly inBandLo: number;
+  readonly inBandHi: number;
+  readonly ok: boolean;
+} => {
+  const above = rows.filter((r) => r.b > LAW.bBand[1]);
+  const below = rows.filter((r) => r.b < LAW.bBand[0]);
+  const inBand = rows.filter(
+    (r) => r.b >= LAW.bBand[0] && r.b <= LAW.bBand[1],
+  );
+  const inBandLo = inBand.length === 0 ? Number.NaN : Math.min(...inBand.map((r) => r.b));
+  const inBandHi = inBand.length === 0 ? Number.NaN : Math.max(...inBand.map((r) => r.b));
+  const reproduced =
+    below.length === 0 &&
+    inBandLo === LAW.bBand[0] &&
+    inBandHi === LAW.bBand[1] &&
+    inBand.length === rows.length - above.length;
+  const named =
+    above.length === 1 &&
+    above[0]!.id === B_EXCURSION_RUNG &&
+    Math.abs(above[0]!.b - B_EXCURSION_VALUE) < 5e-5;
+  return { above, below, reproduced, inBandLo, inBandHi, ok: reproduced && named };
+};
+const liveBand = bandReading(measured.map((m) => ({ id: m.level.id, b: m.b })));
+
 const cutChecks: [string, boolean, string][] = [
   [
     `CUT L15 D_exec = ${LAW.l15Dexec6} (§6.1.1)`,
@@ -266,9 +338,11 @@ const cutChecks: [string, boolean, string][] = [
     `${d6(10)} vs law ${LAW.l10Dexec6}`,
   ],
   [
-    `B band [${LAW.bBand.join(", ")}] (§6.1.1 P2) is reproduced by the isolated set`,
-    bMin === LAW.bBand[0] && bMax === LAW.bBand[1],
-    `measured [${bMin.toFixed(4)}, ${bMax.toFixed(4)}] vs law [${LAW.bBand.join(", ")}]`,
+    `B band [${LAW.bBand.join(", ")}] (§6.1.1 P2) is reproduced by the isolated set, modulo the ONE named F-L16-2 excursion (L${String(B_EXCURSION_RUNG)} at ${B_EXCURSION_VALUE.toFixed(4)}) — never widened, never smoothed`,
+    liveBand.ok,
+    `measured [${bMin.toFixed(4)}, ${bMax.toFixed(4)}] vs law [${LAW.bBand.join(", ")}]; excursion set {${liveBand.above.map((r) => `L${String(r.id)} ${r.b.toFixed(4)}`).join(", ")}} ` +
+      `(named register: L${String(B_EXCURSION_RUNG)} ${B_EXCURSION_VALUE.toFixed(4)}); below the floor [${liveBand.below.map((r) => `L${String(r.id)}`).join(", ")}]; ` +
+      `the remaining ${String(measured.length - liveBand.above.length)} board(s) reproduce the band as [${liveBand.inBandLo.toFixed(4)}, ${liveBand.inBandHi.toFixed(4)}]`,
   ],
   [
     "weights are §2 V0.1 (imported live, not transcribed)",
@@ -421,6 +495,48 @@ console.log(
   `  T ≡ 0 on ${String(tZero)}/${String(measured.length)} · R ≡ 0 on ${String(rZero)}/${String(measured.length)} ` +
     `(§5.2's theorem: inside §4, D_exec = L + 3·B and w3/w4 are inert)`,
 );
+console.log("");
+console.log(
+  "— the F-L16-2 waiver, probed in BOTH directions (a waiver that cannot fail is not evidence) —",
+);
+// Direction 1: the waiver is not vacuous — a SECOND, unnamed excursion must FAIL it.
+const secondExcursion = bandReading([
+  ...measured.map((m) => ({ id: m.level.id, b: m.b })),
+  { id: 99, b: 1.72 },
+]);
+console.log(
+  `  CONTROL  a second, unnamed excursion (L99 at 1.7200) ⇒ B-band clause ok=${String(secondExcursion.ok)} ` +
+    `(required false; the excursion set then reads {${secondExcursion.above.map((r) => `L${String(r.id)} ${r.b.toFixed(4)}`).join(", ")}} — one id is not the register)`,
+);
+// Direction 2: the named register is not a licence to widen — the SAME rung at a different
+// value must FAIL as well, which is what "named, recorded, never smoothed" means.
+const widenedExcursion = bandReading(
+  measured.map((m) => ({ id: m.level.id, b: m.level.id === B_EXCURSION_RUNG ? 1.75 : m.b })),
+);
+console.log(
+  `  CONTROL  the named rung widened (L${String(B_EXCURSION_RUNG)} at 1.7500) ⇒ B-band clause ok=${String(widenedExcursion.ok)} ` +
+    "(required false — the register names a value, not a permission)",
+);
+// Direction 3: with the named excursion waived out, the rest reproduces BOTH endpoints.
+const withoutExcursion = bandReading(
+  measured
+    .filter((m) => m.level.id !== B_EXCURSION_RUNG)
+    .map((m) => ({ id: m.level.id, b: m.b })),
+);
+console.log(
+  `  CONTROL  without L${String(B_EXCURSION_RUNG)}: the remaining ${String(measured.length - 1)} board(s) reproduce the band exactly as ` +
+    `[${withoutExcursion.inBandLo.toFixed(4)}, ${withoutExcursion.inBandHi.toFixed(4)}] (required [1.2500, 1.6875]) — the band itself is re-derived, never widened`,
+);
+cutChecks.push([
+  "the F-L16-2 waiver is non-vacuous and not a widening (both directions probed live)",
+  liveBand.ok &&
+    !secondExcursion.ok &&
+    !widenedExcursion.ok &&
+    withoutExcursion.reproduced &&
+    withoutExcursion.above.length === 0,
+  `live ok=${String(liveBand.ok)} · second unnamed excursion ok=${String(secondExcursion.ok)} · named-rung widened ok=${String(widenedExcursion.ok)} · ` +
+    `without L${String(B_EXCURSION_RUNG)} reproduced=${String(withoutExcursion.reproduced)} as [${withoutExcursion.inBandLo.toFixed(4)}, ${withoutExcursion.inBandHi.toFixed(4)}]`,
+]);
 console.log("");
 
 // ─────────────────────────────────────────────────────────────────────────────

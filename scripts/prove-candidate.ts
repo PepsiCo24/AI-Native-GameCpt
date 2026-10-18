@@ -54,10 +54,10 @@ import { DIRECTIONS, move } from "@/core/state/move";
 import { hashState } from "@/core/state/hash";
 import type { SearchState } from "@/core/state/types";
 import {
-  ACT_II_B1_IDS,
   ACT_II_B_BAND,
   ACT_II_EXEC_BAND,
   ACT_II_PAR_BAND,
+  ACT_II_REGISTERED_IDS,
   ACT_I_REGISTERED_PEAK_EXEC,
   BLOCK_L1619_B_BAND,
   BLOCK_L1619_PRE_R003D_TAIL_EXEC,
@@ -145,8 +145,16 @@ function measureCut(): { floor: number; l15Par: number; n: number; basis: readon
     // stays **frozen at L1–L15 = 14.969697**; §7 needs no re-derivation of it, and the
     // act's own escalation is judged by §7.3's act-peak clause (`act2Batch1Gates` +
     // `actScaleTailGuards`), never by moving the cut.
+    //
+    // R-005a: same rule, third registration — the ten-level train (L26–L35) makes the
+    // exclusion grow once more, and for exactly the same reason: with the new rungs in
+    // the root, the cut basis read 28.339426 and EVERY new rung was refused by
+    // `escalation  D_exec > CUT 28.339426` (the honest quote is in the R-005a move
+    // commit). The cut is still **frozen at L1–L15 = 14.969697**. The law's own id set
+    // (`ACT_II_REGISTERED_IDS`, batch 1 + 2 + 3) is what the filter reads, so a future
+    // registration extends the law once and this instrument follows it.
     if (BLOCK_L1619_IDS.includes(level.id)) continue;
-    if (ACT_II_B1_IDS.includes(level.id)) continue;
+    if (ACT_II_REGISTERED_IDS.includes(level.id)) continue;
     basis.push(level.id);
     const d = analyseDifficulty(level, explore(level));
     if (d.Dexec !== null && d.Dexec > floor) floor = d.Dexec;
@@ -1159,7 +1167,7 @@ function multiPocketGates(
 const cut = measureCut();
 console.log(`prove-candidate — CUT re-measured from the shipped set: D_exec max = ${cut.floor.toFixed(6)} ` +
   `· par(L15) = ${String(cut.l15Par)} · ${String(cut.n)} shipped files · basis ids [${cut.basis.join(", ")}] ` +
-  `(the L16–L20 block and the registered Act II batch are excluded from their own filter — see measureCut)`);
+  `(the L16–L20 block and the registered Act II batches [${ACT_II_REGISTERED_IDS.join(", ")}] are excluded from their own filter — see measureCut)`);
 console.log(
   `family ${FAMILY}${FAMILY === "g" ? " (Act II multi-pocket — §7.2 / §7.4 stage G)" : " (the L20 sealed landing — §6.2.6)"}` +
     ` · Act I's measured peak the batch must clear: ${ACT1_PEAK.toFixed(6)}` +
