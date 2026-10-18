@@ -20,12 +20,14 @@
  * root set and derives `BLOCK_IDS` from `documentedLesson(id)?.obligation` — never from
  * a typed 16–20.
  * The candidate shelf (`src/levels/candidates/`) is asserted to hold **exactly the
- * booked pre-registration set** — `[]` since R-005c, because R-005a graduated the ten
- * Act II ids `l026`–`l035` to the dataset root (QA-026 had booked those ten: LV-014
- * wrote `l026`–`l030` fresh and unregistered, LV-015 posted `l031`–`l035` beside them,
- * merged at `afeb5262d`; QA-025's five-id booking `l026`–`l030`, QA-018's batch-1
- * booking `l021`–`l025` and QA-014's `[]` after R-003d are the same pin's earlier
- * readings) — and
+ * booked pre-registration set** — the five measured LV-017 rungs `l036`–`l040` since
+ * R-005c-b, because LV-017 (the Act II *closing* batch) posted them as proven shelf
+ * candidates **after** R-005c's base, where the shelf was genuinely empty: R-005a had
+ * graduated the ten Act II ids `l026`–`l035` to the dataset root (QA-026 had booked those
+ * ten: LV-014 wrote `l026`–`l030` fresh and unregistered, LV-015 posted `l031`–`l035`
+ * beside them, merged at `afeb5262d`; QA-025's five-id booking `l026`–`l030`, QA-018's
+ * batch-1 booking `l021`–`l025`, QA-014's `[]` after R-003d and R-005c's `[]` are the
+ * same pin's earlier readings) — and
  * only rungs *derived strictly above the registered root max*: the shelf's role is to
  * hold a proven candidate *while its rung is above the registered dataset* (QA-012;
  * R-003c moved l016–l019 off it, LV-011 → R-003d moved the landing rung off it last,
@@ -168,24 +170,47 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
    * `expected [ 'l026.json', 'l027.json', …(8) ] to deeply equal [ 'l026.json', 'l027.json', …(3) ]`),
    * so the literal is re-booked to the set the shelf actually holds.
    *
-   * **R-005c re-books it to `[]` — the EMPTY shelf, again.** R-005a graduated all ten
-   * batch-2 + batch-3 rungs to the dataset root (`git mv`, blob + `sha256` unchanged on
-   * both sides), so `src/levels/candidates/` holds its `README.md` and nothing else and
-   * the booking literal is `[]`. The row is **re-worded, never re-stamped**: the title
-   * drops the now-false parenthetical, the literal becomes the empty set, and the
-   * absence clause below re-points at the new successor (`l036.json`, `documentedLesson(36)`
-   * null, no shipped id > 35) — because the ROOT DATASET stops at the pinned count 35
-   * (`src/levels/README.md` §7d) and nothing above it is booked. The list stays a
+   * **R-005c re-booked it to `[]` — the EMPTY shelf, for exactly one merge.** R-005a
+   * graduated all ten batch-2 + batch-3 rungs to the dataset root (`git mv`, blob +
+   * `sha256` unchanged on both sides), so at that tip `src/levels/candidates/` held its
+   * `README.md` and nothing else, and the literal was the empty set. That row stated the
+   * successor as `l036.json` because the shelf was empty **and** the root stopped at 35:
+   * the same rung was both the first unbooked shelf name and the root's successor. Both
+   * halves were measured true at that tip.
+   *
+   * **R-005c-b re-books it to the five MEASURED names `l036`–`l040`.** LV-017 landed
+   * those five proven candidates on the shelf **after** R-005c's base (`da0e3ac`, rule
+   * commit `b9dac54`) — by design, not by accident: the shelf moved underneath this pin in
+   * the very next merge, which is precisely what the row exists to catch, and the seat
+   * measurement found the one red in the suite here (`l16-l20-candidates.test.ts:201`,
+   * `AssertionError: expected [ 'l036.json', 'l037.json', …(3) ] to deeply equal []`).
+   * The literal below is the **directory's own reading, never typed**; registering a
+   * candidate still moves it to `src/levels/` *and* off this list in the same commit.
+   *
+   * The **successor references move with the shelf, and the root's do not**: the unbooked
+   * extra this row must refuse is now **`l041.json`** — absent from the shelf *and* from
+   * the root, `documentedLesson(41)` null — because `l036.json` is a *booked* shelf file
+   * today, so dropping it in is green by construction. The ROOT absence clause (the
+   * two-tails row below) is untouched: the root still stops at the pinned 35 and
+   * `l036.json` is still absent from root, so the same id is a candidate on the shelf and
+   * a non-existent rung in the dataset — which is the whole point of holding the two
+   * subjects apart (QA-025's scoping). The list stays a
    * **live guard rather than a count**: the
-   * assertion below is *set equality*, so an unregistered extra (`l036.json`) on the
-   * shelf and a vanished member of a non-empty booking both fail by name. QA-012 and
-   * QA-018 proved the populated direction non-vacuously, QA-014 the empty one and
-   * QA-026 the ten-name one (`cp`-in / `mv`-out probes, `tests/e2e/README.md` §1.12);
-   * on a `[]` booking the non-vacuous direction is the **absence clause beside it**
-   * (a probe that drops `l036.json` into the shelf reddens this row by name), which is
-   * the QA-025/QA-026 canon for an empty booking.
+   * assertion below is *set equality*, so an unbooked extra (`l041.json`) on the
+   * shelf and a vanished member of the booking (`l040.json` gone) both fail by name —
+   * QA-012 and QA-018 proved the populated direction non-vacuously, QA-014 the empty one
+   * and QA-026 the ten-name one (`cp`-in / `mv`-out probes, `tests/e2e/README.md` §1.12);
+   * R-005c proved the `[]` reading, and **R-005c-b re-proves both directions on this
+   * five-name reading** (add `l041.json` → red at the set-equality row; `mv l040.json` out
+   * → red at the same row), quoted in `tests/e2e/README.md` §1.17.
    */
-  const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = [];
+  const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = [
+    "l036.json",
+    "l037.json",
+    "l038.json",
+    "l039.json",
+    "l040.json",
+  ];
 
   it("the shelf holds only the booked pre-registration candidates, every rung derived strictly above the registered root max", () => {
     const rootMax = Math.max(...shipped.map((level) => level.id));
@@ -262,13 +287,16 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     // …and the ABSENCE clause, re-pointed at the *new* max rather than deleted: rung
     // max+1 must have no **registered** file, no lesson row and no obligation
     // (`l036.json` absent from `src/levels/` · `documentedLesson(36)` null · no shipped
-    // id above 35 — all three already true, `src/levels/README.md` §7d). All three are
+    // id above 35 — all three already true, `src/levels/README.md` §7d; the ROOT is
+    // untouched by R-005c-b, which moves only the *shelf's* successor). All three are
     // re-derived from the live set, so the clause stays live
     // instead of becoming prose. QA-025: the subject is the *root* set (`LEVELS_DIR`),
-    // never the shelf — a shelved `l036.json` would be a *candidate*, not the dataset's
-    // successor, so re-pointing this derived clause at it would assert an arbitrary rung
-    // instead of the dataset's successor, and would have to be typed; scoping the words
-    // is the honest fix, and the assertion itself is unchanged.
+    // never the shelf — `l036.json` is a **booked shelf candidate** today while it is
+    // still absent from the root, so re-pointing this derived clause at it would assert
+    // an arbitrary rung instead of the dataset's successor, and would have to be typed;
+    // scoping the words is the honest fix, and the assertion itself is unchanged. (The
+    // shelf's own successor — the unbooked extra the booking row refuses — is `l041.json`,
+    // and it lives in that row's docstring, not here.)
     expect(
       existsSync(join(LEVELS_DIR, `l${String(maxShipped + 1).padStart(3, "0")}.json`)),
       "no registered l036.json: the registered dataset stops at the pinned count",

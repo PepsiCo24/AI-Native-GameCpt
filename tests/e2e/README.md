@@ -1725,7 +1725,7 @@ resolved** (no constant moved; the named re-derivation stays R-004c's row with t
 
 ---
 
-### 1.17 R-005c — the 25 → 35 pin migration: one lever, forty-seven restatements, a chain envelope re-derived from measured walks, and a booking that went back to `[]`
+### 1.17 R-005c — the 25 → 35 pin migration: one lever, forty-seven restatements, a chain envelope re-derived from measured walks, and the shelf booking (`[]` at its tip → the five measured names at R-005c-b)
 
 **Scope.** R-005a landed the dataset at **35** (`src/levels/README.md` §7 row 7 / §7d)
 and R-005b served the registry at 35; R-005c is the **test-side** migration on top of
@@ -1836,28 +1836,53 @@ portal-mount.mobile 2 + star-field.mobile 2 = 239` cases in **12** files (`--lis
 verbatim). The registry/unlock rows **auto-grew** the same way in the unit lane
 (37 → 47 at R-005b).
 
-**The booking that went back to `[]` — re-worded, never re-stamped.** R-005a's `git mv`
-emptied the shelf, so `l16-l20-candidates.test.ts`'s booking literal is `[]` again (its
-fourth reading: QA-014 `[]` → QA-018 `l021–l025` → QA-026 `l026–l035` → R-005c `[]`).
-The row was **re-worded**, not re-stamped: the title drops the now-false
-parenthetical, the tail row reads **35** with `ACT_II_REGISTERED_IDS.at(-1)` /
-`ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID` instead of a typed number, and the **absence
-clause re-points at `l036.json`** (`documentedLesson(36)` null, no shipped id > 35) —
-still derived from the live set, so it stays a clause and not prose. The tail row also
-asserts the lesson row's **honestly null** `obligation` (R-005a2 recorded null because
-the `act-2-batch-2/3` dispatchers are booked): asserting `null` is the honest reading and
-it is **not vacuous** — a tail that gained a fabricated obligation, or lost its row,
-fails there by name.
+**The booking, twice: `[]` at R-005c's base, and the five measured names at R-005c-b.**
+R-005a's `git mv` emptied the shelf, so at R-005c's tip the booking literal was `[]` (its
+fourth reading: QA-014 `[]` → QA-018 `l021–l025` → QA-026 `l026–l035` → R-005c `[]`) and
+its successor reference was `l036.json` — the same rung was *both* the first unbooked shelf
+name *and* the root's successor, because the shelf was empty and the root stopped at 35.
+The row was **re-worded**, not re-stamped: the title dropped the now-false parenthetical, the
+tail row reads **35** from `ACT_II_REGISTERED_IDS.at(-1)` /
+`ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID` instead of a typed number, and the root **absence
+clause** stayed derived from the live set. The tail row also asserts the lesson row's
+**honestly null** `obligation` (R-005a2 recorded null because the `act-2-batch-2/3`
+dispatchers are booked) — not vacuous: a tail that gained a fabricated obligation, or lost
+its row, fails there by name.
 
-**Non-vacuity, both directions** (probed live on this tree, `cp`-in / remove, booking
-`[]`): dropping `l036.json` into `src/levels/candidates/` reddens the booking row **by
-name** — `AssertionError: expected [ 'l036.json' ] to deeply equal []`, `1 failed | 51
-passed` — because the assertion is **set equality**, not a count; removing it returns
-the file to `52 passed`. The paired direction drops the same file into the **root**
-(`src/levels/l036.json`), which reddens the **absence clause** row by its own title
-(`1 failed | 51 passed`), proving the re-pointed `l036.json` clause is live rather than
-prose. Both probes were removed again immediately (verified: the shelf holds `README.md`
-only, `git status` lists `tests/**` only).
+**R-005c-b — the shelf moved underneath the pin in the next merge, and the pin caught it
+by name.** LV-017 landed the Act II *closing* batch `l036`–`l040` as **proven shelf
+candidates** *after* R-005c's base, so at the merged tip the suite read **950P / 1F / 3S
+(954)** with the single red exactly here —
+`l16-l20-candidates.test.ts:201:19`, `AssertionError: expected [ 'l036.json', 'l037.json',
+…(3) ] to deeply equal []`. That is the guard working as designed (set equality, never a
+count), not a defect: the literal is now the **five names read off the directory** (never
+typed), and the **successor references moved to `l041.json`** — absent from the shelf *and*
+the root, `documentedLesson(41)` null (verified) — while the **root** absence clause is
+untouched: `l036.json` is still absent from `src/levels/` and `documentedLesson(36)` is null.
+One id, two subjects, held apart on purpose (QA-025's scoping). Post-fix: file **52/52**,
+suite **951P / 3S (954), zero red**, and the shelf-scoped relation (every booked rung
+strictly above the registered root max 35) holds for all five.
+
+**Non-vacuity, both directions, re-proved on the five-name reading** (probes run live on
+this tree, removed again immediately): the **ADD** direction puts an **unbooked extra** on
+the shelf — `cp src/levels/l035.json src/levels/candidates/l041.json` → the booking row
+reddens at `:226:19` with `expected [ 'l036.json', 'l037.json', …(4) ] to deeply equal
+[ 'l036.json', 'l037.json', …(3) ]`, `1 failed | 51 passed`; the **REMOVE** direction takes
+a **booked member** away — `mv src/levels/candidates/l040.json` aside → the same row reddens
+at the same line with `expected [ 'l036.json', 'l037.json', …(2) ] to deeply equal
+[ 'l036.json', 'l037.json', …(3) ]`, `1 failed | 51 passed`. Both restored → `52 passed`;
+the shelf holds `README.md` + `l036`–`l040` and `git status` lists `tests/**` only. (R-005c
+had proved the paired *root* direction under its `[]` booking — a root `l036.json` reddened
+the absence-clause row; at this tip `l036.json` is a **booked shelf candidate** instead, so
+the shelf-scoped ADD probe is the live measurement and the root clause stays untouched.)
+
+**Candidate files are invisible to the browser lane — verified, not assumed.** The e2e
+listing is **unchanged at 239 cases in 12 files** with five new `.json` files on disk
+because `tests/e2e/helpers/levels.ts` discovers the **root** directory only
+(`src/levels/*.json`) and the registry serves registered rows, so a shelf candidate
+generates **no** `playthrough`/`refusal`/`latch-door` row. That is the same derivation that
+made the count grow 189 → 239 when the *dataset* grew — and the reason a shelf landing is
+invisible in the count while it is loud in the booking pin.
 
 **Source law, stated once.** `git diff develop -- src docs scripts` is **empty**;
 `git status --porcelain` lists `tests/**` only; the throwaway measurement probe was
