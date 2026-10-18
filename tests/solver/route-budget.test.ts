@@ -678,6 +678,33 @@ const PINS: Readonly<Record<number, ShippedPin>> = {
   23: { shortest: 20, reachable: 250, positions: 42, maxDepth: 33, dualPhaseTiles: 12, refusedThenEnteredTiles: 17, refusedThenEnteredTileList: ["2,0", "2,1", "2,2", "2,3", "2,4", "2,5", "3,0", "3,3", "4,1", "4,2", "4,4", "4,5", "5,2", "5,3", "5,4", "6,1", "6,3"], deadStates: 0, unrecoverableStates: 0, parRoutes: 20, embedRoutes: 20, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 15, cost: { visits: 148, lookaheadVisits: 1328, prunedChildren: 263 } },
   24: { shortest: 21, reachable: 258, positions: 42, maxDepth: 34, dualPhaseTiles: 12, refusedThenEnteredTiles: 17, refusedThenEnteredTileList: ["2,0", "2,1", "2,2", "2,3", "2,4", "2,5", "3,2", "3,5", "4,0", "4,1", "4,3", "4,4", "5,1", "5,2", "5,3", "6,2", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 90, embedRoutes: 90, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 16, cost: { visits: 549, lookaheadVisits: 2495, prunedChildren: 952 } },
   25: { shortest: 23, reachable: 258, positions: 42, maxDepth: 38, dualPhaseTiles: 12, refusedThenEnteredTiles: 17, refusedThenEnteredTileList: ["2,0", "2,1", "2,2", "2,3", "2,4", "2,5", "3,2", "3,5", "4,0", "4,1", "4,3", "4,4", "5,1", "5,2", "5,3", "6,2", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 72, embedRoutes: 72, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 16, cost: { visits: 471, lookaheadVisits: 2379, prunedChildren: 826 } },
+  // R-005a — Act II batches 2 + 3, graduated from the shelf to the root
+  // (`agent/level/r-005a-reg35`). Transcribed from the regenerated sidecar's records
+  // 26–35 (`docs/level-difficulty.report.json`) and re-measured by the CLI's own
+  // `routeWalk` read-out — the ten rows every projection below reads, never a note.
+  // All ten are §4-clean (`deadStates 0`, `unrecoverableStates 0`), full-coverage
+  // `42/42`, `allOffGoalReachable: false` on 10/10 (the widened seal carries existence,
+  // like every Act II rung before it), and the n-11 prune keeps every rung enumerable.
+  // The device widens per batch: batch 2 (the 3-pocket 7 × 6 frame) reaches 498 states,
+  // `dualPhaseTiles` 12, and the all-OFF subgraph is a **15**-state sink; batch 3 (the
+  // new `CX = 1` skeleton) reaches 720/740/766/772/766, `dualPhaseTiles` **6** (the pair
+  // reach on that frame — the same list form appended at `:779`), and the all-OFF
+  // subgraph is **9** states. `parRoutes` spans the width ladder (60 / 24 / 12 / 72 /
+  // 12 then 30 / 6 / 30 / 12 / 160 — L32 the batch's narrowest, L35 the act's widest
+  // at 160) and the walk cost stays bounded by the prune against `par` 17…24. The
+  // refused tile column is the records' own, in **four** groups: `l026`/`l027`/`l028`
+  // share one 19-tile list, `l029`/`l030` a second 19-tile list, `l031`/`l032` a
+  // 22-tile list and `l033`/`l034`/`l035` a second 22-tile list.
+  26: { shortest: 17, reachable: 498, positions: 42, maxDepth: 33, dualPhaseTiles: 12, refusedThenEnteredTiles: 19, refusedThenEnteredTileList: ["2,0", "2,1", "2,2", "2,3", "2,4", "2,5", "3,0", "3,3", "4,1", "4,2", "4,4", "4,5", "5,0", "5,1", "5,3", "5,4", "6,0", "6,2", "6,3"], deadStates: 0, unrecoverableStates: 0, parRoutes: 60, embedRoutes: 60, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 15, cost: { visits: 242, lookaheadVisits: 2114, prunedChildren: 331 } },
+  27: { shortest: 18, reachable: 498, positions: 42, maxDepth: 35, dualPhaseTiles: 12, refusedThenEnteredTiles: 19, refusedThenEnteredTileList: ["2,0", "2,1", "2,2", "2,3", "2,4", "2,5", "3,0", "3,3", "4,1", "4,2", "4,4", "4,5", "5,0", "5,1", "5,3", "5,4", "6,0", "6,2", "6,3"], deadStates: 0, unrecoverableStates: 0, parRoutes: 24, embedRoutes: 24, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 15, cost: { visits: 132, lookaheadVisits: 1681, prunedChildren: 223 } },
+  28: { shortest: 20, reachable: 498, positions: 42, maxDepth: 35, dualPhaseTiles: 12, refusedThenEnteredTiles: 19, refusedThenEnteredTileList: ["2,0", "2,1", "2,2", "2,3", "2,4", "2,5", "3,0", "3,3", "4,1", "4,2", "4,4", "4,5", "5,0", "5,1", "5,3", "5,4", "6,0", "6,2", "6,3"], deadStates: 0, unrecoverableStates: 0, parRoutes: 12, embedRoutes: 12, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 15, cost: { visits: 70, lookaheadVisits: 1537, prunedChildren: 119 } },
+  29: { shortest: 21, reachable: 498, positions: 42, maxDepth: 36, dualPhaseTiles: 12, refusedThenEnteredTiles: 19, refusedThenEnteredTileList: ["2,0", "2,1", "2,2", "2,3", "2,4", "2,5", "3,2", "3,5", "4,0", "4,1", "4,3", "4,4", "5,1", "5,2", "5,4", "5,5", "6,2", "6,3", "6,5"], deadStates: 0, unrecoverableStates: 0, parRoutes: 72, embedRoutes: 72, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 15, cost: { visits: 411, lookaheadVisits: 2469, prunedChildren: 694 } },
+  30: { shortest: 23, reachable: 498, positions: 42, maxDepth: 42, dualPhaseTiles: 12, refusedThenEnteredTiles: 19, refusedThenEnteredTileList: ["2,0", "2,1", "2,2", "2,3", "2,4", "2,5", "3,2", "3,5", "4,0", "4,1", "4,3", "4,4", "5,1", "5,2", "5,4", "5,5", "6,2", "6,3", "6,5"], deadStates: 0, unrecoverableStates: 0, parRoutes: 12, embedRoutes: 12, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 15, cost: { visits: 73, lookaheadVisits: 1763, prunedChildren: 130 } },
+  31: { shortest: 19, reachable: 720, positions: 42, maxDepth: 33, dualPhaseTiles: 6, refusedThenEnteredTiles: 22, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "2,1", "2,5", "3,0", "3,2", "3,3", "3,4", "4,0", "4,1", "4,2", "4,4", "4,5", "5,1", "5,3", "5,5", "6,2", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 30, embedRoutes: 30, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 9, cost: { visits: 211, lookaheadVisits: 2303, prunedChildren: 313 } },
+  32: { shortest: 22, reachable: 740, positions: 42, maxDepth: 39, dualPhaseTiles: 6, refusedThenEnteredTiles: 22, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "2,1", "2,5", "3,0", "3,2", "3,3", "3,4", "4,0", "4,1", "4,2", "4,4", "4,5", "5,1", "5,3", "5,5", "6,2", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 6, embedRoutes: 6, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 9, cost: { visits: 76, lookaheadVisits: 1827, prunedChildren: 161 } },
+  33: { shortest: 22, reachable: 766, positions: 42, maxDepth: 38, dualPhaseTiles: 6, refusedThenEnteredTiles: 22, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "2,2", "2,5", "3,1", "3,3", "3,4", "4,0", "4,2", "4,3", "4,5", "5,1", "5,2", "5,4", "5,5", "6,2", "6,3", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 30, embedRoutes: 30, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 9, cost: { visits: 214, lookaheadVisits: 2515, prunedChildren: 373 } },
+  34: { shortest: 24, reachable: 772, positions: 42, maxDepth: 42, dualPhaseTiles: 6, refusedThenEnteredTiles: 22, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "2,2", "2,5", "3,1", "3,3", "3,4", "4,0", "4,2", "4,3", "4,5", "5,1", "5,2", "5,4", "5,5", "6,2", "6,3", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 12, embedRoutes: 12, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 9, cost: { visits: 136, lookaheadVisits: 1784, prunedChildren: 245 } },
+  35: { shortest: 24, reachable: 766, positions: 42, maxDepth: 36, dualPhaseTiles: 6, refusedThenEnteredTiles: 22, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "2,2", "2,5", "3,1", "3,3", "3,4", "4,0", "4,2", "4,3", "4,5", "5,1", "5,2", "5,4", "5,5", "6,2", "6,3", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 160, embedRoutes: 160, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 9, cost: { visits: 609, lookaheadVisits: 4086, prunedChildren: 1033 } },
 };
 
 /** Everything the CLI prints for a level, projected off the audit — one object, one diff. */
@@ -773,13 +800,20 @@ describe("LV-007B · n-11 — the shipped L1–L10 numbers are unchanged (LV-008
     // (24/42, 24/42, 18/42, 18/42 — the 7 × 6 device), QA-014's registered terminal
     // rung sits at the same 18/42 as L18/L19, and R-004a's Act II batch 1 appends its
     // five rungs at **12/42 each** (§7c's measured `dualPhaseTiles = 12` ×5 — the new
-    // device's pair reach on the same 7 × 6 lattice). The column is a *list*, so a
-    // registered level with an unexpected pair-reach fails here by value.
+    // device's pair reach on the same 7 × 6 lattice). R-005a's batches 2 + 3 close the
+    // column: batch 2 appends **12 ×5** (the 3-pocket device's pair reach on the same
+    // 7 × 6 lattice, measured `498`-state boards) and batch 3 the **`CX = 1` frame's
+    // 6 ×5** (`720/740/766/772/766` states — the pair reach there is the six tiles of
+    // row 0). The column is a *list*, so a registered level with an unexpected
+    // pair-reach fails here by value.
     expect(
       table
         .filter((pin) => pin.dualPhaseTiles > 0)
         .map((pin) => pin.dualPhaseTiles),
-    ).toEqual([21, 19, 16, 20, 15, 24, 24, 18, 18, 18, 12, 12, 12, 12, 12]);
+    ).toEqual([
+      21, 19, 16, 20, 15, 24, 24, 18, 18, 18, 12, 12, 12, 12, 12,
+      12, 12, 12, 12, 12, 6, 6, 6, 6, 6,
+    ]);
     // The escalation count of the CLI run is one, and it is gate (iv)'s — unchanged
     // by n-11 but printed next to the same lines, so it is pinned with them.
     const escalations = SHIPPED_IDS.flatMap((id) =>

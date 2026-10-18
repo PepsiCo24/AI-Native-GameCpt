@@ -223,6 +223,37 @@ const PINS: Readonly<Record<number, DifficultyPin>> = {
   23: { L: 20, B: 1.5400, T: 0, R: 0, M: 4, D: 44.62, dexec: 24.62, bRaw: 2.86, forced: 0.04, lookahead: 19, states: 250 },
   24: { L: 21, B: 1.5349, T: 0, R: 0, M: 4, D: 45.604651, dexec: 25.604651, bRaw: 2.88, forced: 0.05, lookahead: 20, states: 258 },
   25: { L: 23, B: 1.5349, T: 0, R: 0, M: 4, D: 47.604651, dexec: 27.604651, bRaw: 2.88, forced: 0.05, lookahead: 22, states: 258 },
+  // R-005a — Act II batches 2 + 3 (`l026`–`l035`), graduated from the shelf to the
+  // dataset root by the byte-parity `git mv` of `agent/level/r-005a-reg35` (10/10
+  // sha256 + git blobs unchanged on both sides; `attest-r005a-reg35` exit 0). The ten
+  // rows below are the **regenerated sidecar's** records 26–35
+  // (`docs/level-difficulty.report.json`, the law) re-read on the ROOT bytes by the
+  // shipped metric functions — the same read-out `scripts/solve-levels.ts` prints
+  // (`difficultyExec`), never a note. Shape in one column: `M = 4` ×10 (M1+M3+M2),
+  // `T ≡ R ≡ 0` ×10 (§4 holds — 0 dead, `noUnrecoverableOk` true), full coverage
+  // `42/42` ×10, and `D_exec` climbs 21.560241 → 28.339426 with the two labelled
+  // seams between the batches — L26 lands 6.044410 *below* L25 (27.604651, §7.3.1
+  // instance 2) and L31 lands 4.362098 below L30 (27.566265, instance 3), each relief
+  // named at registration rather than smoothed away. The par ladders are batch 2's
+  // `17 / 18 / 20 / 21 / 23` (`ACT_II_B2_B3_LADDER`) then batch 3's `19 / 22 / 22 / 24 / 24`
+  // — the act's new registered tail is L35's `D_exec` 28.339426, the whole-act maximum
+  // (`ACT_II_R005A_REGISTERED_TAIL_EXEC`), 0.734775 above L30's batch-2 peak and
+  // 0.723074 under the derived-exact ceiling 29.0625 (§7.9). `B` leaves the L1–L15 band
+  // on batch 3 (`CX = 1`'s frame: 1.4014 / 1.3500 / 1.3564 / 1.3756 / 1.4465, under the
+  // band floor on 5/5) — that is the second skeleton's shape, and GD-011's band law is
+  // the registered reader of it, not this table. `lookaheadDepth ≡ L − 1` holds on 10/10
+  // (16 / 17 / 19 / 20 / 22 / 18 / 21 / 21 / 23 / 23), so the alternative reading of `T`
+  // is still not the missing lever.
+  26: { L: 17, B: 1.5201, T: 0, R: 0, M: 4, D: 41.560241, dexec: 21.560241, bRaw: 2.84, forced: 0.04, lookahead: 16, states: 498 },
+  27: { L: 18, B: 1.5201, T: 0, R: 0, M: 4, D: 42.560241, dexec: 22.560241, bRaw: 2.84, forced: 0.04, lookahead: 17, states: 498 },
+  28: { L: 20, B: 1.5161, T: 0, R: 0, M: 4, D: 44.548193, dexec: 24.548193, bRaw: 2.84, forced: 0.04, lookahead: 19, states: 498 },
+  29: { L: 21, B: 1.5161, T: 0, R: 0, M: 4, D: 45.548193, dexec: 25.548193, bRaw: 2.84, forced: 0.04, lookahead: 20, states: 498 },
+  30: { L: 23, B: 1.5221, T: 0, R: 0, M: 4, D: 47.566265, dexec: 27.566265, bRaw: 2.84, forced: 0.04, lookahead: 22, states: 498 },
+  31: { L: 19, B: 1.4014, T: 0, R: 0, M: 4, D: 43.204167, dexec: 23.204167, bRaw: 2.52, forced: 0.16, lookahead: 18, states: 720 },
+  32: { L: 22, B: 1.35, T: 0, R: 0, M: 4, D: 46.05, dexec: 26.05, bRaw: 2.53, forced: 0.16, lookahead: 21, states: 740 },
+  33: { L: 22, B: 1.3564, T: 0, R: 0, M: 4, D: 46.069191, dexec: 26.069191, bRaw: 2.56, forced: 0.14, lookahead: 21, states: 766 },
+  34: { L: 24, B: 1.3756, T: 0, R: 0, M: 4, D: 48.126943, dexec: 28.126943, bRaw: 2.55, forced: 0.14, lookahead: 23, states: 772 },
+  35: { L: 24, B: 1.4465, T: 0, R: 0, M: 4, D: 48.339426, dexec: 28.339426, bRaw: 2.56, forced: 0.14, lookahead: 23, states: 766 },
 };
 
 describe("LV-007B · item 3 — the shipped dataset's difficulty table, measured", () => {
@@ -424,6 +455,24 @@ describe("LV-007C · item 2 — `D_exec` is a derived reading of the published t
       "24.62",
       "25.60",
       "27.60",
+      // R-005a — Act II batches 2 + 3, dataset order: the ten graduated rungs'
+      // measured execution axis (21.560241 / 22.560241 / 24.548193 / 25.548193 /
+      // 27.566265 / 23.204167 / 26.050000 / 26.069191 / 28.126943 / 28.339426), the
+      // same column `docs/level-difficulty.md` §5.2 and the sidecar print. The two
+      // labelled seams sit at "21.56" (L26, 6.044410 below L25) and "23.20" (L31,
+      // 4.362098 below L30); the act's registered tail is the last value. Par 24 —
+      // L34/L35 — is the new rung whose derived refusal envelope is CAP-BOUND
+      // (240 s), the par-24 named row on `refusalRouteEnvelopeMs` (helpers/levels.ts).
+      "21.56",
+      "22.56",
+      "24.55",
+      "25.55",
+      "27.57",
+      "23.20",
+      "26.05",
+      "26.07",
+      "28.13",
+      "28.34",
     ]);
   });
 });
