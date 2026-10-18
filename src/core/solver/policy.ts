@@ -387,7 +387,8 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
   // blocks above: the *batch* is the proofing unit (§7.2 "5 levels sharing one plan shape and
   // one lattice family, proven as a set before any of them is registered"), so the rungs are a
   // property of the registered ladder (`ACT_II_B1_LADDER`), the band membership is a property
-  // of the act (§7.2's par 16–24 / `D_exec` [19.75, 29.06]), and the across-act obligation is
+  // of the act (§7.2's par 16–24 / `D_exec` [19.75, 29.0625], printed [19.75, 29.06] — §7.9's
+  // notation law: derived-exact is the value, the printed form is display), and the across-act obligation is
   // a property of the act's measured **maximum** (§7.3's `act-peak` clause), never of every
   // interior member. `act2Batch1Gates` therefore reads `ACT_II_B1_LADDER` by member index and
   // is the single implementation behind all five rows.
@@ -406,7 +407,7 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
     obligation: "act-2-batch-1",
     switchRequired: "required",
     evidence:
-      "docs/level-design.md §7.2 (Act II = portal orchestration, par 16–24, D_exec [19.75, 29.06]) + §7.4 stage G + §7.7 item 3 (the batch's rung/band pin) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.16 (LV-012 authoring) + §8.17 (R-004a registration) · measured on the ROOT bytes: par 17 (solver-stamped), D_exec 21.581395, B 1.5271 (in band), coverage 42/42, T ≡ R ≡ 0, all-OFF UNSATISFIABLE, parRoutes 12/12 press-then-cross, refusedThenEnteredTiles 17 · docs/level-difficulty.md §5.2 · src/levels/README.md §2f",
+      "docs/level-design.md §7.2 (Act II = portal orchestration, par 16–24, D_exec [19.75, 29.0625], printed [19.75, 29.06] per §7.9's notation law) + §7.4 stage G + §7.7 item 3 (the batch's rung/band pin) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.16 (LV-012 authoring) + §8.17 (R-004a registration) · measured on the ROOT bytes: par 17 (solver-stamped), D_exec 21.581395, B 1.5271 (in band), coverage 42/42, T ≡ R ≡ 0, all-OFF UNSATISFIABLE, parRoutes 12/12 press-then-cross, refusedThenEnteredTiles 17 · docs/level-difficulty.md §5.2 · src/levels/README.md §2f",
   },
   {
     levelId: 22,
@@ -443,6 +444,134 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
     switchRequired: "required",
     evidence:
       "docs/level-design.md §7.3 (`act-peak` clause: “act n's measured maximum D_exec strictly exceeds act n−1's measured maximum”; Act I's registered peak is 24.729412) + §7.7 item 3 · docs/ai-native-pipeline.md §8.16 (the falsification: `--peak=28.5` fails exactly one rung on exactly one gate) + §8.17 · measured on the ROOT bytes: par 23 (solver-stamped), D_exec 27.604651 = Act I's measured peak + 2.875239, B 1.5349 (in band), coverage 42/42, T ≡ R ≡ 0, all-OFF UNSATISFIABLE, parRoutes 72/72 press-then-cross, refusals 17 · docs/level-difficulty.md §5.2 · src/levels/README.md §2f",
+  },
+  // ── L26–L35 — Act II batches 2 + 3 (R-005a), on the law §7.2/§7.3/§7.8 publish ──────────────
+  //
+  // R-005a2 — the ten rows the table-drift check was red on
+  // (`tests/solver/latch-gates.test.ts:210` — `l026 has no documented-lesson row`). These rows are
+  // the dataset half of the named gap (`src/levels/README.md` §2g/§7d item 7); nothing else moves here:
+  // no earlier row is re-stamped, no guard constant is edited, and the registered ladders, tail pins
+  // and seam labels stay the bytes R-005a registered — these rows are checked *against* them.
+  //
+  // `switchRequired: "required"` on all ten — and it is **measured**, not asserted. The device is the
+  // one R-004a registered (one portal pair whose far end is a **walk-sealed pocket** exited only
+  // through a door driven from **inside** it, plus sealed rooms holding the goal), one pocket group
+  // deeper per batch: with every switch OFF the goal is unreachable (`allOffGoalReachable = false` on
+  // 10/10 — the all-OFF subgraph measures 15/498 states on batch 2 and 9/720 · 9/740 · 9/766 · 9/772 ·
+  // 9/766 on batch 3, containing no goal state at all). §7.5 item 1 reads `switchRequired` as a
+  // **measurement**, never an assertion, so these ten rows carry the obligation with teeth instead of
+  // an L6-style concession, exactly as the five batch-1 rows do.
+  //
+  // `obligation: null` on all ten, and the reason is stated rather than implied. `null` here means
+  // "**no per-rung gate family is dispatched for this row**" — never "this board teaches nothing
+  // falsifiable": what *is* read on these bytes today is `switchRequired` (above) and the act-level
+  // clauses, which are dataset-scope and re-derived on every attest run by `actScaleLawReading` /
+  // `actScaleTailGuards` (the registered ladder, the tail pin, the two §7.3.1 relief labels, the §7.9
+  // headroom). A family **cannot** be dispatched for these rungs without a law edit this ticket
+  // deliberately does not make: the act's only per-rung reader (`act2Batch1Gates`) keys its rung on
+  // `ACT_II_B1_IDS.indexOf` and reads `ACT_II_B1_LADDER`, so every existing obligation value would
+  // either mis-key these boards (batch 1's ladder ends at par 23 while id 26 is par 17 — a FAIL on
+  // registered bytes) or graft an Act II rung onto another block's law, which R-005a's own record
+  // forbids (`BLOCK_L1619_IDS` stays `[16 … 20]`; "no new code was invented"). So the honest value
+  // until that dispatch exists is `null`, with the gap named in the rows themselves: the remedy
+  // (obligations `act-2-batch-2` / `act-2-batch-3` behind a `ACT_II_B2_B3_LADDER`-keyed reader, plus
+  // QA's one-control-per-code table) stays booked, and `scripts/attest-r005a-reg35.ts` still asserts
+  // the printed reading it guards (0 families dispatched across the ten rungs), so the gap cannot
+  // outlive its remedy silently.
+  //
+  // Every number below is read from the sidecar (`docs/level-difficulty.report.json` records 26–35,
+  // regenerated from the ROOT bytes at R-005a) and equals the registered row set
+  // (`ACT_II_B2_B3_LADDER`) at the law's precision: `par` / `D_exec` / `B` per rung, `T ≡ R ≡ 0` ×10,
+  // coverage 42/42 ×10, `M` 4 ×10.
+  {
+    levelId: 26,
+    lesson:
+      "batch 2 opens on the labelled seam: the sealed-pocket chain gains a fourth door, so the ordered plan is one press longer than the act's opening rung — depth, never a new idea, and the step down in D_exec belongs to the measurement frame rather than to the puzzle",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 (Act II = portal orchestration, par 16–24, D_exec band [19.75, 29.0625], printed [19.75, 29.06] per §7.9's notation law) + §7.3 (interior freedom: a member sits anywhere in the act's band, in any order) + §7.3.1 (a relief is registrable only with a label published before the bytes) + §7.8 item 4 (the anti-mirror clause this batch answers by mirroring batch 1's pars on purpose) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md + docs/decisions/design-0006-act-close-peak-and-relief-label-form.md · docs/ai-native-pipeline.md §8.19 (LV-014 authoring: the 3-pocket chained sub-lattice) + §8.22 (R-005a registration: blob + sidecar sha256 identity 10/10) · measured on the ROOT bytes: par 17 (solver-stamped), D_exec 21.560241 (sidecar record 26 = 21.56024096385542, the law's 6 dp), B 1.5201 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, all-OFF UNSATISFIABLE (15/498 states), parRoutes 60/60 press-then-cross, refusedBeforeEnteredTiles 19 · the §7.3.1 instance-2 label quoted verbatim: “RELIEF LABEL — `batch-seam` seam L25→L26 · `ΔD_exec = −6.044410` · band `[19.75, 29.06]`” (GD-010; the whole label is `ACT_II_B2_SEAM_RELIEF.label`) · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 27,
+    lesson:
+      "the four-door chain one step longer: Δpar +1 with ΔD_exec +1.000000 — the batch's clean unit step, on the same device, so the step is the board's growth and not a new idea",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 (act par band 16–24 / derived D_exec band [19.75, 29.0625]) + §7.3 (no rising-D_exec obligation: the interior is free in any order) + §7.8 item 4 (anti-mirror clause) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.19 (LV-014 authoring) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 18 (solver-stamped), D_exec 22.560241 (sidecar record 27 = 22.56024096385542), B 1.5201 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, all-OFF UNSATISFIABLE (15/498 states), parRoutes 24/24 press-then-cross, refusedBeforeEnteredTiles 19, step Δpar +1 / ΔD_exec +1.000000 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 28,
+    lesson:
+      "the batch's two-step rung: Δpar +2 buys ΔD_exec +1.987952 — the same four-door device, priced by the board rather than by a new mechanic",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 (act par band 16–24 / derived D_exec band [19.75, 29.0625]) + §7.3 (interior freedom, in-band membership read as a range) + §7.8 item 4 (anti-mirror clause) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.19 (LV-014 authoring: Δpar ≥ 2 holds on 3 of 4 batch-2 steps — printed beside the pleasant column) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 20 (solver-stamped), D_exec 24.548193 (sidecar record 28 = 24.548192771084338), B 1.5161 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, all-OFF UNSATISFIABLE (15/498 states), parRoutes 12/12 press-then-cross, refusedBeforeEnteredTiles 19, step Δpar +2 / ΔD_exec +1.987952 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 29,
+    lesson:
+      "the batch's width rung: 72 shortest routes, every one of them executing the same forced press-then-cross order — variety inside the plan, never around it",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 (act par band 16–24 / derived D_exec band [19.75, 29.0625]) + §7.3 (interior freedom) + §7.8 item 4 (anti-mirror clause) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.19 (LV-014 authoring: the 4-press chain executes on the whole shortest-route set — press-then-cross 72/72) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 21 (solver-stamped), D_exec 25.548193 (sidecar record 29 = 25.548192771084338), B 1.5161 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, all-OFF UNSATISFIABLE (15/498 states), parRoutes 72/72 press-then-cross, refusedBeforeEnteredTiles 19, step Δpar +1 / ΔD_exec +1.000000 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 30,
+    lesson:
+      "the batch-2 peak: the four-door device's longest ordered plan — the rung §7.3's across-act clause rode on while batch 3 was still a shelf candidate, which is exactly why that clause rides on a maximum and never on every member",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 + §7.3 (the `act-peak` clause reads the act's measured maximum; `D_exec` 27.566265 sat below the then-registered tail 27.604651, which is why batch 2 asked no registration train to move a registered maximum) + §7.8 items 1–2 (the batch-3 handoff this rung handed over) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md + docs/decisions/design-0006-act-close-peak-and-relief-label-form.md · docs/ai-native-pipeline.md §8.19 (LV-014 authoring: the batch's peak and the published, unselected par-23 reach 27.746988) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 23 (solver-stamped), D_exec 27.566265 (sidecar record 30 = 27.566265060240966), B 1.5221 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, all-OFF UNSATISFIABLE (15/498 states), parRoutes 12/12 press-then-cross, refusedBeforeEnteredTiles 19, step Δpar +2 / ΔD_exec +2.018072 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 31,
+    lesson:
+      "batch 3 opens on the second labelled seam and on a new skeleton: x = 1 walls, five doors, five switches, a five-press chain — the act's plateau is broken by a different device, not by a larger number",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 + §7.3 (interior relaxation at a ΔM = 0 boundary: no mechanic is introduced) + §7.3.1 (instance 3, the label pre-published before `--write`) + §7.8 item 4 (anti-mirror: batch 3 derives its own par set [19, 22, 22, 24, 24] and shares no par with batch 1) + §7.9 (the band written derived-exact, printed form in parentheses) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md + docs/decisions/design-0007-band-endpoint-law-and-c-path-standing.md · docs/ai-native-pipeline.md §8.20 (LV-015 authoring: the 4-pocket chain, forced order `p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4 < p4 < d5`) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 19 (solver-stamped), D_exec 23.204167 (sidecar record 31 = 23.204166666666666), B 1.4014 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, dualPhaseTiles 6, all-OFF UNSATISFIABLE (9/720 states), parRoutes 30/30 press-then-cross, refusedBeforeEnteredTiles 22 · the §7.3.1 instance-3 label quoted verbatim: “RELIEF LABEL — `batch-seam` seam L30→L31 · `ΔD_exec = −4.362098` · band `[19.75, 29.0625]` (printed `[19.75, 29.06]`)” (GD-011's notation-only amendment; the whole label is `ACT_II_B3_SEAM_RELIEF.label`) · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 32,
+    lesson:
+      "the five-door device at its narrowest: 6 shortest routes — the same forced five-press chain with the fewest ways to walk it, so width is a property of the board and never of the plan's order",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 (act par band 16–24 / derived D_exec band [19.75, 29.0625]) + §7.3 (interior freedom) + §7.8 item 4 (anti-mirror clause) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.20 (LV-015 authoring: the 4-pocket frame at CX = 1, the batch's narrowest route set) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 22 (solver-stamped), D_exec 26.050000 (sidecar record 32 = 26.05 exactly), B 1.3500 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, dualPhaseTiles 6, all-OFF UNSATISFIABLE (9/740 states), parRoutes 6/6 press-then-cross, refusedBeforeEnteredTiles 22, step Δpar +3 / ΔD_exec +2.845833 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 33,
+    lesson:
+      "the sawtooth's shallow tooth: par flat at 22 with ΔD_exec +0.019191 — the step rises inside the band on branching alone, so the act never reads as one plateau and no padding buys the rise",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 + §7.3 (the direction is never a term: the clause binds the registered value and the band, so an in-band shallow rise is lawful and so is the labelled seam two rungs back) + §7.8 item 4 (anti-mirror clause) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.20 (LV-015 authoring: the equal-par pairs rise +0.019191 / +0.212483, so no interior relief label is owed) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 22 (solver-stamped), D_exec 26.069191 (sidecar record 33 = 26.069190600522195), B 1.3564 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, dualPhaseTiles 6, all-OFF UNSATISFIABLE (9/766 states), parRoutes 30/30 press-then-cross, refusedBeforeEnteredTiles 22, step Δpar +0 / ΔD_exec +0.019191 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 34,
+    lesson:
+      "§7.8 item 2's rung: par 24 — the act's own band ceiling — carried by the batch's deepest board (maxDepth 42) inside the derived window par 24 ⇒ D_exec ∈ [27.7500, 29.0625], the last step before the tail",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.8 item 2 (`par 24` is in band and mandated as the act's ceiling; the derived obligation is `D_exec ∈ [27.7500, 29.0625]` = 24 + 3·1.2500 … 24 + 3·1.6875 from the measured B band, no new number invented) + §7.2 + §7.3 (interior freedom) + §7.9 (band endpoints derived-exact and inclusive at both ends; printed forms are display text) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md + docs/decisions/design-0007-band-endpoint-law-and-c-path-standing.md · docs/ai-native-pipeline.md §8.20 (LV-015 authoring: par 24 measured non-empty — 130 accepts / 2640 judged on batch 2's frame, 498 / 20000 on the batch's own) + §8.22 (R-005a registration, L34 strictly inside the band under every reading) · measured on the ROOT bytes: par 24 (solver-stamped), D_exec 28.126943 (sidecar record 34 = 28.126943005181346), B 1.3756 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, dualPhaseTiles 6, all-OFF UNSATISFIABLE (9/772 states), parRoutes 12/12 press-then-cross, refusedBeforeEnteredTiles 22, step Δpar +2 / ΔD_exec +2.057752 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 35,
+    lesson:
+      "the act's registered tail: the whole act's maximum at 28.339426, carried late on the last rung exactly as §7.3.2's act-close requires, with 0.723074 of headroom left under the derived-exact ceiling 29.0625",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.3 (the `act-peak` clause read over the whole registered act `ACT_II_REGISTERED_IDS` (L21–L35): 28.339426 exceeds Act I's registered peak 24.729412 by +3.610014 and the pre-registration standard 27.604651 by +0.734775) + §7.3.2 (the act-close carrier obligation: the act's registered maximum is carried by its last two batches — this rung carries it) + §7.8 item 1 + §7.9 (headroom 29.0625 − 28.339426 = 0.723074 from the derived band end; the printed operand 29.06 would say 0.720574) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md + docs/decisions/design-0006-act-close-peak-and-relief-label-form.md + docs/decisions/design-0007-band-endpoint-law-and-c-path-standing.md · docs/ai-native-pipeline.md §8.20 (LV-015 authoring: the closing rung takes the within-par maximum 28.339426 vs its minimum 28.058108, a printed departure) + §8.22 (R-005a registration: `ACT_II_R005A_REGISTERED_TAIL_EXEC` = 28.339426 at L35) · measured on the ROOT bytes: par 24 (solver-stamped), D_exec 28.339426 (sidecar record 35 = 28.33942558746736), B 1.4465 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, dualPhaseTiles 6, all-OFF UNSATISFIABLE (9/766 states), parRoutes 160/160 press-then-cross, refusedBeforeEnteredTiles 22, step Δpar +0 / ΔD_exec +0.212483 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
   },
 ];
 
@@ -1281,23 +1410,69 @@ export const LAW_PRECISION = 5e-7;
  * The constants below are therefore of two kinds and are kept apart:
  *
  * - **bands** ({@link ACT_II_PAR_BAND}, {@link ACT_II_EXEC_BAND}) — §7.2's published ranges,
- *   "and the range is the law: a candidate outside its act band is **rejected**, not
- *   re-banded";
+ *   read as **derived-exact values, inclusive at both ends** (§7.9 / ADR-design-0007, binding on
+ *   every act and gate; LV-016 aligned both stored constants with their own formula, so no
+ *   printed rounding is a value or an operand here — see {@link ACT_II_EXEC_BAND}), "and the
+ *   range is the law: a candidate outside its act band is **rejected**, not re-banded";
  * - **measurements** ({@link ACT_II_B1_LADDER}, the act-scale tail constants) — the Solver's
  *   read-outs of the **registered** bytes. They are pins, exactly like
  *   `BLOCK_L1619_TAIL_PAR` / `BLOCK_L1619_TAIL_EXEC_CEILING`: a re-registration moves them
  *   in the commit that re-measures, never silently.
  */
 
-/** §7.2 — Act II's par band (a *plateau*, not a ladder): 16–24. */
-export const ACT_II_PAR_BAND: readonly [number, number] = [16, 24];
+/**
+ * §7.2 / §7.9 — Act II's `par` band (a *plateau*, not a ladder): **16–24, inclusive at both
+ * ends**. It is an integer range, so no rounding exists anywhere in it — that is why §7.9's
+ * `par` half needs no formula. The endpoints are named (not typed into the band) so the
+ * `D_exec` derivation below reads the same two constants the band itself is built from, and a
+ * future par-band edit cannot leave one of the two derivations behind.
+ */
+export const ACT_II_PAR_FLOOR = 16;
+export const ACT_II_PAR_CEILING = 24;
+export const ACT_II_PAR_BAND: readonly [number, number] = [
+  ACT_II_PAR_FLOOR,
+  ACT_II_PAR_CEILING,
+];
 
 /**
- * §7.2 — Act II's `D_exec` band, **derived** (`[16 + 3·1.2500, 24 + 3·1.6875]`) from the
- * measured `B` band, never invented. LV-012 measured the accepted pool inside it (`B`
- * 1.5271 … 1.6008) and §7.5 item 1 asks every registered member to sit inside it.
+ * The **measured `B` band** Act II's `D_exec` band is derived from (§7.0: the `D_exec` band is
+ * derived *from the measured `B` band*; §7.9: **derive-from-formula**). Named here as the act's
+ * own formula input rather than re-typed as a literal — the measurement itself is the one the
+ * shipped L1–L15 block publishes ({@link BLOCK_L1619_B_BAND}), so an Act II band and a block
+ * band can never disagree about the `B` basis without this line failing to compile.
  */
-export const ACT_II_EXEC_BAND: readonly [number, number] = [19.75, 29.06];
+export const ACT_II_B_BAND: readonly [number, number] = BLOCK_L1619_B_BAND;
+
+/**
+ * §7.2 / §7.9 — Act II's `D_exec` band, **computed from its formula**:
+ *
+ * ```text
+ * [par_min + 3·B_lo, par_max + 3·B_hi] = [16 + 3·1.2500, 24 + 3·1.6875] = [19.75, 29.0625]
+ * ```
+ *
+ * Both endpoints are **dyadic rationals** (`16 + 3·5/4 = 19.75 = 79/4`; `24 + 3·27/16 = 29.0625
+ * = 465/16`), so this arithmetic is exact in IEEE-754 double — the stored constant *is* the
+ * derived-exact value, bit for bit, and the inclusive comparison at the top admits
+ * `D_exec = 29.0625` (`par 24`, `B = 1.6875`) exactly as §7.9 requires. `[19.75, 29.06]` is the
+ * **printed** form of this range, produced at the printing sites by `.toFixed(2)`; it is display
+ * text and is **never** a comparison operand (§7.9).
+ *
+ * **GD-011's named corollary, discharged here (LV-016).** This constant used to be the literal
+ * `29.06` — the printed rounding — which is a *latent endpoint defect*: it left the
+ * `(29.06, 29.0625]` sliver unbuildable, so §7.8 item 2's own `par 24` mandate could not be
+ * satisfied at its top (`24 + 3·1.6875 = 29.0625`, the band's own ceiling). No rounded literal
+ * survives in this module: every Act II band value below is either an integer law endpoint or a
+ * formula over {@link ACT_II_B_BAND}.
+ *
+ * LV-012 measured the accepted pool inside this band (`B` 1.5271 … 1.6008) and §7.5 item 1 asks
+ * every registered member to sit inside it; every Act II row published to date sits at
+ * `D_exec ≤ 28.771084`, strictly inside under **either** reading — so aligning the constant moves
+ * **no** verdict (the flip audit is on the LV-016 record).
+ */
+export const ACT_II_EXEC_BAND: readonly [number, number] = [
+  ACT_II_PAR_FLOOR + 3 * ACT_II_B_BAND[0],
+  ACT_II_PAR_CEILING + 3 * ACT_II_B_BAND[1],
+];
 
 /** Act II batch 1's members, in registered order (`docs/level-design.md` §7.2/§7.7). */
 export const ACT_II_B1_IDS: readonly number[] = [21, 22, 23, 24, 25];
@@ -1400,6 +1575,237 @@ export const ACT_II_B1_OPEN_RELIEF_LEVEL_ID = 21;
  */
 export const ACT_II_B1_OPEN_RELIEF_EXEC = 21.581395;
 
+// ── R-005a — the ten-level train: batches 2 + 3 registered, the tail moves ────
+//
+// R-004a's shape, one registration later, and the reason it exists is unchanged: a law
+// that compares an act's maximum against a constant *restamped at the moment of
+// registration* is self-confirming. So the pre-R005a standard keeps its own constant,
+// the post-registration tail gets its own, and the gap between them is a measured
+// quantity with a pinned identity — a single edit to either side fails.
+
+/** Act II batch 2's members (LV-014; registered by **R-005a**), in registered order. */
+export const ACT_II_B2_IDS: readonly number[] = [26, 27, 28, 29, 30];
+
+/** Act II batch 3's members (LV-015; registered by **R-005a**), in registered order. */
+export const ACT_II_B3_IDS: readonly number[] = [31, 32, 33, 34, 35];
+
+/**
+ * Every registered Act II member after **R-005a** — the act's own basis. §7.3's
+ * `act-peak` clause is a statement about the **act's measured maximum**, so once the act
+ * spans three batches the reading has to span three batches too: reading it over batch 1
+ * alone after this ticket would report `27.604651` as "Act II's maximum" while the act
+ * measurably ends at `28.339426` (the stale-reading failure mode R-004a's comment names).
+ */
+export const ACT_II_REGISTERED_IDS: readonly number[] = [
+  ...ACT_II_B1_IDS,
+  ...ACT_II_B2_IDS,
+  ...ACT_II_B3_IDS,
+];
+
+/**
+ * Act II batch 2's **registered rows** (LV-014's shelf booking, re-measured on the ROOT
+ * bytes by R-005a before any law edit) — pars **17 / 18 / 20 / 21 / 23**, `D_exec`
+ * **21.560241 / 22.560241 / 24.548193 / 25.548193 / 27.566265**, `B` **1.5201 / 1.5201 /
+ * 1.5161 / 1.5161 / 1.5221**, 7 × 6 with 42/42 coverage. A **registered row set** exactly
+ * like {@link ACT_II_B1_LADDER}, and for the same reason: a restamp of any single rung is
+ * visible against it (the clone-guard lesson — "never re-stamp registered rungs" — applied
+ * to the law rather than to L20 alone).
+ *
+ * The pars **mirror** batch 1's ladder on purpose (published pre-run, git-dated: the
+ * equal-par frame is the measurement instrument, GD-010 ruling A) — so the two tables are
+ * *supposed* to agree on `par` and disagree on `D_exec`.
+ */
+export const ACT_II_B2_LADDER: readonly ActIILadderRow[] = [
+  { id: 26, par: 17, dexec: 21.560241, b: 1.5201, grid: [7, 6], coverage: 42 },
+  { id: 27, par: 18, dexec: 22.560241, b: 1.5201, grid: [7, 6], coverage: 42 },
+  { id: 28, par: 20, dexec: 24.548193, b: 1.5161, grid: [7, 6], coverage: 42 },
+  { id: 29, par: 21, dexec: 25.548193, b: 1.5161, grid: [7, 6], coverage: 42 },
+  { id: 30, par: 23, dexec: 27.566265, b: 1.5221, grid: [7, 6], coverage: 42 },
+];
+
+/**
+ * Act II batch 3's **registered rows** (LV-015's shelf booking, re-measured on the ROOT
+ * bytes by R-005a) — pars **19 / 22 / 22 / 24 / 24** (the **anti-mirror** own-par set,
+ * §7.8 item 4: the in-band pars batch 1 does not use, `par 16` absent and never
+ * substituted), `D_exec` **23.204167 / 26.050000 / 26.069191 / 28.126943 / 28.339426**,
+ * `B` **1.4014 / 1.3500 / 1.3564 / 1.3756 / 1.4465**, 7 × 6 with 42/42 coverage.
+ *
+ * The closing rung takes the within-par **maximum** rather than the minimum
+ * (`28.339426` vs `28.058108`) so that §7.3.2's act-close maximum lands on the **last**
+ * rung; that departure is printed here rather than smoothed away.
+ */
+export const ACT_II_B3_LADDER: readonly ActIILadderRow[] = [
+  { id: 31, par: 19, dexec: 23.204167, b: 1.4014, grid: [7, 6], coverage: 42 },
+  { id: 32, par: 22, dexec: 26.05, b: 1.35, grid: [7, 6], coverage: 42 },
+  { id: 33, par: 22, dexec: 26.069191, b: 1.3564, grid: [7, 6], coverage: 42 },
+  { id: 34, par: 24, dexec: 28.126943, b: 1.3756, grid: [7, 6], coverage: 42 },
+  { id: 35, par: 24, dexec: 28.339426, b: 1.4465, grid: [7, 6], coverage: 42 },
+];
+
+/** The two new batches' rows in one list, in registered order (the clause's own input). */
+export const ACT_II_B2_B3_LADDER: readonly ActIILadderRow[] = [
+  ...ACT_II_B2_LADDER,
+  ...ACT_II_B3_LADDER,
+];
+
+/**
+ * **R-005a** — the **frozen pre-registration standard**: the registered Act II tail as it
+ * stood *before* this ticket, i.e. batch 1's registered peak (`L25`'s `D_exec`). Kept as
+ * its own datum for the R-003d reason and the R-004a reason at once: a re-registration
+ * that quietly restamps the standard it is judged against never fails anything, so the
+ * standard is a constant and the new clause re-derives the comparison.
+ */
+export const ACT_II_PRE_R005A_REGISTERED_TAIL_LEVEL_ID = ACT_II_B1_PEAK_LEVEL_ID;
+
+/** **R-005a** — the pre-registration standard's value: `L25`'s registered `27.604651`. */
+export const ACT_II_PRE_R005A_REGISTERED_TAIL_EXEC = ACT_II_B1_REGISTERED_PEAK_EXEC;
+
+/** The rung that carries Act II's registered maximum **after** R-005a (§7.3.2's late-carried peak). */
+export const ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID = 35;
+
+/** **R-005a** — the post-registration Act II tail: `L35`'s `D_exec`, the Solver's read-out of the ROOT bytes. */
+export const ACT_II_R005A_REGISTERED_TAIL_EXEC = 28.339426;
+
+/**
+ * **R-005a** — the measured gap: `28.339426 − 27.604651 = +0.734775` (§7.3.2's act-close
+ * clause carried by the last rung). The guard checks the *derived* difference, so neither
+ * end of the pair can be edited alone.
+ */
+export const ACT_II_R005A_TAIL_ADVANTAGE = 0.734775;
+
+/**
+ * **R-005a** — §7.3's `act-peak` clause read on the **whole** registered act:
+ * `28.339426 − 24.729412 = +3.610014` against Act I's registered peak. Batch 1's own
+ * advantage {@link ACT_II_B1_PEAK_ADVANTAGE} (`2.875239`) stays pinned beside it, so the
+ * act-level reading and the batch-level record cannot be swapped for one another.
+ */
+export const ACT_II_REGISTERED_PEAK_ADVANTAGE_VS_ACT_I = 3.610014;
+
+/**
+ * **R-005a** — §7.9's **derived-exact** headroom from the act's registered tail to the
+ * act's `D_exec` ceiling:
+ *
+ * ```text
+ * ACT_II_EXEC_BAND[1] − tail = 29.0625 − 28.339426 = 0.723074
+ * ```
+ *
+ * The comparison operand is the **derived band** (`24 + 3·1.6875`), never the printed
+ * `[19.75, 29.06]`; the pinned value is what the re-derivation must come back to. LV-016's
+ * sliver law is why the operand is computed rather than typed: the last `0.0025` of the
+ * band is the difference between the printed rounding and the law.
+ */
+export const ACT_II_R005A_TAIL_HEADROOM_TO_EXEC_CEILING = 0.723074;
+
+/**
+ * One **§7.3.1-form relief label** as published in `docs/level-design.md` §7.3.1 — the
+ * fields the form requires (kind, seam levels, `ΔD_exec`, band) plus the **verbatim text**
+ * the registration artifact has to cite. The label text is *quotation*: the band inside it
+ * is the **printed** form the law file published, while every comparison in the guards
+ * below reads the **derived-exact** {@link ACT_II_EXEC_BAND} (§7.9 — printed forms are
+ * display text and are never comparison operands).
+ */
+export interface ActSeamReliefSpec {
+  /** §7.3.1's instance number in `docs/level-design.md` (1 = the registered act-open). */
+  readonly instance: number;
+  readonly kind: "batch-seam";
+  readonly fromLevelId: number;
+  readonly toLevelId: number;
+  /** The registered tail the seam drops from (`L25` / `L30`). */
+  readonly fromExec: number;
+  /** The registered relief value at the seam's arriving rung (`L26` / `L31`). */
+  readonly toExec: number;
+  /** The published `ΔD_exec` of the seam (a **label** field: the guards derive it and compare). */
+  readonly delta: number;
+  /** The published label, **verbatim** (the text R-005 cites at registration). */
+  readonly label: string;
+}
+
+/**
+ * **R-005a / §7.3.1 instance 2** — batch 2's seam relief, **pre-published by GD-010
+ * before the batch was registered** (the process fix RV-012 demanded: a relief with no
+ * pre-published label is not registrable). `L25 = 27.604651` (registered, batch 1's peak)
+ * → `L26 = 21.560241`, `ΔD_exec = −6.044410`, band `[19.75, 29.06]` as published.
+ *
+ * The relief is **largely an instrument artifact** and the label says so: batch 2 mirrored
+ * batch 1's pars on purpose, so the `par` term is held identical by construction and the
+ * batch-2 device carries a **longer** ordered chain (4 presses vs 3) at `ΔB ≤ 0.0239` —
+ * `D_exec` is blind to comprehension, so the felt reading is a Playtest hypothesis
+ * (§7.3.3), never an asserted ease.
+ */
+export const ACT_II_B2_SEAM_RELIEF: ActSeamReliefSpec = {
+  instance: 2,
+  kind: "batch-seam",
+  fromLevelId: 25,
+  toLevelId: 26,
+  fromExec: 27.604651,
+  toExec: 21.560241,
+  delta: -6.04441,
+  label:
+    "RELIEF LABEL — `batch-seam` seam L25→L26 · `ΔD_exec = −6.044410` · band `[19.75, 29.06]`. " +
+    "Interior relaxation at a `ΔM = 0` boundary, on the execution axis only — never a dip, never a " +
+    "claim of lower felt difficulty, and never the thing that satisfies a clause. §6 does not fire: " +
+    "no mechanic is introduced (`ΔM = 0`) — the fenced 3-pocket / forced 4-press chain " +
+    "(`p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4`) is variety inside §7.2's Act II family, one door " +
+    "deeper than batch 1's 3-press device. `act-peak` rides on the act's measured maximum, never on " +
+    "this relief. The relief is largely an artifact of the measurement design: batch 2 mirrored " +
+    "batch 1's pars on purpose (equal-par comparators for the one variable, chain length — published " +
+    "pre-run, git-dated before the run), so the `par` term is held identical by construction and the " +
+    "`B` term moves by ≤ 0.0239; the label therefore asserts no ease the instrument cannot see — the " +
+    "batch-2 device carries a longer ordered chain (4 presses vs 3) and `D_exec` is blind to " +
+    "comprehension (`M`/`T` are not terms in it), so how the seam reads — mastery rest or deflation " +
+    "— is a labelled Playtest hypothesis (§7.3.3), not a result. The mirrored pars are not a designed " +
+    "repetition of batch 1's climb; they are the measurement instrument's control. (GD-010 §7.3.1 " +
+    "instance 2, quoted verbatim for R-005a at the law file's request; the band is the printed form " +
+    "GD-010 published.)",
+};
+
+/**
+ * **R-005a / §7.3.1 instance 3** — batch 3's seam relief, **pre-published by LV-015 before
+ * `--write`** (`L30 = 27.566265` shelf-side) and **blessed for verbatim citation by GD-011**
+ * with one **notation-only** amendment: the band is written **derived-exact** with the
+ * printed form in parentheses (§7.9). No number LV-015 published pre-write changed.
+ *
+ * The relief is **largely an instrument artifact** here too, and again the label says so:
+ * batch 3 derives its own par set to *avoid* mirroring batch 1 (anti-mirror, §7.8 item 4),
+ * so the `par` term drops by 4 by construction and the deeper device carries a **lower `B`
+ * centre** (`1.3500 … 1.4465`). The batch's equal-par pairs **rise** (`+0.019191` /
+ * `+0.212483`), so no interior label is owed anywhere else.
+ */
+export const ACT_II_B3_SEAM_RELIEF: ActSeamReliefSpec = {
+  instance: 3,
+  kind: "batch-seam",
+  fromLevelId: 30,
+  toLevelId: 31,
+  fromExec: 27.566265,
+  toExec: 23.204167,
+  delta: -4.362098,
+  label:
+    "RELIEF LABEL — `batch-seam` seam L30→L31 · `ΔD_exec = −4.362098` · band `[19.75, 29.0625]` " +
+    "(printed `[19.75, 29.06]`). " +
+    "Interior relaxation at a `ΔM = 0` boundary, on the execution axis only — never a dip, never a " +
+    "claim of lower felt difficulty, and never the thing that satisfies a clause. §6's dip law does " +
+    "not fire: no mechanic is introduced (`M` is 4 on both sides), and the fenced 4-pocket / forced " +
+    "5-press chain (`p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4 < p4 < d5`) is variety inside §7.2's Act II " +
+    "family, one pocket group deeper than batch 2's 3-pocket device. `act-close`/`act-peak` ride on " +
+    "the act's measured maximum (L35 `28.339426`), never on this relief. The relief is largely an " +
+    "artifact of the measurement design: batch 3 derives its own par set to avoid mirroring batch 1 " +
+    "(`[19, 22, 22, 24, 24]`, anti-mirror clause §7.8 item 4, published pre-run), so the `par` term " +
+    "drops by 4 by construction, and the deeper device carries a lower `B` centre (`1.3500 … ` " +
+    "`1.4465`) — the label therefore asserts no ease the instrument cannot see, and `D_exec` is blind " +
+    "to comprehension (`M`/`T` are not terms in it), so how the seam reads is a labelled Playtest " +
+    "hypothesis (§7.3.3; NOT TESTABLE, n = 0), not a result. The batch's equal-par pairs rise " +
+    "(`+0.019191` / `+0.212483`), so no interior label is owed anywhere else. (GD-011 RULING C, " +
+    "blessed verbatim for R-005a/registration with the notation-only band amendment.)",
+};
+
+/** The two §7.3.1 seam instances this law file carries, in instance order. */
+export const ACT_II_SEAM_RELIEFS: readonly ActSeamReliefSpec[] = [
+  ACT_II_B2_SEAM_RELIEF,
+  ACT_II_B3_SEAM_RELIEF,
+];
+
+// ── The clause ids ────────────────────────────────────────────────────────────
+
 /** The clause ids {@link actScaleTailGuards} reports (a closed union: a new clause is a compile error). */
 export type ActTailClauseId =
   | "act-tail-act-i-peak-pin"
@@ -1407,7 +1813,37 @@ export type ActTailClauseId =
   | "act-tail-peak-advantage"
   | "act-tail-pre-r004a-standard"
   | "act-tail-l20-not-restamped"
-  | "act-tail-l21-open-relief";
+  | "act-tail-l21-open-relief"
+  | "act-tail-r005a-registered-rows"
+  | "act-tail-r005a-tail-pin"
+  | "act-tail-r005a-pre-standard"
+  | "act-tail-r005a-exec-headroom"
+  | "act-tail-r005a-seam-reliefs";
+
+/**
+ * **R-004a's** six clauses, by name — the subset `scripts/attest-r004a-act2.ts` owns a
+ * control for. Exported so that the *split of ownership* is data rather than prose: the
+ * R-005a clauses below have their own instrument, and a coverage reading asserts the two
+ * lists partition the reported set (a twelfth clause added later has to be given a home,
+ * not silently left without a control).
+ */
+export const ACT_TAIL_R004A_CLAUSE_IDS: readonly ActTailClauseId[] = [
+  "act-tail-act-i-peak-pin",
+  "act-tail-act-ii-peak-pin",
+  "act-tail-peak-advantage",
+  "act-tail-pre-r004a-standard",
+  "act-tail-l20-not-restamped",
+  "act-tail-l21-open-relief",
+];
+
+/** **R-005a's** five clauses, by name — the subset `scripts/attest-r005a-reg35.ts` owns a control for. */
+export const ACT_TAIL_R005A_CLAUSE_IDS: readonly ActTailClauseId[] = [
+  "act-tail-r005a-registered-rows",
+  "act-tail-r005a-tail-pin",
+  "act-tail-r005a-pre-standard",
+  "act-tail-r005a-exec-headroom",
+  "act-tail-r005a-seam-reliefs",
+];
 
 /** One measured act-scale clause. Deliberately **not** a {@link NamedGate}: it is an act-level
  * reading, never emitted per level, so it must not enter `POLICY_VIOLATION_CODES` (which is
@@ -1425,11 +1861,39 @@ export interface ActPeakReading {
   readonly dexec: number;
 }
 
+/**
+ * **R-005a** — one §7.3.1 seam as **read**: the two rungs' measured `D_exec` on the root
+ * bytes, plus the **registered** side (production: the §7.3.1 constants, bound by
+ * {@link actScaleLawReading}). The registered side is injectable for the same reason
+ * {@link ActScaleLawReading.actOpenRelief} is: a clause that reads its own constant can
+ * only ever confirm itself, so the *relation* is what the guard tests and a control can
+ * simulate a re-registration by moving the registered side.
+ */
+export interface ActSeamReliefReading {
+  readonly fromLevelId: number;
+  readonly toLevelId: number;
+  /** Measured `D_exec` at the seam's departing rung. */
+  readonly fromExec: number;
+  /** Measured `D_exec` at the seam's arriving rung. */
+  readonly toExec: number;
+  /** The **registered** relief value at the arriving rung (production: `ACT_II_B*_SEAM_RELIEF.toExec`). */
+  readonly registeredTo: number;
+  /** The **registered** tail the seam departs from (production: `ACT_II_B*_SEAM_RELIEF.fromExec`). */
+  readonly registeredFrom: number;
+  /** The **published** `ΔD_exec` of the seam (production: `ACT_II_B*_SEAM_RELIEF.delta`). */
+  readonly registeredDelta: number;
+}
+
 /** Everything the act-scale tail law reads. Each field is a **measurement** of the root bytes. */
 export interface ActScaleLawReading {
   /** Measured max `D_exec` over the registered Act I set (L1–L20). */
   readonly actI: ActPeakReading;
-  /** Measured max `D_exec` over the registered Act II set. */
+  /**
+   * Measured max `D_exec` over the registered Act II set — the whole act, i.e.
+   * {@link ACT_II_REGISTERED_IDS} (L21–L35) after R-005a. §7.3's clause is about the
+   * **act's** maximum, so this reading has to span every registered batch; the
+   * batch-1-only reading lives on in {@link ActScaleLawReading.actIIBatchPeak}.
+   */
   readonly actII: ActPeakReading;
   /** Measured max `D_exec` over **this batch's** ids (immutable once registered). */
   readonly actIIBatchPeak: ActPeakReading;
@@ -1463,6 +1927,39 @@ export interface ActScaleLawReading {
    * member happens to take.
    */
   readonly actOpenRelief: number;
+  /**
+   * **R-005a** — the measured rows of batches 2 + 3, in registered order, read off the root
+   * bytes. The clause compares them against {@link ActScaleLawReading.actIIBatchTable}.
+   */
+  readonly actIIBatchRows: readonly ActIILadderRow[];
+  /**
+   * **R-005a** — the registered rows the clause is judged against. Production binds
+   * {@link ACT_II_B2_B3_LADDER} through {@link actScaleLawReading}; injectable so a control can
+   * restamp **one row** of the table and watch the clause name it (a table that cannot be
+   * mutated in a test is a table nobody has proved the clause reads).
+   */
+  readonly actIIBatchTable: readonly ActIILadderRow[];
+  /**
+   * **R-005a** — the **pre-registration standard** the act's post tail is measured against:
+   * production binds {@link ACT_II_PRE_R005A_REGISTERED_TAIL_EXEC} (the tail as it stood
+   * before this ticket), injectable for the same reason
+   * {@link ActScaleLawReading.preR004aStandard} is — a control has to be able to restamp the
+   * standard and show the rise clause refuses it.
+   */
+  readonly preR005aStandard: number;
+  /**
+   * **R-005a** — the two §7.3.1 seam readings (measured sides from the bytes, registered sides
+   * from the constants). Both named instances must be present: a reading that drops one seam is
+   * not a reading of this law.
+   */
+  readonly seams: readonly ActSeamReliefReading[];
+  /**
+   * **R-005a** — the `D_exec` ceiling the headroom clause derives against. Production binds the
+   * **derived-exact** {@link ACT_II_EXEC_BAND}`[1]` (`24 + 3·1.6875 = 29.0625`, §7.9 — never the
+   * printed `29.06`); injectable so a control can narrow the band and watch the derived headroom
+   * stop reproducing the pinned value.
+   */
+  readonly execCeiling: number;
 }
 
 /** Build the law's reading from measurements, binding the terminal-rung clause to the live constants. */
@@ -1471,62 +1968,198 @@ export function actScaleLawReading(measured: {
   readonly actII: ActPeakReading;
   readonly actIIBatchPeak: ActPeakReading;
   readonly actOpen: ActPeakReading;
+  /** R-005a: measured rows of batches 2 + 3 (in `ACT_II_B2_B3_LADDER` order). */
+  readonly actIIBatchRows: readonly ActIILadderRow[];
+  /** R-005a: the measured seam readings; the registered halves are **filled in from the law** here. */
+  readonly seams: readonly {
+    readonly fromLevelId: number;
+    readonly toLevelId: number;
+    readonly fromExec: number;
+    readonly toExec: number;
+  }[];
 }): ActScaleLawReading {
   return {
     ...measured,
     preR004aStandard: ACT_II_B1_PRE_R004A_REGISTERED_TAIL_EXEC,
+    preR005aStandard: ACT_II_PRE_R005A_REGISTERED_TAIL_EXEC,
     actOpenRelief: ACT_II_B1_OPEN_RELIEF_EXEC,
     l20Tail: {
       ids: BLOCK_L1619_IDS,
       tailPar: BLOCK_L1619_TAIL_PAR,
       tailExec: BLOCK_L1619_TAIL_EXEC_CEILING,
     },
+    actIIBatchTable: ACT_II_B2_B3_LADDER,
+    // The registered half of each seam is read from the §7.3.1 spec the law publishes, keyed by
+    // the rung pair — a seam whose rungs the law does not name gets no registered half at all,
+    // and the clause reports the missing instance rather than inventing one.
+    seams: measured.seams.map((seam) => {
+      const spec =
+        ACT_II_SEAM_RELIEFS.find(
+          (s) =>
+            s.fromLevelId === seam.fromLevelId && s.toLevelId === seam.toLevelId,
+        ) ?? null;
+      return {
+        ...seam,
+        registeredFrom: spec?.fromExec ?? Number.NaN,
+        registeredTo: spec?.toExec ?? Number.NaN,
+        registeredDelta: spec?.delta ?? Number.NaN,
+      };
+    }),
+    execCeiling: ACT_II_EXEC_BAND[1],
   };
 }
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) < LAW_PRECISION;
 
 /**
- * §7.3's `act-peak` clause as six measured clauses, each with an anti-tautology guard:
+ * §7.3's `act-peak` clause as eleven measured clauses, each with an anti-tautology guard.
+ * Six are **R-004a's** (the Act I pin, batch 1's record, the across-act rise, the
+ * pre-registration standard, the un-restamped L20 tail, and the act-open relief), five are
+ * **R-005a's** (the ten registered rows, the moved tail, the moved pre-standard, the
+ * `§7.9` headroom identity, and the two §7.3.1 seam labels). {@link
+ * ACT_TAIL_R004A_CLAUSE_IDS} / {@link ACT_TAIL_R005A_CLAUSE_IDS} name the split so that the
+ * two instruments' control tables can be checked to *partition* this list:
  *
  * 1. `act-tail-act-i-peak-pin` — the re-derived Act I maximum equals
  *    {@link ACT_I_REGISTERED_PEAK_EXEC} **and belongs to** {@link ACT_I_REGISTERED_PEAK_LEVEL_ID}
- *    **and is not an Act II board**. Fails if the Act I constant is relabelled to the Act II
- *    value, or if an Act II board is counted into Act I's basis (a "relabel" by arithmetic).
- * 2. `act-tail-act-ii-peak-pin` — the re-derived peak over **this batch's ids** equals
- *    {@link ACT_II_B1_REGISTERED_PEAK_EXEC} at {@link ACT_II_B1_PEAK_LEVEL_ID}. The batch's own
- *    registered record: immutable, and a silent restamp of the bytes or the constant fails here.
- * 3. `act-tail-peak-advantage` — the clause itself (act II's measured max **strictly exceeds**
- *    act I's) **plus** the derived identity `registered II − registered I =
- *    {@link ACT_II_B1_PEAK_ADVANTAGE}`, so neither constant can be edited alone.
+ *    **and is not a registered Act II board**. Fails if the Act I constant is relabelled to the
+ *    Act II value, or if an Act II board is counted into Act I's basis (a "relabel" by arithmetic).
+ * 2. `act-tail-act-ii-peak-pin` — the re-derived peak over **batch 1's ids** equals
+ *    {@link ACT_II_B1_REGISTERED_PEAK_EXEC} at {@link ACT_II_B1_PEAK_LEVEL_ID} **and** the
+ *    batch-1 record's own gap to Act I is {@link ACT_II_B1_PEAK_ADVANTAGE}. The batch's registered
+ *    record: immutable, and a silent restamp of the bytes or the constant fails here.
+ * 3. `act-tail-peak-advantage` — the clause itself (Act II's **act-level** measured max strictly
+ *    exceeds Act I's) **plus** the derived identity `registered II − registered I =
+ *    {@link ACT_II_REGISTERED_PEAK_ADVANTAGE_VS_ACT_I}`, so neither constant can be edited alone.
+ *    R-004a read this over batch 1 because batch 1 *was* the act; after R-005a the act spans three
+ *    batches, so this clause reads {@link ACT_II_REGISTERED_IDS} and batch 1's own advantage is
+ *    pinned one clause up.
  * 4. `act-tail-pre-r004a-standard` — {@link ACT_II_B1_PRE_R004A_REGISTERED_TAIL_EXEC} must
  *    still equal Act I's registered peak (the standard is the tail *as it stood before* this
  *    ticket) and the batch peak must strictly exceed it. A re-registration cannot restamp the
  *    standard it is measured against.
  * 5. `act-tail-l20-not-restamped` — the block law's terminal rung is still L20
- *    (`BLOCK_L1619_IDS` = 16–20, tail par 20, tail `D_exec` = Act I's registered peak) and the
- *    act-II ids are **not** grafted onto it. That is the clone-guard lesson applied to the law
+ *    (`BLOCK_L1619_IDS` = 16–20, tail par 20, tail `D_exec` = Act I's registered peak) and **no
+ *    registered Act II id** is grafted onto it. That is the clone-guard lesson applied to the law
  *    itself: L20's tail reading is *one registered rung*, not "the dataset's tail", and moving
- *    the block's tail to rung 25 would re-stamp a law the five new rungs do not belong to.
+ *    the block's tail to rung 25 (or 35) would re-stamp a law the new rungs do not belong to.
  * 6. `act-tail-l21-open-relief` — the act's first member is inside the act band, below Act I's
  *    peak, and equals the registered relief: **§7.3's permitted plateau relaxation, labelled**.
  *    The clause deliberately does **not** require the registered rise that items 1–4 put on the
  *    act's *maximum*: demanding a cross-act monotone rise is the mirror-image tautology, and a
  *    member outside the band still fails (see the clause's own detail).
+ * 7. `act-tail-r005a-registered-rows` — the ten new rungs reproduce their **registered row
+ *    tables** (par, `D_exec`, `B`, grid, coverage) at the law's precision. This is the
+ *    "never re-stamp a registered rung" duty applied to batches 2 + 3: a restamp of *any single*
+ *    one of the ten FAILs here and is named (L20 was the only registered rung R-004a could
+ *    restamp; the dataset now has ten more, so the guard has to be per row).
+ * 8. `act-tail-r005a-tail-pin` — the re-derived **act** maximum over
+ *    {@link ACT_II_REGISTERED_IDS} equals {@link ACT_II_R005A_REGISTERED_TAIL_EXEC} at
+ *    {@link ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID}. A relabel (the constant moved onto another
+ *    rung, or a measurement taken over a set that omits a registered rung) disagrees with the
+ *    re-derived reading and FAILs.
+ * 9. `act-tail-r005a-pre-standard` — the **R-003d shape, second time**: the pre-R005a standard
+ *    must still be the tail as it stood before this ticket (`27.604651` at `L25`, i.e. batch 1's
+ *    record) and the post tail strictly exceeds it by the measured
+ *    {@link ACT_II_R005A_TAIL_ADVANTAGE}. Emptying the move — restamping the standard to the
+ *    post value — leaves the rise identity unsatisfied and FAILs.
+ * 10. `act-tail-r005a-exec-headroom` — §7.9's **derived-exact** headroom: `ceiling − tail` must
+ *     reproduce {@link ACT_II_R005A_TAIL_HEADROOM_TO_EXEC_CEILING} and stay positive, with the
+ *     ceiling taken from {@link ACT_II_EXEC_BAND} (a formula over the measured `B` band) and the
+ *     printed `[19.75, 29.06]` never a comparison operand. Narrow the band silently and the
+ *     derived headroom moves; restamp the tail and it moves the other way — either single edit
+ *     FAILs loudly here.
+ * 11. `act-tail-r005a-seam-reliefs` — the two **§7.3.1-form** seam labels (`L25→L26`,
+ *     `L30→L31`), quoted verbatim in the law constants: each measured seam must reproduce its
+ *     registered `from`/`to` values, its published `ΔD_exec`, and sit **inside the act band**
+ *     (derived-exact). The **direction is not part of the status** — that is the two-sided
+ *     refusal: a validator demanding cross-batch monotony would have refused both registered
+ *     seams, and a law demanding a drop would refuse an in-band rise; the clause binds the
+ *     registered values, the derived delta and the band, and nothing else.
  */
 export function actScaleTailGuards(
   reading: ActScaleLawReading,
 ): readonly ActTailClause[] {
-  const { actI, actII, actIIBatchPeak, actOpen, l20Tail, preR004aStandard, actOpenRelief } =
-    reading;
+  const {
+    actI,
+    actII,
+    actIIBatchPeak,
+    actOpen,
+    l20Tail,
+    preR004aStandard,
+    actOpenRelief,
+    actIIBatchRows,
+    actIIBatchTable,
+    seams,
+    execCeiling,
+    preR005aStandard,
+  } = reading;
   const advantage = actII.dexec - actI.dexec;
   const registeredAdvantage =
+    ACT_II_R005A_REGISTERED_TAIL_EXEC - ACT_I_REGISTERED_PEAK_EXEC;
+  const batch1Advantage = actIIBatchPeak.dexec - actI.dexec;
+  const registeredBatch1Advantage =
     ACT_II_B1_REGISTERED_PEAK_EXEC - ACT_I_REGISTERED_PEAK_EXEC;
-  const actIFromActII = ACT_II_B1_IDS.includes(actI.levelId);
-  const grafted = l20Tail.ids.filter((id) => ACT_II_B1_IDS.includes(id));
+  const actIFromActII = ACT_II_REGISTERED_IDS.includes(actI.levelId);
+  const grafted = l20Tail.ids.filter((id) => ACT_II_REGISTERED_IDS.includes(id));
   const reliefInBand =
     actOpen.dexec >= ACT_II_EXEC_BAND[0] &&
     actOpen.dexec <= ACT_II_EXEC_BAND[1];
+
+  // ── R-005a readings ────────────────────────────────────────────────────────
+  const tailInBand =
+    actII.dexec >= ACT_II_EXEC_BAND[0] && actII.dexec <= ACT_II_EXEC_BAND[1];
+  const headroom = execCeiling - actII.dexec;
+  const toTolerance = (a: number, b: number): boolean => Math.abs(a - b) < 5e-5;
+  const rowOf = (
+    rows: readonly ActIILadderRow[],
+    id: number,
+  ): ActIILadderRow | null => rows.find((r) => r.id === id) ?? null;
+  const rowsRegistered = ACT_II_B2_B3_LADDER.every((expected) => {
+    const measuredRow = rowOf(actIIBatchRows, expected.id);
+    const tableRow = rowOf(actIIBatchTable, expected.id);
+    return (
+      measuredRow !== null &&
+      tableRow !== null &&
+      near(measuredRow.dexec, expected.dexec) &&
+      measuredRow.par === expected.par &&
+      measuredRow.grid[0] === expected.grid[0] &&
+      measuredRow.grid[1] === expected.grid[1] &&
+      measuredRow.coverage === expected.coverage &&
+      toTolerance(measuredRow.b, expected.b) &&
+      near(tableRow.dexec, expected.dexec) &&
+      tableRow.par === expected.par
+    );
+  });
+  const restampedRows = ACT_II_B2_B3_LADDER.filter((expected) => {
+    const measuredRow = rowOf(actIIBatchRows, expected.id);
+    return measuredRow !== null && !near(measuredRow.dexec, expected.dexec);
+  }).map((r) => `L${String(r.id)}`);
+  const seamReadings = ACT_II_SEAM_RELIEFS.map((spec) => {
+    const seam =
+      seams.find(
+        (s) => s.fromLevelId === spec.fromLevelId && s.toLevelId === spec.toLevelId,
+      ) ?? null;
+    const derivedDelta = seam === null ? Number.NaN : seam.toExec - seam.fromExec;
+    return {
+      spec,
+      seam,
+      derivedDelta,
+      ok:
+        seam !== null &&
+        near(seam.fromExec, seam.registeredFrom) &&
+        near(seam.toExec, seam.registeredTo) &&
+        near(seam.registeredFrom, spec.fromExec) &&
+        near(seam.registeredTo, spec.toExec) &&
+        near(seam.registeredDelta, spec.delta) &&
+        near(derivedDelta, seam.registeredDelta) &&
+        seam.fromExec >= ACT_II_EXEC_BAND[0] &&
+        seam.fromExec <= ACT_II_EXEC_BAND[1] &&
+        seam.toExec >= ACT_II_EXEC_BAND[0] &&
+        seam.toExec <= ACT_II_EXEC_BAND[1],
+    };
+  });
+  const seamsOk = seamReadings.every((s) => s.ok);
 
   return [
     {
@@ -1548,33 +2181,39 @@ export function actScaleTailGuards(
     {
       clause: "act-tail-act-ii-peak-pin",
       label:
-        `§7.5 item 2 — Act II batch 1's measured peak is the registered ${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} at L${String(ACT_II_B1_PEAK_LEVEL_ID)}`,
+        `§7.5 item 2 — Act II batch 1's measured peak is the registered ${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} at L${String(ACT_II_B1_PEAK_LEVEL_ID)}, and its own gap to Act I is the registered ${ACT_II_B1_PEAK_ADVANTAGE.toFixed(6)}`,
       status:
         near(actIIBatchPeak.dexec, ACT_II_B1_REGISTERED_PEAK_EXEC) &&
-        actIIBatchPeak.levelId === ACT_II_B1_PEAK_LEVEL_ID
+        actIIBatchPeak.levelId === ACT_II_B1_PEAK_LEVEL_ID &&
+        near(batch1Advantage, ACT_II_B1_PEAK_ADVANTAGE) &&
+        near(registeredBatch1Advantage, ACT_II_B1_PEAK_ADVANTAGE)
           ? "PASS"
           : "FAIL",
       detail:
         `measured batch peak D_exec=${actIIBatchPeak.dexec.toFixed(6)} at L${String(actIIBatchPeak.levelId)}; ` +
-        `registered ${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} at L${String(ACT_II_B1_PEAK_LEVEL_ID)}. ` +
-        `The batch's own record is immutable: a restamp of L${String(ACT_II_B1_PEAK_LEVEL_ID)}'s bytes or of the constant moves this line and is refused.`,
+        `registered ${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} at L${String(ACT_II_B1_PEAK_LEVEL_ID)}; ` +
+        `measured gap to Act I ${batch1Advantage.toFixed(6)} and registered gap ${registeredBatch1Advantage.toFixed(6)} vs pinned ${ACT_II_B1_PEAK_ADVANTAGE.toFixed(6)}. ` +
+        `The batch's own record is immutable: a restamp of L${String(ACT_II_B1_PEAK_LEVEL_ID)}'s bytes or of the constant moves this line and is refused. ` +
+        `R-005a kept this clause on BATCH 1's ids on purpose — the act-level reading moved to act-tail-peak-advantage and act-tail-r005a-tail-pin, so the batch record and the act record can never be swapped for one another.`,
     },
     {
       clause: "act-tail-peak-advantage",
       label:
-        "§7.3 — act n's measured maximum strictly exceeds act n−1's, and the registered gap is the measured gap (the derived identity)",
+        `§7.3 — Act II's measured act-level maximum strictly exceeds Act I's, and the registered gap is the measured gap (read over the whole registered act, ids ${String(ACT_II_REGISTERED_IDS[0])}–${String(ACT_II_REGISTERED_IDS[ACT_II_REGISTERED_IDS.length - 1] ?? 0)}: registered ${ACT_II_R005A_REGISTERED_TAIL_EXEC.toFixed(6)} at L${String(ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID)} − Act I ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} = ${ACT_II_REGISTERED_PEAK_ADVANTAGE_VS_ACT_I.toFixed(6)})`,
       status:
         advantage > 0 &&
-        near(registeredAdvantage, ACT_II_B1_PEAK_ADVANTAGE) &&
-        near(advantage, ACT_II_B1_PEAK_ADVANTAGE)
+        near(registeredAdvantage, ACT_II_REGISTERED_PEAK_ADVANTAGE_VS_ACT_I) &&
+        near(advantage, ACT_II_REGISTERED_PEAK_ADVANTAGE_VS_ACT_I)
           ? "PASS"
           : "FAIL",
       detail:
         `measured: Act II ${actII.dexec.toFixed(6)} − Act I ${actI.dexec.toFixed(6)} = ${advantage.toFixed(6)}; ` +
-        `registered: ${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} − ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} = ` +
-        `${registeredAdvantage.toFixed(6)}; pinned advantage ${ACT_II_B1_PEAK_ADVANTAGE.toFixed(6)}. ` +
+        `registered: ${ACT_II_R005A_REGISTERED_TAIL_EXEC.toFixed(6)} − ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} = ` +
+        `${registeredAdvantage.toFixed(6)}; pinned advantage ${ACT_II_REGISTERED_PEAK_ADVANTAGE_VS_ACT_I.toFixed(6)}. ` +
         `The clause is an inequality (strictly exceeds) AND a derived equality, which is what keeps it from being satisfied by ` +
-        `editing one of the two constants.`,
+        `editing one of the two constants. R-004a read this over BATCH 1's ids because batch 1 was the whole act; after R-005a ` +
+        `the act ends at L${String(ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID)}, so a batch-1-only reading here would publish a stale ` +
+        `act maximum (the very failure this clause exists to catch) — batch 1's own identity is pinned by the clause above.`,
     },
     {
       clause: "act-tail-pre-r004a-standard",
@@ -1595,7 +2234,7 @@ export function actScaleTailGuards(
     {
       clause: "act-tail-l20-not-restamped",
       label:
-        "the L16–L20 block law is untouched: the terminal rung is still L20 at its registered par/D_exec, and L21–L25 are NOT grafted onto BLOCK_L1619_IDS",
+        `the L16–L20 block law is untouched: the terminal rung is still L20 at its registered par/D_exec, and no registered Act II id (${ACT_II_REGISTERED_IDS.join(", ")}) is grafted onto BLOCK_L1619_IDS`,
       status:
         l20Tail.ids.length === BLOCK_L1619_IDS.length &&
         l20Tail.ids.every((id, i) => id === BLOCK_L1619_IDS[i]) &&
@@ -1609,9 +2248,10 @@ export function actScaleTailGuards(
         `tail ids [${l20Tail.ids.join(", ")}] vs BLOCK_L1619_IDS [${BLOCK_L1619_IDS.join(", ")}]; tail par ` +
         `${String(l20Tail.tailPar)} vs ${String(BLOCK_L1619_TAIL_PAR)}; tail D_exec ${l20Tail.tailExec.toFixed(6)} vs ` +
         `${BLOCK_L1619_TAIL_EXEC_CEILING.toFixed(6)} and vs Act I's registered peak ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)}; ` +
-        `grafted act-II ids [${grafted.join(", ")}]. §7.7 item 4 — "do not re-stamp L20": the registered tail ceiling is a ` +
-        `statement about the *sealed landing's* rung, so the five new rungs must prove under their own gates, and a law that ` +
-        `moved the block's tail to rung 25 would silently retire the gate L20 is judged by (the clone-guard lesson).`,
+        `grafted act-II ids [${grafted.join(", ")}] (checked against all ${String(ACT_II_REGISTERED_IDS.length)} registered Act II ids, not only batch 1's five). ` +
+        `§7.7 item 4 — "do not re-stamp L20": the registered tail ceiling is a ` +
+        `statement about the *sealed landing's* rung, so the new rungs must prove under their own gates, and a law that ` +
+        `moved the block's tail to rung 25 (or 35) would silently retire the gate L20 is judged by (the clone-guard lesson).`,
     },
     {
       clause: "act-tail-l21-open-relief",
@@ -1633,6 +2273,101 @@ export function actScaleTailGuards(
         `is the mirror-image tautology, and this clause is satisfied by the registered relief *and* by any in-band value in either ` +
         `direction, while an out-of-band member (or a value on the wrong rung) still FAILs by name.`,
     },
+    // ── R-005a — the ten-level train's clauses ────────────────────────────────
+    {
+      clause: "act-tail-r005a-registered-rows",
+      label:
+        `R-005a — the ten newly registered rungs reproduce their REGISTERED row tables (batches 2 + 3: par / D_exec / B / grid / coverage), so no registered rung can be re-stamped silently`,
+      status: rowsRegistered ? "PASS" : "FAIL",
+      detail:
+        `rows read off the root bytes vs ACT_II_B2_B3_LADDER: ${ACT_II_B2_B3_LADDER.map((r) => {
+          const m = rowOf(actIIBatchRows, r.id);
+          return `L${String(r.id)} ${m === null ? "MISSING" : `${m.par}/${m.dexec.toFixed(6)}/${m.b.toFixed(4)}`} (registered ${String(r.par)}/${r.dexec.toFixed(6)}/${r.b.toFixed(4)})`;
+        }).join(" · ")}. ` +
+        `ANTI-TAUTOLOGY: a restamp of any single rung moves that rung's measured D_exec away from its registered row and fails here, by name ` +
+        `[${restampedRows.length === 0 ? "none" : restampedRows.join(", ")}]; the table itself is injectable so the reading cannot be confirmed by the ` +
+        `same constant it is compared with. The act's MAXIMUM is pinned separately (act-tail-r005a-tail-pin) — this clause is why the ten rungs ` +
+        `below the tail are covered at all, which a max-only reading never could.`,
+    },
+    {
+      clause: "act-tail-r005a-tail-pin",
+      label:
+        `R-005a — Act II's registered tail after this ticket is the re-derived maximum over the whole registered act (L${String(ACT_II_REGISTERED_IDS[0])}–L${String(ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID)}): ${ACT_II_R005A_REGISTERED_TAIL_EXEC.toFixed(6)} at L${String(ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID)}`,
+      status:
+        near(actII.dexec, ACT_II_R005A_REGISTERED_TAIL_EXEC) &&
+        actII.levelId === ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID &&
+        tailInBand
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `measured act max D_exec=${actII.dexec.toFixed(6)} at L${String(actII.levelId)} (in band = ${String(tailInBand)}); registered ` +
+        `${ACT_II_R005A_REGISTERED_TAIL_EXEC.toFixed(6)} at L${String(ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID)}. ` +
+        `ANTI-TAUTOLOGY: the constant cannot be moved alone — it is compared with a re-derived measurement over ACT_II_REGISTERED_IDS ` +
+        `[${ACT_II_REGISTERED_IDS.join(", ")}], so a relabel onto another rung (or a basis that drops a registered rung) disagrees and FAILs. ` +
+        `§7.9's band is the derived-exact [${ACT_II_EXEC_BAND[0].toFixed(2)}, ${String(ACT_II_EXEC_BAND[1])}] (printed [19.75, 29.06]); the operator reads the derived value.`,
+    },
+    {
+      clause: "act-tail-r005a-pre-standard",
+      label:
+        `R-005a — the pre-registration standard is the registered tail as it stood before this ticket (${ACT_II_PRE_R005A_REGISTERED_TAIL_EXEC.toFixed(6)} at L${String(ACT_II_PRE_R005A_REGISTERED_TAIL_LEVEL_ID)}, batch 1's record), and the post tail strictly exceeds it by the measured ${ACT_II_R005A_TAIL_ADVANTAGE.toFixed(6)}`,
+      status:
+        near(preR005aStandard, ACT_II_PRE_R005A_REGISTERED_TAIL_EXEC) &&
+        near(ACT_II_PRE_R005A_REGISTERED_TAIL_EXEC, ACT_II_B1_REGISTERED_PEAK_EXEC) &&
+        ACT_II_PRE_R005A_REGISTERED_TAIL_LEVEL_ID === ACT_II_B1_PEAK_LEVEL_ID &&
+        actII.dexec > preR005aStandard &&
+        near(actII.dexec - preR005aStandard, ACT_II_R005A_TAIL_ADVANTAGE) &&
+        near(
+          ACT_II_R005A_REGISTERED_TAIL_EXEC -
+            ACT_II_PRE_R005A_REGISTERED_TAIL_EXEC,
+          ACT_II_R005A_TAIL_ADVANTAGE,
+        )
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `pre-R005a standard ${preR005aStandard.toFixed(6)} (constant ${ACT_II_PRE_R005A_REGISTERED_TAIL_EXEC.toFixed(6)}) vs batch 1's registered record ` +
+        `${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} at L${String(ACT_II_B1_PEAK_LEVEL_ID)} (they must stay the same number: the tail before this ticket *was* batch 1's peak); ` +
+        `measured post tail ${actII.dexec.toFixed(6)}; derived rise ${(actII.dexec - preR005aStandard).toFixed(6)} vs pinned ${ACT_II_R005A_TAIL_ADVANTAGE.toFixed(6)}. ` +
+        `This is the R-003d pattern a second time ("BLOCK_L1619_PRE_R003D_TAIL_EXEC" → "ACT_II_B1_PRE_R004A_REGISTERED_TAIL_EXEC" → here): the standard is kept as ` +
+        `its own datum, so a re-registration that restamps the standard it is judged against leaves the rise identity unsatisfied and FAILs loudly.`,
+    },
+    {
+      clause: "act-tail-r005a-exec-headroom",
+      label:
+        `R-005a / §7.9 — the act's registered tail keeps DERIVED-EXACT headroom to the act's D_exec ceiling: ${ACT_II_EXEC_BAND[1].toFixed(4)} − ${ACT_II_R005A_REGISTERED_TAIL_EXEC.toFixed(6)} = ${ACT_II_R005A_TAIL_HEADROOM_TO_EXEC_CEILING.toFixed(6)} (no rounded operand survives)`,
+      status:
+        near(actII.dexec, ACT_II_R005A_REGISTERED_TAIL_EXEC) &&
+        headroom > 0 &&
+        near(headroom, ACT_II_R005A_TAIL_HEADROOM_TO_EXEC_CEILING) &&
+        near(execCeiling, ACT_II_EXEC_BAND[1])
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `ceiling read ${execCeiling.toFixed(4)} (the derived-exact ACT_II_EXEC_BAND[1] = ${String(ACT_II_PAR_CEILING)} + 3·${ACT_II_B_BAND[1].toFixed(4)} = ` +
+        `${ACT_II_EXEC_BAND[1].toFixed(4)}; printed 29.06 is display text, never an operand); measured tail ${actII.dexec.toFixed(6)}; ` +
+        `derived headroom ${headroom.toFixed(6)} vs pinned ${ACT_II_R005A_TAIL_HEADROOM_TO_EXEC_CEILING.toFixed(6)}. ` +
+        `ANTI-TAUTOLOGY, both single-edit directions: narrow the band and the derived headroom falls below the pin; restamp the tail upward and it falls the other way — ` +
+        `either edit FAILs here without touching the other constant. §7.8 item 2's remaining headroom is the act's own, and the last 0.0025 of it is exactly the sliver ` +
+        `§7.9's derived-exact law exists to keep buildable.`,
+    },
+    {
+      clause: "act-tail-r005a-seam-reliefs",
+      label:
+        `R-005a / §7.3.1 — the two PRE-PUBLISHED seam reliefs are registered as published: ${ACT_II_SEAM_RELIEFS.map((s) => `instance ${String(s.instance)} \`batch-seam\` L${String(s.fromLevelId)}→L${String(s.toLevelId)} ΔD_exec=${s.delta.toFixed(6)}`).join(" · ")} (band DERIVED-EXACT [${ACT_II_EXEC_BAND[0].toFixed(2)}, ${String(ACT_II_EXEC_BAND[1])}], printed [19.75, 29.06]; direction NOT part of the clause)`,
+      status: seamsOk ? "PASS" : "FAIL",
+      detail:
+        seamReadings
+          .map(
+            (s) =>
+              `instance ${String(s.spec.instance)} L${String(s.spec.fromLevelId)}→L${String(s.spec.toLevelId)}: measured ${s.seam === null ? "MISSING" : `${s.seam.fromExec.toFixed(6)}→${s.seam.toExec.toFixed(6)}`} · ` +
+              `registered ${s.seam === null ? "n/a" : `${s.seam.registeredFrom.toFixed(6)}→${s.seam.registeredTo.toFixed(6)}`} · derived Δ ${s.derivedDelta.toFixed(6)} vs published ${s.spec.delta.toFixed(6)} · ok=${String(s.ok)}`,
+          )
+          .join(" | ") +
+        `. Both sides must sit inside the act band (derived-exact) and the derived Δ must equal the published ΔD_exec. ` +
+        `THE DIRECTION IS NOT PART OF THE STATUS, deliberately and in both directions: a validator that demanded CROSS-BATCH MONOTONY would have refused both registered ` +
+        `seams (L25→L26 −6.044410, L30→L31 −4.362098 — the registered sawtooth), and a law that demanded a DROP would refuse an in-band rise at a seam. ` +
+        `What binds is the registered value, the derived delta and the band; that a relief exists at all is §7.3 interior freedom, and its label is the only thing that makes it registrable (§7.3.1). ` +
+        `Labels, verbatim, as registered: "${ACT_II_B2_SEAM_RELIEF.label.slice(0, 96)}…" / "${ACT_II_B3_SEAM_RELIEF.label.slice(0, 96)}…" — the band inside each label is the PRINTED form the §7.3.1 text published, while this clause's comparison reads the derived-exact constant (§7.9).`,
+    },
   ];
 }
 
@@ -1653,6 +2388,71 @@ export function actPeakOf(
 }
 
 /**
+ * **The act-scale law's reading, measured from a set of levels** — one implementation, so
+ * that `scripts/attest-r004a-act2.ts` and `scripts/attest-r005a-reg35.ts` cannot disagree
+ * about what "the act's maximum" means (the R-004a lesson: two transcripts of the same law
+ * that measure it two ways is how a stale reading survives a registration).
+ *
+ * Everything here is a **measurement**; the registered halves (the terminal-rung clause,
+ * the §7.3.1 seam specs, the `D_exec` ceiling) are bound by {@link actScaleLawReading}
+ * from the law's own constants. A rung the caller's set does not contain is reported as a
+ * `NaN` reading rather than skipped: the clauses then FAIL, which is the honest outcome for
+ * "the law was asked about bytes that are not in the set".
+ */
+export function measureActScaleReading(
+  levels: readonly Level[],
+): ActScaleLawReading {
+  const ids = levels.map((level) => level.id);
+  const actIPeak = actPeakOf(
+    levels,
+    ids.filter((id) => !ACT_II_REGISTERED_IDS.includes(id)),
+  );
+  const measuredRowOf = (id: number): ActIILadderRow | null => {
+    const level = levels.find((l) => l.id === id);
+    if (level === undefined) return null;
+    const graph = explore(level);
+    const result = analyse(level, graph);
+    const difficulty = analyseDifficulty(level, graph);
+    if (result.shortestSolution === null || difficulty.Dexec === null) return null;
+    return {
+      // `par` is the **solver's** shortest solution, never the file's label: a row table that
+      // echoed the file would confirm itself (the `par-stamped` gate's own duty).
+      id,
+      par: result.shortestSolution,
+      dexec: difficulty.Dexec,
+      b: difficulty.B,
+      grid: [level.width, level.height],
+      coverage: result.distinctPositions,
+    };
+  };
+  const seamRung = (id: number): number => actPeakOf(levels, [id])?.dexec ?? Number.NaN;
+  return actScaleLawReading({
+    actI: actIPeak ?? { levelId: 0, dexec: Number.NaN },
+    actII: actPeakOf(levels, ACT_II_REGISTERED_IDS) ?? {
+      levelId: 0,
+      dexec: Number.NaN,
+    },
+    actIIBatchPeak: actPeakOf(levels, ACT_II_B1_IDS) ?? {
+      levelId: 0,
+      dexec: Number.NaN,
+    },
+    actOpen: actPeakOf(levels, [ACT_II_B1_OPEN_RELIEF_LEVEL_ID]) ?? {
+      levelId: 0,
+      dexec: Number.NaN,
+    },
+    actIIBatchRows: ACT_II_B2_B3_LADDER.map(
+      (row) => measuredRowOf(row.id) ?? { ...row, dexec: Number.NaN, b: Number.NaN },
+    ),
+    seams: ACT_II_SEAM_RELIEFS.map((spec) => ({
+      fromLevelId: spec.fromLevelId,
+      toLevelId: spec.toLevelId,
+      fromExec: seamRung(spec.fromLevelId),
+      toExec: seamRung(spec.toLevelId),
+    })),
+  });
+}
+
+/**
  * Act II batch 1's named gates — `docs/level-design.md` §7.5 item 1's per-level obligations,
  * read on the registered bytes. Returned in a stable, documented order:
  *
@@ -1660,7 +2460,8 @@ export function actPeakOf(
  *      exact, authored *and* solver-stamped) and strictly inside §7.2's par band [16, 24].
  *      §7.5 item 1's "`par` ∈ act band" is discharged here in its stronger form: the band is a
  *      range, the registered rung is a measurement, and this level is both.
- *   2. `act2-exec-band` — `D_exec` inside §7.2's derived band [19.75, 29.06] **and** equal to
+ *   2. `act2-exec-band` — `D_exec` inside §7.2's derived band [19.75, 29.0625] (printed
+ *      [19.75, 29.06]; §7.9's notation law) **and** equal to
  *      the registered row's value at {@link LAW_PRECISION}. The band half is §7.5 item 1 ("a
  *      candidate outside its act band is rejected, not re-banded"); the equality half is the
  *      anti-restamp pin.
@@ -1804,7 +2605,7 @@ export function act2Batch1Gates(
     gates.push({
       id: "act2-act-peak",
       label:
-        `§7.3 — the act-peak clause on the batch's PEAK rung: act II's measured maximum (${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)}) strictly exceeds Act I's registered peak (${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)}), and the peak is the registered one`,
+        `§7.3 — the act-peak clause on the batch's PEAK rung: Act II batch 1's measured maximum (${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)}) strictly exceeds Act I's registered peak (${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)}), and the batch peak is the registered one (R-005a moved the act-level reading to ACT_II_REGISTERED_IDS (L21–L35); this per-rung gate stays BATCH-scoped, because §7.7 item 3 discharges the obligation per batch)`,
       status:
         dexec !== null &&
         dexec > ACT_I_REGISTERED_PEAK_EXEC &&
@@ -1814,11 +2615,14 @@ export function act2Batch1Gates(
       detail:
         `Dexec=${dexec === null ? "n/a (unsolvable)" : dexec.toFixed(6)} vs Act I's registered peak ` +
         `${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} (delta ${dexec === null ? "n/a" : (dexec - ACT_I_REGISTERED_PEAK_EXEC).toFixed(6)}; ` +
-        `registered delta ${ACT_II_B1_PEAK_ADVANTAGE.toFixed(6)}). §7.3 puts the across-act obligation on the act's MEASURED MAXIMUM ` +
-        `and §7.7 item 3 discharges it per batch — which is why the clause rides only on the peak rung: requiring it of every member ` +
+        `registered delta ${ACT_II_B1_PEAK_ADVANTAGE.toFixed(6)}). This is the BATCH-1 rung gate: §7.3's across-act ` +
+        `obligation rides on the ACT's measured maximum (since R-005a the whole registered act, L21–L35, 28.339426 at L35 — ` +
+        `docs/level-difficulty.md §3.5), while §7.7 item 3 discharges it per batch, which is why this clause rides only on ` +
+        `each batch's peak rung: requiring it of every member ` +
         `would demand 20 padded rungs the gates forbid (item 86(a) census saturation; P3(a)/P4 par-is-bounded-by-the-board). ` +
         `The dataset-level anti-tautology guards are actScaleTailGuards (relabel, restamp, pre-registration standard, L20 un-restamped, ` +
-        `and the act-open relief).`,
+        `and the act-open relief; R-005a added registered-rows, tail-pin, pre-standard, exec-headroom and seam-reliefs, each controlled ` +
+        `by scripts/attest-r005a-reg35.ts).`,
     });
   }
 

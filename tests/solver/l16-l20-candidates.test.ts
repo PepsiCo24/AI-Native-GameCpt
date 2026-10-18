@@ -2,7 +2,8 @@
  * `tests/solver/l16-l20-candidates.test.ts` — the durable pin on the L16–L20
  * registered root block (QA-011, retargeted from the pre-registration candidate
  * shelf; QA-014 extended to the registered terminal rung; QA-018 re-booked the shelf
- * to the Act II batch-1 ids and QA-025 re-booked it to the Act II batch-2 ids).
+ * to the Act II batch-1 ids, QA-025 to the Act II batch-2 ids and QA-026 to the ten-name
+ * Act II batch-2 + batch-3 shelf).
  *
  * Why this file exists: `scripts/author-l16-candidates.ts` proposes and
  * `scripts/prove-candidate.ts` proves, but both are *runs* — their output lives in
@@ -19,14 +20,18 @@
  * root set and derives `BLOCK_IDS` from `documentedLesson(id)?.obligation` — never from
  * a typed 16–20.
  * The candidate shelf (`src/levels/candidates/`) is asserted to hold **exactly the
- * booked pre-registration set** — the five Act II batch-2 ids `l026`–`l030` since
- * QA-025 (LV-014 wrote them fresh and unregistered; QA-018's batch-1 booking
- * `l021`–`l025` graduated to the root by R-004a, and QA-014's was `[]` after R-003d
- * registered the last entry) — and
+ * booked pre-registration set** — the five measured LV-017 rungs `l036`–`l040` since
+ * R-005c-b, because LV-017 (the Act II *closing* batch) posted them as proven shelf
+ * candidates **after** R-005c's base, where the shelf was genuinely empty: R-005a had
+ * graduated the ten Act II ids `l026`–`l035` to the dataset root (QA-026 had booked those
+ * ten: LV-014 wrote `l026`–`l030` fresh and unregistered, LV-015 posted `l031`–`l035`
+ * beside them, merged at `afeb5262d`; QA-025's five-id booking `l026`–`l030`, QA-018's
+ * batch-1 booking `l021`–`l025`, QA-014's `[]` after R-003d and R-005c's `[]` are the
+ * same pin's earlier readings) — and
  * only rungs *derived strictly above the registered root max*: the shelf's role is to
  * hold a proven candidate *while its rung is above the registered dataset* (QA-012;
  * R-003c moved l016–l019 off it, LV-011 → R-003d moved the landing rung off it last,
- * LV-012 posted the Act II batch, LV-014 batch 2). That is a **derived rung relation, never a ceiling
+ * LV-012 posted the Act II batch, LV-014 batch 2, LV-015 batch 3). That is a **derived rung relation, never a ceiling
  * claim about any device** — `docs/project-status.md` item 114: the pocket census is
  * unmeasured at ≥ 11, so no ceiling may be published in either direction, and the law
  * binds test prose too. A shelf file at or below the registered root max is a root row
@@ -57,7 +62,8 @@ import { analyse, explore } from "@/core/solver/bfs";
 import { analyseDifficulty } from "@/core/solver/difficulty";
 import {
   allOffShortestSolution,
-  ACT_II_B1_IDS,
+  ACT_II_REGISTERED_IDS,
+  ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID,
   auditLevel,
   BLOCK_L1619_IDS,
   BLOCK_L1619_NAMED_B_EXCURSIONS,
@@ -145,33 +151,68 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
    * The booked shelf, **named once**: the candidates that a pre-registration
    * transcript measured and proved while their rung sat above the registered root max
    * (`l016`–`l019` on the R-003c lineage, `l020` on LV-011's, `l021`–`l025` on the
-   * Act II batch-1 lineage, `l026`–`l030` on LV-014's batch-2 lineage — the first three
+   * Act II batch-1 lineage, `l026`–`l030` on LV-014's batch-2 lineage and `l031`–`l035`
+   * on LV-015's batch-3 lineage — the first three
    * registered at the root since, which is why every booking since QA-014 was `[]` until
    * QA-025). Registering a candidate moves it to
    * `src/levels/` *and* off this list, in the same commit — so this pin cannot
    * silently absorb a new shelf file, and a *missing* booked file fails too.
    *
-   * **QA-025: the booking is the five LV-014 ids.** R-004c's booking was `[]` (R-004a had
+   * **QA-025 booked the five LV-014 ids.** R-004c's booking was `[]` (R-004a had
    * registered `l021`–`l025` — proof in `scripts/prove-candidate-l2125.transcript.md` —
    * leaving the shelf empty), and LV-014 then occupied the shelf with Act II batch 2:
-   * `l026.json`–`l030.json`, written fresh, proven on the shelf and **unregistered**
-   * (`src/levels/candidates/README.md` names this exact booking set). Occupied shelf plus
-   * an `[]` literal was the one red this suite carried, so the literal is re-booked to the
-   * set the shelf actually holds. The list stays a **live guard rather than a count**: the
-   * assertion below is *set equality*, so an unregistered extra (`l031.json`) and a
-   * vanished member (`l030.json` gone) both fail by name. QA-012 and QA-018 proved the
-   * populated direction non-vacuously and QA-014 the empty one (`cp`-in / `mv`-out probes,
-   * `tests/e2e/README.md` §1.12).
+   * `l026.json`–`l030.json`, written fresh, proven on the shelf and **unregistered**.
+   * **QA-026 booked the ten Act II ids `l026`–`l035`**, because LV-015 posted batch 3
+   * beside batch 2 — `l031.json`–`l035.json`, proven on the shelf and **unregistered**
+   * (`scripts/prove-candidate-l3135.transcript.md` §5 measures the shelf as ten files,
+   * `10/10 PASS`) — and the merge `afeb5262d` landed all ten at once: a five-name literal
+   * over a ten-file shelf was the one red this suite carried (byte-shape
+   * `expected [ 'l026.json', 'l027.json', …(8) ] to deeply equal [ 'l026.json', 'l027.json', …(3) ]`),
+   * so the literal is re-booked to the set the shelf actually holds.
+   *
+   * **R-005c re-booked it to `[]` — the EMPTY shelf, for exactly one merge.** R-005a
+   * graduated all ten batch-2 + batch-3 rungs to the dataset root (`git mv`, blob +
+   * `sha256` unchanged on both sides), so at that tip `src/levels/candidates/` held its
+   * `README.md` and nothing else, and the literal was the empty set. That row stated the
+   * successor as `l036.json` because the shelf was empty **and** the root stopped at 35:
+   * the same rung was both the first unbooked shelf name and the root's successor. Both
+   * halves were measured true at that tip.
+   *
+   * **R-005c-b re-books it to the five MEASURED names `l036`–`l040`.** LV-017 landed
+   * those five proven candidates on the shelf **after** R-005c's base (`da0e3ac`, rule
+   * commit `b9dac54`) — by design, not by accident: the shelf moved underneath this pin in
+   * the very next merge, which is precisely what the row exists to catch, and the seat
+   * measurement found the one red in the suite here (`l16-l20-candidates.test.ts:201`,
+   * `AssertionError: expected [ 'l036.json', 'l037.json', …(3) ] to deeply equal []`).
+   * The literal below is the **directory's own reading, never typed**; registering a
+   * candidate still moves it to `src/levels/` *and* off this list in the same commit.
+   *
+   * The **successor references move with the shelf, and the root's do not**: the unbooked
+   * extra this row must refuse is now **`l041.json`** — absent from the shelf *and* from
+   * the root, `documentedLesson(41)` null — because `l036.json` is a *booked* shelf file
+   * today, so dropping it in is green by construction. The ROOT absence clause (the
+   * two-tails row below) is untouched: the root still stops at the pinned 35 and
+   * `l036.json` is still absent from root, so the same id is a candidate on the shelf and
+   * a non-existent rung in the dataset — which is the whole point of holding the two
+   * subjects apart (QA-025's scoping). The list stays a
+   * **live guard rather than a count**: the
+   * assertion below is *set equality*, so an unbooked extra (`l041.json`) on the
+   * shelf and a vanished member of the booking (`l040.json` gone) both fail by name —
+   * QA-012 and QA-018 proved the populated direction non-vacuously, QA-014 the empty one
+   * and QA-026 the ten-name one (`cp`-in / `mv`-out probes, `tests/e2e/README.md` §1.12);
+   * R-005c proved the `[]` reading, and **R-005c-b re-proves both directions on this
+   * five-name reading** (add `l041.json` → red at the set-equality row; `mv l040.json` out
+   * → red at the same row), quoted in `tests/e2e/README.md` §1.17.
    */
   const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = [
-    "l026.json",
-    "l027.json",
-    "l028.json",
-    "l029.json",
-    "l030.json",
+    "l036.json",
+    "l037.json",
+    "l038.json",
+    "l039.json",
+    "l040.json",
   ];
 
-  it("the shelf holds only the booked pre-registration candidates (l026–l030, LV-014 batch 2), every rung derived strictly above the registered root max", () => {
+  it("the shelf holds only the booked pre-registration candidates, every rung derived strictly above the registered root max", () => {
     const rootMax = Math.max(...shipped.map((level) => level.id));
     const shelf = existsSync(CANDIDATES_DIR)
       ? readdirSync(CANDIDATES_DIR)
@@ -201,7 +242,7 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     }
   });
 
-  it("two tails, two facts: the block's tail stays rung 20 while the dataset's tail is the pinned 25 — never a re-stamp", () => {
+  it("two tails, two facts: the block's tail stays rung 20 while the dataset's tail is the pinned 35 — never a re-stamp", () => {
     const blockMax = BLOCK_IDS.at(-1) as number;
     const maxShipped = Math.max(...shipped.map((level) => level.id));
 
@@ -223,26 +264,42 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     // (`docs/project-status.md` item 114: the pocket census is unmeasured at ≥ 11, so
     // neither "9 is the largest" nor any other ceiling may be published).
     expect(maxShipped).toBe(EXPECTED_LEVEL_COUNT);
-    expect(EXPECTED_LEVEL_COUNT).toBe(ACT_II_B1_IDS.at(-1));
+    // The act's **registered** tail is the dataset's tail (R-005a moved the act maximum
+    // off batch 1's peak 27.604651 onto L35), and the law's own constants name that
+    // rung — so this is read off `ACT_II_REGISTERED_IDS` / the tail-level constant
+    // rather than a typed 35.
+    expect(EXPECTED_LEVEL_COUNT).toBe(ACT_II_REGISTERED_IDS.at(-1));
+    expect(EXPECTED_LEVEL_COUNT).toBe(ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID);
     const tailFile = `l${String(maxShipped).padStart(3, "0")}.json`;
     expect(
       existsSync(join(LEVELS_DIR, tailFile)),
       `${tailFile} is the registered terminal rung and must live in the root set`,
     ).toBe(true);
-    expect(documentedLesson(maxShipped)?.obligation).toBe("act-2-batch-1");
+    // The tail's lesson row exists, and its `obligation` is the **honestly null** one
+    // R-005a2 recorded: the `act-2-batch-2` / `act-2-batch-3` dispatchers behind an
+    // `ACT_II_B2_B3_LADDER`-keyed reader are booked (`src/levels/README.md` §7 item 7),
+    // so R-005c may not invent a family to make this row read a value. Asserting `null`
+    // is the honest reading — and it is *not* vacuous: a tail that gained a fabricated
+    // obligation (or lost its row) fails here by name.
+    expect(documentedLesson(maxShipped), `l${String(maxShipped)} lesson row`).not.toBeNull();
+    expect(documentedLesson(maxShipped)?.obligation).toBeNull();
 
     // …and the ABSENCE clause, re-pointed at the *new* max rather than deleted: rung
     // max+1 must have no **registered** file, no lesson row and no obligation
-    // (`l026.json` absent from `src/levels/` · `documentedLesson(26)` null · no shipped
-    // id above 25). All three are re-derived from the live set, so the clause stays live
+    // (`l036.json` absent from `src/levels/` · `documentedLesson(36)` null · no shipped
+    // id above 35 — all three already true, `src/levels/README.md` §7d; the ROOT is
+    // untouched by R-005c-b, which moves only the *shelf's* successor). All three are
+    // re-derived from the live set, so the clause stays live
     // instead of becoming prose. QA-025: the subject is the *root* set (`LEVELS_DIR`),
-    // never the shelf — since LV-014 a shelved `l026.json` does exist, so re-pointing
-    // this derived clause at `l031` would assert an arbitrary rung instead of the
-    // dataset's successor, and would have to be typed; scoping the words is the honest
-    // fix, and the assertion itself is unchanged.
+    // never the shelf — `l036.json` is a **booked shelf candidate** today while it is
+    // still absent from the root, so re-pointing this derived clause at it would assert
+    // an arbitrary rung instead of the dataset's successor, and would have to be typed;
+    // scoping the words is the honest fix, and the assertion itself is unchanged. (The
+    // shelf's own successor — the unbooked extra the booking row refuses — is `l041.json`,
+    // and it lives in that row's docstring, not here.)
     expect(
       existsSync(join(LEVELS_DIR, `l${String(maxShipped + 1).padStart(3, "0")}.json`)),
-      "no registered l026.json: the registered dataset stops at the pinned count",
+      "no registered l036.json: the registered dataset stops at the pinned count",
     ).toBe(false);
     expect(documentedLesson(maxShipped + 1)).toBeNull();
     expect(

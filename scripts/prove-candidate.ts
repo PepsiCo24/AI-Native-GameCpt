@@ -54,9 +54,10 @@ import { DIRECTIONS, move } from "@/core/state/move";
 import { hashState } from "@/core/state/hash";
 import type { SearchState } from "@/core/state/types";
 import {
-  ACT_II_B1_IDS,
+  ACT_II_B_BAND,
   ACT_II_EXEC_BAND,
   ACT_II_PAR_BAND,
+  ACT_II_REGISTERED_IDS,
   ACT_I_REGISTERED_PEAK_EXEC,
   BLOCK_L1619_B_BAND,
   BLOCK_L1619_PRE_R003D_TAIL_EXEC,
@@ -144,8 +145,16 @@ function measureCut(): { floor: number; l15Par: number; n: number; basis: readon
     // stays **frozen at L1–L15 = 14.969697**; §7 needs no re-derivation of it, and the
     // act's own escalation is judged by §7.3's act-peak clause (`act2Batch1Gates` +
     // `actScaleTailGuards`), never by moving the cut.
+    //
+    // R-005a: same rule, third registration — the ten-level train (L26–L35) makes the
+    // exclusion grow once more, and for exactly the same reason: with the new rungs in
+    // the root, the cut basis read 28.339426 and EVERY new rung was refused by
+    // `escalation  D_exec > CUT 28.339426` (the honest quote is in the R-005a move
+    // commit). The cut is still **frozen at L1–L15 = 14.969697**. The law's own id set
+    // (`ACT_II_REGISTERED_IDS`, batch 1 + 2 + 3) is what the filter reads, so a future
+    // registration extends the law once and this instrument follows it.
     if (BLOCK_L1619_IDS.includes(level.id)) continue;
-    if (ACT_II_B1_IDS.includes(level.id)) continue;
+    if (ACT_II_REGISTERED_IDS.includes(level.id)) continue;
     basis.push(level.id);
     const d = analyseDifficulty(level, explore(level));
     if (d.Dexec !== null && d.Dexec > floor) floor = d.Dexec;
@@ -235,18 +244,30 @@ function judge(
     ...(family === "g"
       ? ([
           {
+            // F-L31-1 (`scripts/prove-candidate-l3135.transcript.md` §0): this test was `>`/`<`
+            // — *strictly* inside the band — while the law admits the band's own ceiling. The
+            // inclusive form is the published one, on four readings that agree with each other and
+            // one that did not: (i) `policy.ts`'s `inParBand` is `>=`/`<=` on the same constants;
+            // (ii) `scripts/author-l21.ts`'s census + selection filters are inclusive (this batch's
+            // own pool was filtered that way); (iii) §7.2's table writes Act I's band `4–20` in the
+            // same notation and its ceiling `par 20` is REGISTERED (L20); (iv) §7.8 item 2 mandates
+            // a `par 24` rung and names it "Act II's own band ceiling", and §7.8 item 3 says `par 24`
+            // is "in-band" — while the act's derived `D_exec` top IS `24 + 3·1.6875`, so a strict
+            // form would make the published band's own top unattainable and the law self-contradictory.
+            // No constant, endpoint, threshold or gate list moved — only the comparison operator.
             id: "act2-par-band",
-            ok: stamped > ACT2_PAR_BAND[0] && stamped < ACT2_PAR_BAND[1],
+            ok: stamped >= ACT2_PAR_BAND[0] && stamped <= ACT2_PAR_BAND[1],
             detail:
-              `par=${String(stamped)} strictly inside Act II's band (${String(ACT2_PAR_BAND[0])}, ${String(ACT2_PAR_BAND[1])}) ` +
-              `(§7.2; the exact-rung ladder of §6.1.1 P2 is NOT the law inside the act band — it is measured below as the named finding it is)`,
+              `par=${String(stamped)} inside Act II's band [${String(ACT2_PAR_BAND[0])}, ${String(ACT2_PAR_BAND[1])}] (inclusive; §7.2 "par 16–24") ` +
+              `— §7.8 item 2 names par ${String(ACT2_PAR_BAND[1])} "Act II's own band ceiling" and requires one, and the derived D_exec top ` +
+              `${String(ACT2_EXEC_BAND[1])} (printed ${ACT2_EXEC_BAND[1].toFixed(2)}; §7.9) is exactly ${String(ACT2_PAR_BAND[1])} + 3·${String(ACT_II_B_BAND[1])}, so the ceiling belongs to the band (F-L31-1)`,
           },
           {
             id: "act2-exec-band",
             ok: diff.Dexec !== null && diff.Dexec >= ACT2_EXEC_BAND[0] && diff.Dexec <= ACT2_EXEC_BAND[1],
             detail:
-              `D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} ∈ [${ACT2_EXEC_BAND[0].toFixed(2)}, ${ACT2_EXEC_BAND[1].toFixed(2)}] ` +
-              `(§7.2's derived Act II band; derived from the measured B band through D_exec = par + 3·B — no new maths)`,
+              `D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} ∈ [${String(ACT2_EXEC_BAND[0])}, ${String(ACT2_EXEC_BAND[1])}] (printed [${ACT2_EXEC_BAND[0].toFixed(2)}, ${ACT2_EXEC_BAND[1].toFixed(2)}]; §7.9) ` +
+              `(§7.2's derived Act II band; derived from the measured B band through D_exec = par + 3·B — no new maths, and the compared operands ARE the derived values)`,
           },
           {
             id: "act2-b-band",
@@ -1146,7 +1167,7 @@ function multiPocketGates(
 const cut = measureCut();
 console.log(`prove-candidate — CUT re-measured from the shipped set: D_exec max = ${cut.floor.toFixed(6)} ` +
   `· par(L15) = ${String(cut.l15Par)} · ${String(cut.n)} shipped files · basis ids [${cut.basis.join(", ")}] ` +
-  `(the L16–L20 block and the registered Act II batch are excluded from their own filter — see measureCut)`);
+  `(the L16–L20 block and the registered Act II batches [${ACT_II_REGISTERED_IDS.join(", ")}] are excluded from their own filter — see measureCut)`);
 console.log(
   `family ${FAMILY}${FAMILY === "g" ? " (Act II multi-pocket — §7.2 / §7.4 stage G)" : " (the L20 sealed landing — §6.2.6)"}` +
     ` · Act I's measured peak the batch must clear: ${ACT1_PEAK.toFixed(6)}` +
@@ -1239,7 +1260,7 @@ function proveOne(file: string, rung: number): Proved {
   return { ok, verdict, level, caught, controls: controls.length };
 }
 
-const ladderRows: { id: number; par: number | null; dexec: number | null; b: number | null; coverage: string | null; chain: string | null; accepted: boolean }[] = [];
+const ladderRows: { id: number; par: number | null; dexec: number | null; b: number | null; coverage: string | null; chain: string | null; accepted: boolean; caught: number; controls: number }[] = [];
 let allOk = true;
 const targets = LADDER.length > 0 ? LADDER : [RUNG];
 /**
@@ -1266,6 +1287,8 @@ for (const id of targets) {
     coverage: coverage === null ? null : (/(\d+\/\d+)/.exec(coverage)?.[1] ?? coverage),
     chain,
     accepted: r.verdict.accepted,
+    caught: r.caught,
+    controls: r.controls,
   });
 }
 
@@ -1296,9 +1319,23 @@ if (LADDER.length > 0) {
   console.log(
     `batch peak: ${maxRow === null || maxRow.dexec === null ? "n/a" : `L${String(maxRow.id)} at ${maxRow.dexec.toFixed(6)}`} · ` +
       `Act I measured peak ${ACT1_PEAK.toFixed(6)} · §7.3 act-peak clause ${maxRow !== null && maxRow.dexec !== null && maxRow.dexec > ACT1_PEAK ? "DISCHARGED" : "NOT DISCHARGED"} ` +
-      `· headroom to the Act II ceiling ${ACT2_EXEC_BAND[1].toFixed(2)}: ${maxRow === null || maxRow.dexec === null ? "n/a" : (ACT2_EXEC_BAND[1] - maxRow.dexec).toFixed(6)}`,
+      `· headroom to the Act II ceiling ${String(ACT2_EXEC_BAND[1])} (printed ${ACT2_EXEC_BAND[1].toFixed(2)}; §7.9 — derived-exact is the value): ${maxRow === null || maxRow.dexec === null ? "n/a" : (ACT2_EXEC_BAND[1] - maxRow.dexec).toFixed(6)}`,
   );
-  console.log(`LADDER RESULT: ${allOk ? "PASS" : "FAIL"} (${String(ladderRows.filter((r) => r.accepted).length)}/${String(ladderRows.length)} rung(s) ACCEPT, every control caught on every rung)`);
+  // F-L31-2 (`scripts/prove-candidate-l3135.transcript.md` §0): this line used to assert
+  // "every control caught on every rung" as a STRING LITERAL, printing it even when a control had
+  // MISSED (rung 31 of batch 3: 12/13). A summary that asserts a fact it never computed is the
+  // "looks fine" failure AGENTS.md §7 forbids — inside the tool that exists to prevent it. The
+  // tally below is measured, and a shortfall says so.
+  const caughtTotal = ladderRows.reduce((n, r) => n + r.caught, 0);
+  const controlsTotal = ladderRows.reduce((n, r) => n + r.controls, 0);
+  console.log(
+    `LADDER RESULT: ${allOk ? "PASS" : "FAIL"} (${String(ladderRows.filter((r) => r.accepted).length)}/${String(ladderRows.length)} rung(s) ACCEPT, ` +
+      (MEASURE_CONTROLS
+        ? `controls MEASURED, not asserted (F-L16-3 expectation pass): ${String(controlsTotal)} across the ${String(ladderRows.length)} rung(s)`
+        : `controls named: ${String(caughtTotal)}/${String(controlsTotal)} across the ${String(ladderRows.length)} rung(s)` +
+          `${caughtTotal === controlsTotal ? "" : " — MISSES are listed per rung above and are not hidden"}`) +
+      `)`,
+  );
 }
 
 process.exit(allOk ? 0 : 1);
@@ -1433,10 +1470,22 @@ function controlTable(level: Level, rung: number, verdict: Verdict, gview: GView
       {
         // g3 — the goal's seal door dropped: the chain loses its last press and the goal's
         // room is no longer sealed. The view is injected so every gate still measures a device.
-        name: `g3 control — the goal's seal door "${goalDoor}" dropped (the chain loses a press)`,
+        // F-L31-3 (`scripts/prove-candidate-l3135.transcript.md` §0): the control is renamed to its
+        // MEASURED meaning and its `mustFire` moved from `g3-ordered-chain` to `g6-room-structure`.
+        // Measurement, on the 5-press sealed chain (`l031`–`l035`): dropping the goal's seal orphans
+        // its switch (one switch per door ⇒ the board is structurally invalid) and unseals the goal's
+        // room, so `validator` + `g2-room-exit-door` + `g6-room-structure` fire on 5/5 rungs, while
+        // `g3-ordered-chain` fires on 4/5 — on `l031` the four remaining presses stay forced and
+        // ordered, which is what that gate *asks*, so it legitimately passes (the order is implied by
+        // the seal topology; no single-object mutation can break it without first destroying
+        // reachability). House rule, verbatim: F-L16-3 (expectations corrected to the measured names)
+        // and F-L20-4 (a control that MISSED is renamed to its measured meaning, §8.14). The mutation
+        // must still be REFUSED and still has to name a specific gate; `g3-ordered-chain` stays named
+        // on 5/5 rungs by the g1/g4/g5 controls, so §7.5 item 4 coverage is unchanged.
+        name: `g3/g6 control — the goal's seal door "${goalDoor}" dropped (the chain loses its last press AND the goal's room is no longer sealed)`,
         board: { ...level, doors: level.doors.filter((d) => d.id !== goalDoor) },
         gview,
-        mustFire: "g3-ordered-chain",
+        mustFire: "g6-room-structure",
         expect: [
           "g3-ordered-chain", "g2-room-exit-door", "g6-room-structure", "g5-identity-broken", "validator",
           "par-stamped", "escalation", "act2-par-band", "act2-exec-band", "act-peak",

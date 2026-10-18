@@ -52,15 +52,18 @@ import {
   ACT_II_B1_PEAK_LEVEL_ID,
   ACT_II_B1_PRE_R004A_REGISTERED_TAIL_EXEC,
   ACT_II_B1_REGISTERED_PEAK_EXEC,
+  ACT_II_REGISTERED_IDS,
+  ACT_II_R005A_REGISTERED_TAIL_EXEC,
+  ACT_TAIL_R004A_CLAUSE_IDS,
+  ACT_TAIL_R005A_CLAUSE_IDS,
 
   ACT_I_REGISTERED_PEAK_EXEC,
   ACT_I_REGISTERED_PEAK_LEVEL_ID,
   act2Batch1Gates,
-  actPeakOf,
-  actScaleLawReading,
   actScaleTailGuards,
   allOffShortestSolution,
   auditLevel,
+  measureActScaleReading,
 } from "@/core/solver/policy";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -235,29 +238,17 @@ console.log("");
 
 console.log("[3/6] §7.3 act-scale tail law — the act peaks, measured on the root bytes");
 const all = shipped();
-const actI = actPeakOf(
-  all.map((s) => s.level),
-  all.map((s) => s.id).filter((id) => !ACT_II_B1_IDS.includes(id)),
-);
-const actII = actPeakOf(all.map((s) => s.level), ACT_II_B1_IDS);
-const actIIBatchPeak = actPeakOf(all.map((s) => s.level), ACT_II_B1_IDS);
-const actOpen = actPeakOf(
-  all.map((s) => s.level),
-  [ACT_II_B1_OPEN_RELIEF_LEVEL_ID],
-);
-if (actI === null || actII === null || actIIBatchPeak === null || actOpen === null) {
-  divergences.push("the act peaks could not be measured (a reading is null)");
-}
-const reading: ActScaleLawReading = actScaleLawReading({
-  actI: actI ?? { levelId: 0, dexec: Number.NaN },
-  actII: actII ?? { levelId: 0, dexec: Number.NaN },
-  actIIBatchPeak: actIIBatchPeak ?? { levelId: 0, dexec: Number.NaN },
-  actOpen: actOpen ?? { levelId: 0, dexec: Number.NaN },
-});
+// **R-005a** — the reading is built by ONE implementation (`@/core/solver/policy`'s
+// `measureActScaleReading`), shared with `scripts/attest-r005a-reg35.ts`: two transcripts of
+// the same law that measure it two ways is how a stale reading survives a registration.
+// R-004a's own change here is the Act I basis (it now excludes every registered Act II id,
+// not only batch 1's five) and the act-level maximum (which now spans L21–L35, while batch
+// 1's own record stays pinned in `act-tail-act-ii-peak-pin`).
+const reading: ActScaleLawReading = measureActScaleReading(all.map((s) => s.level));
 console.log(
   `  measured: Act I peak ${reading.actI.dexec.toFixed(6)} (L${String(reading.actI.levelId)}) · ` +
     `Act II peak ${reading.actII.dexec.toFixed(6)} (L${String(reading.actII.levelId)}) · ` +
-    `batch peak ${reading.actIIBatchPeak.dexec.toFixed(6)} · act-open L${String(reading.actOpen.levelId)} ${reading.actOpen.dexec.toFixed(6)}`,
+    `batch-1 peak ${reading.actIIBatchPeak.dexec.toFixed(6)} · act-open L${String(reading.actOpen.levelId)} ${reading.actOpen.dexec.toFixed(6)}`,
 );
 const registered = actScaleTailGuards(reading);
 for (const clause of registered) {
@@ -355,15 +346,29 @@ for (const control of tailControls) {
     );
 }
 check(
-  "every tail clause has exactly one control",
+  "every R-004a tail clause has exactly one control, and the control set is R-004a's own six",
   tailCaught === tailControls.length &&
-    new Set(tailControls.map((c) => c.clause)).size === registered.length,
-  `${String(tailCaught)}/${String(tailControls.length)} caught · clauses covered ${String(new Set(tailControls.map((c) => c.clause)).size)}/${String(registered.length)}`,
+    new Set(tailControls.map((c) => c.clause)).size === ACT_TAIL_R004A_CLAUSE_IDS.length &&
+    ACT_TAIL_R004A_CLAUSE_IDS.every((id) => tailControls.some((c) => c.clause === id)),
+  `${String(tailCaught)}/${String(tailControls.length)} caught · clauses covered ${String(new Set(tailControls.map((c) => c.clause)).size)}/${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} (R-004a's six; R-005a's five are ` +
+    `${ACT_TAIL_R005A_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r005a-reg35.ts — named here so the split of ownership is a reading, not a convention)`,
 );
 check(
-  "the registered reading is the discrimination side (all six clauses PASS on it)",
+  "the registered reading is the discrimination side (every reported clause PASSes on it)",
   registered.every((c) => c.status === "PASS"),
-  `registered 6/6 PASS · controls ${String(tailControls.length)}`,
+  `registered ${String(registered.filter((c) => c.status === "PASS").length)}/${String(registered.length)} PASS · R-004a controls ${String(tailControls.length)} · R-005a clauses reported here but controlled in the R-005a instrument: ${ACT_TAIL_R005A_CLAUSE_IDS.length}`,
+);
+check(
+  "the two instruments' clause sets PARTITION the reported set (a future clause must be given a home)",
+  new Set([...ACT_TAIL_R004A_CLAUSE_IDS, ...ACT_TAIL_R005A_CLAUSE_IDS]).size ===
+    registered.length &&
+    registered.every(
+      (c) =>
+        ACT_TAIL_R004A_CLAUSE_IDS.includes(c.clause) ||
+        ACT_TAIL_R005A_CLAUSE_IDS.includes(c.clause),
+    ),
+  `reported ${String(registered.length)} · R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} + R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} = ` +
+    `${String(new Set([...ACT_TAIL_R004A_CLAUSE_IDS, ...ACT_TAIL_R005A_CLAUSE_IDS]).size)} (a twelfth clause with no instrument reddens this row)`,
 );
 // Two-sided non-vacuity, on the clause whose subject is a DIRECTION: the law binds the
 // registered value and the band, and nothing else. So (a) an in-band value *above* Act I's
@@ -435,7 +440,7 @@ const memberControls: readonly {
   {
     mustFire: "gate-act2-exec-band",
     name: "-exec-band: the LAW table is restamped (L23's registered D_exec moved to 30) while the bytes stay registered",
-    coupling: "named: the band is [19.75, 29.06], so a restamped row leaves the band by three units — the silent-restamp direction this dispatch's guard exists for",
+    coupling: "named: the band is [19.75, 29.0625] (printed [19.75, 29.06]; §7.9 — derived-exact is the value), so a restamped row leaves the band by three units — the silent-restamp direction this dispatch's guard exists for",
     codes: gatesOf(readLevel(23), restampedRows),
   },
   {
@@ -526,9 +531,9 @@ check(
   `par ${String(l20.par)} · measured D_exec ${auditLevel(l20).difficulty.Dexec?.toFixed(6) ?? "n/a"} · Act I registered peak ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)}`,
 );
 check(
-  "the five new rungs are not grafted onto the block law (they prove under their own gates)",
+  "the new rungs are not grafted onto the block law (they prove under their own gates)",
   registered.find((c) => c.clause === "act-tail-l20-not-restamped")?.status === "PASS",
-  `act-tail-l20-not-restamped PASS on the live constants; batch ids [${ACT_II_B1_IDS.join(", ")}] ∉ BLOCK_L1619_IDS`,
+  `act-tail-l20-not-restamped PASS on the live constants; registered Act II ids [${ACT_II_REGISTERED_IDS.join(", ")}] ∉ BLOCK_L1619_IDS (L16–L20)`,
 );
 check(
   "the pre-R004a standard is the tail as it stood before this ticket",
@@ -546,6 +551,36 @@ check(
  * statement about *this file* instead of about the shipped cut, so the pass is taken as the
  * instrument's own stdout (its `CUT` line and its exit code) over the registered root bytes.
  * A ladder failure, or a cut that moved off 14.969697 / off the L1–L15 basis, fails this row.
+ *
+ * **R-005a chore (booked by `docs/project-status.md` item 139, discharged here).** The
+ * summary regex used to pin the *pre-F-L31-2* print
+ * `LADDER RESULT: PASS (5/5 rung(s) ACCEPT, every control caught on every rung)` — a literal
+ * LV-015 replaced with the **measured tally** (`controls named: 65/65 across the 5 rung(s)`,
+ * F-L31-2's honest-count fix). The row therefore REPORTED A DIVERGENCE on a ladder that had
+ * passed, at base as well as here (`docs/ai-native-pipeline.md` §8.21's instrument-finding
+ * note). It now reads the post-fix print — and reads the **counts** out of it rather than
+ * only matching its shape, so the relaxed regex cannot hide a rung that stopped passing.
+ *
+ * ── revert path, and the PRE → POST byte diff ───────────────────────────────
+ * The chore is **one reader line + one identity in the row below** — it cannot touch the
+ * registration, the cut or the basis. Bytes, base `dfd8f48` → this tree:
+ *
+ *   -const ladderPass = /^LADDER RESULT: PASS \((\d)\/(\d) rung\(s\) ACCEPT, every control caught on every rung\)$/m.exec(ladderOut);
+ *   +const ladderPass = /^LADDER RESULT: PASS \((\d+)\/(\d+) rung\(s\) ACCEPT, controls named: (\d+)\/(\d+) across the (\d+) rung\(s\)\)$/m.exec(ladderOut);
+ *   +const ladderControlsOk =
+ *   +  ladderPass !== null && ladderPass[4] === `${String(5 * 13)}` && ladderPass[5] === "5";
+ *
+ *   -    ladderPass !== null &&
+ *   -    ladderPass[1] === ladderPass[2],
+ *   +    ladderPass !== null &&
+ *   +    ladderPass[1] === ladderPass[2] &&
+ *   +    ladderPass[1] === "5" &&
+ *   +    ladderControlsOk,
+ *
+ * `git revert <the R-005a commit that carries this>` re-pins the pre-F-L31-2 print, and the
+ * row then reports a DIVERGENCE again on a green ladder — measured, not asserted: it did so at
+ * base `dfd8f48` as well as here. To revert by hand: restore the one-line regex and drop
+ * `ladderControlsOk` from the row's condition and from its detail string.
  */
 let ladderOut = "";
 let ladderExit = 0;
@@ -565,21 +600,25 @@ try {
 }
 const cutLine = /^prove-candidate — CUT re-measured.*$/m.exec(ladderOut)?.[0] ?? null;
 const cutMatch = cutLine === null ? null : /D_exec max = ([\d.]+) · par\(L15\) = (\d+) · (\d+) shipped files · basis ids \[([\d, ]+)\]/.exec(cutLine);
-const ladderPass = /^LADDER RESULT: PASS \((\d)\/(\d) rung\(s\) ACCEPT, every control caught on every rung\)$/m.exec(ladderOut);
+const ladderPass = /^LADDER RESULT: PASS \((\d+)\/(\d+) rung\(s\) ACCEPT, controls named: (\d+)\/(\d+) across the (\d+) rung\(s\)\)$/m.exec(ladderOut);
+const ladderControlsOk =
+  ladderPass !== null && ladderPass[4] === `${String(5 * 13)}` && ladderPass[5] === "5";
 check(
   "the freezer holds: the cut is still L1–L15, and the ladder still proves at the root",
   ladderExit === 0 &&
     cutMatch !== null &&
     Number(cutMatch[1]) === 14.969697 &&
     cutMatch[2] === "10" &&
-    cutMatch[3] === "25" &&
+    cutMatch[3] === "35" &&
     cutMatch[4] === "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15" &&
     ladderPass !== null &&
-    ladderPass[1] === ladderPass[2],
+    ladderPass[1] === ladderPass[2] &&
+    ladderPass[1] === "5" &&
+    ladderControlsOk,
   `scripts/prove-candidate.ts --family=g --ladder=21,22,23,24,25 --dir=src/levels on this tree: exit ${String(ladderExit)} · ` +
     `CUT D_exec max = ${cutMatch?.[1] ?? "n/a"} · par(L15) = ${cutMatch?.[2] ?? "n/a"} · ${cutMatch?.[3] ?? "n/a"} shipped files · ` +
-    `basis ids [${cutMatch?.[4] ?? "n/a"}] · LADDER ${ladderPass === null ? "n/a" : `${ladderPass[1]}/${ladderPass[2]} ACCEPT`} — ` +
-    "the L16–L20 block and the registered Act II batch are excluded from the cut's own filter and prove under their own laws",
+    `basis ids [${cutMatch?.[4] ?? "n/a"}] · LADDER ${ladderPass === null ? "n/a" : `${ladderPass[1]}/${ladderPass[2]} ACCEPT, controls named ${ladderPass[3]}/${ladderPass[4]}`} — ` +
+    "the L16–L20 block and the registered Act II batches are excluded from the cut's own filter and prove under their own laws",
 );
 // Non-vacuity, both halves. A row that cannot fail is not evidence, so the reader and the
 // instrument are each probed with an input that MUST move them.
@@ -630,7 +669,7 @@ if (divergences.length > 0) {
   process.exit(1);
 }
 console.log(
-  `RESULT: REGISTERED-MATCH — the five rungs are byte-identical to the shelf they were copied from (${ORIGIN}), every`,
+  `RESULT: REGISTERED-MATCH — the five R-004a rungs are byte-identical to the shelf they were copied from (${ORIGIN}), every`,
 );
 console.log(
   "booked number (par / D_exec / B / T / R / coverage / all-OFF / press-then-cross) is reproduced by the program solver",
@@ -639,8 +678,8 @@ console.log(
   `on the registered bytes, the registered ladder is ${ACT_II_B1_LADDER.map((r) => String(r.par)).join(" / ")} rising strictly on the execution axis,`,
 );
 console.log(
-  `§7.3's act-peak clause is discharged by the batch maximum (${ACT_II_B1_REGISTERED_PEAK_EXEC.toFixed(6)} > Act I's ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)}, ${ACT_II_B1_PEAK_ADVANTAGE.toFixed(6)}) under all six`,
+  `§7.3's act-peak clause is discharged by the act's measured maximum (${ACT_II_R005A_REGISTERED_TAIL_EXEC.toFixed(6)} > Act I's ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)}, read over ${String(ACT_II_REGISTERED_IDS[0])}–${String(ACT_II_REGISTERED_IDS[ACT_II_REGISTERED_IDS.length - 1] ?? 0)} after R-005a) under all ${String(registered.length)}`,
 );
 console.log(
-  `tail clauses, and ${String(memberControls.length)}/${String(memberControls.length)} member controls are refused by name with the L16–L20 block un-restamped.`,
+  `tail clauses (R-004a's six controlled HERE, R-005a's five controlled by scripts/attest-r005a-reg35.ts), and ${String(memberControls.length)}/${String(memberControls.length)} member controls are refused by name with the L16–L20 block un-restamped.`,
 );

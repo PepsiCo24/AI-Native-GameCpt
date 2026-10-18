@@ -36,6 +36,7 @@ import type { Level } from "@/core/level";
 import { validateLevel } from "@/core/level";
 import type { PolicyViolationCode } from "@/core/solver/policy";
 import {
+  ACT_II_EXEC_BAND,
   BLOCK_L1619_IDS,
   BLOCK_L1619_PAR_EXPECTATION,
   DOCUMENTED_LESSONS,
@@ -695,7 +696,8 @@ const ACT2_REGISTERED_RUNG_RELABELLED: Level = { ...act2L021, id: 22 };
  * because `auditLevel(board)` always reads the registered `ACT_II_B1_LADDER` itself. So
  * the same clause is exercised from the other side, board-side: the table stays
  * registered and the **bytes** are what moved — `l024`'s board
- * (`D_exec = 25.604651`, *inside* the derived band [19.75, 29.06]) under id 21, whose
+ * (`D_exec = 25.604651`, *inside* the derived band [19.75, 29.0625] (printed [19.75, 29.06];
+ * §7.9's notation law)) under id 21, whose
  * registered value is 21.581395. The band half therefore still holds and the
  * **anti-restamp half** is the half that fires — precisely the half the attest control's
  * own name and detail are written about ("a silent re-measure of a registered rung has
@@ -902,6 +904,20 @@ describe("LV-007A · m-2 — every policy code has a negative control that fails
             : ["lesson-latch-dynamism"],
       );
     }
+  });
+
+  it("§7.9 — the band `gate-act2-exec-band` reads is DERIVED law: ACT_II_EXEC_BAND[1] is 24 + 3·1.6875 exactly", () => {
+    // LV-016 made the band a *computation* (`… PAR_CEILING + 3·B_hi`) because the printed
+    // rounding used to BE the endpoint — which left the `(printed, derived-exact]` sliver
+    // unbuildable and §7.8 item 2's own par-24 rung unrepresentable. This is that law made
+    // executable, stated next to the control whose premise it is. The operands are the
+    // **published** values (par ceiling 24, measured B top 1.6875) written as literals on
+    // purpose: reading `ACT_II_PAR_CEILING` / `ACT_II_B_BAND` here would make the clause
+    // follow any edit — a tautology, which is the one thing §7.9 forbids.
+    expect(ACT_II_EXEC_BAND[1]).toBe(24 + 3 * 1.6875);
+    // …and it is EXACT, not a rounded print: every Act II endpoint is a dyadic rational
+    // (n/16), so a two-decimal literal cannot satisfy the clause above without lying.
+    expect(Number.isInteger(ACT_II_EXEC_BAND[1] * 16)).toBe(true);
   });
 });
 
