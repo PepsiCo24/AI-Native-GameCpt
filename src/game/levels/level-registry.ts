@@ -1,5 +1,5 @@
 /**
- * Level registry — loads the authored L1–L25 files and **validates every one**
+ * Level registry — loads the authored L1–L35 files and **validates every one**
  * before it can reach the board.
  *
  * `docs/architecture.md` §7 / ADR-0004: schema → rule validation → (solver, at CI
@@ -51,6 +51,16 @@ import l022 from "@/levels/l022.json";
 import l023 from "@/levels/l023.json";
 import l024 from "@/levels/l024.json";
 import l025 from "@/levels/l025.json";
+import l026 from "@/levels/l026.json";
+import l027 from "@/levels/l027.json";
+import l028 from "@/levels/l028.json";
+import l029 from "@/levels/l029.json";
+import l030 from "@/levels/l030.json";
+import l031 from "@/levels/l031.json";
+import l032 from "@/levels/l032.json";
+import l033 from "@/levels/l033.json";
+import l034 from "@/levels/l034.json";
+import l035 from "@/levels/l035.json";
 
 interface LevelSource {
   readonly file: string;
@@ -125,6 +135,39 @@ export const LEVEL_SOURCES: readonly LevelSource[] = [
   { file: "l023.json", raw: l023 },
   { file: "l024.json", raw: l024 },
   { file: "l025.json", raw: l025 },
+  // L26–L35 is R-005a's registered Act II batches 2 + 3 (the act-scale tail law's
+  // successor clause, `docs/ai-native-pipeline.md` §7.3.1 / `src/levels/README.md`
+  // §2g): moved out of `src/levels/candidates/` by `git mv`, rename 100 %, `sha256`
+  // **and** git blobs identical on both sides, no content edit during the move. All
+  // ten are `switchRequired: required` like the L16–L20 latch block and R-004a's
+  // batch above — all-OFF is a measured no-goal state (UNSATISFIABLE ×10) — and each
+  // carries its own per-member gates (`ACT_II_B2_B3_LADDER` in
+  // `@/core/solver/policy`): par **17 / 18 / 20 / 21 / 23** (batch 2) and
+  // **19 / 22 / 22 / 24 / 24** (batch 3), `par == shortestSolution` 10/10, coverage
+  // and the 13/13 controls caught on every rung (`LADDER RESULT: PASS`). Batch 3 is
+  // the act's **new registered tail** — it raises the act maximum to L35's `D_exec`
+  // 28.339426, a tail the batch ladder registers by name rather than a number that
+  // drifts on its own — and the two seam rungs are labelled at registration
+  // (L26 lands below L25, L31 below L30, §7.3.1: a named relief, never a silent
+  // dip). The registration did **not** move the block law (`BLOCK_L1619_IDS` is
+  // still `[16 … 20]`, `block-l1619-tail-ceiling` still judges L20 at par 20 /
+  // `D_exec` 24.729412; L20 **not** re-stamped) and re-stamped **no** R-004a-era
+  // row — the five L21–L25 rows above survive unchanged. Same shape of input as
+  // L1–L25: ten rows, no new scene logic, no new painter seam — the door / switch /
+  // portal painters all shipped before them, so requiring them of `?level=26..35`
+  // and of the L1→L35 chain is exactly this data edit and nothing else
+  // (`GameSession.next` walks this array, so the chain needs no second literal).
+  // The files stay read-only inputs here (`src/levels/**` is Level AI + Solver's).
+  { file: "l026.json", raw: l026 },
+  { file: "l027.json", raw: l027 },
+  { file: "l028.json", raw: l028 },
+  { file: "l029.json", raw: l029 },
+  { file: "l030.json", raw: l030 },
+  { file: "l031.json", raw: l031 },
+  { file: "l032.json", raw: l032 },
+  { file: "l033.json", raw: l033 },
+  { file: "l034.json", raw: l034 },
+  { file: "l035.json", raw: l035 },
 ];
 
 export interface LoadReport {
@@ -193,7 +236,7 @@ export function startIndexForLevel(levels: readonly Level[], requested: number |
 }
 
 /**
- * `L1–L25` — the **shipped ladder's own range**, derived from the playable list.
+ * `L1–L35` — the **shipped ladder's own range**, derived from the playable list.
  *
  * The end panel's copy must name the ladder the player actually cleared, so it is
  * computed from the registry rather than written down: QA-005 pinned the stale
