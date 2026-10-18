@@ -207,22 +207,35 @@ the spot so a shelf file cannot be justified by a dataset that moved without the
 This section used to say the literal "must flip to `[]`" after R-005a emptied the shelf, i.e. that the
 literal *was* `[]`. It is **not**: the literal at this tree is the **ten names `l026` … `l035`**, booked
 at **QA-026** (`d21f399`) when the shelf held those ten files, and R-005a's graduation moved the bytes
-to the root **without** re-booking it. So the row is **RED here by name** — `expected [ 'l036.json',
-…(4) ] to deeply equal [ 'l026.json', …(9) ]` — and it was already red before LV-017 landed anything,
-for the older reason. Landing `l036`–`l040` did not create the red; it changed *which* mismatch the red
-reports. **The needed re-book is to the five files the shelf actually holds, `l036` … `l040`** (not
-`[]`, unless a registration graduates these five too), and the **absence clause must be re-pointed**
-from `l036.json` — which now **exists**, so `documentedLesson(36)` is no longer the absent one — to
-`l041.json`: `l041.json` does not exist, `documentedLesson(41)` is `null`, and no shipped id exceeds
-`35`. Both halves are **count-/booking-derived pins** owned by **R-005c** (`src/levels/README.md` §7d);
-`tests/**` is **off this lane and was not edited** — this file reports the red, it does not re-book it.
+to the root **without** re-booking it. So the row is **RED here by name** — the suite prints
+`AssertionError: expected [ 'l036.json', 'l037.json', …(3) ] to deeply equal [ 'l026.json', 'l027.json',
+…(8) ]` — and it was already red before LV-017 landed anything, for the older reason (`expected [] to
+deeply equal [ 'l026.json', …(9) ]`). Landing `l036`–`l040` did not create the red; it changed *which*
+mismatch the red reports. **The needed re-book is to the five files the shelf actually holds,
+`l036` … `l040`** (not `[]`, unless a registration graduates these five too). That half is a
+**booking-derived pin** owned by **R-005c** (`src/levels/README.md` §7d); `tests/**` is **off this lane
+and was not edited** — this file reports the red, it does not re-book it.
+
+**The absence clause, by contrast, needs NO re-pointing — and the earlier revision of this section was
+wrong about that too.** It is the *other* assertion in the same block, and it is already **root-scoped
+and derived**, not typed: QA-025 re-pointed it at the **`LEVELS_DIR` (root) set** precisely because a
+shelved `l026.json` had existed since LV-014 — *"the subject is the **root** set, never the shelf"* —
+and asserted it as `maxShipped + 1`, i.e. `36` here. So it checks three live facts and **all three
+already hold and pass**: `src/levels/l036.json` does **not** exist (the file is on the shelf, at
+`src/levels/candidates/l036.json`), `documentedLesson(36)` is `null`, and no shipped id exceeds `35`.
+A shelf byte cannot falsify any of them, because the shelf is invisible to the root census — which is
+exactly why the clause is scoped that way and why it needs no edit when the shelf fills. The measured
+proof is in the suite itself: of this block's assertions, only the **set-equality** row is red
+(`expected [ 'l036.json', … ] to deeply equal [ 'l026.json', … ]`), and the absence clause is **not**
+among the failures.
 
 Two readings the pin's second half gives for free, both **derived relations, never ceiling claims**:
 `rootMax = 35 = EXPECTED_LEVEL_COUNT` and the five shelf ids are `36 … 40`, so each is **strictly
-above** it (5/5). The clause is **vacuous-but-live** in the direction that matters — it re-derives on
-every run, so a shelf file at or below the root max is caught **as a live guard, not as a count**,
-and an unregistered extra and a vanished member both fail **by name** (QA-012/QA-018 proved the
-populated direction, QA-014 the empty one; QA-026 re-proved the populated direction on those ten bytes).
+above** it (5/5 — re-derived per run in the loop over `shelf`, not typed). That half is **live and
+green**: it re-derives on every run, so a shelf file at or below the root max is caught **as a live
+guard, not as a count**, and an unregistered extra and a vanished member both fail **by name**
+(QA-012/QA-018 proved the populated direction, QA-014 the empty one; QA-026 re-proved the populated
+direction on those ten bytes).
 
 History, kept honest: this file once carried a ⚠ paragraph saying the row was **RED** while the
 booking literal was still `[]` (the R-004a left-over) — true of the five-entry era; it was re-booked
