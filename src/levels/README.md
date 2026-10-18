@@ -857,12 +857,19 @@ onto `BLOCK_L1619_IDS` (still `[16 … 20]`, `block-l1619-tail-ceiling` still ju
 `D_exec` 24.729412`**), and it did **not** widen the cut.
 
 **Named gate-family gap (measured, booked, not papered over).** `auditLevel` dispatches a rung's
-per-member gate family from its **documented lesson row**; ids 26–35 have **no** lesson row in
-`DOCUMENTED_LESSONS` yet, so those rungs carry **no registered per-rung gate family** — their proof
-is the family-gate ladder run (`prove-candidate --family=g`), not a per-id dispatch. This is asserted
-as a printed reading in `scripts/attest-r005a-reg35.ts` (and the script **reddens** the day the
-`act-2-batch-2/3` lesson rows land, so the gap cannot outlive its remedy). Booked for R-005b/c:
-design + QA owe one control per new code plus the lesson rows.
+per-member gate family from its **documented lesson row**. **R-005a2 added the ten rows**
+(`l026`–`l035` in `DOCUMENTED_LESSONS`: `switchRequired: "required"` measured on the all-OFF world,
+`obligation: null`) — so the ten rungs are documented — but they still carry **no registered per-rung
+gate family**: the act's only per-rung reader (`act2Batch1Gates`) keys its rung on `ACT_II_B1_IDS`
+and reads `ACT_II_B1_LADDER`, so a dispatched value would either mis-key these boards (a FAIL on
+registered bytes — batch 1's ladder ends at par 23 while `l026` is par 17) or graft an Act II rung
+onto another block's law. Their proof is therefore still the family-gate ladder run
+(`prove-candidate --family=g`), not a per-id dispatch, and this is asserted as a printed reading in
+`scripts/attest-r005a-reg35.ts` (`audit gate counts across the ten rungs: [0]` — the script
+**reddens** the day a `act-2-batch-2/3` **family** lands, so the gap cannot outlive its remedy; its
+detail line naming *that* event is itself corrected here, and the transcript refreshed with a note).
+Booked for R-005b/c: design + QA owe one control per new code plus the family-keyed dispatch behind
+those two obligations.
 
 **The evidence run is one command per claim.** `npx tsx scripts/attest-r005a-reg35.ts` re-derives
 everything from the root bytes (byte identity · both registered ladders · the eleven clauses
@@ -936,7 +943,7 @@ Exported by `src/core/level/index.ts`: `Coord`, `DoorDef`, `SwitchDef`, `PortalD
 - **Level AI + Solver — R-005a: Act II batches 2 + 3 (L26–L035) are registered; the dataset is 35 files (this handoff).** The ten LV-013/LV-014 candidates are in the root **byte-identically** (§2g): `git mv`, rename 100 %, `sha256` **and** git blobs unchanged on both sides, and **no content edit during the move**. The law was fitted to the boards and never the reverse — the root re-measure ran **before** the first law edit: `par` **17 / 18 / 20 / 21 / 23** (batch 2) and **19 / 22 / 22 / 24 / 24** (batch 3), `parMatch` 10/10; `D_exec` **21.560241 / 22.560241 / 24.548193 / 25.548193 / 27.566265 / 23.204167 / 26.050000 / 26.069191 / 28.126943 / 28.339426**; `B` **1.5201 / 1.5201 / 1.5161 / 1.5161 / 1.5221 / 1.4014 / 1.3500 / 1.3564 / 1.3756 / 1.4465** (in band 10/10); `T ≡ R ≡ 0` ×10; `M` 4 ×10; coverage 42/42 ×10; all-OFF **UNSATISFIABLE ×10** (subgraph 15/498 ×5 then 9/720 · 9/740 · 9/766 · 9/772 · 9/766). Evidence per claim, all exit 0: `npm run levels` → `35/35 level files ok · 0 errors · 148 warnings (0 multi-switch-door) · 11/11 negative cases`, **RESULT: PASS**; `tsx scripts/solve-levels.ts --audit` → `35/35 level file(s) PASS`, `par verified from the solver on 35/35`, **RESULT: PASS** (the one standing escalation is still `l008`'s `dual-phase-tiles`); `tsx scripts/solve-levels.ts --report` regenerated `docs/level-difficulty.report.json` to **35 records**, stable (a second run is byte-identical); `tsx scripts/prove-candidate.ts --family=g --ladder=26,27,28,29,30,31,32,33,34,35 --dir=src/levels` → exit 0, **LADDER RESULT: PASS (10/10 rung(s) ACCEPT, controls named: 130/130 across the 10 rung(s))**, `13/13 controls caught by their named gate` on every rung, root CUT `D_exec max = 14.969697 · par(L15) = 10 · 35 shipped files · basis ids [1 … 15]`; `tsx scripts/attest-r005a-reg35.ts` → exit 0, `RESULT: REGISTERED-MATCH`, transcript `scripts/attest-r005a-reg35.transcript.md`; `tsx scripts/attest-r004a-act2.ts` → exit 0, `REGISTERED-MATCH` (its old freezer regex that pinned the pre-fix `5/5 ACCEPT` summary string was relaxed to the post-fix print); `tsx scripts/attest-lv010-block.ts` → exit 0, its census now reading `root 35 files = 15 basis + 5 rungs + 15 Act II rungs`.
 - **Level AI + Solver — the act-tail law moved by the R-003d rule, and the seam instances are registered with their published labels (§2g).** `ACT_II_R005A_REGISTERED_TAIL_EXEC` is the re-derived maximum over the **whole** registered act (28.339426 at L35, `ACT_II_REGISTERED_IDS` 21–35); the pre-ticket standard stays named (`ACT_II_PRE_R005A_REGISTERED_TAIL_EXEC` 27.604651 at L25) so the move is the measured `+0.734775`, and §7.3's across-act clause now reads `+3.610014` over the whole act (batch 1's own `+2.875239` is kept alive in clause 2). Headroom to the derived-exact `D_exec` ceiling is `0.723074` (`29.0625 − 28.339426`, §7.9 — the printed operand `29.06` would give `0.720574`). The two §7.3.1 reliefs are carried verbatim as `ACT_II_B2_SEAM_RELIEF` / `ACT_II_B3_SEAM_RELIEF` (`L25→L26 ΔD_exec −6.044410`, band printed `[19.75, 29.06]`; `L30→L31 ΔD_exec −4.362098`, band `[19.75, 29.0625]` printed `[19.75, 29.06]`), with named guards `ACT_TAIL_R004A_CLAUSE_IDS` / `ACT_TAIL_R005A_CLAUSE_IDS` partitioning the eleven clauses. **The direction is never a term**: 12 rises and 2 drops, both drops named, and the instrument prints the no-sign-test NOTE instead of probing a variant that could not fail.
 - **GAME — the registry row for L26–L035 is the one edit left before the two batches are playable, and it is outside this lane.** `src/game/levels/level-registry.ts` ships L1–L25; R-005a adds no entry there (`src/game/**` is not the Level AI + Solver lane). The unlock is the R-004a precedent ten more times: ten `import l0NN from "@/levels/l0NN.json"` lines, ten `LEVEL_SOURCES` rows (`l026.json`…`l035.json`), and the docstring range `L1–L25` → `L1–L35`. No new painter seam is implied — the boards' objects (doors, switches, one portal pair, the pocket) are all ones the renderer already draws for L21–L25.
-- **QA / game-designer — the named gate-family gap (booked, not papered over, §2g).** `auditLevel` dispatches a rung's per-member gate family from its **documented lesson row**; ids 26–35 have **no** lesson row in `DOCUMENTED_LESSONS` yet, so they carry **no registered per-rung gate family** and prove via the family-gate ladder run instead of a per-id dispatch. `scripts/attest-r005a-reg35.ts` asserts this as a printed reading and **reddens** the day the `act-2-batch-2/3` lesson rows land. R-005b/c owe the lesson rows and QA the one-control-per-code table.
+- **QA / game-designer — the named gate-family gap (booked, not papered over, §2g).** `auditLevel` dispatches a rung's per-member gate family from its **documented lesson row**; **R-005a2 landed the ten rows** (`l026`–`l035`, `switchRequired: "required"` measured, `obligation: null` — the row half of this gap is closed), so ids 26–35 are documented but still carry **no registered per-rung gate family** and prove via the family-gate ladder run instead of a per-id dispatch. `scripts/attest-r005a-reg35.ts` asserts this as a printed reading (`[0]` families) and **reddens** the day a `act-2-batch-2/3` **family** lands. R-005b/c owe that family (the two obligations behind a `ACT_II_B2_B3_LADDER`-keyed reader) and QA the one-control-per-code table.
 - **QA — the pins this registration breaks are enumerated in §7d (handed over, not edited here).** `tests/**` is off-lane. With the ten new files in the root and the sidecar regenerated, `npx vitest run` is **RED by count**: the dataset moved **25 → 35** while `EXPECTED_LEVEL_COUNT` and the derived pin tables still read 25. §7d lists each row with its `file:line` and the **measured** new expectation (from `docs/level-difficulty.report.json` records 26–35).
 
 - **Level AI + Solver — R-004a: Act II batch 1 (L21–L025) is registered; the dataset is 25 files (this handoff).** The five LV-012 candidates are in the root **byte-identically** (§2f): `git mv`, rename 100 %, `sha256` **and** git blobs unchanged on both sides, and **no content edit during the move**. The law was fitted to the boards and never the reverse — the root re-measure ran **before** the first law edit: `par` **17 / 18 / 20 / 21 / 23** (`parMatch` 5/5), `D_exec` **21.581395 / 22.584 / 24.62 / 25.604651 / 27.604651**, `B` **1.5271 / 1.5280 / 1.5400 / 1.5349 / 1.5349** (in band 5/5), `T ≡ R ≡ 0` ×5, `M` 4 ×5, coverage 42/42 ×5, `refusedThenEnteredTiles` **17 ×5**, all-OFF **UNSATISFIABLE ×5** (all-OFF subgraph 16/258 · 15/250 · 15/250 · 16/258 · 15/250), par-route press-then-cross 12/12 · 16/16 · 20/20 · 90/90 · 72/72. Evidence per claim: `npm run levels` → `25/25 level files ok · 0 errors · 88 warnings (0 multi-switch-door) · 11/11 negative cases`, **RESULT: PASS**; `tsx scripts/solve-levels.ts --audit` → `25/25 PASS` with `parMatch` 25/25, **RESULT: PASS** (the one standing escalation is still `l008`'s `dual-phase-tiles`); `tsx scripts/solve-levels.ts --report` regenerated `docs/level-difficulty.report.json` to **25 records**, stable (a second run is byte-identical), **RESULT: PASS**; `tsx scripts/prove-candidate.ts --family=g --ladder=21,22,23,24,25 --dir=src/levels` → exit 0, **LADDER RESULT: PASS (5/5 ACCEPT, 13/13 controls caught on every rung)**, `act-peak` DISCHARGED, headroom 1.455349 (`--family=g` is **required** — without it the same ladder fails the block's `par-step`/`par-rung-exact` gates); `tsx scripts/attest-r004a-act2.ts` → exit 0, `RESULT: REGISTERED-MATCH`, transcript `scripts/attest-r004a-act2.transcript.md`; `tsx scripts/attest-lv010-block.ts` → exit 0, and its regenerated transcript differs from the committed R-003d bytes in **exactly two lines** — the worktree path and the census line `root 25 files = 15 basis + 5 rungs + 5 Act II batch-1 rungs` — which is the **L20-was-not-touched proof**. `tsc --noEmit` is **production-clean**; the only red is the `tests/**` `Record<PolicyViolationCode, …>` pin (§7c). **The cut did not move:** `measureCut()` still prints `CUT re-measured from the shipped set: D_exec max = 14.969697 · par(L15) = 10 · 25 shipped files · basis ids [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]`, i.e. the frozen L1–L15 value re-derived on the bigger root with the L16–L20 block *and* the registered Act II batch excluded from their own filter.
@@ -1115,8 +1122,10 @@ item 4 forbids re-stamping L20, and the block's tail is the **block's** tail, no
 honest shape is the derivation the file already computes (`BLOCK_IDS` from
 `documentedLesson(id)?.obligation === "block-l1619"`, which still yields `[16 … 20]`): assert
 `BLOCK_IDS.at(-1) === 20` **and** `maxShipped === EXPECTED_LEVEL_COUNT === 25` as two facts, with the
-absence clause re-pointed at the new max (`l026.json` absent · `documentedLesson(26)` null · no
-shipped id > 25 — all three already true). `:188` (`rootMax === EXPECTED_LEVEL_COUNT`) goes green
+absence clause re-pointed at the new max (as written for the 25-file dataset: `l026.json` absent ·
+`documentedLesson(26)` null · no shipped id > 25 — **all three are superseded**: R-005a registered
+`l026`–`l035` and R-005a2 gave id 26 its row, so the re-wording must target the **35-file** max
+instead, which is R-005c's to write). `:188` (`rootMax === EXPECTED_LEVEL_COUNT`) goes green
 with §0.
 
 **6. `tests/solver/policy-negative-controls.test.ts` — 7 red + 1 `tsc`.**
@@ -1157,7 +1166,11 @@ set**, so the docs/law edits moved no verdict. The dataset moved **25 → 35** �
 move R-004a made
 **20 → 25**, and the red tally moved with it (**41 → 50** rows). **Nine of the ten red files are
 count-, dataset- or `PINS`-derived**; the tenth is the *named gate-family gap* (§7 below) and is **not
-a pin at all**. No red row names a board, a rule or a solver behaviour: the ten new rungs are clean on
+a pin at all**. **R-005a2 (the lesson-row micro ticket) closed exactly that tenth one**, re-measured on
+the same tree: **9 failed files / 28 passed (37); 49 failed / 892 passed / 3 skipped (944)** — the two
+runs' FAIL sets diff by **exactly one line**, the latch-gates row, and `tests/solver/latch-gates.test.ts:210`
+is green **off the ten new rows alone** (`tests/**` untouched). Every other row below still reads exactly
+as written here — R-005c re-books the tally. No red row names a board, a rule or a solver behaviour: the ten new rungs are clean on
 every program reader (`npm run levels` 35/35 · `solve-levels --audit` 35/35, `par` verified 35/35 ·
 `attest-r005a-reg35` exit 0 · the family-g `--ladder=26…35` run **10/10 ACCEPT, 130/130 controls**),
 and the ten §5.2 mirror rows are **already green** (§2g). Per-file:line groups below; each carries the
@@ -1280,17 +1293,25 @@ already true). `:209` (`rootMax === EXPECTED_LEVEL_COUNT`) goes green with §0.
   (*accepts every file: ids 1..N …*) — both compare the registry's rows against `discoveredFileIds()`,
   so they need the **registry row** (GAME) and then go green with §0.
 
-**7. The one red row that is NOT a pin — the named gate-family gap (§2g), and it is QA + design, not a
-number.**
+**7. CLEARED at R-005a2 — the one red row that was NOT a pin (the named gate-family gap, §2g); it is
+QA + design, not a number.**
 `tests/solver/latch-gates.test.ts:210` — *every shipped level in `src/levels` has a documented-lesson
 row (the table cannot drift)*: `l026 has no documented-lesson row: expected null not to be null`. That
-row is a **truthful alarm**: `auditLevel` dispatches a rung's per-member gate family from its documented
-lesson row, and ids 26–35 have **no row** in `DOCUMENTED_LESSONS`, so these ten rungs currently carry
-**no registered per-rung gate family** — their proof today is the `--family=g --ladder=26…35` run
-(10/10 ACCEPT, 13/13 named controls per rung). **R-005c must not "fix" this by adding a row**; the
-remedy is the booked design + QA work (`act-2-batch-2` / `act-2-batch-3` lesson rows **plus one control
-per new code** in the `policy-negative-controls` `Record`), and `scripts/attest-r005a-reg35.ts` asserts
-the gap's *existence* so it cannot outlive its remedy silently.
+row was a **truthful alarm**, and **R-005a2 (Level AI + Solver) fixed it by adding the ten rows**
+themselves: `l026`–`l035` in `DOCUMENTED_LESSONS`, one 128-line insertion, **no other `policy.ts`
+change**, `tests/**` untouched — each row `switchRequired: "required"` (measured: the all-OFF world is
+UNSATISFIABLE on 10/10, `allOffGoalReachable = false`) with `par` / `D_exec` / `B` read from sidecar
+records 26–35, the two §7.3.1 relief labels quoted verbatim at the seam rungs (`l026` instance 2,
+`l031` instance 3), and `obligation: null` because no **family** can be dispatched yet (see below).
+Measured: **50 → 49 failed rows, 10 → 9 failed files**, the FAIL sets differing by that one line.
+What is **not** closed — and **R-005c must not "fix" it by inventing a family**: the ten rungs still
+carry **no registered per-rung gate family** (`act2Batch1Gates` keys on `ACT_II_B1_IDS` / reads
+`ACT_II_B1_LADDER`, so a dispatched value would mis-key these boards or graft an Act II rung onto
+another block's law), and their proof remains the `--family=g --ladder=26…35` run (10/10 ACCEPT, 13/13
+named controls per rung). The remedy is the booked design + QA work: the `act-2-batch-2` /
+`act-2-batch-3` obligations behind a `ACT_II_B2_B3_LADDER`-keyed reader **plus one control per new
+code** in the `policy-negative-controls` `Record`, while `scripts/attest-r005a-reg35.ts` keeps
+asserting the gap's *existence* (`[0]` families) so it cannot outlive its remedy silently.
 
 **8. The latent second-order pin (`:758` hides it, so it is easy to miss).**
 `tests/solver/route-budget.test.ts:779` — the *list* form of the parity-breaking column,

@@ -445,6 +445,134 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
     evidence:
       "docs/level-design.md §7.3 (`act-peak` clause: “act n's measured maximum D_exec strictly exceeds act n−1's measured maximum”; Act I's registered peak is 24.729412) + §7.7 item 3 · docs/ai-native-pipeline.md §8.16 (the falsification: `--peak=28.5` fails exactly one rung on exactly one gate) + §8.17 · measured on the ROOT bytes: par 23 (solver-stamped), D_exec 27.604651 = Act I's measured peak + 2.875239, B 1.5349 (in band), coverage 42/42, T ≡ R ≡ 0, all-OFF UNSATISFIABLE, parRoutes 72/72 press-then-cross, refusals 17 · docs/level-difficulty.md §5.2 · src/levels/README.md §2f",
   },
+  // ── L26–L35 — Act II batches 2 + 3 (R-005a), on the law §7.2/§7.3/§7.8 publish ──────────────
+  //
+  // R-005a2 — the ten rows the table-drift check was red on
+  // (`tests/solver/latch-gates.test.ts:210` — `l026 has no documented-lesson row`). These rows are
+  // the dataset half of the named gap (`src/levels/README.md` §2g/§7d item 7); nothing else moves here:
+  // no earlier row is re-stamped, no guard constant is edited, and the registered ladders, tail pins
+  // and seam labels stay the bytes R-005a registered — these rows are checked *against* them.
+  //
+  // `switchRequired: "required"` on all ten — and it is **measured**, not asserted. The device is the
+  // one R-004a registered (one portal pair whose far end is a **walk-sealed pocket** exited only
+  // through a door driven from **inside** it, plus sealed rooms holding the goal), one pocket group
+  // deeper per batch: with every switch OFF the goal is unreachable (`allOffGoalReachable = false` on
+  // 10/10 — the all-OFF subgraph measures 15/498 states on batch 2 and 9/720 · 9/740 · 9/766 · 9/772 ·
+  // 9/766 on batch 3, containing no goal state at all). §7.5 item 1 reads `switchRequired` as a
+  // **measurement**, never an assertion, so these ten rows carry the obligation with teeth instead of
+  // an L6-style concession, exactly as the five batch-1 rows do.
+  //
+  // `obligation: null` on all ten, and the reason is stated rather than implied. `null` here means
+  // "**no per-rung gate family is dispatched for this row**" — never "this board teaches nothing
+  // falsifiable": what *is* read on these bytes today is `switchRequired` (above) and the act-level
+  // clauses, which are dataset-scope and re-derived on every attest run by `actScaleLawReading` /
+  // `actScaleTailGuards` (the registered ladder, the tail pin, the two §7.3.1 relief labels, the §7.9
+  // headroom). A family **cannot** be dispatched for these rungs without a law edit this ticket
+  // deliberately does not make: the act's only per-rung reader (`act2Batch1Gates`) keys its rung on
+  // `ACT_II_B1_IDS.indexOf` and reads `ACT_II_B1_LADDER`, so every existing obligation value would
+  // either mis-key these boards (batch 1's ladder ends at par 23 while id 26 is par 17 — a FAIL on
+  // registered bytes) or graft an Act II rung onto another block's law, which R-005a's own record
+  // forbids (`BLOCK_L1619_IDS` stays `[16 … 20]`; "no new code was invented"). So the honest value
+  // until that dispatch exists is `null`, with the gap named in the rows themselves: the remedy
+  // (obligations `act-2-batch-2` / `act-2-batch-3` behind a `ACT_II_B2_B3_LADDER`-keyed reader, plus
+  // QA's one-control-per-code table) stays booked, and `scripts/attest-r005a-reg35.ts` still asserts
+  // the printed reading it guards (0 families dispatched across the ten rungs), so the gap cannot
+  // outlive its remedy silently.
+  //
+  // Every number below is read from the sidecar (`docs/level-difficulty.report.json` records 26–35,
+  // regenerated from the ROOT bytes at R-005a) and equals the registered row set
+  // (`ACT_II_B2_B3_LADDER`) at the law's precision: `par` / `D_exec` / `B` per rung, `T ≡ R ≡ 0` ×10,
+  // coverage 42/42 ×10, `M` 4 ×10.
+  {
+    levelId: 26,
+    lesson:
+      "batch 2 opens on the labelled seam: the sealed-pocket chain gains a fourth door, so the ordered plan is one press longer than the act's opening rung — depth, never a new idea, and the step down in D_exec belongs to the measurement frame rather than to the puzzle",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 (Act II = portal orchestration, par 16–24, D_exec band [19.75, 29.0625], printed [19.75, 29.06] per §7.9's notation law) + §7.3 (interior freedom: a member sits anywhere in the act's band, in any order) + §7.3.1 (a relief is registrable only with a label published before the bytes) + §7.8 item 4 (the anti-mirror clause this batch answers by mirroring batch 1's pars on purpose) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md + docs/decisions/design-0006-act-close-peak-and-relief-label-form.md · docs/ai-native-pipeline.md §8.19 (LV-014 authoring: the 3-pocket chained sub-lattice) + §8.22 (R-005a registration: blob + sidecar sha256 identity 10/10) · measured on the ROOT bytes: par 17 (solver-stamped), D_exec 21.560241 (sidecar record 26 = 21.56024096385542, the law's 6 dp), B 1.5201 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, all-OFF UNSATISFIABLE (15/498 states), parRoutes 60/60 press-then-cross, refusedBeforeEnteredTiles 19 · the §7.3.1 instance-2 label quoted verbatim: “RELIEF LABEL — `batch-seam` seam L25→L26 · `ΔD_exec = −6.044410` · band `[19.75, 29.06]`” (GD-010; the whole label is `ACT_II_B2_SEAM_RELIEF.label`) · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 27,
+    lesson:
+      "the four-door chain one step longer: Δpar +1 with ΔD_exec +1.000000 — the batch's clean unit step, on the same device, so the step is the board's growth and not a new idea",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 (act par band 16–24 / derived D_exec band [19.75, 29.0625]) + §7.3 (no rising-D_exec obligation: the interior is free in any order) + §7.8 item 4 (anti-mirror clause) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.19 (LV-014 authoring) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 18 (solver-stamped), D_exec 22.560241 (sidecar record 27 = 22.56024096385542), B 1.5201 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, all-OFF UNSATISFIABLE (15/498 states), parRoutes 24/24 press-then-cross, refusedBeforeEnteredTiles 19, step Δpar +1 / ΔD_exec +1.000000 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 28,
+    lesson:
+      "the batch's two-step rung: Δpar +2 buys ΔD_exec +1.987952 — the same four-door device, priced by the board rather than by a new mechanic",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 (act par band 16–24 / derived D_exec band [19.75, 29.0625]) + §7.3 (interior freedom, in-band membership read as a range) + §7.8 item 4 (anti-mirror clause) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.19 (LV-014 authoring: Δpar ≥ 2 holds on 3 of 4 batch-2 steps — printed beside the pleasant column) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 20 (solver-stamped), D_exec 24.548193 (sidecar record 28 = 24.548192771084338), B 1.5161 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, all-OFF UNSATISFIABLE (15/498 states), parRoutes 12/12 press-then-cross, refusedBeforeEnteredTiles 19, step Δpar +2 / ΔD_exec +1.987952 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 29,
+    lesson:
+      "the batch's width rung: 72 shortest routes, every one of them executing the same forced press-then-cross order — variety inside the plan, never around it",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 (act par band 16–24 / derived D_exec band [19.75, 29.0625]) + §7.3 (interior freedom) + §7.8 item 4 (anti-mirror clause) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.19 (LV-014 authoring: the 4-press chain executes on the whole shortest-route set — press-then-cross 72/72) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 21 (solver-stamped), D_exec 25.548193 (sidecar record 29 = 25.548192771084338), B 1.5161 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, all-OFF UNSATISFIABLE (15/498 states), parRoutes 72/72 press-then-cross, refusedBeforeEnteredTiles 19, step Δpar +1 / ΔD_exec +1.000000 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 30,
+    lesson:
+      "the batch-2 peak: the four-door device's longest ordered plan — the rung §7.3's across-act clause rode on while batch 3 was still a shelf candidate, which is exactly why that clause rides on a maximum and never on every member",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 + §7.3 (the `act-peak` clause reads the act's measured maximum; `D_exec` 27.566265 sat below the then-registered tail 27.604651, which is why batch 2 asked no registration train to move a registered maximum) + §7.8 items 1–2 (the batch-3 handoff this rung handed over) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md + docs/decisions/design-0006-act-close-peak-and-relief-label-form.md · docs/ai-native-pipeline.md §8.19 (LV-014 authoring: the batch's peak and the published, unselected par-23 reach 27.746988) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 23 (solver-stamped), D_exec 27.566265 (sidecar record 30 = 27.566265060240966), B 1.5221 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, all-OFF UNSATISFIABLE (15/498 states), parRoutes 12/12 press-then-cross, refusedBeforeEnteredTiles 19, step Δpar +2 / ΔD_exec +2.018072 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 31,
+    lesson:
+      "batch 3 opens on the second labelled seam and on a new skeleton: x = 1 walls, five doors, five switches, a five-press chain — the act's plateau is broken by a different device, not by a larger number",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 + §7.3 (interior relaxation at a ΔM = 0 boundary: no mechanic is introduced) + §7.3.1 (instance 3, the label pre-published before `--write`) + §7.8 item 4 (anti-mirror: batch 3 derives its own par set [19, 22, 22, 24, 24] and shares no par with batch 1) + §7.9 (the band written derived-exact, printed form in parentheses) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md + docs/decisions/design-0007-band-endpoint-law-and-c-path-standing.md · docs/ai-native-pipeline.md §8.20 (LV-015 authoring: the 4-pocket chain, forced order `p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4 < p4 < d5`) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 19 (solver-stamped), D_exec 23.204167 (sidecar record 31 = 23.204166666666666), B 1.4014 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, dualPhaseTiles 6, all-OFF UNSATISFIABLE (9/720 states), parRoutes 30/30 press-then-cross, refusedBeforeEnteredTiles 22 · the §7.3.1 instance-3 label quoted verbatim: “RELIEF LABEL — `batch-seam` seam L30→L31 · `ΔD_exec = −4.362098` · band `[19.75, 29.0625]` (printed `[19.75, 29.06]`)” (GD-011's notation-only amendment; the whole label is `ACT_II_B3_SEAM_RELIEF.label`) · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 32,
+    lesson:
+      "the five-door device at its narrowest: 6 shortest routes — the same forced five-press chain with the fewest ways to walk it, so width is a property of the board and never of the plan's order",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 (act par band 16–24 / derived D_exec band [19.75, 29.0625]) + §7.3 (interior freedom) + §7.8 item 4 (anti-mirror clause) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.20 (LV-015 authoring: the 4-pocket frame at CX = 1, the batch's narrowest route set) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 22 (solver-stamped), D_exec 26.050000 (sidecar record 32 = 26.05 exactly), B 1.3500 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, dualPhaseTiles 6, all-OFF UNSATISFIABLE (9/740 states), parRoutes 6/6 press-then-cross, refusedBeforeEnteredTiles 22, step Δpar +3 / ΔD_exec +2.845833 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 33,
+    lesson:
+      "the sawtooth's shallow tooth: par flat at 22 with ΔD_exec +0.019191 — the step rises inside the band on branching alone, so the act never reads as one plateau and no padding buys the rise",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.2 + §7.3 (the direction is never a term: the clause binds the registered value and the band, so an in-band shallow rise is lawful and so is the labelled seam two rungs back) + §7.8 item 4 (anti-mirror clause) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md · docs/ai-native-pipeline.md §8.20 (LV-015 authoring: the equal-par pairs rise +0.019191 / +0.212483, so no interior relief label is owed) + §8.22 (R-005a registration) · measured on the ROOT bytes: par 22 (solver-stamped), D_exec 26.069191 (sidecar record 33 = 26.069190600522195), B 1.3564 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, dualPhaseTiles 6, all-OFF UNSATISFIABLE (9/766 states), parRoutes 30/30 press-then-cross, refusedBeforeEnteredTiles 22, step Δpar +0 / ΔD_exec +0.019191 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 34,
+    lesson:
+      "§7.8 item 2's rung: par 24 — the act's own band ceiling — carried by the batch's deepest board (maxDepth 42) inside the derived window par 24 ⇒ D_exec ∈ [27.7500, 29.0625], the last step before the tail",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.8 item 2 (`par 24` is in band and mandated as the act's ceiling; the derived obligation is `D_exec ∈ [27.7500, 29.0625]` = 24 + 3·1.2500 … 24 + 3·1.6875 from the measured B band, no new number invented) + §7.2 + §7.3 (interior freedom) + §7.9 (band endpoints derived-exact and inclusive at both ends; printed forms are display text) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md + docs/decisions/design-0007-band-endpoint-law-and-c-path-standing.md · docs/ai-native-pipeline.md §8.20 (LV-015 authoring: par 24 measured non-empty — 130 accepts / 2640 judged on batch 2's frame, 498 / 20000 on the batch's own) + §8.22 (R-005a registration, L34 strictly inside the band under every reading) · measured on the ROOT bytes: par 24 (solver-stamped), D_exec 28.126943 (sidecar record 34 = 28.126943005181346), B 1.3756 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, dualPhaseTiles 6, all-OFF UNSATISFIABLE (9/772 states), parRoutes 12/12 press-then-cross, refusedBeforeEnteredTiles 22, step Δpar +2 / ΔD_exec +2.057752 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
+  {
+    levelId: 35,
+    lesson:
+      "the act's registered tail: the whole act's maximum at 28.339426, carried late on the last rung exactly as §7.3.2's act-close requires, with 0.723074 of headroom left under the derived-exact ceiling 29.0625",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.3 (the `act-peak` clause read over the whole registered act `ACT_II_REGISTERED_IDS` (L21–L35): 28.339426 exceeds Act I's registered peak 24.729412 by +3.610014 and the pre-registration standard 27.604651 by +0.734775) + §7.3.2 (the act-close carrier obligation: the act's registered maximum is carried by its last two batches — this rung carries it) + §7.8 item 1 + §7.9 (headroom 29.0625 − 28.339426 = 0.723074 from the derived band end; the printed operand 29.06 would say 0.720574) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md + docs/decisions/design-0006-act-close-peak-and-relief-label-form.md + docs/decisions/design-0007-band-endpoint-law-and-c-path-standing.md · docs/ai-native-pipeline.md §8.20 (LV-015 authoring: the closing rung takes the within-par maximum 28.339426 vs its minimum 28.058108, a printed departure) + §8.22 (R-005a registration: `ACT_II_R005A_REGISTERED_TAIL_EXEC` = 28.339426 at L35) · measured on the ROOT bytes: par 24 (solver-stamped), D_exec 28.339426 (sidecar record 35 = 28.33942558746736), B 1.4465 (in band), coverage 42/42, T ≡ R ≡ 0, M 4, dualPhaseTiles 6, all-OFF UNSATISFIABLE (9/766 states), parRoutes 160/160 press-then-cross, refusedBeforeEnteredTiles 22, step Δpar +0 / ΔD_exec +0.212483 · docs/level-difficulty.md §5.2 · src/levels/README.md §2g",
+  },
 ];
 
 export function documentedLesson(levelId: number): DocumentedLesson | null {

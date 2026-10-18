@@ -260,19 +260,30 @@ for (const m of measured) {
 }
 /*
  * A named, printed reading rather than a silent pass. The audit dispatches its per-rung gate
- * families from the *documented lesson row* (`DOCUMENTED_LESSONS`), and no row exists for ids
- * 26–35 yet: the ten rungs therefore carry **no registered per-rung gate family**, and their
- * proof at this ticket is the family-gate run below (`scripts/prove-candidate.ts`, 13/13 named
- * controls per rung). Recorded here so the gap is visible in the artifact rather than inferred
- * from a zero — booked for R-005b/R-005c as a `act-2-batch-2` / `act-2-batch-3` lesson
- * obligation with its own named gates (design content + QA's one-control-per-code table).
+ * families from the *documented lesson row* (`DOCUMENTED_LESSONS`); since **R-005a2** the ten rows
+ * **exist** (`l026`–`l035`, `switchRequired: "required"` measured on the all-OFF world,
+ * `obligation: null`) but they dispatch **no family**: the act's only per-rung reader
+ * (`act2Batch1Gates`) keys its rung on `ACT_II_B1_IDS` and reads `ACT_II_B1_LADDER`, so a value
+ * there would mis-key these boards or graft an Act II rung onto another block's law. The ten rungs
+ * therefore carry **no registered per-rung gate family**, and their proof at this ticket is still
+ * the family-gate run below (`scripts/prove-candidate.ts`, 13/13 named controls per rung).
+ * Recorded here so the gap is visible in the artifact rather than inferred from a zero — booked for
+ * R-005b/R-005c as an `act-2-batch-2` / `act-2-batch-3` **family** (obligations behind a
+ * `ACT_II_B2_B3_LADDER`-keyed reader: design content + QA's one-control-per-code table).
+ * R-005a2 moved exactly one printed string here — this row's own detail line, which read "a future
+ * `act-2-batch-2/3` **lesson row** must also extend this instrument", now names the **obligation**'s
+ * arrival, because that ticket established a row can exist without dispatching a family (these ten
+ * do). The check's condition, its `[0]` reading and every other line are unchanged, so no status,
+ * count, clause reading or verdict moved; the committed transcript is refreshed with a `refreshed:`
+ * note recording that single line. This row reddens exactly when a **family** lands — not when a
+ * row lands.
  */
 const gateFamilies = new Set(measured.map((m) => m.gates.length));
 check(
   "the registered-bytes audit carries no per-rung gate family for L26–L35 yet (booked gap, NOT a silent pass)",
   gateFamilies.size === 1 && [...gateFamilies][0] === 0,
   `audit gate counts across the ten rungs: [${[...gateFamilies].join(", ")}] — the proof of these rungs in this artifact is the family-gate run below; ` +
-    "a future `act-2-batch-2/3` lesson row must also extend this instrument (the event that reddens this row)",
+    "a future `act-2-batch-2/3` OBLIGATION must also extend this instrument (a ladder-keyed family is the event that reddens this row — the row's mere existence no longer is, measured at R-005a2)",
 );
 check(
   "the ten rows reproduce their registered table (all of it, rung by rung)",

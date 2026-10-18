@@ -11,9 +11,20 @@ origin:  36ffe0b:src/levels/candidates (the shelf the ten files were moved FROM,
 run:     npx tsx scripts/attest-r005a-reg35.ts           # exit 0 · RESULT: REGISTERED-MATCH
 note:    the transcript also EXECUTES scripts/prove-candidate.ts in ladder mode over the registered bytes ([2/6]),
          so the CUT line and the LADDER RESULT in that section are that instrument's own stdout, not a quote from here.
+refreshed:
+         R-005a2 re-ran this attester after the ten documented-lesson rows landed and refreshed the body, because
+         exactly ONE printed line moved: this instrument's gate-family detail line said "a future
+         `act-2-batch-2/3` lesson row must also extend this instrument", and R-005a2 established that a row can
+         exist WITHOUT dispatching a family — these ten do (`l026`–`l035`, `switchRequired: "required"` measured,
+         `obligation: null`, because the act's only per-rung reader `act2Batch1Gates` keys on `ACT_II_B1_IDS` and
+         reads `ACT_II_B1_LADDER`). The line now names the **obligation**'s arrival (a ladder-keyed family) as the
+         reddening event. No status, count, clause reading or verdict moved: the check's condition
+         (`gateFamilies.size === 1 && [...gateFamilies][0] === 0`), its reading `[0]`, the per-rung
+         `audit violations empty · 0` lines and the ladder/prover stdout are unchanged, and the rest of this body
+         is byte-identical to the R-005a capture apart from the `levels dir:` path.
 
 attest-r005a-reg35 — Act II batches 2 + 3 registration (L26–L35) + the moved §7.3 tail law
-levels dir: /Users/Admin/VibeCoding/GameCpt/.worktrees/r-005a-reg35/src/levels/
+levels dir: /Users/Admin/.local/share/opencode/worktree/f9a5d9/r-005a2-lessons/src/levels/
 origin:     L26–L35 36ffe0b:src/levels/candidates (the shelf the bytes were moved from)
 
 [1/6] byte identity — the registered root files are byte-copies, not edits
@@ -110,7 +121,7 @@ origin:     L26–L35 36ffe0b:src/levels/candidates (the shelf the bytes were mo
   MATCH  l035.json grid + coverage — 7 × 6 · distinctPositions=42 of 42 · registered 7 × 6 / 42
   MATCH  l035.json all-OFF world is UNSATISFIABLE (measured) — allOffShortest=null · allOffGoalReachable=false · subgraph 9/766 states
   MATCH  l035.json audit violations empty — 0 violation(s) · per-rung gate families reported by the audit: 0
-  MATCH  the registered-bytes audit carries no per-rung gate family for L26–L35 yet (booked gap, NOT a silent pass) — audit gate counts across the ten rungs: [0] — the proof of these rungs in this artifact is the family-gate run below; a future `act-2-batch-2/3` lesson row must also extend this instrument (the event that reddens this row)
+  MATCH  the registered-bytes audit carries no per-rung gate family for L26–L35 yet (booked gap, NOT a silent pass) — audit gate counts across the ten rungs: [0] — the proof of these rungs in this artifact is the family-gate run below; a future `act-2-batch-2/3` OBLIGATION must also extend this instrument (a ladder-keyed family is the event that reddens this row — the row's mere existence no longer is, measured at R-005a2)
   MATCH  the ten rows reproduce their registered table (all of it, rung by rung) — 10/10 rungs re-measured against ACT_II_B2_B3_LADDER
 
   family-gate proof at the ROOT (scripts/prove-candidate.ts --family=g --ladder=26…35 --dir=src/levels):
