@@ -450,6 +450,23 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
       "24.62",
       "25.60",
       "27.60",
+      // R-005a — Act II batches 2 + 3, dataset order: the ten graduated rungs'
+      // measured execution axis (21.560241 / 22.560241 / 24.548193 / 25.548193 /
+      // 27.566265 / 23.204167 / 26.050000 / 26.069191 / 28.126943 / 28.339426),
+      // mirrored out of `tests/solver/difficulty.test.ts`'s table (this file's own
+      // parsed `HAND_PINS`), so the builder still cannot agree with itself. "23.20"
+      // is L31, the second labelled seam (4.362098 below L30); the last value is the
+      // act's registered tail, L35 28.339426.
+      "21.56",
+      "22.56",
+      "24.55",
+      "25.55",
+      "27.57",
+      "23.20",
+      "26.05",
+      "26.07",
+      "28.13",
+      "28.34",
     ]);
     expect(HAND_PINS.get(11)?.dexec.toFixed(2)).toBe("8.57");
     expect(HAND_PINS.get(12)?.dexec.toFixed(2)).toBe("8.23");
@@ -465,6 +482,11 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
     // from the parsed table on both ends (the batch's `D_exec` band edges).
     expect(HAND_PINS.get(21)?.dexec.toFixed(2)).toBe("21.58");
     expect(HAND_PINS.get(25)?.dexec.toFixed(2)).toBe("27.60");
+    // R-005a — the batches-2+3 mirrors read from the parsed table on both ends: the
+    // batch-2 seam (L26 21.560241) and the act's registered tail (L35 28.339426).
+    expect(HAND_PINS.get(26)?.dexec.toFixed(2)).toBe("21.56");
+    expect(HAND_PINS.get(31)?.dexec.toFixed(2)).toBe("23.20");
+    expect(HAND_PINS.get(35)?.dexec.toFixed(2)).toBe("28.34");
   });
 });
 

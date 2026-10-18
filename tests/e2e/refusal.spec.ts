@@ -357,9 +357,12 @@ test.describe("Act II batch 1 — the refusal census of the sealed-landing rungs
       page,
     }) => {
       // The same derived envelope as every other refusal row (QA-013 / item 77(d)):
-      // a function of the level's **par**, never of its id. L25 (par 23) is the first
-      // rung whose uncapped envelope exceeds the 240 s cap, so it rides the cap — the
-      // migration R-004c registered, quoted rather than re-derived here.
+      // a function of the level's **par**, never of its id. L25 (par 23) was the first
+      // rung whose uncapped envelope exceeded the 240 s cap; R-005c's batch-2+3 rungs
+      // add par 24 (L34/L35), the third cap-binding rung — so the migration R-004c
+      // registered is now quoted for par 22, 23 *and* 24 (the arithmetic lives in
+      // `refusalRouteEnvelopeMs`'s docstring; par 19/L31 lands inside the formula at
+      // 212 s).
       test.setTimeout(refusalRouteEnvelopeMs(ref.par));
 
       const fixtures = cheapestRefusalFixtures(ref);
