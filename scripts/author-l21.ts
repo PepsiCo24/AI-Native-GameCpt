@@ -287,6 +287,161 @@
  * its `--paircap` / `--budget` counters as a **prefix**, never as a completed class
  * (`docs/architecture.md` §15.5).
  *
+ * ── LV-017 · THE CLOSING BATCH (`--batch=4`, Act II finale = L36–L40) ─────────────
+ *
+ * Law this pass implements, quoted not paraphrased:
+ *
+ * - **§7.2** fixes Act II's family as *"**Portal orchestration**: multi-pocket sealed landings
+ *   (**2–4 pockets**), ordered multi-switch chains, portal-repriced latches; the walk-only world
+ *   deleted from the outset"*, with par band **16–24** and the derived `D_exec` band
+ *   **`[19.75, 29.0625]`** (printed `[19.75, 29.06]`; §7.9's notation law — the derived-exact
+ *   value is the value, the printed form is display text and is never a comparison operand).
+ * - **§7.4** publishes stage `G`'s lattice axes for Act II — *"multi-pocket: **pocket count 1–4**
+ *   × **portal pairs 1–2** × **door arity 2–5** × **landing position**, on **7×6 → 7×7**"* — and
+ *   names this batch's feed: *"Act II batches 3–4"*.
+ * - **§7.8** is the handoff this batch answers. **Item 4** (anti-mirror): *"Batch 3 must **not**
+ *   mirror batch 1's ladder again, and must not copy batch 2's device. … repeating it converts a
+ *   measurement into a formula and yields a **third indistinct rung set**."* — the clause is
+ *   about the **ladder**, and this batch derives its own (rule 2 below) rather than mirroring a
+ *   third time. **Item 1** + **§7.3.2** (`act-close`): *"An act's registered maximum `D_exec`
+ *   must be carried by its **last two batches**"* — for Act II that is **L31–L40**, and R-005a
+ *   registered the carrier at **L35 = 28.339426 > 27.604651** (`ACT_II_R005A_REGISTERED_TAIL_EXEC`,
+ *   read from the law module, never typed), i.e. **the obligation is already DISCHARGED** and this
+ *   batch **owes no peak**. **Item 5**: a seam below the shelf's tail takes a **§7.3.1-form
+ *   label published before `--write`**. **Item 6**: report the refusal census with the accepts,
+ *   hand the batch to QA for the §7.6 stratum before registry, report the act's measured maximum.
+ * - **§6.2.3**, the sealed-landing lattice law, VERBATIM obligations, read against a **5-door**
+ *   device: (1) *"Exactly one opposite-colour portal pair … both ends visible from the start"*;
+ *   (2) *"The landing end resolves into a pocket that is **not on-foot reachable** in the needed
+ *   phase without the portal"*; (3) *"The pocket's only exit is a door (M1). **No phase wall may
+ *   form the exit** — F-L19-2 … every blocker in this device MUST be an **openable door**"*;
+ *   (4) *"at least one shortest route executes **≥ 2 presses in a fixed order**, the second switch
+ *   reachable only after the first door opens"*; (5) `par(L20) = 20` is **cited, not inherited**
+ *   (no batch-4 id is 20); (6) *"`T ≡ R ≡ 0` and P4 coverage: the pocket is a **through-station**,
+ *   never a dead pocket"*; (7) *"`switchRequired = "required"` is **expected but not decreed** — it
+ *   is a **measurement** obligation on the candidate"*. `T ≡ R ≡ 0`, determinism, entry-only
+ *   solidity and never-crushed (ADR-0008 rules 1–7) are unchanged and are gates, not prose.
+ *
+ * ── WHAT THIS BATCH IS, AND WHY THE ACT CLOSES HERE (the finale proposal) ─────────
+ *
+ * Act II's catalogue names exactly **one** sealed-landing family — *multi-pocket sealed landings
+ * (2–4 pockets)* — and batches 1, 2 and 3 built it at pocket counts **2, 3, 4**: the **4-pocket
+ * member is the family's ceiling** (§7.2's own range, §7.4's `pocket count 1–4` top, and the
+ * deepest ordered chain the act's vocabulary admits — `5 doors / 5 presses`,
+ * `p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4 < p4 < d5`). A **5-pocket** device is therefore
+ * **refused by §7.2's published family text, not by authoring weakness** — and it is **not
+ * censused**: a census of a device the act's own family forbids is an invitation to a family
+ * change, which is a Game Designer decision (ADR + §7.2 edit) that no level ticket may take.
+ *
+ * The finale's character is taken on the axes that are still open **and published**:
+ *
+ * 1. **The frame axis** (§7.4: *"on 7×6 → 7×7"*). Every Act II batch so far sits on **7×6**:
+ *    batch 1/2 at `CX = 2`, batch 3 at `CX = 1`. **7×7 is the axis's second member and has never
+ *    been used by any Act II rung**, and at the only `7×7` frame LV-015 measured for this device
+ *    (`CX = 2`) the class is **EMPTY** — 0 judged of 0, with the frame's measured room capacity
+ *    beside it (`--stage=roomcap`: 6 / 4 / 4 / 6 disjoint rooms; F-L31-1, `§8.20`). So the finale's
+ *    claim is a **census question**, never a wish: *does 7×7 at `CX = 1` admit the 4-pocket device
+ *    at all, and inside the act's par band?*
+ * 2. **The par axis**: the act's **band-ceiling `par 24`** (§7.8 item 2) carried by the **closing
+ *    rung**, with the batch's own **P2-exact** ladder (rule 2) — a property no Act II batch has.
+ *
+ * Stated as a sentence, the act's close reads: **it closes on the act's deepest lawful ordered
+ * chain, on the act's largest lawful board (49 tiles), at the act's own band-ceiling par.**
+ * Whether that close **also** carries the act's `D_exec` maximum is a **measurement reported
+ * either way** — `D_exec = par + 3·B` (§7.5 item 1's measured theorem) and the deeper families
+ * measure a **lower** `B` centre (batch 3: `1.3500 … 1.4465`), so a finale that does not exceed
+ * `28.339426` is an honest, likely outcome: it is then reported as a **named act-shape finding**
+ * (`act-close` already discharged at L35, inside the last two batches), **never** repaired by
+ * padding a par or re-banding a rung.
+ *
+ * ── THE DEVICE (the named plan shape, written before the search) ──────────────────
+ *
+ * ```
+ *   P   landing pocket   exit d1 (its whole boundary)         press s1 ∈ P
+ *   F   free band        press s2 ∈ F  → drives d2             [reachable once d1 opens]
+ *   R2  second pocket    exit/entrance = d2 (whole boundary)   press s3 ∈ R2 → drives d3
+ *   R3  third pocket     exit/entrance = d3 (whole boundary)   press s4 ∈ R3 → drives d4
+ *   R4  fourth pocket    exit/entrance = d4 (whole boundary)   press s5 ∈ R4 → drives d5
+ *   G   the goal         every walk-neighbour is a d5 tile
+ * ```
+ *
+ * Identity with batch 3's **device class** is stated rather than implied: the class is §7.2's
+ * family ceiling and batch 3 already proved it on 7×6 — what this batch changes is the **frame**
+ * (§7.4's second member), the **par derivation** (P2-exact, rule 2) and the rungs themselves.
+ * The rungs are still censused against the §6.1.4 **seal-inclusive key** of **every registered
+ * file**, so no rung may re-stamp a shipped board (the guard is a filter, and its collisions are
+ * printed, never hidden).
+ *
+ * ── BATCH 4'S SELECTION RULE — published here before any census or any byte ──────
+ *
+ * 1. **Frame and device.** §7.4's `7×7` (the axis's second member) at `CX = 1`, the **4-pocket /
+ *    5-door / 5-press** member (§7.2's family ceiling). The `--pocketsize=4`, `--qmax=4`,
+ *    `--paircap` / `--budget` / `--cap` bounds of the earlier passes are kept unchanged so the
+ *    class stays comparable; every counter is printed beside every count.
+ * 2. **The par ladder is DERIVED, and it is the P2-exact one.** §7.2's batch size is **5** and
+ *    §7.2/§7.9 give the par band's integer endpoints as `[ACT_II_PAR_FLOOR, ACT_II_PAR_CEILING] =
+ *    [16, 24]` (inclusive). §6.1.1's **P2** is the only published clause that makes an in-block
+ *    rise a *guarantee* rather than a measurement: `Δpar ≥ 2`, because `3·B`'s measured spread is
+ *    `1.3125 < 2`. A five-member ladder whose every step is exactly P2's minimum spans
+ *    `4 × 2 = 8 = 24 − 16` — the band's own width — so it must **be** the band's two endpoints with
+ *    every step 2: **`[16, 18, 20, 22, 24]`**, and this is **UNIQUE** (any five members with all
+ *    steps `≥ 2` inside the band have span `≥ 8`, hence use both endpoints and leave no room for a
+ *    step above 2; a member outside the band is refused by the band gate, §7.5 item 1). Adopted as
+ *    **derived** (the §6.1.1 uniqueness style — `4, 6, 8, 10` was adopted the same way), never
+ *    approved by taste. This closes §7.8 item 4's anti-mirror clause **by construction**: the batch
+ *    does not mirror a registered ladder, it recomputes one from the band and P2.
+ * 3. **Pool filter (batch 3's clause, kept).** A par with an **empty** accept pool is **ABSENT**
+ *    from the ladder and is **never substituted**; the remaining rungs are filled by repeating the
+ *    ladder's **own highest supported par, descending** — the act's ceiling first, because §7.3.2
+ *    asks the act's maximum to be carried **late**. Every repeat prints its reason.
+ * 4. **Ordering and tie-break.** Ascending par; within a par, minimal `D_exec` then enumeration
+ *    order (batch 1/2/3's rule), with the same **published departure**: the batch's **last rung
+ *    takes the within-par maximum `D_exec`** so the act's maximum is carried by the closing rung
+ *    (§7.3.2 read as a selection rule). Every departure is printed beside the ladder.
+ * 5. **Bands and gates are filters, never preferences** (§7.5 item 1): `par ∈ [16, 24]`,
+ *    `D_exec ∈ [19.75, 29.0625]` **derived-exact** (§7.9 — compared against the law module's
+ *    constants, never against a printed form), `B ∈ [1.2500, 1.6875]`, `T ≡ R ≡ 0`, coverage
+ *    `49/49` on the 7×7 frame, `switchRequired` **measured** as the all-OFF world, and the `g0`–`g6`
+ *    family gates by name.
+ * 6. **§6.1.4 clone filter.** Each rung's seal-inclusive key must be free of **every registered
+ *    key** and of its four siblings'; the census prints the distinct-key count and every collision
+ *    (there is no silent filter). The five rungs must carry five distinct keys.
+ * 7. **No fabricated `act-close` branch.** §7.3.2's obligation is already satisfied inside the last
+ *    two batches (L35), so this ticket adds **no** refusal clause — a clause here would be a gate
+ *    invented to be passed. The measured maximum is **printed as a reading** (vs the registered
+ *    tail, vs batch 1's peak, vs Act I's peak) and reported per batch (§7.8 item 6).
+ * 8. **Empty-pool honesty (published fallback, in order).** If the 7×7 frame yields **no** in-band
+ *    accept at all, the batch is **not** padded: the census is reported as a named **act
+ *    limitation**, and the *only* published fallback is to re-run the **same derived ladder and
+ *    device on the only other frame this device has ever been non-empty on** (`CX = 1`, `7×6` —
+ *    batch 3's frame), with every key re-checked against the registered set; if that too is empty,
+ *    nothing is written and the Game Designer is briefed. A borrowed par, a re-banded act or a
+ *    copied ladder is not a remedy.
+ * 9. **Relief label before bytes.** L36's `D_exec` will sit below the registered tail
+ *    `ACT_II_R005A_REGISTERED_TAIL_EXEC` (28.339426) on any plausible ladder, so §7.8 item 5 fires:
+ *    the `L35 → L36` seam takes a **§7.3.1-form** label published in the census dossier **before
+ *    `--write`**, with `Δpar` / `3·ΔB` / `ΔD_exec` decomposed so it cannot be read as a designed dip.
+ * 10. **Deferred, with its scope stated.** The `--pocketsize ≥ 11` probe stays **DEFERRED**:
+ *    `≤ 10` was closed by measurement (`scripts/author-l20-p10.transcript.md` §10), **`≥ 11` remains
+ *    unmeasured**, and **no ceiling wording is published in either direction** (item 114's law).
+ *
+ * The census commands, also published before the run (they are what the dossier quotes):
+ *
+ * ```
+ *   STEP 1 — the frame's capacity and the par-24 obligation at the NEW frame:
+ *     a) npx tsx scripts/author-l21.ts --stage=roomcap --cx=1 --h=7 --maxsize=4
+ *     b) npx tsx scripts/author-l21.ts --stage=g --batch=4 --pockets=4 --cx=1 --h=7 \
+ *          --pocketsize=4 --qmax=4 --paircap=40 --budget=8000 --cap=400 --parmin=24 --parmax=24
+ *   STEP 2 — the batch's own pool over the full act band, on its own frame:
+ *     c) npx tsx scripts/author-l21.ts --stage=g --batch=4 --pockets=4 --cx=1 --h=7 \
+ *          --pocketsize=4 --qmax=4 --paircap=40 --budget=20000 --cap=400 --parmin=16 --parmax=24
+ *   STEP 3 — the selection (dry run, then --write):
+ *     d) npx tsx scripts/author-l21.ts --stage=s --batch=4 --parmin=16 --parmax=24 \
+ *          --accepts=<c's dump>
+ *     e) npx tsx scripts/author-l21.ts --stage=s --batch=4 --parmin=16 --parmax=24 --write \
+ *          --accepts=<c's dump>
+ * ```
+ *
  * Stages:
  *
  *   0.  **preflight law** — the parity/judging-phase rule re-derived from the shipped
