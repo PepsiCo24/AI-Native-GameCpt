@@ -28,6 +28,40 @@
 > own words. No Act IV byte may exist until this section lands, and `docs/project-status.md` item 167 names
 > the constant re-pins that the same era owes.
 
+> **STATUS LINE — dated 2026-10-20 (GD-016b): RV-015 CORRIGENDA APPLIED (items 1–4, WORDING ONLY); RULINGS
+> UNMOVED; R2/R3 BOOKED TO GD-017.** RV-015 re-derived every bound, half, margin and refusal in this ADR and
+> in `docs/level-design.md` §7.11 and reported **zero arithmetic deltas** — what died is wording. The four
+> fixes, recorded here without moving anything: **(1)** §7.11.2's **O6** cell contradicted its parent clause
+> §7.10.6 **B5**; it is rewritten to B5's semantics (the plural tie-break is scoped to **NON-FINAL** rungs, and
+> in `[24,26,28,30,30]` the non-final `par 30` multiplicity is **one** ⇒ `L64` = pool **minimum**, `L65`
+> (closing) = within-par **maximum**), with the **refuted wording kept VERBATIM** in a dated supersession
+> record (a corrigendum that erases its evidence trail is a restamp). **(2)** the `+4` "**independent
+> readings**" label is corrected to a **growth READ-OUT** — an **induction** from the single Act II→III step,
+> Act I excluded, both computations bottoming on §7.2's same designed table — and the fix's form is the
+> **FORBID sentence** (*no future act band may be DERIVED FROM `+4`; bands anchor via §7.2's per-act rows*),
+> **not** an assumption `A4`, because an assumption is what a derivation *leans on*. **(3)** the refuted B1
+> variant is renamed a **CROSS-ACT `ℓ` CONTINUATION** (Act III ends at `ℓ = 4`) and the true **DATASET-SCOPED
+> counter** collapse is added — `ℓ = 13` ⇒ `A = 48`, **harder** than the `ℓ = 5` ⇒ `32` already published.
+> **(4)** **V3** gains its explicit **`*Owner-program:*`** sentence (level lane, Act IV opener era,
+> fill-in-before-bytes + `near()` on the **frozen pair**, `F-GD014-1` family, program-side check in the
+> `ARCH-006c` symbol form), matching V1/V2. **BAND, OPENER LADDER, INSTANCE-9 HALVES, REFUSAL STACK, DEFERRALS
+> AND EVERY NUMBER ARE UNCHANGED** — re-verified after these edits by the whole-file counter instrument
+> (distinct-numeric-value set identical; **no pre-existing occurrence altered, only restatements added**).
+> **GD-017 OWNS the two REAL legislation riders RV-015 booked** (the **GD-012 near-era precedent** forbids
+> legislating them here — this STATUS line **records the booking, it does not legislate**): **(R2) the Act IV
+> closing-batch RANK COMPARISON (`L80` vs `L75`)**, in **§7.10.13.3's form** — pre-byte program comparison,
+> the closing rung taking its own pool's B5 maximum, with the **named-limitation fallback** carrying both
+> measured numbers when the pool refuses the selection — **DUE BEFORE the `L71–L80` census** (a comparison
+> written after the bytes is a justification, not a duty). **(R3) the across-act `act-peak` clause + its
+> comparator constant** — the **R-009 analogue of `ACT_III_REGISTERED_PEAK_ADVANTAGE_VS_ACT_II`** (`2.0` in
+> `policy.ts`) — declared **PIN-LITERAL**, never as a growing alias, because **Act III's tail moves at
+> `L51–L60`** and an alias would be correct only **contingently** (`F-GD014-1`'s own rule).
+> **Authority: RV-015's structural findings.** The generalizing law **exists on disk** — §7.3's strict-increase,
+> §7.3.2's last-two-batches carrier clause, and its ACT-MAX rider generalised — so **a lower Act IV tail is
+> UNLAWFUL, not merely undesired**; and the duty is **satisfiable by construction**, because the `par 30`/`par
+> 32` classes `[33.7500, 35.0625]` / `[35.7500, 37.0625]` both **clear Act III's ceiling `33.0625`** — so the
+> comparison's pool condition can be met without padding.
+
 ---
 
 ## Why this is its own ADR (and why three of its five rulings could not have been published earlier)
@@ -36,8 +70,10 @@
    **already law** in ADR-design-0005's acts table — but only as a **printed range**. GD-011 (§7.9) made
    printed forms *display roundings* and forbade them as operands; GD-012 published Act III's **derived-exact**
    band and the read-out that the band **translates its predecessor by exactly `+4` on both ends**. The Act IV
-   instantiation is therefore the first test of whether that growth law is a **law** or a coincidence of two
-   acts — and the answer is checkable only by computing both readings and comparing them to the last digit.
+   instantiation is therefore the first act whose band can be checked against **§7.2's own row** and against
+   that read-out at once — and they are checkable **together** to the last digit. *(RV-015 item 2, applied by
+   GD-016b: they are **not** two independent derivations — both bottom on §7.2's designed table — and the `+4`
+   step is **forbidden as a band source** at `docs/level-design.md` §7.11.1.)*
 2. **The opener rule must be re-based, not re-invented, and the "which act's floor?" question is new here.**
    §7.10.2's O1–O6 were written with Act III's constants. Re-basing them raises a question Act III never
    asked: whether Act IV's opener anchors at Act IV's floor or at the class Act III just closed on. That is
@@ -61,7 +97,7 @@
 
 ---
 
-## RULING A — the Act IV `D_exec` band is `[27.7500, 37.0625]`, derived-exact from a growth law that two independent readings agree on
+## RULING A — the Act IV `D_exec` band is `[27.7500, 37.0625]`, derived-exact from §7.2's own Act IV row and cross-checked by a growth read-out (RV-015 item 2: the two computations are **not** independent readings)
 
 **Original Hypothesis.** ADR-design-0005's acts table prints Act IV's band as `[27.75, 37.06]` alongside its
 `par` band `24–32`. The working assumption on the tool side could have been either (a) the printed pair is
@@ -77,22 +113,33 @@ growth law itself had never been tested across a second step: GD-012 showed `+4`
 have been an artifact of two adjacent bands rather than a law.
 
 **Change.** Act IV's band is published **derived-exact** as **`[27.7500, 37.0625]`**, *printed*
-`[27.75, 37.06]`, and the derivation is printed **twice**:
+`[27.75, 37.06]`, with the derivation shown **once and its cross-check beside it**:
 
 ```text
-growth law, from §7.2's own act table (BOTH readings agree to the last digit):
+band law, from §7.2's OWN Act IV row   (the ONLY source; §7.11.0's integrity row):
+  ACT_IV_PAR_FLOOR = 24  ·  ACT_IV_PAR_CEILING = 32
+  EXEC_FLOOR   = 24 + 3·1.2500 = 27.7500 · EXEC_CEILING = 32 + 3·1.6875 = 37.0625
+growth READ-OUT, cross-checked against the block above:
   floors   : 16 (II) · 20 (III) · 24 (IV) · 28 (V)      ⇒ +4 per act
   ceilings : floor + 8                                   ⇒ +4 per act
   §7.10.1's read-out of Act II→III: "translates Act II's by exactly +4.0 on both ends (ΔEXEC = ΔPAR)"
-applied    : [23.7500, 33.0625] + 4 = [27.7500, 37.0625]
-endpoints' own formula (second reading):
-  EXEC_FLOOR = 24 + 3·1.2500 = 27.7500 · EXEC_CEILING = 32 + 3·1.6875 = 37.0625
+  applied  : [23.7500, 33.0625] + 4 = [27.7500, 37.0625]   — agrees to the last digit
+  BASIS    : an INDUCTION from ONE observed step (Act II→III). Act I is EXCLUDED — its row is a
+             MEASURED `9.00–24.73` over a `4–20` rung ladder, not a derived band over a per-act
+             par row. BOTH computations bottom on §7.2's SAME designed table, so the agreement
+             says the read-out is not CONTRADICTED — never that an independent route exists.
 ```
 
-Because the two readings agree, the published law **uniquely determines** Act IV's band and **no
-STOP-AND-ROUTE is owed** — the dispatch's condition (*"if the published law does NOT uniquely determine Act
-IV, rule among the named admissible readings with STOP-AND-ROUTE"*) is **not triggered**. Both endpoints are
-**dyadic** (`111/4` and `593/16`) ⇒ IEEE-754 bit-exact, and §7.9's inclusivity is operator-free.
+The derivation and the read-out **agree to the last digit**, so the published law **uniquely determines** Act
+IV's band and **no STOP-AND-ROUTE is owed** — the dispatch's condition (*"if the published law does NOT
+uniquely determine Act IV, rule among the named admissible readings with STOP-AND-ROUTE"*) is **not
+triggered**. Both endpoints are **dyadic** (`111/4` and `593/16`) ⇒ IEEE-754 bit-exact, and §7.9's
+inclusivity is operator-free. **The two computations are NOT independent readings, and the `+4` step is
+FORBIDDEN as a band source** — the form of the fix is the FORBID sentence, not a dated assumption `A4`
+(an assumption is what a derivation *leans on*; publishing `+4` as one would re-import the misreading).
+Bands anchor through **§7.2's per-act rows**, which is what each act's own row already did. **No value
+moves:** the band stands on §7.2's row IV alone (RV-015 item 2, applied 2026-10-20 by GD-016b;
+law text: `docs/level-design.md` §7.11.1).
 
 Three **dated assumptions** are published so a census can falsify them:
 
@@ -111,13 +158,15 @@ Three **dated assumptions** are published so a census can falsify them:
 **Evidence.** `policy.ts` at this ticket's base: `ACT_III_PAR_FLOOR = 20`, `ACT_III_PAR_CEILING = 28`,
 `ACT_III_B_BAND = BLOCK_L1619_B_BAND = [1.25, 1.6875]`, `ACT_III_EXEC_BAND` computed = `[23.75, 33.0625]`,
 `LAW_PRECISION = 5e-7`; a throwaway disk-reading script computed `[27.75, 37.0625]` by **both** routes and
-diffed them to `0`; `ACT_IV_*` greps as **ABSENT** from `policy.ts` today; §7.2's Act IV row and §7.10.1's
+diffed them to `0` — **read as a cross-check, not as two independent derivations** (RV-015 item 2); `ACT_IV_*` greps as **ABSENT** from `policy.ts` today; §7.2's Act IV row and §7.10.1's
 `+4` read-out are on disk; §7.10.3's totality statement already covers Act IV (`24–32`) inside the published
 star rows (`21–30 → k1 6 / k2 12`; `31–40 → +8 / +16`).
 
-**Result.** Act IV has a band that can be read by a gate **before** any of its boards exists; the growth law
-is now verified across **two** steps rather than one; the printed row in §7.2 is confirmed to be a display
-rounding of exactly this pair; and no number in Act I/II/III moves.
+**Result.** Act IV has a band that can be read by a gate **before** any of its boards exists; the `+4`
+read-out is now **confirmed consistent with §7.2's own row IV** — the same table's designed step, **not** a
+second measurement and **not** a band source (RV-015 item 2; the FORBID sentence lives at
+`docs/level-design.md` §7.11.1); the printed row in §7.2 is confirmed to be a display rounding of exactly
+this pair; and no number in Act I/II/III moves.
 
 ---
 
@@ -149,9 +198,13 @@ re-derived — giving the ladder **`[24, 26, 28, 30, 30]`**, with:
   **structural** — `[24,26,28,30,30]` is the only one carrying `30` at all;
 - **O5** ABSENT-never-substituted with a **rising** fill (the instance-5 precedent admits exactly two
   first-rung readings: `par 24` or `par 26`), then **STOP-AND-ROUTE to GD**;
-- **O6** the final rung at the within-par maximum, earlier rungs at the minimum, with §7.10.6's
-  **plural-same-par tie-break** applying from the act's **first** batch (`par 30` is doubled by the
-  truncation).
+- **O6** the final rung at the within-par maximum, earlier rungs at the minimum — **B5's scope read exactly**:
+  the plural-same-par tie-break fires only where **two or more NON-FINAL** rungs share a par, and
+  the opener ladder's non-final `par 30` multiplicity is **one** (`L64`) ⇒ it **never fires** here, so
+  `L64` = the pool's `par 30` **minimum** and `L65` (closing) = the pool's `par 30` **maximum**. *(As first
+  published this bullet added "applying from the act's first batch" over both `par 30` rungs — a claim that
+  contradicts B5; the refuted wording is kept verbatim in `docs/level-design.md` §7.11.2's dated supersession
+  record. RV-015 item 1, applied 2026-10-20 by GD-016b: wording only.)*
 
 `L61 = par 24`, so the seam's `par` term is `Δpar = −4` against Act III's closing `par 28`, and the seam is a
 §7.3.1 relief (ruling C) rather than a dip: **`ΔM = 0`**, no mechanic introduced.
@@ -245,7 +298,12 @@ Four properties are published so the lane **verifies** rather than trusts:
   **B7's multiset conditional** (§7.10.11's own NAMED CONDITIONAL) is inherited **unchanged**.
 - **(V3) Register-form obligation.** `F-GD015-1`'s pin duty, published explicitly **because this is the third
   occurrence of the same hazard class** (instances 6, 8, 9) — a hazard with two named prior occurrences that
-  is silently assumed gone is how the class returns.
+  is silently assumed gone is how the class returns. ***Owner-program:* the LEVEL LANE, at the Act IV opener
+  era** — it fills the pin **literals** (`60` and `L60`'s registered value), derives `_DELTA` from the pin, and
+  asserts `near()` on the **frozen pair** (`F-GD014-1` family), enforced by the register's
+  **fill-in-before-bytes ceremony** (§7.3.1's bound → fill-in → bytes order) and checked program-side in the
+  **`ARCH-006c` symbol form** (declarators, not integers). *(Clause added 2026-10-20 by GD-016b, RV-015 item 4:
+  V1 and V2 named their owners and this one left ownership implied by the constants paragraph.)*
 
 **Evidence.** §7.10.11's B1–B7 and its B7 conditional; §7.10.12's general form and `F-GD015-1`; §7.10.7's
 register-wide test and its `1.3125` residue bound; §7.10.13.3's rank comparison; §7.10.4 / §7.10.10 for the
@@ -283,10 +341,17 @@ deferred Act IV ladder would inherit the wrong anchor.
   `A₄ = ACT_III_PAR_FLOOR + 2·(4−1)` — the expression names **its own act's** floor constant, and `ℓ` indexes
   **that act's own batches**. The cross-act generalization is therefore **substitution of the act's floor into
   the same formula** (which is exactly how O1 already writes it generically), **not** a shared dataset-level
-  counter. The alternative reading is **refused arithmetically**: a dataset-scoped `ℓ = 5` at Act IV's first
-  batch would give `A = 24 + 2·4 = 32` — **the act's own reserved ceiling** — which O2/O3 forbids as an opener,
-  because consuming the ceiling destroys §7.3.2's by-construction carrier guarantee (no class would remain
-  above the opener). So the forced anchor is **`ACT_IV_PAR_FLOOR = 24`** — the `+2` is the **step**, not the
+  counter. **Two** losing readings are refused arithmetically, and the second collapses harder:
+  (a) a **CROSS-ACT `ℓ` CONTINUATION** (called *"dataset-scoped `ℓ = 5`"* when first published — the
+  arithmetic was right, the name was not, since Act III ends at `ℓ = 4`) gives `A = 24 + 2·(5−1) = 32` —
+  **the act's own reserved ceiling** — which O2/O3 forbids as an opener, because consuming the ceiling
+  destroys §7.3.2's by-construction carrier guarantee (no class would remain above the opener); (b) a
+  **genuinely DATASET-SCOPED counter** (the reading the word properly denotes) gives, at Act IV's first batch,
+  dataset batch **`ℓ = 13`** (12 batches to `L60`: 4 + 4 + 4) ⇒ `A = 24 + 2·(13−1) = 48`, which exceeds
+  **`ACT_IV_PAR_CEILING = 32`** (integer comparison, no operator question) and lies outside **every** act's
+  `par` band.
+  *(RV-015 item 3, applied 2026-10-20 by GD-016b: naming + the stronger second collapse; conclusion unchanged.)*
+  So the forced anchor is **`ACT_IV_PAR_FLOOR = 24`** — the `+2` is the **step**, not the
   anchor — and this section publishes it as part of the opener law rather than deferring it.
 
 **Evidence.** §7.10.2's O1–O6 and its scope sentence; §7.10.6's opening (why the interior rule needed its own
@@ -375,8 +440,10 @@ instrument that actually refuses its hardest case (`par 31`), so a lane cannot p
 
 ## Decision
 
-1. **Act IV's `D_exec` band is `[27.7500, 37.0625]`**, printed `[27.75, 37.06]`, derived-exact from a growth law
-   two independent readings agree on; assumptions **A1–A3** are published as dated clauses.
+1. **Act IV's `D_exec` band is `[27.7500, 37.0625]`**, printed `[27.75, 37.06]`, derived-exact from
+   **§7.2's own Act IV row** and cross-checked by the **growth read-out** (an induction from the single
+   Act II→III step; **never** a band source — RV-015 item 2 forbids deriving any act band from `+4`);
+   assumptions **A1–A3** are published as dated clauses.
 2. **Act IV is `L61–L80`**, its **first half `L61–L70`** carries the reservation's scope (**`par ≤ 30`**;
    `par 31` inadmissible; `par 32` reserved), and its **`act-close` carrier window is `L71–L80`**.
 3. **The `L61–L65` opener rule is §7.10.2's O1–O6 re-based** ⇒ `[24, 26, 28, 30, 30]`; the opener **enters the
@@ -399,8 +466,9 @@ instrument that actually refuses its hardest case (`par 31`), so a lane cannot p
 
 ## Consequences
 
-- **Positive.** Every future act now has a **template that has been tested twice**: a band derived from the
-  published growth law and checked by the endpoints' own formula; an opener rule re-based rather than
+- **Positive.** Every future act now has a **template that has been applied twice**: a band derived from
+  **§7.2's own per-act row** and **cross-checked** by the growth read-out (`+4`) — the read-out being a
+  cross-check and never a source (§7.11.1's FORBID); an opener rule re-based rather than
   re-invented; a pre-published relief with **no** comparator needed; and a documented split between the opener's
   law (ruled early) and the interior ladders' law (ruled when gated). The comparator-free relief class is now
   established on **both** seam kinds, and the `par 31` read-out gives the level lane a checkable statement of
@@ -417,7 +485,9 @@ instrument that actually refuses its hardest case (`par 31`), so a lane cannot p
 - **Risk named.** The derivation leans on **A1** (one measured `B` band, act-invariant by reference). If a
   future census widens the measured band, **every** act band moves at once — so the guard is that widening is a
   design change with an ADR, never a silent re-derivation; and any lane that re-derives a band from printed
-  prose re-introduces GD-011's defect. §7.9 plus this section's derivation lines are the guard.
+  prose re-introduces GD-011's defect, while any lane that derives one from the `+4` read-out breaks
+  §7.11.1's **FORBID** (bands anchor via §7.2's per-act rows). §7.9 plus this section's derivation lines are
+  the guard.
 - **Testable predictions, published so they can fail.** (i) If Act III's batch 4 ever registers with a closing
   `par` other than `28`, **V2** fires and instance 9 must be re-published by a GD ruling — a measurement, not
   a renegotiation. (ii) If the Playtest lens measures an `M4/M5/M6` spike at `L61–L65` against `L60`, the

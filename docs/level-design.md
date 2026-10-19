@@ -2242,20 +2242,45 @@ never the reverse. Applied here:
 | **Act IV `D_exec` band** | **`[27.7500, 37.0625]`**, *printed* `[27.75, 37.06]` | inclusive at both ends (§7.9); both endpoints dyadic ⇒ IEEE-754 bit-exact |
 
 ```text
-growth law, read from §7.2's own act table   (BOTH readings agree to the last digit):
-  floors   : 16 (II) · 20 (III) · 24 (IV) · 28 (V)              ⇒ +4 per act
-  ceilings : floor + 8                                          ⇒ +4 per act
-  §7.10.1's read-out of Act II→III: "translates Act II's by exactly +4.0 on both ends (ΔEXEC = ΔPAR)"
-applied    : [23.7500, 33.0625] + 4 = [27.7500, 37.0625]
-independent check of the same pair (second reading):
+band law, derived from §7.2's own Act IV row   (the ONLY source — §7.11.0's integrity row):
+  ACT_IV_PAR_FLOOR = 24  ·  ACT_IV_PAR_CEILING = 32        (§7.2's row IV; ADR-design-0005 RULING B)
   EXEC_FLOOR   = 24 + 3·1.2500 = 27.7500
   EXEC_CEILING = 32 + 3·1.6875 = 37.0625
   §7.2's printed Act IV row is [27.75, 37.06] — the display rounding of exactly this pair (§7.9)
+
+growth READ-OUT, cross-checked against the block above  (an INDUCTION, never a second derivation):
+  floors   : 16 (II) · 20 (III) · 24 (IV) · 28 (V)              ⇒ +4 per act
+  ceilings : floor + 8                                          ⇒ +4 per act
+  §7.10.1's read-out of Act II→III: "translates Act II's by exactly +4.0 on both ends (ΔEXEC = ΔPAR)"
+  applied  : [23.7500, 33.0625] + 4 = [27.7500, 37.0625]   — agrees to the last digit
+  BASIS    : ONE observed step (Act II→III). Act I is EXCLUDED — §7.2's Act I row is a MEASURED
+             `9.00–24.73` over a `4–20` rung ladder, not a derived band over a per-act `par` row,
+             so it is not a second instance of the pattern and cannot be counted as one.
+  WHY THE AGREEMENT IS NOT EVIDENCE OF TWO ROUTES: both computations bottom on the SAME designed
+             table (§7.2's per-act rows); the read-out is what those rows' own `+4` par step
+             REPRODUCES, so the agreement says the read-out is NOT CONTRADICTED — never that an
+             independent route to the number exists.
 ```
 
-Both readings agree, so the **published law uniquely determines** Act IV's band and **no STOP-AND-ROUTE is
-owed** (contrast: had the table's row and the growth law differed by even one `LAW_PRECISION` quantum, this
-section would have had to name the admissible readings and STOP rather than pick by taste).
+The derivation and the read-out **agree to the last digit**, so the **published law uniquely determines** Act
+IV's band and **no STOP-AND-ROUTE is owed** (contrast: had §7.2's own Act IV row disagreed with the read-out
+by even one `LAW_PRECISION` quantum, this section would have had to name the admissible readings and STOP
+rather than pick by taste).
+
+**Corrigendum (RV-015 item 2, dated 2026-10-20 — the `+4` label).** The two computations were published as
+**independent readings**; they are not, for the reason printed in the `BASIS`/`WHY` lines above. The form of
+the fix is **RULED — the FORBID sentence, not a dated assumption `A4`**: an *assumption* is something a
+derivation **leans on**, and publishing the `+4` step as one would re-import exactly the misreading this
+corrigendum removes (`A1`–`A3` remain the only assumptions this section leans on). What binds instead:
+
+> **FORBID (dated 2026-10-20, GD-016b).** **No future act's band may be DERIVED FROM the `+4` step.** Bands
+> anchor through **§7.2's per-act rows** — each act's own `par` band read from the table, then
+> `[par_min + 3·B_lo, par_max + 3·B_hi]` (§7.9) — which is what **§7.11.0's integrity row** already
+> publishes (*Act IV's `par` band: "NO — already law … this section **quotes** it and derives from it"*). The
+> `+4` read-out is a **cross-check on that derivation and never its source**.
+> **Falsifier, published so the read-out can fail without any value moving:** if a future act's §7.2 row
+> yields a `ΔPAR ≠ +4` step, the `+4` **pattern is falsified for that step** and must be withdrawn **as a
+> pattern** — **no band moves**, because no band was ever derived from it.
 
 **Assumptions the derivation leans on, each dated and each falsifiable.**
 
@@ -2300,7 +2325,33 @@ re-based on Act IV's own constants** — quoted, never re-derived:
 | **O3 · why O2 is derived** | opener rungs top out at `30 + 3·1.6875 = 35.0625`; any `par 32` tail rung bottoms at `32 + 3·1.2500 = 35.7500` | **`35.7500 > 35.0625`**, margin **`0.6875`** ⇒ §7.3.2's `act-close` is satisfiable **by construction** on `L71–L80` **regardless of the opener's realised `B`**. The margin is **act-invariant by construction**: `2 − 3·(B_hi − B_lo) = 2 − 1.3125 = 0.6875` — the `+2` par step the P2 window earns, minus the widest `B` swing three weights can carry. It **coincides numerically** with `ACT_III_CEILING_RESERVATION_MARGIN` (a **checkable coincidence, never a template**: in `policy.ts` that constant is *derived* from its own act's endpoints and opener top, so the Act IV sibling is to be derived likewise) |
 | **O4 · anti-mirror** | the multiset must differ from **every registered Act II batch** (`[17,18,20,21,23]`, `[19,22,22,24,24]`, `[18,20,22,24,24]`) and from **every Act III batch's** (`[20,22,24,26,26]`, `[22,24,26,26,26]`, `[24,26,28,28,28]`, `[26,28,28,28,28]`, and any B6 outcome of batch 4) | checked **today** against all eight known multisets: `[24,26,28,30,30]` is distinct from each, and the distinctness is **structural**, not lucky — it is the only one carrying `30` at all. **Coinciding pars are printed, never hidden**; the check is re-run on the **realised** Act III sets at the Act IV census (batch 4's B6 path can only *remove* values, so no B6 outcome of batch 4 is `[24,26,28,30,30]`) |
 | **O5 · empty pool ⇒ ABSENT, never substituted** | a derived par absent from the stage-`I` census pool is **absent**; no out-of-set par is substituted; the shortfall is absorbed by **within-par repeats at the highest available derived par** | the fill is **rising** from an absent floor (the instance-5 precedent, whose union published exactly two admissible first rungs), so **two** first-rung readings are admissible: `par 24` (the anchor) and `par 26` (one P2 step up). If fewer than five rungs can be populated even so, the batch **STOP-AND-ROUTES to GD** — it never silently extends into the reserved ceiling |
-| **O6 · within-par convention** | the **final rung** takes the within-par **maximum** `D_exec`; every earlier rung the **minimum** | §7.10.2's O6 verbatim; with `par 30` doubled by the truncation, §7.10.6's **plural-same-par tie-break** applies from the act's **first** batch — the two `par 30` rungs take the pool's **lowest** accepted values in **ascending id order** |
+| **O6 · within-par convention** | the **final rung** takes the within-par **maximum** `D_exec`; every earlier rung the **minimum** | §7.10.2's O6 verbatim, **read at exactly the scope §7.10.6's B5 gives it**: B5's **plural-same-par tie-break** fires only where **two or more NON-FINAL rungs** share a par, and in `[24, 26, 28, 30, 30]` the **non-final** `par 30` multiplicity is **ONE** (`L64`) ⇒ the tie-break **never fires at this batch** and the **closing rung `L65` is never inside it**. Read-out: **`L64` = the pool's `par 30` MINIMUM** (tie-broken inside the value by minimal `D_exec`, then enumeration order — B5's own inner rule) **and `L65` = the pool's `par 30` MAXIMUM** (the closing rung, O6's first half). As first published this cell claimed a within-par maximum for the final rung **and** the plural tie-break over **both** `par 30` rungs *from the act's first batch* — which contradicts its own parent clause; that wording is kept **verbatim** in the dated supersession record below, and **nothing about `par`, `D_exec`, the multiset or any bound moves** (RV-015 item 1) |
+
+> **SUPERSESSION RECORD — dated 2026-10-20 (GD-016b, RV-015 item 1).** The cell text quoted below is §7.11.2's
+> **O6 as published by GD-016** and is **REFUTED** by §7.10.6's **B5**, whose own words scope the tie-break to
+> *"where **two or more** non-final rungs share a par"*. It is **not law**, must **not** be encoded, and is kept
+> **verbatim** because the refutation is the evidence for the corrected cell: *a corrigendum that erases its
+> own evidence trail is a restamp* (the GD-014b model case).
+>
+> > §7.10.2's O6 verbatim; with `par 30` doubled by the truncation, §7.10.6's **plural-same-par tie-break**
+> > applies from the act's **first** batch — the two `par 30` rungs take the pool's **lowest** accepted values
+> > in **ascending id order**
+>
+> **Refuted — the cell contradicts its parent clause, in one line of arithmetic.** B5 scopes the plural
+> tie-break to **non-final** rungs, so it can fire only where **two or more non-final rungs share a par**; in
+> this ladder the `par 30` rungs are `L64` (non-final, multiplicity **one**) and `L65` (the
+> **closing** rung, which O6's first half already assigns the within-par **maximum**) ⇒ the tie-break has
+> **no second non-final member to order** and is **never invoked**. Read as written, the cell puts `L65` inside
+> a **non-final** tie-break against the same sentence's first half, and the phrase *"applies from the act's
+> first batch"* acquires a referent it does not have. **Correct reading:** `L64` = the pool's `par 30`
+> **minimum**, `L65` = the pool's `par 30` **maximum** — which is what ADR-design-0012's RULING B already
+> restates (*"the final rung at the within-par maximum, earlier rungs at the minimum"*).
+> **Blast radius, stated:** the ladder is still the derived O2 truncation multiset, O1–O5 are untouched, every `D_exec`
+> class in §7.11 is byte-identical, and **no bound, half, margin, refusal, constant or registered row moves**
+> (§7.11.4's halves, §7.11.3's reservation margin and §7.11.5's refusals are all `par`-level or band-level and
+> never touched this clause). The tie-break **does** fire elsewhere — §7.10.9.2's batch 3 and §7.10.11's batch 4
+> each carry **two** or **three** non-final rungs at one par — which is precisely why the scope matters and why
+> a mis-scoped copy must not be quotable from this section.
 
 **No `act-peak` / `act-close` branch for the opener — RULED (mirrored).** §7.3.2 puts the carrier on the
 act's **last two batches** (`L71–L80` for Act IV) and §7.3's `act-peak` binds the act's **measured maximum**,
@@ -2442,6 +2493,17 @@ The full label, verbatim, for the registration ticket to cite:
 > fill-in** (`F-GD015-1`), so the register form's two-board reading stays true — see the pin-literals below.
 > This clause is published **because this is the third occurrence of the same hazard class**: a hazard with two
 > named prior occurrences that is silently assumed to be gone is how the class returns.
+> *Owner-program:* the **LEVEL LANE**, at the **Act IV opener era** — **V1/V2 above name their owners and this
+> clause does the same rather than leaving ownership implied by the pin-literals paragraph only.** The duty is:
+> fill `ACT_IV_B1_OPEN_RELIEF_PREVIOUS_LEVEL_ID_AT_REGISTRATION = 60` and
+> `…_PREVIOUS_EXEC_AT_REGISTRATION = <L60's registered value>` as **literals** (never as an alias to
+> `ACT_III_REGISTERED_TAIL_*`), derive `_DELTA` **from the pin**, and assert `near()` on the **frozen pair**
+> with message `F-GD014-1`. **Enforcement, not intention:** the register's **fill-in-before-bytes ceremony**
+> (bound → fill-in → bytes, §7.3.1's own order) plus the **`near()`-frozen-pair assertion** of the
+> `F-GD014-1` family — the program-side check written in the **`ARCH-006c` symbol form** (§7.10.10's
+> register-wide form law: declarators, not integers), so a later Act III registration that moves the act tail
+> makes the check **fail loudly** instead of restamping this label silently. The design lane **rules** this
+> duty; it does not write, fill or assert it (`src/**` is the level lane's, with Architect sign-off).
 
 **Registration-side constants proposed — the PIN-LITERAL form (§7.10.10's register-wide form law).**
 `ACT_IV_B1_OPEN_RELIEF_LEVEL_ID = 61`;
@@ -2515,12 +2577,21 @@ legislated by this ticket, and the hold rests on a stated basis rather than on s
   2·(3−1)` and §7.10.11's reads `A₄ = ACT_III_PAR_FLOOR + 2·(4−1)` — the declarator names **its own act's
   floor constant**, and `ℓ` indexes **that act's own batches**. The cross-act generalization is therefore
   **substitution of the act's floor into the same formula** (which is exactly how O1 already writes it
-  generically), not a shared dataset-level counter. Checked arithmetically, the alternative reading
-  **collapses**: a dataset-scoped `ℓ = 5` at Act IV would give `A = 24 + 2·4 = 32` — **the act's own reserved
-  ceiling** — which O2/O3 forbids as an opener (it would consume the ceiling and destroy §7.3.2's
-  by-construction carrier guarantee). So the forced anchor at Act IV's first batch is **`ACT_IV_PAR_FLOOR =
-  24`** — the `+2` is the **step**, not the anchor — and it is **published here** as part of the opener law,
-  never deferred.
+  generically), not a shared dataset-level counter. Checked arithmetically, **both** losing readings collapse —
+  and the second one collapses harder, which is why the naming now matters:
+  - **A CROSS-ACT `ℓ` CONTINUATION** — the variant this section first published as *"a dataset-scoped `ℓ = 5`"*
+    (the arithmetic was right; the **name** was not). Act III ends at **`ℓ = 4`**, so no Act IV batch can be
+    `ℓ = 5` **within its own act**: the reading actually being refused is a counter **walked across the seam**.
+    It gives `A = 24 + 2·(5−1) = 32` — **the act's own reserved ceiling** — which O2/O3 forbids as an opener
+    (it would consume the ceiling and destroy §7.3.2's by-construction carrier guarantee).
+  - **A genuinely DATASET-SCOPED counter** (`ℓ` counted over the whole dataset — the reading the *word* properly
+    denotes, and the stronger refusal): this file's 50-rung plan carries **4 + 4 + 4 = 12 batches** to `L60`
+    (`L1–L20 · L21–L40 · L41–L60`), so Act IV's first batch is dataset batch **`ℓ = 13`** ⇒
+    `A = 24 + 2·(13−1) = 48` — **`48 > ACT_IV_PAR_CEILING = 32`** (an integer comparison, no operator
+    question) and outside **every** act's `par` band.
+  So the forced anchor at Act IV's first batch is **`ACT_IV_PAR_FLOOR = 24`** — the `+2` is the **step**, not
+  the anchor — and it is **published here** as part of the opener law, never deferred. **Conclusion unchanged**
+  (`ACT-SCOPED`, anchor `24`); RV-015 item 3 touched the **label** and added the second collapse, nothing else.
 - **The release of `par 32` → the Act IV tail's era**, with its own record (§7.11.3).
 - **The `T5` comprehension extension → GD-017** (above).
 - **Re-pinning duties owed at the Act IV era (register hygiene, named not performed).** Whatever registration
