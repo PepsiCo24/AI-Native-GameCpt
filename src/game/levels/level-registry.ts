@@ -1,5 +1,5 @@
 /**
- * Level registry — loads the authored L1–L40 files and **validates every one**
+ * Level registry — loads the authored L1–L45 files and **validates every one**
  * before it can reach the board.
  *
  * `docs/architecture.md` §7 / ADR-0004: schema → rule validation → (solver, at CI
@@ -66,6 +66,11 @@ import l037 from "@/levels/l037.json";
 import l038 from "@/levels/l038.json";
 import l039 from "@/levels/l039.json";
 import l040 from "@/levels/l040.json";
+import l041 from "@/levels/l041.json";
+import l042 from "@/levels/l042.json";
+import l043 from "@/levels/l043.json";
+import l044 from "@/levels/l044.json";
+import l045 from "@/levels/l045.json";
 
 interface LevelSource {
   readonly file: string;
@@ -206,6 +211,54 @@ export const LEVEL_SOURCES: readonly LevelSource[] = [
   { file: "l038.json", raw: l038 },
   { file: "l039.json", raw: l039 },
   { file: "l040.json", raw: l040 },
+  // L41–L45 is R-007's registered **Act III batch 1** — GD-012's act **opener**, and
+  // the dataset's **first act boundary** (the act-scale tail law read across an act
+  // for the first time, `docs/ai-native-pipeline.md` §8.27 / `src/levels/README.md`
+  // §2i, `docs/level-design.md` §7.10, **ADOPTED + USER-APPROVED 2026-10-19**): moved
+  // out of `src/levels/candidates/` by `git mv`, rename 100 %, `sha256` **and** git
+  // blobs identical on both sides (`a07f7846…` · `d130315e…` · `ae18e42b…` ·
+  // `a4da9d38…` · `a4d8860a…`), no content edit during the move, and the shelf is
+  // EMPTY again. All five are `switchRequired: required` like the L16–L20 latch block
+  // and every batch above — all-OFF is a measured no-goal state (UNSATISFIABLE ×5) —
+  // and they run batch 4's 4-pocket / 5-door / forced 5-press device class on the
+  // same proven frame (`7 × 7` at `CX = 1`) with §7.10.5's YAGNI executed literally:
+  // `ΔM = 0`, Act III introduces **no** mechanic unit, so §6's dip law does not fire
+  // and no new painter seam is implied. On §7.10.2's **derived** (P2-exact) opener
+  // multiset: par **20 / 22 / 24 / 26 / 26**, `par == shortestSolution` 5/5 at
+  // `D_exec` 24.257329 / 26.238773 / 28.213816 / 30.225216 / 30.455319, coverage
+  // 49/49 ×5, `T ≡ R ≡ 0` ×5, `M = 4` ×5 (`LADDER RESULT: PASS`). **No `ACT_III_*`
+  // per-rung gate family exists yet** — the act-scale obligations key on Act II id
+  // lists and their ladders, so dispatching one here would mis-key these boards; the
+  // remedy is booked by name on L41's own policy row (`act-3-batch-1`, an
+  // `ACT_III_B1_LADDER`-keyed reader plus one control per new code — the R-005a2 /
+  // R-006c precedent one act later), and until it lands the proof is the
+  // `--act=3 --family=g --ladder=41…45` run (5/5 ACCEPT, 65/65 named controls).
+  // The tail law left Act II's basis: `ACT_III_REGISTERED_TAIL_EXEC` is the maximum
+  // over Act III's own ladder (`30.455319` at L45) and the pre-registration standard
+  // stays named and **alias-typed** (`ACT_III_PRE_R007_REGISTERED_TAIL_EXEC` =
+  // `28.455319` at L40), so the move is the measured **+2.000000** (structural, the
+  // standard *is* Act II's tail) and neither end can be edited alone; the act's
+  // opening rung is the **labelled seam** (L41 lands `−4.197990` below that tail,
+  // §7.3.1 instance 5, inside the pre-published bound `[−4.705319, −1.392819]`) and
+  // the register's **first fill-in-before-existence** (bound `b28ed97` → value
+  // `db78a13` → bytes `568c136`). §7.3.2's act-close obligation belongs to `L51–L60`
+  // and is **neither discharged nor re-fired** here, so no `act-close` branch was
+  // invented; headroom is `33.0625 − 30.455319 = 2.607181` from the derived band end.
+  // The registration did **not** move the block law (`BLOCK_L1619_IDS` is still
+  // `[16 … 20]`, `block-l1619-tail-ceiling` still judges L20 at par 20 / `D_exec`
+  // 24.729412; L20 **not** re-stamped), did **not** widen the cut (frozen L1–L15 at
+  // 14.969697, now measured on 45 files), and re-stamped **no** earlier row — the
+  // forty L1–L40 rows above survive unchanged. Same shape of input as L1–L40: five
+  // rows, no new scene logic, no new painter seam — the door / switch / portal
+  // painters all shipped before them, so serving `?level=41..45` and the L1→L45 chain
+  // is exactly this data edit and nothing else (`GameSession.next` walks this array,
+  // so the chain needs no second literal). The files stay read-only inputs here
+  // (`src/levels/**` is Level AI + Solver's).
+  { file: "l041.json", raw: l041 },
+  { file: "l042.json", raw: l042 },
+  { file: "l043.json", raw: l043 },
+  { file: "l044.json", raw: l044 },
+  { file: "l045.json", raw: l045 },
 ];
 
 export interface LoadReport {
@@ -274,7 +327,7 @@ export function startIndexForLevel(levels: readonly Level[], requested: number |
 }
 
 /**
- * `L1–L40` — the **shipped ladder's own range**, derived from the playable list.
+ * `L1–L45` — the **shipped ladder's own range**, derived from the playable list.
  *
  * The end panel's copy must name the ladder the player actually cleared, so it is
  * computed from the registry rather than written down: QA-005 pinned the stale
