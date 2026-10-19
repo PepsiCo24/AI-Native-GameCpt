@@ -51,6 +51,8 @@ import { analyse, explore, forEachParRoute, goalReachableWithAllSwitchesOff } fr
 import { analyseDifficulty } from "@/core/solver/difficulty";
 import { applyMove, isLegalMove } from "@/core/rules";
 import { DIRECTIONS, move } from "@/core/state/move";
+import type { DerivedRoom } from "./room-derivation";
+import { derivedWalkSealedRooms, inBoundsNeighbours as sharedInBoundsNeighbours } from "./room-derivation";
 import { hashState } from "@/core/state/hash";
 import type { SearchState } from "@/core/state/types";
 import {
@@ -58,6 +60,12 @@ import {
   ACT_II_EXEC_BAND,
   ACT_II_PAR_BAND,
   ACT_II_REGISTERED_IDS,
+  ACT_II_R006A_REGISTERED_TAIL_EXEC,
+  ACT_III_B1_IDS,
+  ACT_III_B_BAND,
+  ACT_III_EXEC_BAND,
+  ACT_III_OPENER_PAR_MULTISET,
+  ACT_III_PAR_BAND,
   ACT_I_REGISTERED_PEAK_EXEC,
   BLOCK_L1619_B_BAND,
   BLOCK_L1619_PRE_R003D_TAIL_EXEC,
@@ -77,6 +85,20 @@ const argOf = (name: string): string | null => {
 const CANDIDATE = process.argv[2] ?? fileURLToPath(new URL("../src/levels/candidates/l016.json", import.meta.url));
 const RUNG = Number(argOf("rung") ?? "16");
 /**
+ * **The ACT whose band law the rung is judged against** (LV-018). `2` = Act II (the default, so
+ * every earlier command in the records stays byte-identical) and `3` = **Act III** (§7.10).
+ *
+ * What it changes, and nothing else: the **band family** the rung must sit inside (`act2-par-band`,
+ * `act2-exec-band`, `act2-b-band` → `act3-par-band`, `act3-exec-band`, `act3-b-band`, read from the
+ * law module's own derived-exact constants) and **which act's measured maximum §7.3's across-act
+ * clause compares against** — Act II's comparator is Act I's measured peak, while Act III's is
+ * **Act II's registered maximum** (`ACT_II_R006A_REGISTERED_TAIL_EXEC`, L40's `28.455319`), because
+ * §7.3 reads *act n* > *act n−1*. No weight, metric, device gate or control changes: the device
+ * family stays `g` (the 4-pocket / 5-door / 5-press class, §7.10.5 RULING D item 2).
+ */
+const ACT = Number(argOf("act") ?? "2");
+
+/**
  * The **family** judged. `sl` = the L20 sealed-landing device (§6.2.6, one pocket); `g` = Act II's
  * **multi-pocket** class (§7.2/§7.4 stage G, ≥ 2 walk-sealed rooms). The family is never inferred
  * from the outcome: it is an argument, and the gates it selects are printed.
@@ -89,7 +111,31 @@ const LADDER = (argOf("ladder") ?? "").split(",").filter((s) => s !== "").map(Nu
 /** `--peak=`: the Act I measured peak the batch must clear (printed by the authoring tool).
  * R-004a: the default is the **registered** peak constant from the law, so the tool cannot
  * quote a peak the registration does not publish. */
-const ACT1_PEAK = Number(argOf("peak") ?? String(ACT_I_REGISTERED_PEAK_EXEC));
+const ACT1_PEAK = Number(argOf("peak") ?? String(ACT === 3 ? ACT_II_R006A_REGISTERED_TAIL_EXEC : ACT_I_REGISTERED_PEAK_EXEC));
+
+/**
+ * F-L41-4 — the **act-aware NAME** of the operand `ACT1_PEAK` carries.
+ *
+ * `:114` has always read the comparator **act-aware** (Act III's is the *previous* act's
+ * registered maximum, i.e. Act II's `L40` tail `28.455319`; Act II's is Act I's registered peak
+ * `24.729412`), but the two ladder-table label sites and the two per-rung prints named it
+ * "Act I peak" / "Act I measured peak" unconditionally. The **value** was right and the **name**
+ * was wrong — a printed string that misdescribes its own reading, the same class as F-L36-1 /
+ * F-L36-2. Found by LV-018 (`scripts/prove-candidate-l4145.transcript.md` §0, F-L41-4, booked
+ * not fixed) and repaired here **in its own commit** (R-007 F-L41-4, disclosed): the asserting
+ * line (`act-peak`, per rung) was already act-aware, so **no verdict moves** — proved by
+ * re-running both ladders before/after with the identical verdicts quoted in the R-007 record.
+ *
+ * Away from `--act=3` every string below is **byte-identical** to what it printed before this
+ * edit, so the Act II receipts (R-004a / R-005a / R-006a transcripts) stay reproducible.
+ */
+const PEAK_NAME_LONG =
+  ACT === 3
+    ? "the previous act's registered maximum (Act II ≡ L40's measured D_exec)"
+    : "Act I's measured peak";
+const PEAK_NAME_SHORT = ACT === 3 ? "vs the previous act's registered max" : "vs Act I peak";
+const PEAK_NAME_LADDER = ACT === 3 ? "Δ vs previous act's reg. max" : "Δ vs Act I peak";
+const BAND_ACTIC = ACT === 3 ? "III" : "II";
 
 interface Gate {
   readonly id: string;
@@ -153,8 +199,17 @@ function measureCut(): { floor: number; l15Par: number; n: number; basis: readon
     // commit). The cut is still **frozen at L1–L15 = 14.969697**. The law's own id set
     // (`ACT_II_REGISTERED_IDS`, batch 1 + 2 + 3) is what the filter reads, so a future
     // registration extends the law once and this instrument follows it.
+    //
+    // R-007: same rule, **first act boundary** — Act III's opener (L41–L45) lands in the
+    // root, and the cut basis read 30.455319, so EVERY new rung was refused by
+    // `escalation  D_exec=24.257329 > CUT 30.455319` (measured, not remembered: that is
+    // the first line of the R-007 registration run). `ACT_III_B1_IDS` is the law's own
+    // id list for the act, so the exclusion grows by the act rather than by five typed
+    // ids. The cut stays **frozen at L1–L15 = 14.969697** — the across-act escalation
+    // belongs to §7.3's `act-peak` clause (`actScaleTailGuards`), never to a moving cut.
     if (BLOCK_L1619_IDS.includes(level.id)) continue;
     if (ACT_II_REGISTERED_IDS.includes(level.id)) continue;
+    if (ACT_III_B1_IDS.includes(level.id)) continue;
     basis.push(level.id);
     const d = analyseDifficulty(level, explore(level));
     if (d.Dexec !== null && d.Dexec > floor) floor = d.Dexec;
@@ -255,22 +310,22 @@ function judge(
             // is "in-band" — while the act's derived `D_exec` top IS `24 + 3·1.6875`, so a strict
             // form would make the published band's own top unattainable and the law self-contradictory.
             // No constant, endpoint, threshold or gate list moved — only the comparison operator.
-            id: "act2-par-band",
+            id: ACT === 3 ? "act3-par-band" : "act2-par-band",
             ok: stamped >= ACT2_PAR_BAND[0] && stamped <= ACT2_PAR_BAND[1],
             detail:
-              `par=${String(stamped)} inside Act II's band [${String(ACT2_PAR_BAND[0])}, ${String(ACT2_PAR_BAND[1])}] (inclusive; §7.2 "par 16–24") ` +
-              `— §7.8 item 2 names par ${String(ACT2_PAR_BAND[1])} "Act II's own band ceiling" and requires one, and the derived D_exec top ` +
-              `${String(ACT2_EXEC_BAND[1])} (printed ${ACT2_EXEC_BAND[1].toFixed(2)}; §7.9) is exactly ${String(ACT2_PAR_BAND[1])} + 3·${String(ACT_II_B_BAND[1])}, so the ceiling belongs to the band (F-L31-1)`,
+              `par=${String(stamped)} inside Act ${String(ACT)}'s band [${String(ACT2_PAR_BAND[0])}, ${String(ACT2_PAR_BAND[1])}] (inclusive; ` +
+              `${ACT === 3 ? `§7.10.3 "par 20–28", the act's own ceiling ${String(ACT2_PAR_BAND[1])} binding and no cap at 30` : `§7.2 "par 16–24" — §7.8 item 2 names par ${String(ACT2_PAR_BAND[1])} "Act II's own band ceiling" and requires one`}) ` +
+              `— the derived D_exec top ${String(ACT2_EXEC_BAND[1])} (printed ${ACT2_EXEC_BAND[1].toFixed(2)}; §7.9) is exactly ${String(ACT2_PAR_BAND[1])} + 3·${String(ACT === 3 ? ACT_III_B_BAND[1] : ACT_II_B_BAND[1])}, so the ceiling belongs to the band (F-L31-1)`,
           },
           {
-            id: "act2-exec-band",
+            id: ACT === 3 ? "act3-exec-band" : "act2-exec-band",
             ok: diff.Dexec !== null && diff.Dexec >= ACT2_EXEC_BAND[0] && diff.Dexec <= ACT2_EXEC_BAND[1],
             detail:
               `D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} ∈ [${String(ACT2_EXEC_BAND[0])}, ${String(ACT2_EXEC_BAND[1])}] (printed [${ACT2_EXEC_BAND[0].toFixed(2)}, ${ACT2_EXEC_BAND[1].toFixed(2)}]; §7.9) ` +
-              `(§7.2's derived Act II band; derived from the measured B band through D_exec = par + 3·B — no new maths, and the compared operands ARE the derived values)`,
+              `(${ACT === 3 ? "§7.10.1's Act III band, computed as [PAR_FLOOR + 3·B_lo, PAR_CEILING + 3·B_hi] over the act's own par band" : "§7.2's derived Act II band"}; derived from the measured B band through D_exec = par + 3·B — no new maths, and the compared operands ARE the derived values)`,
           },
           {
-            id: "act2-b-band",
+            id: ACT === 3 ? "act3-b-band" : "act2-b-band",
             ok: diff.B >= BLOCK_L1619_B_BAND[0] && diff.B <= BLOCK_L1619_B_BAND[1],
             detail: `B=${diff.B.toFixed(4)} ∈ [${BLOCK_L1619_B_BAND[0].toFixed(4)}, ${BLOCK_L1619_B_BAND[1].toFixed(4)}] (the measured band; F-L16-2 excursion would have to be named)`,
           },
@@ -278,7 +333,7 @@ function judge(
             id: "act-peak",
             ok: PEAK_RUNG === null || rung === PEAK_RUNG ? (diff.Dexec !== null && diff.Dexec > ACT1_PEAK) : true,
             detail:
-              `D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} vs Act I's measured peak ${ACT1_PEAK.toFixed(6)} ` +
+              `D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} vs ${ACT === 3 ? `the PREVIOUS act's registered maximum (Act II ≡ L40's measured D_exec)` : PEAK_NAME_LONG} ${ACT1_PEAK.toFixed(6)} ` +
               `(delta ${diff.Dexec === null ? "n/a" : (diff.Dexec - ACT1_PEAK).toFixed(6)}) — §7.3 puts the across-act obligation on the act's measured ` +
               `PEAK, never on every interior member: ${PEAK_RUNG === null ? "no ladder given, so the clause is reported (this file is treated as the peak)" : `ladder peak rung = L${String(PEAK_RUNG)}`}`,
           },
@@ -336,7 +391,7 @@ function judge(
         detail:
           "the multi-pocket device could not be derived from the landed bytes: §7.4's stage G needs exactly one portal pair, exactly one end " +
           "unreachable on foot (the landing), and ≥ 2 walk-sealed rooms each covered by exactly ONE openable door object. " +
-          `Measured: ${String(proven.portals.length)} portal(s), ${String(sealedRooms(proven).length)} sealed room(s)`,
+          `Measured: ${String(proven.portals.length)} portal(s), ${String(derivedWalkSealedRooms(proven).length)} sealed room(s)`,
       });
     } else {
       extras.push(...multiPocketGates(proven, graph, result, gview));
@@ -735,24 +790,21 @@ function sealedLandingGates(
  * may only ever accept less than §7.2 permits, never more, so a widening here is impossible
  * by construction. The band itself is imported from the law (`@/core/solver/policy`, R-004a)
  * so the tool and the registration gate cannot drift apart. */
-const ACT2_PAR_BAND: readonly [number, number] = ACT_II_PAR_BAND;
-/** Act II's published `D_exec` band (§7.2; derived from the measured `B` band, not new maths). */
-const ACT2_EXEC_BAND: readonly [number, number] = ACT_II_EXEC_BAND;
+const ACT2_PAR_BAND: readonly [number, number] = ACT === 3 ? ACT_III_PAR_BAND : ACT_II_PAR_BAND;
+/** The act's published `D_exec` band (§7.2 for Act II, §7.10.1 for Act III; both **computed** from
+ * the band endpoints and the measured `B` band, not new maths — and for Act III derived-exact, so
+ * the `(29.06, 29.0625]` sliver §7.9 admits is admissible on Act II too, F-L31-1). */
+const ACT2_EXEC_BAND: readonly [number, number] = ACT === 3 ? ACT_III_EXEC_BAND : ACT_II_EXEC_BAND;
 /** The batch's peak rung, when a ladder was given (§7.3: the across-act clause rides on the peak). */
 const PEAK_RUNG: number | null = LADDER.length > 0 ? Math.max(...LADDER) : null;
 
-interface RoomView {
-  readonly tiles: readonly Coord[];
-  readonly boundary: readonly Coord[];
-  /** Distinct door ids covering the boundary (exactly one, or the room is not sealed). */
-  readonly doorIds: readonly string[];
-  readonly doorTiles: readonly Coord[];
-  readonly wallTiles: readonly Coord[];
-  readonly freeTiles: readonly Coord[];
-  readonly switchIds: readonly string[];
-  readonly hasGoal: boolean;
-  readonly hasLanding: boolean;
-}
+/**
+ * `RoomView` **is** the shared derivation's room (`scripts/room-derivation.ts`), aliased so the
+ * proving side's type name is unchanged while the law itself lives in exactly one place —
+ * `F-L41-2`'s fix: the generator's filter and this prover's `g6` must not be two implementations
+ * of "the rooms of a board".
+ */
+type RoomView = DerivedRoom;
 
 interface GView {
   readonly landing: Coord;
@@ -764,73 +816,7 @@ interface GView {
 }
 
 /** The four tile-neighbours of `t` that are in bounds (the grid edge blocks by itself). */
-function inBoundsNeighbours(level: Level, t: Coord): Coord[] {
-  const out: Coord[] = [];
-  for (const d of DIRECTIONS) {
-    const n = at2(t, d);
-    if (n[0] < 0 || n[1] < 0 || n[0] >= level.width || n[1] >= level.height) continue;
-    out.push(n);
-  }
-  return out;
-}
-
-/**
- * Every **walk-sealed room** of the board, derived from the bytes: a maximal connected
- * set of tiles that are neither a phase wall nor a door tile, whose entire boundary is
- * covered by exactly one door object — no phase-wall boundary tile (F-L19-2: a wall on
- * the boundary makes its tile unstandable and the 42/42 coverage gate fails) and no
- * free boundary tile (an open leak).
- */
-function sealedRooms(level: Level): RoomView[] {
-  const wall = new Set([...level.phaseAWalls, ...level.phaseBWalls].map(coordKey));
-  const doorOf = new Map<string, string>();
-  for (const d of level.doors) for (const t of d.tiles) doorOf.set(coordKey(t), d.id);
-  const blocked = (t: Coord): boolean => wall.has(coordKey(t)) || doorOf.has(coordKey(t));
-  const seen = new Set<string>();
-  const rooms: RoomView[] = [];
-  for (let y = 0; y < level.height; y += 1) {
-    for (let x = 0; x < level.width; x += 1) {
-      const s = [x, y] as Coord;
-      if (seen.has(coordKey(s)) || blocked(s)) continue;
-      const tiles: Coord[] = [];
-      const q: Coord[] = [s];
-      seen.add(coordKey(s));
-      for (let i = 0; i < q.length; i += 1) {
-        const t = q[i] as Coord;
-        tiles.push(t);
-        for (const n of inBoundsNeighbours(level, t)) {
-          if (seen.has(coordKey(n)) || blocked(n)) continue;
-          seen.add(coordKey(n));
-          q.push(n);
-        }
-      }
-      const inside = new Set(tiles.map(coordKey));
-      const bmap = new Map<string, Coord>();
-      for (const t of tiles) for (const n of inBoundsNeighbours(level, t)) if (!inside.has(coordKey(n))) bmap.set(coordKey(n), n);
-      const boundary = [...bmap.values()].sort((p, q2) => coordKey(p).localeCompare(coordKey(q2)));
-      const doorIds = [...new Set(boundary.map((t) => doorOf.get(coordKey(t))).filter((id): id is string => id !== undefined))].sort();
-      const wallTiles = boundary.filter((t) => wall.has(coordKey(t)));
-      const freeTiles = boundary.filter((t) => !wall.has(coordKey(t)) && !doorOf.has(coordKey(t)));
-      // The room is a walk-sealed ROOM only when a single door object covers its whole
-      // boundary. Anything else (a wall boundary, two doors, an open leak) is a region,
-      // not a room, and the gate that wants a room will say so by name.
-      if (doorIds.length !== 1 || wallTiles.length > 0 || freeTiles.length > 0) continue;
-      const sorted = [...tiles].sort((p, q2) => coordKey(p).localeCompare(coordKey(q2)));
-      rooms.push({
-        tiles: sorted,
-        boundary,
-        doorIds,
-        doorTiles: boundary.filter((t) => doorOf.has(coordKey(t))),
-        wallTiles,
-        freeTiles,
-        switchIds: level.switches.filter((sw) => inside.has(coordKey(sw.tile))).map((sw) => sw.id),
-        hasGoal: inside.has(coordKey(level.goal)),
-        hasLanding: false,
-      });
-    }
-  }
-  return rooms;
-}
+const inBoundsNeighbours = (level: Level, t: Coord): Coord[] => sharedInBoundsNeighbours(level, t);
 
 function multiPocketFromBytes(level: Level): GView | null {
   if (level.portals.length !== 1) return null;
@@ -841,7 +827,7 @@ function multiPocketFromBytes(level: Level): GView | null {
   if (behind.length !== 1) return null;
   const landing = behind[0] as Coord;
   const near = coordKey(a) === coordKey(landing) ? b : a;
-  const rooms = sealedRooms(level).map((r) => ({
+  const rooms = derivedWalkSealedRooms(level).map((r) => ({
     ...r,
     hasLanding: r.tiles.some((t) => coordKey(t) === coordKey(landing)),
   }));
@@ -1165,12 +1151,23 @@ function multiPocketGates(
 // ── run ───────────────────────────────────────────────────────────────────────
 
 const cut = measureCut();
+// F-R007-2 (R-007, disclosed): this line's exclusion clause printed **Act II's** id list while
+// `measureCut()` had just been extended to exclude **Act III's** opener as well, so the label
+// under-reported its own reading — the F-L41-4 class one line further down. The clause is now
+// **derived from the two constants** (`ACT_II_REGISTERED_IDS` + `ACT_III_B1_IDS`) instead of
+// re-typing one of them, so the next act boundary cannot leave it behind again. Eye-readers: the
+// trim in the attest instruments (`cutLine.replace(/ \(the L16.*$/, "")`) and their
+// `D_exec max … basis ids […]` regex both stop before this clause, so no transcript byte moved.
 console.log(`prove-candidate — CUT re-measured from the shipped set: D_exec max = ${cut.floor.toFixed(6)} ` +
   `· par(L15) = ${String(cut.l15Par)} · ${String(cut.n)} shipped files · basis ids [${cut.basis.join(", ")}] ` +
-  `(the L16–L20 block and the registered Act II batches [${ACT_II_REGISTERED_IDS.join(", ")}] are excluded from their own filter — see measureCut)`);
+  `(the L16–L20 block, the registered Act II batches [${ACT_II_REGISTERED_IDS.join(", ")}] and Act III batch 1 [${ACT_III_B1_IDS.join(", ")}] are excluded from their own filter — see measureCut)`);
 console.log(
   `family ${FAMILY}${FAMILY === "g" ? " (Act II multi-pocket — §7.2 / §7.4 stage G)" : " (the L20 sealed landing — §6.2.6)"}` +
-    ` · Act I's measured peak the batch must clear: ${ACT1_PEAK.toFixed(6)}` +
+    ` · act ${String(ACT)}` +
+    (ACT === 3
+      ? ` (band [${String(ACT2_PAR_BAND[0])}, ${String(ACT2_PAR_BAND[1])}] par · [${String(ACT2_EXEC_BAND[0])}, ${String(ACT2_EXEC_BAND[1])}] D_exec, derived-exact §7.10.1; §7.10.2's opener multiset [${ACT_III_OPENER_PAR_MULTISET.join(", ")}]; batch ids [${ACT_III_B1_IDS.join(", ")}])`
+      : "") +
+    ` · ${ACT === 3 ? "the previous act's registered maximum" : PEAK_NAME_LONG} the batch must clear: ${ACT1_PEAK.toFixed(6)}` +
     (PEAK_RUNG === null ? " (no --ladder: the across-act clause is reported per file)" : ` · ladder peak rung L${String(PEAK_RUNG)}`),
 );
 
@@ -1197,7 +1194,7 @@ function proveOne(file: string, rung: number): Proved {
       `D_exec=${verdict.dexec === null ? "n/a" : verdict.dexec.toFixed(6)} ` +
       `B=${verdict.b === null ? "n/a" : verdict.b.toFixed(4)} ` +
       `(CUT ${cut.floor.toFixed(6)}, delta ${verdict.dexec === null ? "n/a" : (verdict.dexec - cut.floor).toFixed(6)}; ` +
-      `delta vs Act I peak ${verdict.dexec === null ? "n/a" : (verdict.dexec - ACT1_PEAK).toFixed(6)})`,
+      `delta ${PEAK_NAME_SHORT} ${verdict.dexec === null ? "n/a" : (verdict.dexec - ACT1_PEAK).toFixed(6)})`,
   );
   if (verdict.view !== null) {
     const v = verdict.view;
@@ -1295,7 +1292,7 @@ for (const id of targets) {
 if (LADDER.length > 0) {
   console.log(`\n${"═".repeat(78)}\nLADDER TABLE — ${LADDER.map((i) => `L${String(i)}`).join(", ")} (§7.2 band, §7.3 rise, §7.7 handoff)`);
   console.log(
-    "rung · par · D_exec · B · coverage · prev-step Δpar · strictly-rising D_exec · Δ vs Act I peak " + ACT1_PEAK.toFixed(6),
+    "rung · par · D_exec · B · coverage · prev-step Δpar · strictly-rising D_exec · " + PEAK_NAME_LADDER + " " + ACT1_PEAK.toFixed(6),
   );
   let prevPar: number | null = null;
   let prevExec: number | null = null;
@@ -1318,8 +1315,8 @@ if (LADDER.length > 0) {
   );
   console.log(
     `batch peak: ${maxRow === null || maxRow.dexec === null ? "n/a" : `L${String(maxRow.id)} at ${maxRow.dexec.toFixed(6)}`} · ` +
-      `Act I measured peak ${ACT1_PEAK.toFixed(6)} · §7.3 act-peak clause ${maxRow !== null && maxRow.dexec !== null && maxRow.dexec > ACT1_PEAK ? "DISCHARGED" : "NOT DISCHARGED"} ` +
-      `· headroom to the Act II ceiling ${String(ACT2_EXEC_BAND[1])} (printed ${ACT2_EXEC_BAND[1].toFixed(2)}; §7.9 — derived-exact is the value): ${maxRow === null || maxRow.dexec === null ? "n/a" : (ACT2_EXEC_BAND[1] - maxRow.dexec).toFixed(6)}`,
+      `${ACT === 3 ? "Previous act's registered max" : "Act I measured peak"} ${ACT1_PEAK.toFixed(6)} · §7.3 act-peak clause ${maxRow !== null && maxRow.dexec !== null && maxRow.dexec > ACT1_PEAK ? "DISCHARGED" : "NOT DISCHARGED"} ` +
+      `· headroom to the Act ${BAND_ACTIC} ceiling ${String(ACT2_EXEC_BAND[1])} (printed ${ACT2_EXEC_BAND[1].toFixed(2)}; §7.9 — derived-exact is the value): ${maxRow === null || maxRow.dexec === null ? "n/a" : (ACT2_EXEC_BAND[1] - maxRow.dexec).toFixed(6)}`,
   );
   // F-L31-2 (`scripts/prove-candidate-l3135.transcript.md` §0): this line used to assert
   // "every control caught on every rung" as a STRING LITERAL, printing it even when a control had

@@ -554,6 +554,172 @@
  *    item 114's law). Nor is any earlier transcript re-stamped: batch-2/3's records are print
  *    records of the instrument as it was, and repairing a label does not re-write history.
  *
+ * ── LV-018 · THE ACT III OPENER (`--batch=5 --act=3`, Act III batch 1 = L41–L45) ────────────────
+ *
+ * Law this pass implements, **quoted from `docs/level-design.md` §7.10 (GD-012 as ADOPTED and
+ * USER-APPROVED 2026-10-19) and from `docs/decisions/design-0008-…` RULING D — never re-tasted**.
+ * The constants the selection rule must *quote* are named here **before** the census and before
+ * any byte, so the ladder is a derivation and not a preference:
+ *
+ * - **`EXEC_FLOOR = 23.7500`** — §7.10.1's derived-exact band floor, `20 + 3·1.2500` over
+ *   `PAR_FLOOR = 20` and the measured `B` band `[1.2500, 1.6875]`.
+ * - **`EXEC_CEILING = 33.0625`** — `28 + 3·1.6875` over `PAR_CEILING = 28`; both endpoints dyadic
+ *   ⇒ bit-exact, **inclusive at both ends** (§7.9), and compared **from the formula, never from
+ *   the printed `[23.75, 33.06]`**.
+ * - **Act II's registered tail `28.455319`** — L40's measured `D_exec`
+ *   (`ACT_II_R006A_REGISTERED_TAIL_EXEC`, read from the law module, never typed). The band's floor
+ *   sits **`23.7500 − 28.455319 = −4.705319`** below it, i.e. the previous act's tail is strictly
+ *   inside Act III's band (§7.3 interior freedom).
+ * - **ceiling reservation margin `0.6875`** — §7.10.2 O3: opener rungs top out at
+ *   `26 + 3·1.6875 = 31.0625` while any `par 28` tail rung bottoms at `28 + 3·1.2500 = 31.7500`,
+ *   and `31.7500 > 31.0625` by exactly **0.6875**. The reservation is **derived**, so Act III's
+ *   `act-close` (§7.3.2, carrier `L51–L60`) stays satisfiable **by construction**.
+ * - **relief instance 5 label, pre-published** (§7.10.4): **`ΔD_exec ∈ [−4.705319, −1.392819]`**,
+ *   decomposition `ΔD_exec = Δpar + 3·ΔB` with the `par` term shown beside it; registration-side
+ *   constants proposed there as `ACT_III_B1_OPEN_RELIEF_LEVEL_ID = 41` +
+ *   `ACT_III_B1_OPEN_RELIEF_DELTA_RANGE`.
+ *
+ * ── THE LADDER — §7.10.2 O1–O6, executed as a derivation (never a search) ─────────
+ *
+ * **`[20, 22, 24, 26, 26]`.** O1: `L_i = PAR_FLOOR + 2·(i−1)` over `[20, 28]` gives the P2-exact
+ * five-member window `20, 22, 24, 26, 28` (LV-017's derivation, same constants, applied to Act
+ * III's band). O2: the derived top rung **`par 28` is withheld** (the ceiling is reserved for the
+ * tail) and the 5th rung **repeats the truncated top** at its within-par **maximum**. O3: why the
+ * reservation is derived — the `0.6875` margin above. O4: **anti-mirror** against every registered
+ * Act II multiset (`[17,18,20,21,23]`, `[19,22,22,24,24]`, `[18,20,22,24,24]`, `[18,20,22,24,24]`)
+ * and every other Act III batch's; coinciding pars are **printed, never hidden**. O5: **empty pool
+ * ⇒ ABSENT, never substituted** — no out-of-set par is substituted, the shortfall is absorbed by
+ * within-par repeats at the highest available derived par (LV-017's descending fill, verbatim), and
+ * a batch that cannot populate **five rungs** from the truncated set **STOP-AND-ROUTES to GD**; it
+ * never silently extends to the ceiling. O6: the **final rung** takes the within-par **maximum**
+ * `D_exec`, every earlier rung the **minimum** (LV-017 rule 4 / LV-015's tie-break).
+ *
+ * Every admitted rung is **in band by construction** (`par 20` ⇒ `[23.75, 25.0625]`; `par 26` ⇒
+ * `[29.75, 31.0625]`; both ⊆ `[23.75, 33.0625]`), so a rung outside the band is a **broken rule**,
+ * not a nuance. The opener **carries no `act-peak` / `act-close` branch** (RULED, §7.10.2): §7.3.2's
+ * carrier is `L51–L60`, and §7.3's `act-peak` binds the act's **measured** maximum, read per batch.
+ * What this batch *does* carry is §7.3.1's **`act-open` relief instance 5**.
+ *
+ * ── THE DEVICE AND THE FRAME (published before the run, per RULING D) ────────────
+ *
+ * §7.10.5 / ADR-design-0008 RULING D orders the axes: *"1. the **`CX = 1`** frames that
+ * LV-015/LV-017 measured … over any new frame… 2. the **4-pocket / 5-door / 5-press device class**
+ * … **before any deeper chain** — a **5-pocket** device is refused by §7.2's published family text
+ * and is **not censused**."* So this batch takes **that device class** (the 4-pocket ordered chain
+ * `p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4 < p4 < d5`, five walk-sealed rooms + the goal's own seal)
+ * on the **`7×7` @ `CX = 1`** frame — the proven `CX=1` frame whose room capacity LV-017 measured
+ * (`46 / 31 / 31 / 46`, maximum pairwise-disjoint **8**), i.e. the frame that admits the class with
+ * the most headroom, and the act's largest lawful board (49 tiles).
+ *
+ * **Explicit NON-CLAIM, published so it cannot be read in later.** This batch does **not** carry
+ * the act's `H` (both-pair) composition and does **not** use the **XOR multi-switch door**: the
+ * ratified pacing (§7.10.4 / §7.10.5, dispatch U-002) puts the XOR debut in the act's **second
+ * half**, and the both-pair verb needs a forcing mechanism (a pocket whose only entrance is the
+ * second pair) whose gate family does not exist yet — §7.5 requires *"one negative control per new
+ * gate named by its measured refusal"*, so inventing that gate family here would be **new gate
+ * law**, which is a GD/Architect decision and **not** this ticket's. The `H` census is therefore
+ * **booked forward, by name**, to the act's second-half ticket; this batch's new axis is the
+ * **par axis** (`26` — a par no registered rung has) inside Act III's own band. A lane that later
+ * reads this batch as "Act III = Act II's device" is reading a **non-claim** as a claim.
+ *
+ * ── THE RELIEF FILL-IN (instance 5) — the procedure this run must execute ────────
+ *
+ * §7.10.4's label is **pre-published**; its **exact value is a FILL-IN BEFORE THE BYTES, NEVER
+ * AFTER**. In order, and git-dated:
+ *
+ * 1. this rule block is committed **first** (docstring alone — the law-before-census order is
+ *    provable by commit timestamps);
+ * 2. the census runs and the selection picks **L41's `par` and `D_exec`**;
+ * 3. `ΔD_exec := D_exec(L41) − 28.455319` is **computed from those two measured numbers**, written
+ *    into the census/rule record **with its decomposition** (`Δpar` at L40's par `24` ⇒ `−4` at the
+ *    band floor, and `3·ΔB` beside it), and **checked inside the pre-published bound**
+ *    `[−4.705319, −1.392819]` — the admissible first rungs are exactly L41 at `par 20` ⇒
+ *    `[−4.705319, −3.392819]` and at `par 22` ⇒ `[−2.705319, −1.392819]`, and the union is the
+ *    published bound;
+ * 4. **only then** may a board byte be written (`--write`), and the same value is planted in
+ *    `ACT_III_B1_OPEN_RELIEF_EXEC` / `_DELTA` (policy) so the registration ticket cites a constant
+ *    instead of re-typing a number.
+ *
+ * A fill-in that lands **outside** the bound is a **STOP-AND-ROUTE to GD**: it would mean the
+ * opener's first rung is not the floor-anchored rung §7.10.2 derived, and no later re-pick may
+ * "repair" it (that is exactly the after-the-fact fitting §7.10.4 forbids).
+ *
+ * ── THE CENSUS COMMANDS (published before the run; the dossier quotes them) ──────
+ *
+ * ```
+ *   STEP 0 — the derived-structure ledger (F-L41-2: the generator's filter and the prover's gate
+ *            read ONE derivation; the registered corpus must be 0 out of class):
+ *     z) npx tsx scripts/author-l21.ts --stage=struct --dir=src/levels
+ *        npx tsx scripts/author-l21.ts --stage=struct --dir=src/levels/candidates
+ *   STEP 1 — the frame's room capacity at the batch's own frame (a measurement, not a wish):
+ *     a) npx tsx scripts/author-l21.ts --stage=roomcap --act=3 --cx=1 --h=7 --maxsize=4
+ *   STEP 2 — the batch's pool over Act III's own par band, on its own frame:
+ *     b) npx tsx scripts/author-l21.ts --stage=g --act=3 --batch=5 --pockets=4 --cx=1 --h=7 \
+ *          --pocketsize=4 --qmax=4 --paircap=40 --budget=20000 --cap=400 --parmin=20 --parmax=28
+ *   STEP 3 — the selection (dry run, then --write):
+ *     c) npx tsx scripts/author-l21.ts --stage=s --act=3 --batch=5 --parmin=20 --parmax=28 \
+ *          --accepts=<b's dump>
+ *     d) npx tsx scripts/author-l21.ts --stage=s --act=3 --batch=5 --parmin=20 --parmax=28 --write \
+ *          --accepts=<b's dump>
+ *   STEP 4 — the proof on the LANDED bytes (prover, family `g`, Act III gate set):
+ *     e) npx tsx scripts/prove-candidate.ts --act=3 --family=g --ladder=41,42,43,44,45 \
+ *          --dir=src/levels/candidates
+ *     f) npx tsx scripts/prove-candidate.ts --act=3 --family=g --ladder=41,42,43,44,45 \
+ *          --measure-controls --dir=src/levels/candidates
+ *     g) npx tsx scripts/prove-candidate.ts --act=3 --family=g --ladder=41,42,43,44,45 \
+ *          --peak=31.7589095 --dir=src/levels/candidates
+ *          (the derived midpoint — see F-L41-3; the earlier (peak+28.455319)/2 form was a no-op)
+ * ```
+ *
+ * **Published fallback (in order), so an empty frame is never a silent frame change.** If the
+ * `7×7`@`CX=1` frame yields no admissible rung at all, the *only* fallback is to re-run the
+ * **identical device and the identical derived ladder on the only other frame this class has ever
+ * been non-empty on — `7×6` @ `CX=1`** (batch 3's frame), with every key re-checked against the
+ * registered set; if **that** is empty too, nothing is written and the census is reported as a
+ * **NAMED ACT LIMITATION** briefed to the Game Designer. A borrowed par, a re-banded act, a
+ * substituted rung and a silent frame switch are **not** remedies.
+ *
+ * **The falsification probe is DERIVED, never typed.** `--peak` is the **comparator the ladder's
+ * peak rung must clear** (§7.3: act *n*'s measured maximum must exceed act *n−1*'s), so a probe that
+ * *falsifies* must be a comparator the peak rung **fails** to clear — i.e. it must sit **above** the
+ * batch's own peak. The only derived choice that stays inside the act's band is the band's
+ * **derived-exact ceiling `33.0625`** (§7.10.1's top), so the probe is the **midpoint** of the
+ * batch's measured peak and that ceiling: `--peak = (our peak rung's D_exec + 33.0625)/2`; the run
+ * must exit 1 failing **exactly one gate on exactly one rung** (`act-peak`, the ladder's peak rung)
+ * with the control battery still 13×5 = 65 caught. A probe that fails nothing, or fails more than
+ * the peak rung, is a finding about the instrument and is published as one.
+ *
+ *   **F-L41-3 — the derivation as first published could not falsify (measured, both ways).** This
+ *   paragraph originally read `--peak = (our peak rung's D_exec + 28.455319)/2` — the midpoint with
+ *   the **below-peak** comparator `28.455319`, i.e. a value **beneath** the peak, so `D_exec > peak`
+ *   held and the probe exited **0** with `RESULT: PASS` (measured: `--peak=29.455319` over L41–L45,
+ *   exactly the "probe that fails nothing" the rule's own last sentence calls a finding). The
+ *   **operand** was wrong, not the intent: a falsifying comparator must sit above the peak. With
+ *   `--peak=31.7589095 = (30.455319 + 33.0625)/2` the run exits **1** failing **exactly one**
+ *   `act-peak` gate on **exactly** the peak rung L45, controls still `65/65` — the receipt the rule
+ *   asks for. The superseded form is quoted here so a reader sees what moved; no other probe-law
+ *   wording changed.
+ *
+ * **Band membership is proven BOTH directions, derived-exact:** the accepted rungs must sit inside
+ * `[23.7500, 33.0625]` **inclusive** (derived from the formula, §7.9), and the *same* arithmetic is
+ * re-read as the refusal side — a mutation that pushes a rung one unit past an endpoint must be
+ * caught by `act3-par-band` / `act3-exec-band` **by name** (the two negative controls that carry
+ * this batch's band law).
+ *
+ * **Deferred, with its scope stated (unchanged).** The `--pocketsize ≥ 11` probe stays **DEFERRED**:
+ * `≤ 10` is closed by measurement (`scripts/author-l20-p10.transcript.md` §10), **`≥ 11` remains
+ * unmeasured**, and **no ceiling wording is published in either direction** (item 114's law).
+ *
+ * **Enumeration SIZES may be predicted per the `D2` orbit law (ADR-architecture-0004 Ruling 4),
+ * results never.** The far rectangle `Γ_F = [CX+1, W−1] × [0, H−1]` is a rectangle, so
+ * `σ_x : x ↦ CX + W − x` is an automorphism of it **and of the boundary operator**, and it
+ * **preserves checkerboard parity** (`x ↦ 8 − x` changes `x+y` by an even amount), so the
+ * candidate-count `K` is constant on each `σ_x` orbit (`(2,y) ↔ (6,y)`, `(3,y) ↔ (5,y)`, `(4,y)`
+ * fixed at `CX = 1`, `W = 7`). Any such figure printed by this run is labelled **PREDICTED** and is
+ * a statement about **sizes only**; **accepts are never inherited** (`g_leak` fails equivariance —
+ * the column is on the left and the board edge on the right), and nothing is inherited across
+ * frames, caps or instruments.
+ *
  * Stages:
  *
  *   0.  **preflight law** — the parity/judging-phase rule re-derived from the shipped
@@ -580,6 +746,62 @@
  * Solvability is never asserted here: `par` comes from the BFS solver, every gate
  * number from the shipped readers, and a candidate that fails is **dropped with its
  * measurement** (ADR-0004 — no repair path, no tuning loop).
+ *
+ * ── F-L41-2 — THE AUTHORING FILTER AND THE PROVER'S GATE DISAGREE ABOUT A BOARD (found by the
+ *    prover, published BEFORE the line that fixes it moves) ─────────────────────────────────────
+ *
+ * **What was measured.** The five rungs of this batch's first selection were written and proved;
+ * **`l044.json` was REJECTED by `g6-room-structure` on its own landed bytes**:
+ *
+ *   `FAIL g6-room-structure rooms=6 …; covering doors distinct=false [d1 d2 d3 d4 d5 d4]`
+ *   `g2-room-exit-door 6 walk-sealed room(s) derived from the bytes [d1:3,0+4,0+4,1+5,0 · d2:6,2 ·
+ *    d3:3,3 · d4:5,5 · d5:3,6 · d4:6,6]`
+ *
+ * i.e. that rung's door `d4` seals **two** walk-sealed rooms: the intended `R4 = {5,5}` and the
+ * **corner cell `{6,6}`**, whose only two in-frame neighbours (`5,6`, `6,5`) are exactly `d4`'s two
+ * tiles — so the single door encloses two regions. Legal geometry, solvable board (par 26 stamped by
+ * the solver, `180/180` press-then-cross), **but outside this device's class**, which is what the
+ * gate says and this tool did not.
+ *
+ * **Why the tool did not say it.** The generator's `g6` verdict is computed against the context it
+ * **declared** while building the device — `ctx.rooms = [pocket, room2, room3, room4]` plus
+ * `ctx.goalRoom` — so it checks "the declared rooms are well formed and `d1`..`d5` cover distinct
+ * *declared* rooms". The prover **re-derives** the rooms **from the bytes** and checks the derived
+ * covering list for duplicates. A door that incidentally encloses a second region is invisible to
+ * the declaration and visible to the derivation — the two agree on every board whose doors enclose
+ * exactly what was declared, and disagree here. This is `F-L36-1`'s shape one layer down (there a
+ * *label* and a *measurement* disagreed; here a *declaration* and a *derivation* disagree), and its
+ * remedy has the same form: make the two read **one** truth source rather than two copies of a law.
+ *
+ * **What this clause does, and what it does NOT do.**
+ *
+ *   - **Nothing is repaired.** `l044.json` is not edited, not re-targeted, not shrunk: a board whose
+ *     bytes fail a gate is **rejected and re-drawn from its own pool**, which is the same treatment
+ *     the clone guard and the rung-key-distinct clause already give a row (both print their skips).
+ *   - **The refusal is counted where every other refusal is counted.** The check runs in the
+ *     generator's enumeration, immediately after the par-band filter and before `judge`, so it lands
+ *     in the rejection histogram as its own row, in the upstream skip counters **and** in the
+ *     identity the census must close (`accepts + par-out-of-band + unsolvable + g5-identity-broken +
+ *     derived-two-room-door = judged`). A filter that hides is how a pool becomes a claim.
+ *   - **The derivation is shared, not copied.** The law moves to `scripts/room-derivation.ts`
+ *     (`derivedWalkSealedRooms`), which **both** `scripts/prove-candidate.ts` (its `g6`, `g2`, `g5`
+ *     and control readers) and this tool import. Two implementations of "the rooms of a board" is
+ *     the defect, so the fix is one implementation, and the prover's output over **all 20 registered
+ *     Act II rungs (L21–L40)** is required to stay **byte-identical** across the extraction — the
+ *     A/B receipt is in the census record.
+ *   - **Scope, stated rather than implied.** The clause is applied to **this act's** enumeration
+ *     (`ACT === 3`) in this ticket. It is not a weakening of Act II's record: the prover already
+ *     passes `g6` on **20/20** registered Act II rungs, so the clause refuses **nothing** on the
+ *     registered corpus (measured, not asserted — `--stage=struct` reads any directory). Re-baselining
+ *     a *registered* act's census by inserting a filter into it is a different ticket's business.
+ *   - **The census before the fix is kept, not overwritten.** The first census (4402 accepts of 20000
+ *     judged, committed at `db78a13`) stays in the record as the **pre-fix instrument's** reading,
+ *     beside the post-fix one, exactly as `F-L36-1`'s pre-fix reading was kept beside its repair —
+ *     because the whole point of the receipt is that a reader can see what the filter moved.
+ *   - **The fill-in is unaffected, and that is checked rather than assumed.** §7.10.4's value comes
+ *     from **L41 at `par 20`**; if the clause moves that rung, the constant filled in at `db78a13` is
+ *     re-derived and re-published **before** any board byte is written (the fill-in's own rule: before
+ *     the bytes, never after).
  */
 
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -601,21 +823,40 @@ import {
   ACT_II_B1_LADDER,
   ACT_II_B1_REGISTERED_PEAK_EXEC,
   ACT_II_B2_B3_LADDER,
+  ACT_II_B4_LADDER,
   ACT_II_EXEC_BAND,
   ACT_II_PAR_BAND,
   ACT_II_PAR_CEILING,
   ACT_II_PAR_FLOOR,
   ACT_II_R005A_REGISTERED_TAIL_EXEC,
+  ACT_II_R006A_REGISTERED_TAIL_EXEC,
   ACT_II_REGISTERED_IDS,
+  ACT_III_B1_IDS,
+  ACT_III_B1_OPEN_RELIEF_ADMISSIBLE_FIRST_RUNGS,
+  ACT_III_B1_OPEN_RELIEF_DELTA,
+  ACT_III_B1_OPEN_RELIEF_DELTA_RANGE,
+  ACT_III_B1_OPEN_RELIEF_EXEC,
+  ACT_III_B1_OPEN_RELIEF_LEVEL_ID,
+  ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC,
+  ACT_III_B1_OPEN_RELIEF_PREVIOUS_LEVEL_ID,
+  ACT_III_CEILING_RESERVATION_MARGIN,
+  ACT_III_EXEC_BAND,
+  ACT_III_OPENER_PAR_MULTISET,
+  ACT_III_OPENER_TOP_PAR,
+  ACT_III_PAR_BAND,
+  ACT_III_PAR_CEILING,
+  ACT_III_PAR_FLOOR,
   ACT_I_REGISTERED_PEAK_EXEC,
   BLOCK_L1619_B_BAND,
   BLOCK_L1619_IDS,
   BLOCK_L1619_PAR_BASE,
   BLOCK_L1619_TAIL_EXEC_CEILING,
+  LAW_PRECISION,
   allOffShortestSolution,
   auditLevel,
   firingSwitches,
 } from "@/core/solver/policy";
+import { doorsCoveringTwoRooms, derivedWalkSealedRooms } from "./room-derivation";
 
 const LEVELS_DIR = fileURLToPath(new URL("../src/levels/", import.meta.url));
 const OUT_DIR = fileURLToPath(new URL("../src/levels/candidates/", import.meta.url));
@@ -637,6 +878,16 @@ const STAGE = argOf("stage") ?? "g";
  * transcript).
  */
 const BATCH = Number(argOf("batch") ?? "1");
+/**
+ * **The ACT this pass is authoring for** (LV-018). `2` = Act II (the default, so every earlier
+ * command in this file's records stays byte-identical) and `3` = **Act III** (§7.10), which
+ * changes exactly two things: the **band the census filters against** (Act III's derived-exact
+ * `[23.7500, 33.0625]` and its `par` band `20–28`, read from the law module) and the **act's
+ * comparator** for §7.3's across-act reading. It changes **no weight, no metric, no gate meaning
+ * and no Act II constant** — the Act II path is untouched by construction, and `--act=3` on an
+ * Act II batch is the only way to make the two disagree.
+ */
+const ACT = Number(argOf("act") ?? "2");
 /**
  * `--pockets=2` = batch 1's device (P + Q + goal seal, 3 presses); `3` = the chained sub-lattice
  * (P + R2 + R3 + goal seal, 4 presses); `4` = the family ceiling (P + R2 + R3 + R4 + goal seal,
@@ -664,15 +915,15 @@ const CAP = Number(argOf("cap") ?? "400");
 const PAIR_CAP = Number(argOf("paircap") ?? "60");
 const BUDGET = Number(argOf("budget") ?? "3000");
 /** The Act II par band, strictly inside (§7.2 band 16–24; the dispatch's obligation). */
-const PAR_MIN = Number(argOf("parmin") ?? "17");
+const PAR_MIN = Number(argOf("parmin") ?? (ACT === 3 ? String(ACT_III_PAR_FLOOR) : "17"));
 /**
  * The batch's first rung id and its rung count. Batch 1 = L21–L25 (registered, R-004a);
  * batch 2 = **L26–L30** (this ticket, shelf candidates only — registration is a later
  * train, so nothing here widens a registered ceiling).
  */
-const BATCH_FIRST_ID = BATCH === 4 ? 36 : BATCH === 3 ? 31 : BATCH === 2 ? 26 : 21;
+const BATCH_FIRST_ID = BATCH === 5 ? 41 : BATCH === 4 ? 36 : BATCH === 3 ? 31 : BATCH === 2 ? 26 : 21;
 const RUNG_COUNT = 5;
-const PAR_MAX = Number(argOf("parmax") ?? "23");
+const PAR_MAX = Number(argOf("parmax") ?? (ACT === 3 ? String(ACT_III_PAR_CEILING) : "23"));
 /** The Act II `D_exec` band (§7.2, derived from the measured `B` band).
  *
  * **Read from the law module, never re-typed (LV-016 / §7.9).** This line used to be the
@@ -682,7 +933,9 @@ const PAR_MAX = Number(argOf("parmax") ?? "23");
  * own `par 24` mandate unbuildable at its top. The census/selection filters below (`>=`/`<=`
  * at 1216/2554) now compare against the derived-exact constant by construction.
  */
-const ACT2_EXEC_BAND: readonly [number, number] = ACT_II_EXEC_BAND;
+const EXEC_BAND: readonly [number, number] = ACT === 3 ? ACT_III_EXEC_BAND : ACT_II_EXEC_BAND;
+/** The act's own band endpoints, for the printed banners and the gate detail strings. */
+const ACT_PAR_BAND: readonly [number, number] = ACT === 3 ? ACT_III_PAR_BAND : ACT_II_PAR_BAND;
 
 const at = (px: number, py: number): Coord => [px, py];
 const x = (c: Coord): number => c[0];
@@ -1527,12 +1780,12 @@ function gatesOf(level: Level, graph: ReachableGraph, ctx: Context): readonly Ga
     {
       id: "par-band",
       ok: par >= PAR_MIN && par <= PAR_MAX && level.par === par,
-      detail: `par=${String(level.par)} (solver ${String(result.shortestSolution)}) ∈ [${String(PAR_MIN)}, ${String(PAR_MAX)}] — strictly inside Act II's published 16–24 (§7.2, §7.7 item 3)`,
+      detail: `par=${String(level.par)} (solver ${String(result.shortestSolution)}) ∈ [${String(PAR_MIN)}, ${String(PAR_MAX)}] — inside Act ${String(ACT)}'s published band [${String(ACT_PAR_BAND[0])}, ${String(ACT_PAR_BAND[1])}] (inclusive, §7.9; §7.2's acts table, §7.10.3 for Act III)`,
     },
     {
-      id: "act2-exec-band",
-      ok: dexec !== null && dexec >= ACT2_EXEC_BAND[0] && dexec <= ACT2_EXEC_BAND[1],
-      detail: `D_exec=${dexec === null ? "n/a" : dexec.toFixed(6)} ∈ [${ACT2_EXEC_BAND[0].toFixed(2)}, ${ACT2_EXEC_BAND[1].toFixed(2)}] (§7.2's derived band = [par+3·1.2500, par+3·1.6875] over the par band)`,
+      id: ACT === 3 ? "act3-exec-band" : "act2-exec-band",
+      ok: dexec !== null && dexec >= EXEC_BAND[0] && dexec <= EXEC_BAND[1],
+      detail: `D_exec=${dexec === null ? "n/a" : dexec.toFixed(6)} ∈ [${String(EXEC_BAND[0])}, ${String(EXEC_BAND[1])}] (printed [${EXEC_BAND[0].toFixed(2)}, ${EXEC_BAND[1].toFixed(2)}]; §7.9 — derived-exact is the operand) = [par+3·1.2500, par+3·1.6875] over Act ${String(ACT)}'s par band`,
     },
     {
       id: "b-band",
@@ -1743,7 +1996,7 @@ function stageLattice(cut: { floor: number; actI: number; l15Par: number }, only
     `\nstage G multi-pocket lattice: ${String(devs.length)} leak-free landing device(s) ` +
       `(landing × near × pocket ≤ ${String(POCKET_MAX)}${onlyLanding === null ? "" : `, filtered to landing ${onlyLanding}`}) · ` +
       `second pocket ≤ ${String(QMAX)} · cap ${String(CAP)} tuple(s) per device · par band [${String(PAR_MIN)}, ${String(PAR_MAX)}] · ` +
-      `D_exec band [${ACT2_EXEC_BAND[0].toFixed(2)}, ${ACT2_EXEC_BAND[1].toFixed(2)}]`,
+      `D_exec band [${EXEC_BAND[0].toFixed(2)}, ${EXEC_BAND[1].toFixed(2)}] (derived-exact [${String(EXEC_BAND[0])}, ${String(EXEC_BAND[1])}], §7.9)`,
   );
   const histogram = new Map<string, number>();
   const parHist = new Map<number, number>();
@@ -1965,7 +2218,7 @@ function stageLattice3(cut: { floor: number; actI: number; l15Par: number }, onl
       `(landing × near × pocket ≤ ${String(POCKET_MAX)}${onlyLanding === null ? "" : `, filtered to landing ${onlyLanding}`}) · ` +
       `R2, R3 ≤ ${String(QMAX)} tile(s) · ${String(PAIR_CAP)} (R2,R3) pair(s)/device cap · ${String(CAP)} tuple(s)/group cap · ` +
       `${String(BUDGET)} judged tuple(s) budget · par band [${String(PAR_MIN)}, ${String(PAR_MAX)}] · ` +
-      `D_exec band [${ACT2_EXEC_BAND[0].toFixed(2)}, ${ACT2_EXEC_BAND[1].toFixed(2)}]`,
+      `D_exec band [${EXEC_BAND[0].toFixed(2)}, ${EXEC_BAND[1].toFixed(2)}] (derived-exact [${String(EXEC_BAND[0])}, ${String(EXEC_BAND[1])}], §7.9)`,
   );
   const histogram = new Map<string, number>();
   const parHist = new Map<number, number>();
@@ -2320,7 +2573,7 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
       `(landing × near × pocket ≤ ${String(POCKET_MAX)}${onlyLanding === null ? "" : `, filtered to landing ${onlyLanding}`}) · ` +
       `R2, R3, R4 ≤ ${String(QMAX)} tile(s) · ${String(PAIR_CAP)} (R2,R3,R4) group(s)/device cap · ${String(CAP)} tuple(s)/group cap · ` +
       `${String(BUDGET)} judged tuple(s) budget · par band [${String(PAR_MIN)}, ${String(PAR_MAX)}] · ` +
-      `D_exec band [${ACT2_EXEC_BAND[0].toFixed(2)}, ${ACT2_EXEC_BAND[1].toFixed(2)}]`,
+      `D_exec band [${EXEC_BAND[0].toFixed(2)}, ${EXEC_BAND[1].toFixed(2)}] (derived-exact [${String(EXEC_BAND[0])}, ${String(EXEC_BAND[1])}], §7.9)`,
   );
   const histogram = new Map<string, number>();
   const parHist = new Map<number, number>();
@@ -2339,6 +2592,7 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
     rooms34Adjacent: 0,
     noGoal: 0,
     s2OnSeal: 0,
+    derivedTwoRoomDoor: 0,
   };
   const misses: { reason: string; note: string; par: number; dexec: number; b: number; failing?: readonly Gate[] }[] = [];
   const room2Fail = new Map<string, number>();
@@ -2568,6 +2822,19 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
                         if (probe.par > 0) parHist.set(probe.par, (parHist.get(probe.par) ?? 0) + 1);
                         continue;
                       }
+                      // F-L41-2 — the generator's DECLARATION and the prover's DERIVATION are ONE
+                      // truth source now (`scripts/room-derivation.ts`): a door that encloses a second
+                      // derived region is refused HERE, counted in its own histogram row and skip
+                      // counter, and re-drawn from the pool like any other refusal (nothing repaired).
+                      // Act-scoped by construction: Act II's registered census is not re-baselined.
+                      if (ACT === 3) {
+                        const structure = doorsCoveringTwoRooms(draft);
+                        if (structure.duplicated.length > 0) {
+                          skip.derivedTwoRoomDoor += 1;
+                          histogram.set("derived-two-room-door", (histogram.get("derived-two-room-door") ?? 0) + 1);
+                          continue;
+                        }
+                      }
                       const { outcome, level } = judge(draft, ctx);
                       if (!outcome.accepted || level === null) {
                         histogram.set(outcome.reason, (histogram.get(outcome.reason) ?? 0) + 1);
@@ -2628,7 +2895,8 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
       `R4 sets not sealable ${String(skip.room4Unsealable)} ${[...room4Fail.entries()].map(([k, v]) => `(${k} ${String(v)})`).join(" ")} · ` +
       `R4 boundary outside the pool ${String(skip.room4BoundaryOutside)} · ${String(room4Sealed)} sealed R4 set(s) · ` +
       `SHAPE FILTER #2 (an R4 tile adjacent to an R2 or R3 tile) ${String(skip.rooms34Adjacent)} (0 expected by the seal law) · ` +
-      `no goal candidate ${String(skip.noGoal)} · s2 tile on the goal's seal or the goal itself ${String(skip.s2OnSeal)}`,
+      `no goal candidate ${String(skip.noGoal)} · s2 tile on the goal's seal or the goal itself ${String(skip.s2OnSeal)}` +
+      `${ACT === 3 ? ` · derived two-room door (F-L41-2 — a door enclosing TWO derived walk-sealed rooms) ${String(skip.derivedTwoRoomDoor)}` : ""}`,
   );
   console.log(
     `tile accounting: largest R3 pool seen ${String(maxR3Pool)} tile(s) · largest R4 pool seen ${String(maxR4Pool)} tile(s) · ` +
@@ -2638,6 +2906,14 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
     console.log(`room rejections: ${[...ROOM_FAIL.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}: ${String(v)}`).join(" · ")}`);
   console.log("rejection histogram:");
   for (const [k, v] of [...histogram.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${k}: ${String(v)}`);
+  if (ACT === 3) {
+    const refused = [...histogram.values()].reduce((a, b) => a + b, 0);
+    console.log(
+      `census accounting identity (F-L36-2 / F-L41-2 — every refusal is counted, so the census can close): ` +
+        `accepts ${String(accepts.length)} + refuses ${String(refused)} [${[...histogram.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([k, v]) => `${k} ${String(v)}`).join(" · ")}] ` +
+        `= ${String(accepts.length + refused)} vs judged ${String(total)} ${accepts.length + refused === total ? "— CLOSES exactly" : "— DOES NOT CLOSE (a refusal path is uncounted)"}`,
+    );
+  }
   console.log(
     `par census over the OUT-OF-BAND judged candidate(s) (the histogram counts only the members the par band refused; in-band members are enumerated by "accepts by par" and by the in-band refusal list — F-L36-2): ` +
       `${[...parHist.entries()].sort((a, b) => a[0] - b[0]).map(([k, v]) => `${String(k)}:${String(v)}`).join(" ")}`,
@@ -2666,6 +2942,57 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
   writeFileSync(ACCEPTS, `${JSON.stringify(accepts)}\n`);
   console.log(`wrote ${String(accepts.length)} accept(s) to ${ACCEPTS}`);
   return accepts;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 0c-bis. The DERIVED-STRUCTURE ledger — the receipt F-L41-2's clause is read with
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * **The derived-structure ledger** (`--stage=struct`): reads a directory of landed boards and
+ * reports, for each, the **walk-sealed rooms derived from its bytes** and whether any single door
+ * covers **two** of them (`F-L41-2`'s class boundary — `g6-room-structure`'s "covering doors
+ * distinct" clause).
+ *
+ * It exists because the clause that refuses such a board in `--stage=g` must be **measured, not
+ * asserted**: `--stage=struct --dir=src/levels` reads the **registered corpus** and shows the clause
+ * refuses **nothing** there (every registered rung is in class), while
+ * `--stage=struct --dir=src/levels/candidates` reads the shelf and names any out-of-class board.
+ * The reader is `scripts/room-derivation.ts` — the prover's own walk-sealed-room derivation — so
+ * the ledger and the gate cannot drift apart. Exit code is 1 when any board is out of class.
+ */
+function stageStruct(): void {
+  const dir = argOf("dir") ?? LEVELS_DIR;
+  const files = readdirSync(dir)
+    .filter((f) => f.endsWith(".json"))
+    .sort();
+  let inClass = 0;
+  const outOfClass: string[] = [];
+  console.log(
+    `\nstage S derived-structure ledger (F-L41-2): ${String(files.length)} board(s) in ${dir} · derivation scripts/room-derivation.ts (the prover's own walk-sealed-room reader)`,
+  );
+  for (const file of files) {
+    const raw: unknown = JSON.parse(readFileSync(join(dir, file), "utf8"));
+    const parsed = LevelSchema.safeParse(raw);
+    if (!parsed.success) {
+      console.log(`  ${file}: NOT A LEVEL (schema)`);
+      outOfClass.push(file);
+      continue;
+    }
+    const level = parsed.data;
+    const rooms = derivedWalkSealedRooms(level);
+    const { covering, duplicated } = doorsCoveringTwoRooms(level);
+    if (duplicated.length === 0) inClass += 1;
+    else outOfClass.push(file);
+    console.log(
+      `  L${String(level.id)} ${file}: rooms=${String(rooms.length)} covering=[${covering.join(" ")}]` +
+        `${duplicated.length === 0 ? " — every door covers <= 1 room (in class)" : ` — door(s) covering TWO rooms: [${duplicated.join(" ")}] (OUT OF CLASS)`}`,
+    );
+  }
+  console.log(
+    `struct ledger: ${String(inClass)} in class · ${String(outOfClass.length)} out of class ${outOfClass.length === 0 ? "(none — the clause refuses nothing on this corpus)" : `[${outOfClass.join(", ")}]`}`,
+  );
+  if (outOfClass.length > 0) process.exitCode = 1;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2918,6 +3245,68 @@ function batch4ParMultiset(byPar: ReadonlyMap<number, readonly Accept[]>): numbe
   return out.sort((a, b) => a - b);
 }
 
+/**
+ * **The Act III opener's par multiset — §7.10.2's O1–O6, executed as a derivation, never a
+ * search** (LV-018). The ladder is *not* recomputed from a band width here, because §7.10.2 has
+ * already derived it and the derivation is an **intersection of published clauses**, not this
+ * tool's choice: `[20, 22, 24, 26, 26]` is read from the law module
+ * (`ACT_III_OPENER_PAR_MULTISET`) and every clause is **quoted**, so a lane that changes the law
+ * changes this ladder rather than re-tuning it.
+ *
+ * O1: the P2-exact five-member window `PAR_FLOOR + 2·(i−1)` over `[20, 28]` = `20, 22, 24, 26, 28`.
+ * O2: the derived top rung `par 28` is **withheld** (the ceiling is reserved for the tail, O3) and
+ * the 5th rung repeats the truncated top `26` at its within-par **maximum** (O6). O3: the
+ * reservation is derived — opener rungs top out at `26 + 3·1.6875 = 31.0625` while any `par 28`
+ * tail rung bottoms at `28 + 3·1.2500 = 31.7500`; the margin is `0.6875`, read from the law module
+ * as `ACT_III_CEILING_RESERVATION_MARGIN`. O4: anti-mirror is checked and **printed** against every
+ * registered Act II multiset and every other Act III batch's, with coinciding pars shown, never
+ * hidden. O5: a derived par with an **empty** pool is **ABSENT** and is **never substituted**; the
+ * shortfall is absorbed by within-par repeats at the highest available **derived** par (LV-017's
+ * descending fill, verbatim), and if fewer than five rungs can be populated from the truncated set
+ * the batch **STOP-AND-ROUTES to GD** (it never silently extends to the ceiling).
+ */
+function batch5ParMultiset(byPar: ReadonlyMap<number, readonly Accept[]>): number[] {
+  const derived = [...ACT_III_OPENER_PAR_MULTISET];
+  const window = ACT_III_PAR_BAND[0] + 2 * 0;
+  const p2Exact: number[] = [];
+  for (let i = 0; i < RUNG_COUNT; i += 1) p2Exact.push(ACT_III_PAR_FLOOR + 2 * i);
+  console.log(
+    `selection: Act III OPENER par multiset (GD-012 §7.10.2 O1–O6, read from the law module, never re-derived by taste) — ` +
+      `[${derived.join(", ")}]: O1's P2-exact window is [${p2Exact.join(", ")}] (PAR_FLOOR ${String(ACT_III_PAR_FLOOR)} + 2·(i−1)); ` +
+      `O2 withholds the derived top rung par ${String(ACT_III_OPENER_TOP_PAR + 2)} (the ceiling, §7.10.1's PAR_CEILING ${String(ACT_III_PAR_CEILING)}) ` +
+      `and repeats the truncated top ${String(ACT_III_OPENER_TOP_PAR)} at its 5th rung; O3's reservation margin ` +
+      `${ACT_III_CEILING_RESERVATION_MARGIN.toFixed(4)} = (${String(ACT_III_PAR_CEILING)} + 3·1.2500) − (${String(ACT_III_OPENER_TOP_PAR)} + 3·1.6875) ` +
+      `= ${(ACT_III_PAR_CEILING + 3 * 1.25).toFixed(4)} − ${(ACT_III_OPENER_TOP_PAR + 3 * 1.6875).toFixed(4)} (derived, not taste; §7.10.2 O3) ` +
+      `(width check: P2-exact window span ${String(window + 2 * (RUNG_COUNT - 1))} vs the band's width ${String(ACT_III_PAR_BAND[1] - ACT_III_PAR_BAND[0])})`,
+  );
+  const supported = derived.filter((p) => (byPar.get(p) ?? []).length > 0);
+  const absent = [...new Set(derived)].filter((p) => !supported.includes(p));
+  if (absent.length > 0)
+    console.log(
+      `selection: ABSENT (empty pool, never substituted — §7.10.2 O5): [${absent.join(", ")}] — a derived par the census does not support is ` +
+        `dropped, no out-of-set par is substituted, and no registered ladder's par is borrowed; the shortfall is absorbed by within-par repeats at the ` +
+        `highest available derived par (descending fill, LV-017 verbatim)`,
+    );
+  if (supported.length === 0) return [];
+  const out = [...supported];
+  const pool = [...supported].sort((a, b) => b - a);
+  let i = 0;
+  while (out.length < RUNG_COUNT) {
+    const p = pool[i % pool.length] as number;
+    out.push(p);
+    i += 1;
+  }
+  if (out.length < RUNG_COUNT) return [];
+  console.log(
+    `selection: O5 descending fill executed — 5 rung(s) populated from the truncated set ` +
+      `[${[...new Set(out)].join(", ")}] (${String(supported.length)} of the 5 derived rung(s) supported); ` +
+      `${out.length === RUNG_COUNT ? "five rungs are populatable, so the STOP-AND-ROUTE branch does not fire" : "FEWER THAN FIVE RUNGS — STOP-AND-ROUTES to GD (§7.10.2 O5: never a silent extension to the ceiling)"}`,
+  );
+  // ascending par; the repeated par's two members keep their ascending D_exec order (O6: min first,
+  // max on the closing rung), which the caller's takeMax rule enforces on the LAST rung only.
+  return out.sort((a, b) => a - b);
+}
+
 function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept }[] {
   const requireRise = BATCH === 1;
   /**
@@ -2930,8 +3319,8 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
     (a) =>
       a.par >= PAR_MIN &&
       a.par <= PAR_MAX &&
-      a.dexec >= ACT2_EXEC_BAND[0] &&
-      a.dexec <= ACT2_EXEC_BAND[1] &&
+      a.dexec >= EXEC_BAND[0] &&
+      a.dexec <= EXEC_BAND[1] &&
       a.b >= BLOCK_L1619_B_BAND[0] &&
       a.b <= BLOCK_L1619_B_BAND[1] &&
       Number.isFinite(a.dexec),
@@ -2962,8 +3351,40 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
       acc.pop();
     }
   };
-  if (mirror === null && BATCH !== 3 && BATCH !== 4) {
+  if (mirror === null && BATCH !== 3 && BATCH !== 4 && BATCH !== 5) {
     pick(0, []);
+  } else if (BATCH === 5) {
+    // Act III's opener: the ladder is §7.10.2's own derivation, executed as ONE combo.
+    const own = batch5ParMultiset(byPar);
+    if (own.length !== RUNG_COUNT) {
+      console.log(
+        `selection: the derived Act III opener multiset [${own.join(", ")}] cannot populate five rungs on this frame's accept pool — ` +
+          `NOTHING is fabricated and NO par is substituted (O5). This is a STOP-AND-ROUTE to GD per §7.10.2 O5: the published fallback ` +
+          `(the identical device and the identical derived ladder on 7×6 @ CX=1) is the only lawful retry, and if that is empty too the ` +
+          `census is reported as a NAMED ACT LIMITATION.`,
+      );
+      return [];
+    }
+    const registeredAct2 = [
+      ACT_II_B1_LADDER.map((r) => r.par),
+      ACT_II_B2_B3_LADDER.slice(0, 5).map((r) => r.par),
+      ACT_II_B2_B3_LADDER.slice(5, 10).map((r) => r.par),
+      ACT_II_B4_LADDER.map((r) => r.par),
+    ];
+    const ownDistinct = [...new Set(own)];
+    console.log(
+      `selection: Act III opener par multiset [${own.join(", ")}] · ascending par; O6: the ladder's LAST rung takes the within-par MAXIMUM ` +
+        `D_exec and every earlier rung the minimum`,
+    );
+    console.log(
+      `selection: O4 anti-mirror (printed, never hidden) — O1's own step is not re-tuned to dodge a coincidence; the registered Act II ` +
+        `multisets are ${registeredAct2.map((m) => `[${m.join(", ")}]`).join(" · ")} and this batch's is [${own.join(", ")}]: ` +
+        `${own.join(",") === registeredAct2[0]?.join(",") ? "IDENTICAL to batch 1 — VIOLATION" : "distinct from every one of them by multiset"} ` +
+        `· coinciding distinct pars ${String(ownDistinct.filter((p) => registeredAct2.some((m) => m.includes(p))).length)} of ${String(ownDistinct.length)} ` +
+        `(${ownDistinct.filter((p) => registeredAct2.some((m) => m.includes(p))).join(", ")}) — a finite integer band makes these coincidences unavoidable, ` +
+        `so they are printed rather than implied away, and the par ${String(ACT_III_OPENER_TOP_PAR)} rung is the act's own new axis (no registered rung carries it)`,
+    );
+    combos.push(own);
   } else if (mirror !== null) {
     // The published mirror: exactly ONE combo, and it is the law's par list — never a search.
     const absent = mirror.filter((p) => !byPar.has(p));
@@ -3046,7 +3467,7 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
        * minimal-`D_exec` rule), so §7.3.2's maximum is carried by the batch's last rung rather
        * than by its interior. Printed per rung, never silent.
        */
-      const takeMax = (BATCH === 3 || BATCH === 4) && rungIndex === combo.length - 1;
+      const takeMax = (BATCH === 3 || BATCH === 4 || BATCH === 5) && rungIndex === combo.length - 1;
       const ordered = takeMax ? [...pool].reverse() : pool;
       let candidate: Accept | undefined;
       let skippedByKey = 0;
@@ -3192,6 +3613,102 @@ function selectBatch(accepts: readonly Accept[]): { level: Level; accept: Accept
       `  anti-mirror check: ${equalPar.length === 0 ? "0 rungs share a par with the registered batch-1 ladder — the batch carries its OWN par set (§7.8 item 4), so no equal-par comparator exists on purpose" : `${String(equalPar.length)} rung(s) DO share a batch-1 par — the anti-mirror clause is violated`}`,
     );
   }
+  if (BATCH === 5) {
+    /*
+     * Act III's opener prints what §7.10.2 RULED it carries and what it does NOT:
+     *  - NO act-peak / act-close branch (the carrier is L51–L60; §7.3's act-peak binds the
+     *    act's measured maximum). The batch's measured maximum is a READING.
+     *  - It DOES carry §7.3.1's `act-open` relief, **instance 5**, whose label §7.10.4
+     *    pre-published. The exact value is a FILL-IN computed from L41's measured par and
+     *    D_exec and checked INSIDE the published bound — printed here so it can be pasted into
+     *    the census record BEFORE --write, never after.
+     */
+    if (best.keySkips.length > 0) {
+      console.log(
+        "\nact-III opener note — every departure from the minimal-D_exec tie-break, printed (a filter is never silent):",
+      );
+      for (const s of best.keySkips) console.log(`  ${s}`);
+    }
+    const first = best.levels[0] as { level: Level; accept: Accept };
+    const last = best.levels[best.levels.length - 1] as { level: Level; accept: Accept };
+    const maxRung = best.levels.reduce(
+      (acc, c) => (c.accept.dexec > acc.accept.dexec ? c : acc),
+      best.levels[0] as { level: Level; accept: Accept },
+    );
+    const peakRungIndex = best.levels.indexOf(maxRung);
+    console.log(
+      `\nact III opener READING (§7.10.2: NO act-peak / act-close branch on the opener; §7.3.2's carrier is L51–L60) — ` +
+        `the batch's measured MAXIMUM is L${String(BATCH_FIRST_ID + peakRungIndex)} at D_exec ${maxRung.accept.dexec.toFixed(6)} ` +
+        `(par ${String(maxRung.accept.par)}, B ${maxRung.accept.b.toFixed(4)}, chain ${String(maxRung.accept.pressThenCross)}/${String(maxRung.accept.routes)}): ` +
+        `vs the previous act's registered maximum ${ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC.toFixed(6)} (L${String(ACT_III_B1_OPEN_RELIEF_PREVIOUS_LEVEL_ID)}, §7.3's across-act comparator) ` +
+        `→ Δ ${(maxRung.accept.dexec - ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC).toFixed(6)} ` +
+        `${maxRung.accept.dexec > ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC ? "— STRICTLY ABOVE, so the act-scale reading is discharged by the batch's own peak (a READING: the opener carries no clause)" : "— NOT above: reported as a reading, never repaired by padding"}; ` +
+        `vs Act I's measured peak ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)} → Δ ${(maxRung.accept.dexec - ACT_I_REGISTERED_PEAK_EXEC).toFixed(6)}`,
+    );
+    console.log(
+      `  band containment (derived-exact both directions, §7.9): Act III's band is [${String(ACT_III_EXEC_BAND[0])}, ${String(ACT_III_EXEC_BAND[1])}] ` +
+        `(printed [${ACT_III_EXEC_BAND[0].toFixed(2)}, ${ACT_III_EXEC_BAND[1].toFixed(2)}]) and every rung sits inside it inclusive: ` +
+        best.levels
+          .map((c, i) => `L${String(BATCH_FIRST_ID + i)} ${c.accept.dexec.toFixed(6)} ${c.accept.dexec >= ACT_III_EXEC_BAND[0] && c.accept.dexec <= ACT_III_EXEC_BAND[1] ? "∈" : "OUTSIDE"}`)
+          .join(" · ") +
+        `; par band [${String(ACT_III_PAR_FLOOR)}, ${String(ACT_III_PAR_CEILING)}] inclusive (§7.10.3)`,
+    );
+    console.log(
+      `  last rung L${String(BATCH_FIRST_ID + best.levels.length - 1)} par=${String(last.accept.par)} D_exec=${last.accept.dexec.toFixed(6)} ` +
+        `(O6 put the batch's maximum on the closing rung: ${last.accept.dexec === maxRung.accept.dexec ? "HOLDING" : `NOT holding — the within-par maximum of par ${String(maxRung.accept.par)} sits on L${String(BATCH_FIRST_ID + peakRungIndex)}, printed as a measurement, never re-picked`})`,
+    );
+    // ── §7.3.1 instance 5 — the act-open relief FILL-IN ─────────────────────────
+    const delta = first.accept.dexec - ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC;
+    const deltaPar = first.accept.par - 24; // L40's registered par (the Act II ceiling), read as a literal fact of the registered rung
+    const dB = first.accept.b - 1.4851; // L40's registered B (the printed form; the sidecar's value is quoted in the dossier)
+    const admissible = ACT_III_B1_OPEN_RELIEF_ADMISSIBLE_FIRST_RUNGS.find((r) => r.par === first.accept.par);
+    const inRange = delta >= ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[0] && delta <= ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[1];
+    const inHalf = admissible !== undefined && delta >= admissible.deltaRange[0] && delta <= admissible.deltaRange[1];
+    console.log(
+      `\nRELIEF instance 5 FILL-IN (§7.10.4; the label was PRE-PUBLISHED, its value is filled in BEFORE the bytes, never after):`,
+    );
+    console.log(
+      `  L${String(ACT_III_B1_OPEN_RELIEF_LEVEL_ID)} par ${String(first.accept.par)} · D_exec ${first.accept.dexec.toFixed(6)} · B ${first.accept.b.toFixed(4)} ` +
+        `vs L${String(ACT_III_B1_OPEN_RELIEF_PREVIOUS_LEVEL_ID)} par 24 · D_exec ${ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC.toFixed(6)} · B 1.4851 → ` +
+        `Δpar ${deltaPar >= 0 ? "+" : ""}${String(deltaPar)}, ΔB ${dB.toFixed(4)}, 3·ΔB ${(3 * dB).toFixed(6)}, ` +
+        `ΔD_exec = Δpar + 3·ΔB = ${delta.toFixed(6)}`,
+    );
+    console.log(
+      `  exact value ${delta.toFixed(6)} · published bound [${String(ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[0])}, ${String(ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[1])}] → ` +
+        `${inRange ? "INSIDE the bound" : "OUTSIDE the bound"} · admissible first-rung half for par ${String(first.accept.par)}: ` +
+        `${admissible === undefined ? "NONE — this par is not one of §7.10.4's two admissible first rungs" : `[${String(admissible.deltaRange[0])}, ${String(admissible.deltaRange[1])}] → ${inHalf ? "INSIDE it" : "OUTSIDE it"}`} ` +
+        `${inRange && inHalf ? "" : "⇒ STOP-AND-ROUTE to GD (§7.10.4: a fill-in outside the bound means the opener's first rung is not the floor-anchored rung §7.10.2 derived, and no later re-pick may repair it)"}`,
+    );
+    console.log(
+      `  paste-ready (the census record quotes this line verbatim, before any board byte): ` +
+        `ACT_III_B1_OPEN_RELIEF_LEVEL_ID = ${String(ACT_III_B1_OPEN_RELIEF_LEVEL_ID)} · ACT_III_B1_OPEN_RELIEF_EXEC = ${first.accept.dexec.toFixed(6)} · ` +
+        `ACT_III_B1_OPEN_RELIEF_DELTA = ${delta.toFixed(6)} · ACT_III_B1_OPEN_RELIEF_DELTA_RANGE = [${String(ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[0])}, ${String(ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[1])}]` +
+        `${first.accept.dexec < ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC ? " (BELOW the previous act's tail — §7.10.4's own premise holds)" : " (NOT below — §7.10.4's premise FAILS: report to GD, do not write)"}`,
+    );
+    /*
+     * The fill-in is only trustworthy if the **constant the registration train will cite** and the
+     * **measurement that produced it** are checked against each other on every run: a re-typed
+     * literal is exactly how a label drifts away from the boards it explains (§7.9's notation law,
+     * one level up). `_EXEC` is the filled-in value; `_DELTA` is **derived** from it, so this line is
+     * also the receipt that the derivation is what produced the printed number.
+     *
+     * **The comparison is the law module's own tolerance, never `===`** (F-L41-1): the house style is
+     * a 6-decimal *display-form operand* compared with `LAW_PRECISION` (`near()`'s rule, applied to
+     * Act II's registered tails too), so a strict check would report a spurious DRIFT on a value that
+     * is exact to 1e-8. Both forms are printed side by side — display and round-trip-exact — so the
+     * residue is readable rather than asserted away.
+     */
+    const roundTrip = (n: number): string => String(n);
+    const dExec = Math.abs(first.accept.dexec - ACT_III_B1_OPEN_RELIEF_EXEC);
+    const dDelta = Math.abs(delta - ACT_III_B1_OPEN_RELIEF_DELTA);
+    console.log(
+      `  law-module verification (the constant and the measurement must agree, or the registration train cites a stale literal; compared with the law module's own LAW_PRECISION ${String(LAW_PRECISION)} — never \`===\`, because the operand is the display form, F-L41-1): ` +
+        `ACT_III_B1_OPEN_RELIEF_EXEC = ${first.accept.dexec.toFixed(6)} (constant ${ACT_III_B1_OPEN_RELIEF_EXEC.toFixed(6)}; exact ${roundTrip(first.accept.dexec)} vs ${roundTrip(ACT_III_B1_OPEN_RELIEF_EXEC)}, |Δ| ${dExec.toExponential(3)}) → ` +
+        `${dExec < LAW_PRECISION ? "MATCH" : "DRIFTED"} · ` +
+        `ACT_III_B1_OPEN_RELIEF_DELTA = ${delta.toFixed(6)} (derived ${ACT_III_B1_OPEN_RELIEF_DELTA.toFixed(6)}; exact ${roundTrip(delta)} vs ${roundTrip(ACT_III_B1_OPEN_RELIEF_DELTA)}, |Δ| ${dDelta.toExponential(3)}) → ` +
+        `${dDelta < LAW_PRECISION ? "MATCH" : "DRIFTED"}`,
+    );
+  }
   if (BATCH === 4) {
     // Published rule 9: batch 4 has NO act-close refusal branch. §7.3.2's obligation was
     // discharged inside batches 2–3 (L35 = 28.339426), so this batch prints its measured
@@ -3265,6 +3782,30 @@ function stageSelect(): void {
       return;
     }
   }
+  if (BATCH === 5) {
+    /*
+     * §7.10.4's fill-in discipline, enforced at the WRITE POINT and not only printed: the relief's
+     * exact value must be inside the pre-published bound **and** inside the admissible first-rung
+     * half for the par the selection actually took. A value outside it is a STOP-AND-ROUTE to GD —
+     * the batch is not written, because a board whose seam sits outside the label would make the
+     * label false at the moment it is cited.
+     */
+    const first = chosen[0] as { level: Level; accept: Accept };
+    const delta = first.accept.dexec - ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC;
+    const half = ACT_III_B1_OPEN_RELIEF_ADMISSIBLE_FIRST_RUNGS.find((r) => r.par === first.accept.par);
+    const inRange = delta >= ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[0] && delta <= ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[1];
+    const inHalf = half !== undefined && delta >= half.deltaRange[0] && delta <= half.deltaRange[1];
+    if (!inRange || !inHalf) {
+      console.log(
+        `\nSTOP — §7.3.1 instance 5 (` +
+          `act-open L${String(ACT_III_B1_OPEN_RELIEF_PREVIOUS_LEVEL_ID)} → L${String(ACT_III_B1_OPEN_RELIEF_LEVEL_ID)}): the measured ` +
+          `ΔD_exec ${delta.toFixed(6)} is ${inRange ? "inside the published bound" : "OUTSIDE the published bound " + `[${String(ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[0])}, ${String(ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[1])}]`} and ` +
+          `${inHalf ? "inside" : "outside"} the admissible first-rung half for par ${String(first.accept.par)}. Nothing is written: this is a STOP-AND-ROUTE ` +
+          `to the Game Designer (§7.10.4) — the seam's exact value is a fill-in BEFORE the bytes, and a value the label does not admit is not made true by re-picking a rung.`,
+      );
+      return;
+    }
+  }
   if (!WRITE) {
     console.log(`(dry run — pass --write to land the ${String(RUNG_COUNT)} candidates)`);
     return;
@@ -3293,18 +3834,59 @@ function stageSelect(): void {
 const cut = measureCut();
 console.log(
   `author-l21 (G lattice, Act II batch ${String(BATCH)}${
-    BATCH === 4
-      ? " — the family-ceiling 4-pocket sub-lattice on §7.4's second frame (7×7, CX=1), L36–L40"
-      : BATCH === 3
-        ? " — the 4-pocket sub-lattice, L31–L35"
-        : BATCH === 2
-          ? " — the 3-pocket chained sub-lattice, L26–L30"
-          : " — L21–L25"
+    BATCH === 5
+      ? ` — the ACT III OPENER (L41–L45) on the proven 4-pocket/5-door/5-press class, Act III's own band`
+      : BATCH === 4
+        ? " — the family-ceiling 4-pocket sub-lattice on §7.4's second frame (7×7, CX=1), L36–L40"
+            : BATCH === 3
+            ? " — the 4-pocket sub-lattice, L31–L35"
+            : BATCH === 2
+              ? " — the 3-pocket chained sub-lattice, L26–L30"
+              : " — L21–L25"
   }) — ` +
     `CUT re-measured from the shipped set: D_exec max over the L1–L15 basis = ${cut.floor.toFixed(6)} · ` +
     `Act I measured peak (ids 1–20) = ${cut.actI.toFixed(6)} · par(L15) = ${String(cut.l15Par)} · ` +
     `B band [${cut.bBand[0].toFixed(4)}, ${cut.bBand[1].toFixed(4)}] · basis ids [${cut.basis.join(", ")}]`,
 );
+console.log(
+  `act ${String(ACT)}'s law surface (read from the law module, never re-typed): par band [${String(ACT_PAR_BAND[0])}, ${String(ACT_PAR_BAND[1])}] inclusive · ` +
+    `D_exec band [${String(EXEC_BAND[0])}, ${String(EXEC_BAND[1])}] (printed [${EXEC_BAND[0].toFixed(2)}, ${EXEC_BAND[1].toFixed(2)}]; §7.9: the derived value is the operand)` +
+    `${ACT === 3 ? ` · §7.10.2's opener multiset [${ACT_III_OPENER_PAR_MULTISET.join(", ")}] · O3's reservation margin ${ACT_III_CEILING_RESERVATION_MARGIN.toFixed(4)} · §7.3.1 instance 5 bound [${String(ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[0])}, ${String(ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[1])}] vs the previous act's registered maximum ${ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC.toFixed(6)} (alias to Act II's registered tail ${ACT_II_R006A_REGISTERED_TAIL_EXEC.toFixed(6)}: ${ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC === ACT_II_R006A_REGISTERED_TAIL_EXEC ? "identical, so the two cannot drift" : "DIVERGED — a constant moved without its alias"}) · batch ids [${ACT_III_B1_IDS.join(", ")}] vs this run's window L${String(BATCH_FIRST_ID)}–L${String(BATCH_FIRST_ID + RUNG_COUNT - 1)}: ${ACT_III_B1_IDS[0] === BATCH_FIRST_ID && ACT_III_B1_IDS[RUNG_COUNT - 1] === BATCH_FIRST_ID + RUNG_COUNT - 1 ? "identical" : "MISMATCH — the law module and this tool disagree about L41–L45"}` : ""}`,
+);
+if (ACT === 3) {
+  /*
+   * The `D2` orbit law, applied to **sizes only** (ADR-architecture-0004 Ruling 4; §7.9/§7.10 —
+   * quoted in this file's LV-018 header). `Γ_F` is a rectangle, so `σ_x : x ↦ CX + W − x` is an
+   * automorphism of it and of the boundary operator, and it preserves checkerboard parity, so the
+   * candidate count `K` is constant on each `σ_x` orbit. Printed as PREDICTED and then MEASURED
+   * beside it; **no accept is ever inherited** (the column is on the left, the board edge on the
+   * right — `g_leak` fails equivariance), and nothing crosses frames, caps or instruments.
+   */
+  const counts = new Map<string, number>();
+  for (const dev of devices(null)) {
+    const k = coordKey(dev.landing);
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  let pre = 0;
+  let mea = 0;
+  const rows: string[] = [];
+  for (const landing of FAR_TILES) {
+    const mirror = at(CX + W - x(landing), y(landing));
+    if (coordKey(mirror) === coordKey(landing)) continue;
+    if (coordKey(landing) > coordKey(mirror)) continue;
+    pre += 1;
+    const a = counts.get(coordKey(landing)) ?? 0;
+    const b = counts.get(coordKey(mirror)) ?? 0;
+    const holds = a === b;
+    if (holds) mea += 1;
+    rows.push(`${coordKey(landing)}=${String(a)} ↔ ${coordKey(mirror)}=${String(b)} ${holds ? "equal" : "DIFFERENT"}`);
+  }
+  console.log(
+    `D2 orbit law — SIZES ONLY (PREDICTED, then MEASURED; accepts never inherit): σ_x : x ↦ ${String(CX)} + ${String(W)} − x ⇒ K is orbit-constant; ` +
+      `PREDICTED ${String(pre)} orbit pair(s) of device counts equal, MEASURED ${String(mea)}/${String(pre)} equal` +
+      `${rows.length > 0 ? ` · ${rows.slice(0, 12).join(" · ")}${rows.length > 12 ? ` … (+${String(rows.length - 12)} pair(s))` : ""}` : ""}`,
+  );
+}
 /**
  * **F-L36-1's receipt.** Printed unconditionally, so the pre-fix and post-fix floors are both
  * on screen every run and can never agree silently: they coincide only when no Act II rung above
@@ -3331,12 +3913,13 @@ console.log(`clone guard (§6.1.4, seal-inclusive key): ${String(guard.size)} ge
 
 if (STAGE === "frame") frameCensus();
 else if (STAGE === "roomcap") stageRoomCap();
+else if (STAGE === "struct") stageStruct();
 else if (STAGE === "g") {
   if (POCKETS >= 4) stageLattice4(cut, argOf("only"));
   else if (POCKETS >= 3) stageLattice3(cut, argOf("only"));
   else stageLattice(cut, argOf("only"));
 } else if (STAGE === "s") stageSelect();
-else console.log(`unknown stage "${STAGE}" — use frame | g | s`);
+else console.log(`unknown stage "${STAGE}" — use frame | roomcap | struct | g | s`);
 
 void BLOCK_L1619_PAR_BASE;
 void BLOCK_L1619_TAIL_EXEC_CEILING;

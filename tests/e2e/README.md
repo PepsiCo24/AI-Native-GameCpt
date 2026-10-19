@@ -2075,7 +2075,219 @@ debt at the base blob (unformatted there too), so R-006c matches the surrounding
 
 ---
 
-## 2. Inventory — 264 cases in 12 files (measured)
+### 1.19 R-007c — the 40 → 45 pin migration: the one lever again, the chain envelope re-derived at 45 rungs (1_397_000 ms falsified by measurement, and the measurement landed 3.64 % **under** the level lane's forecast), the act-tail rows re-pointed at Act III **by act-boundary reason**, and an independent pin audit over the whole dossier
+
+**Scope.** R-007 registered Act III's opener (`l041`–`l045`) at the dataset root
+(`src/levels/README.md` §2i) and R-007b grew the playable registry to 45 (`4442d46`); R-007c is
+the **test-side** migration on top of that tip. `git diff 4442d46 -- src docs scripts` is
+**empty**, and `git status --porcelain` lists `tests/**` only — the diff law holds. Endstates
+measured on the same bytes:
+
+| endstate | before (at the tip) | after (R-007c) |
+|---|---|---|
+| `npx tsc --noEmit` | **0** | **0** |
+| `npx vitest run` | **33 failed / 1008 passed / 3 skipped (1044)**, 9 failed files | **1041 passed / 3 skipped (1044)**, 37/37 files, exit 0 |
+| `npm run levels` | — | `45/45 level files ok · 0 errors · 218 warnings (0 multi-switch-door)`, **RESULT: PASS** |
+| `npx playwright test --list` | — | **289 tests in 12 files** |
+
+R-007's §7f handed over the authoring detail on its own tree (`34 failed / 1002 passed / 3
+skipped (1039)`); this ticket's base is one train later (R-007b's registry row had landed) and
+reads **33 / 1008 / 3 (1044)** — measured at the base, never inherited, and the per-file
+attribution below is *this* tip's. The total row count is **unchanged at 1044**: every migrated
+pin carries data into an existing row rather than adding one, so the only moving number is
+`passed` (1008 → 1041) as the 33 reds turn green.
+
+**The one lever, and the thirty-three restatements.** `EXPECTED_LEVEL_COUNT`
+(`tests/e2e/helpers/levels.ts:147`) `40 → 45` is the migration's only *decision* — every other
+inventory in the suite derives from the directory (QA-005c OQ2), so an unlock costs one pin and
+the rest is arithmetic on it. The 33 red rows fell per file as:
+
+| file | red rows | what the re-pin actually was |
+|---|---:|---|
+| `tests/solver/difficulty.test.ts` | 8 | PINS rows **41–45** (+5), the five `l041`–`l045` §2 breakdowns, the published `D_exec` 2-dp list, and the `lookahead ≡ L − 1` saturation row |
+| `tests/solver/route-budget.test.ts` | 7 | PINS rows **41–45** (`cost` = visits / lookaheadVisits / prunedChildren, `allOffReachableStates` 11) + the `dualPhaseTiles` column (+5 rows each reading 7) |
+| `tests/solver/ordered-companion.test.ts` | 5 | ORDERED_PINS rows **41–45** — ordered ≡ unordered (ADR-0002's coincidence) |
+| `tests/solver/metrics-sidecar.test.ts` | 4 | one record per shipped level in file order, "the pin table was really parsed", report ↔ PINS agreement, and the published `D_exec` column |
+| `tests/unit/level-inventory-derivation.test.ts` | 4 | the derived-count row **plus its three mutation probes** (ADD / REMOVE / RENUMBER) — the pin doing the alarming, both directions |
+| `tests/solver/l16-l20-candidates.test.ts` | 2 | the shelf booking → **`[]`** (below); the "two tails" row's dataset tail 40 → **45**, re-pointed at **Act III** (below) |
+| `tests/unit/multi-switch-door-warning.test.ts` | 1 | "reads the shipped dataset (**45** boards, the pinned count)" |
+| `tests/unit/hud-end-panel-copy.test.ts` | 1 | `ladderLabelOf` names the shipped ladder **L1–L45** (registry-derived, never `/L1–L40/`) |
+| `tests/unit/player-embedded-home.test.ts` | 1 | the `solidAt` sweep is over the **shipped** registry |
+| **total** | **33** | **0** |
+
+Every new value is **read** off `docs/level-difficulty.report.json` records 41–45 (the sidecar is
+the law) and lands cell-for-cell on §2i's handed-over table; the route-budget rows are the
+transcript's own read-out. The values were taken with a **throwaway probe** in the worktree,
+which is **not** part of the commit. `bRaw`/`forced` for the new rows are stored at 4 dp
+(matching the neighbouring batch-4 rows), `B` at 4 dp and `D`/`D_exec` at 6 dp.
+
+**Independent pin audit (throwaway script, not committed).** Beyond the migration itself, the
+**whole dossier** was re-read against its two sources — `docs/level-difficulty.report.json` and
+`scripts/attest-r007-reg45.transcript.md`:
+
+- all **45** difficulty `PINS` rows → **0** outside tolerance; the worst last-digit deviation is
+  **0.4930** of one last-digit unit (a batch-era row, L19's `bRaw`), and on the five new rows
+  **0.4828** (L44's `D`);
+- all **45** route-budget `PINS` rows → **0** mismatches (the `cost` triple is the CLI's own
+  `routeWalk` read-out);
+- all **45** ordered-companion pins → **0** mismatches;
+- the attest transcript's `l041`–`l045` `par` / `D_exec` / `B` cells → **MATCH** on all three
+  columns, 5/5 rungs.
+
+So every pin is the source's own number at the file's own precision, and the audit is
+source-anchored in **two** places, not one.
+
+**The two act-tail rows: re-pointed at Act III by act-boundary reason, never re-stamped.**
+`l16-l20-candidates.test.ts`'s "two tails, two facts" row (`:271`) used to read the dataset tail
+as an anonymous value comparison; at the 40-rung pin it passed **for the wrong reason** — the pin
+happened to equal *Act II's* tail. At 45 rungs that is no longer true, so the row now reads the
+**live Act III** constant (`ACT_III_REGISTERED_TAIL_LEVEL_ID` = 45, `ACT_III_REGISTERED_TAIL_EXEC`
+= 30.455319, both from `src/core/solver/policy.ts`, never typed here), while each earlier act's
+tail **keeps its own frozen datum**: `ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID` stays **40**,
+`ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID` stays **35**, and the pre-R-007 standard
+(`ACT_III_PRE_R007_REGISTERED_TAIL_LEVEL_ID`) is *alias-typed* to R-006a's 40. **Non-vacuity is
+asserted, not intended**: `ACT_III_REGISTERED_TAIL_LEVEL_ID.not.toBe(ACT_III_PRE_R007_REGISTERED_TAIL_LEVEL_ID)`
+(`:318`) is the tooth a *wrong act's tail* cannot satisfy, and the **value** axis pins the pair
+(level id, `D_exec`) — `tailDiff.Dexec.toBeCloseTo(ACT_III_REGISTERED_TAIL_EXEC, 6)` (`:343`) with
+`ACT_III_REGISTERED_TAIL_EXEC.not.toBe(ACT_III_PRE_R007_REGISTERED_TAIL_EXEC)` (`:344`), so a
+re-point back at Act II's 28.455319 reddens on either half. The absence clause was re-pointed one
+rung up rather than deleted: `l046.json` must have **no registered file**, no lesson row and no
+obligation (`:372`–`:379`), re-derived as `maxShipped + 1`.
+
+**Chain envelope: one row, semantics intact, re-derived off a 45-rung walk.** The envelope is a
+**single row** (`playthrough.spec.ts`'s unlock chain, `:164`) and its semantics are **unchanged**:
+the dialog's own `Next` walks L1 → L45 for real — no `?level=` shortcut, no direct navigation, no
+thinning. The chain is now **705 par moves**
+(`par(1…35) = 479` + `par(36…40) = 108` + `par(41…45) = 20+22+24+26+26 = 118`), **+20.10 %** on
+the 40-rung chain the live constant was derived from (587 → 705), i.e. 45 par routes, 45 HUD
+reads and 44 `Next` clicks. Two fresh plain runs of that row at this tip (`--retries=0`, one
+worker, JSON reporter, ports 5255 / 5256), **both green**:
+
+| run | mode | local total |
+|---|---|---:|
+| A | row alone, JSON | **232 144 ms = 232.144 s** |
+| B | row alone, JSON | **244 875 ms = 244.875 s** |
+
+The spread is **+5.48 %** on a four-minute wall clock — the same tenth-of-a-run leverage R-005c
+and R-006c measured — so the derivation reads the **worse** sample:
+
+```
+cloudFullChainS(45) = 4.40 × 244.875                     = 1_077.45 s   (4.40× = QA-024's BOOKED cloud datum, item 131)
+envelopeMs          = ceil(1.5 × 1_077.45) × 1000        = ceil(1_616.175) × 1000 = 1_617_000 ms
+```
+
+**Falsifications, as arithmetic rather than opinion:** the live **1_397_000 ms is falsified at 45
+rungs** by `1_617_000 / 1_397_000 =` **1.1575×** (it prices 587 moves where the row now walks
+705); the historical legs of the same chain are falsified harder — **1_213_000 ms** at 40 rungs by
+**1.1517×**, and both the **639_000 ms** constant and its pre-registered **856_000 ms** remedy at
+35 rungs by **1.90×** and **1.42×**. None may be re-used: each is falsified on the rung count it
+was derived for (item 143's pre-ruling). **The level lane's forecast and where this measurement
+landed.** R-007 pre-registered **1_678_000 ms** (it scaled the 40-rung local total by the move
+ratio, `211.602 × 705/587 = 254.1387 s`, §7f item 10); the measurement lands **below** it — `1_617_000 / 1_678_000 =` **0.9636×**, i.e. **3.64 % under**,
+and the raw local total is under the forecast's own local total by the same factor
+(`244.875 / 254.1387 =` **0.9635×**) — so the STOP order's condition (a measured total wilder
+than **1.6×** the forecast, i.e. > 2_684_800 ms) **did not fire** on either reading. The gap is the
+forecast's move-linear model error (the per-rung fixed cost does not scale with move count). The
+row's own comment carries the full chain plus the **pre-registered next bounds**, written before
+they are needed: **2_168_000 ms** (same-family `ceil(1.5 × 5.9 × 244.875)`, R-007 forecast
+2_250_000 — 3.64 % above) and **3_592_000 ms** (`×100/45` work face, R-007 forecast 3_728_000 —
+3.65 % above).
+
+**Refusal envelopes: the batch adds a FOURTH cap row (par 26).** `refusalRouteEnvelopeMs` is a
+function of **par alone**, so the new rungs are absorbed with **zero code change** — the docstring
+now carries the verified arithmetic (`5.9 × (1.17·par − 1.28 + 3.0)` seconds, `ceil(1.5 × …)`,
+cap 240 s). The opener walks the family to par **20 / 22 / 24 / 26 / 26** — **three standing
+values plus one new one (26)**:
+
+| rung | par | cloud-upper | uncapped envelope | in force | reading |
+|---|---:|---:|---:|---:|---|
+| L41 | 20 | 148.208 s | 223_000 ms | **223_000 ms** | **inside the formula** — no cap registration |
+| L42 | 22 | 162.014 s | 244_000 ms | **240_000 ms** | re-uses the standing par-22 cap row |
+| L43 | 24 | 175.820 s | 264_000 ms | **240_000 ms** | re-uses the par-24 cap row named at R-005c (§1.17) |
+| L44 / L45 | **26** | 189.626 s | 285_000 ms | **240_000 ms** | **NEW cap-binding row** — `285_000 − 240_000 = +45_000 ms` (**+18.75 %**) |
+
+So the cap now stops the derived form on **four** distinct par values (22, 23, 24, **26**), and it
+is *strengthened* rather than silenced: the two most recent exceedances are 15 s (par 24) and 45 s
+(par 26). The par-24 row **keeps its name** and gains a successor above it. The envelope's own
+re-derivation (its cloud factor, or the cap) stays a **cloud-datum question** — no fresh cloud
+round exists at 45 levels — so R-007c **registers the par-26 row and leaves both the cap and the
+formula standing**. Every assertion in `refusal.spec.ts` is untouched (wall clock only).
+
+**This ticket's whole-file round, and where the chain row landed.** Running
+`playthrough.spec.ts` whole, plain, once on the shipped bytes
+(`PS_E2E_PORT=5258`, `--retries=0`, list reporter) → **49 passed / 0 failed in 10.2 m**,
+`EXIT=0`. The chain row inside it read **3.8 m** (the list reporter's 0.1-minute rounding ⇒
+**225–231 s**), i.e. **13.9–14.3 %** of its 1_617_000 ms envelope — the same band the row has
+held since R-004c (R-006c's round read 3.3 m / 195–201 s on the 40-rung walk). The heaviest
+per-level rows in that round are the new tail's own — **L43 / L44 / L45 at 12.9 s of 90 s**
+(**14.3 %**), with L41 **10.8 s** and L42 **11.9 s** (12.0 % / 13.2 %) — just above the batch-era
+**L39 12.6 s** and **L40 12.5 s**, so the /45 tail is the slow end of the ladder by a hair, not by
+a step change.
+
+**Throttle arm (necessary, never sufficient).** The same row on the same bytes with
+`PS_E2E_CPU_THROTTLE=20` → **1 passed in 563 143 ms = 563.143 s**, i.e. **2.30×** its own plain
+walk (`563.143 / 244.875`) and **34.8 %** of the 1_617_000 ms envelope — against R-006c's 40-rung
+arm at **≈ 480 s / 2.42× / 34.4 %**. A green there proves the row is not scheduler-fragile; it does
+**not** prove the envelope fits a starvation day, because QA-024 measured the cloud at **4.40×**
+while rate 20 only reaches ~2.3× locally — the same necessary-not-sufficient law the constant's
+own comment states.
+
+**Refusal round, and where the new rungs landed.** `refusal.spec.ts` ran plain, whole file once
+on the shipped bytes (`PS_E2E_PORT=5259`, `--retries=0`, list reporter) → **95 passed / 0 failed
+in 18.0 m**, `EXIT=0` — **no timeout fired anywhere**, and the cap-bound rows specifically did not. Each rung's
+own wall-clock budget is the par-derived `refusalRouteEnvelopeMs(ref.par)`, so L41 lands at
+**223 s**, L42 at **240 s**, L43 at **240 s** and L44 / L45 at **240 s**: three of the five rows
+ride standing envelopes and the par-26 pair rides the **new** fourth cap row with an order of
+magnitude inside the cap. Unlike a dataset growth, **no refusal row was added by hand** — the
+per-level freeze rows and the ladder refused-then-entered rows derive from the dataset on disk.
+
+**Inventory arithmetic (why the count moved 264 → 289 without a new row being typed).** The new
+rows are **generated off the dataset**, so the dataset's growth is the count's growth:
+`playthrough 49 + refusal 95 + latch-door 82 + mobile 12 + star-field 12 + portal-mount 10 +
+controls 8 + transient 7 + portal 6 + input-replay 4 + portal-mount.mobile 2 + star-field.mobile 2
+= 289` cases in **12** files (`--list`, verbatim: **273 desktop + 16 mobile**). The growth is
+arithmetic, not edit count: playthrough 44 → **49** (+5 per-level rows), refusal 85 → **95**
+(+5 per-level freeze rows **and** +5 ladder refused-then-entered rows), latch-door 72 → **82**
+(+10 = two rows per new latch level, the dataset's derived contiguous tail L6–**L45** now **forty**
+latch levels, not thirty-five).
+
+**The booking, a seventh time: `[]`, and this time the two subjects coincide again.** R-007's
+byte-parity `git mv` emptied the LV-018 shelf, so at this tip `src/levels/candidates/` holds its
+`README.md` and nothing else and the literal is the **empty set** (the pin's seventh reading:
+QA-014 `[]` → QA-018 `l021–l025` → QA-026 `l026–l035` → R-005c `[]` → R-005c-b `l036–l040` →
+R-006c `[]` → **R-007c `[]`**), re-taken by the directory scan itself rather than asserted from
+memory. The successor is **`l046.json`** — absent from the shelf *and* from the root,
+`documentedLesson(46)` null — and the root's own absence clause stops at **maxShipped + 1**, so the
+two subjects R-005c-b had to hold apart **coincide again**, and no scoping words were needed or
+removed. The tail row is deliberately not re-stamped: the frozen **R-005a standard stays 35**
+while the R-006a constant and `ACT_II_REGISTERED_IDS.at(-1)` carry **40**, and the Act III
+constant carries **45** — a move that re-stamped the pre-registration standard would fail by name
+right there.
+
+**Non-vacuity, both directions, re-proved on this 45-rung `[]` reading** (live probes on this
+tree, removed again immediately — `git status` after them lists `tests/**` only): the **extra**
+direction puts an unbooked file on the shelf — `cp src/levels/l045.json
+src/levels/candidates/l046.json` → the booking row reddens **by name** at
+`l16-l20-candidates.test.ts:252:19` with `expected [ 'l046.json' ] to deeply equal []`,
+`1 failed | 51 passed`; the **absent**
+direction — which for an empty booking is the *root* clause rather than a removed member — puts a
+file at the root's successor — `cp src/levels/l045.json src/levels/l046.json` → the absence clause
+reddens at `:375:7` with `no registered l046.json: the registered dataset stops at the pinned
+count`, `1 failed | 51 passed`. Both restored → **52 passed**, the shelf holding `README.md` only
+and the root stopping at `l045.json`. So neither half of the pin is decorative: the shelf assertion catches an extra file,
+and the clause catches the dataset moving without the pin.
+
+**Source law, stated once.** `git diff 4442d46 -- src docs scripts` is **empty**;
+`git status --porcelain` lists `tests/**` only; the throwaway measurement probe and the audit
+script were both deleted before the commit. One production string is deliberately **not**
+re-pointed and is named rather than touched: the `multi-switch-door` warning's own `L6–L35`
+allowance clause is a `src/**` byte, off QA's lane. `tests/solver/**` and `tests/e2e/**` style:
+the touched files carry **pre-existing** Prettier debt at the base blob, so R-007c matches the
+surrounding style and **names** the debt instead of chasing it (R-005b/R-005c/R-006c precedent).
+
+---
+
+## 2. Inventory — 289 cases in 12 files (measured)
 
 **Dated note (2026-10-16, QA-005h).** The per-ticket blocks in §1 are **historical
 snapshots**: the `88/0` rounds, the `88 tests in 8 files` `--list` lines and the per-file
@@ -2221,6 +2433,23 @@ then proving the due move still counts — before driving the off-phase portal p
 `npx tsc --noEmit` → **0**. §1.16 carries the class table, both timing rounds and the
 cap-binding watch.
 
+**Update (2026-10-19, R-007c — the 40 → 45 pin migration, 264 → 289).** R-007 registered Act
+III's opener (`l041`–`l045`) at the dataset root (`src/levels/README.md` §2i), so
+`EXPECTED_LEVEL_COUNT` moved **40 → 45** in the same batch and the four ladder-derived specs grew
+with it. The `--list` arithmetic is now
+`49 + 95 + 82 + 12 + 12 + 10 + 8 + 7 + 6 + 4 + 2 + 2 = 289 tests in 12 files` (**273 desktop +
+16 mobile**), against R-006c's 264. The whole growth is the five new rungs, and it is arithmetic
+rather than edit count: playthrough 44 → **49** (+5 per-level rows), refusal 85 → **95** (+5
+per-level freeze rows **and** +5 ladder refused-then-entered rows), latch-door 72 → **82** (+10 =
+two rows per new latch level). Not one ladder row was added by hand — the per-level rows derive
+from the dataset on disk and their routes from the solver. `npx vitest run` reads **1041 passed |
+3 skipped (1044)**, 37/37 files, **exit 0** — the **33-row red set of the R-007 handoff (§7f)
+heals to zero**, and the total row count is *unchanged* at 1044 because every migrated pin
+carries data into an existing row rather than adding one. `npx tsc --noEmit` → **0**;
+`npm run levels` → **45/45 level files ok · 0 errors · 218 warnings (0 multi-switch-door) ·
+RESULT: PASS**. §1.19 carries the migration table, the chain re-derivation and the independent
+pin audit.
+
 **The rounds, and what they are evidence for.** The A-8 pair ran **three consecutive
 times on the final bytes** (`PS_E2E_PORT=5249 npx playwright test
 tests/e2e/portal-mount.spec.ts tests/e2e/portal-mount.mobile.spec.ts --retries=0` →
@@ -2237,9 +2466,9 @@ whose slow rows are the ladder walks.
 
 | file | cases | project | what it pins |
 |---|---:|---|---|
-| `playthrough.spec.ts` | 44 | desktop | L1–L40 par route → win dialog (one row per shipped level, from the dataset); the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the **L1→L40** unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L40` and never a stale `L1–L5` |
-| `refusal.spec.ts` | 85 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one (now including L16–L40) — each row's wall-clock budget is the par-derived `refusalRouteEnvelopeMs(ref.par)`, so L21–L40 arrived with their own envelopes (par 22, 23 and 24 read the **240 s cap** — the third, par-24, named at R-005c, §1.17; par 18, 19 and 20 land inside the formula at 202 / 212 / 223 s, the batch re-using par 22 and 24 so **no new cap row arrives**, §1.18) and no test edit; **plus (R-004d, §1.16)** the Act II refusal **classes** — one census row (published `refusedThenEnteredTiles = 17` per rung, `T ≡ R ≡ 0`, the class partition of every refused press, `refusedAtPortalEnds = 0`) and one browser row per new rung freezing a `phase-wall` and a `door-without-switch` refusal (then proving the due move still counts) and driving the off-phase portal press, which is an ordinary step |
-| `latch-door.spec.ts` | 72 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all **thirty-five** latch levels (L6–L40, the dataset's derived contiguous tail — the rule, not a typed list), in-core and through the UI |
+| `playthrough.spec.ts` | 49 | desktop | L1–L45 par route → win dialog (one row per shipped level, from the dataset); the HUD phase chip/glyph flips on **every** legal move; the player's tile read back from the canvas equals the solver's goal tile; the **L1→L45** unlock chain through the dialog's own `Next`; out-of-range `?level` falls back to L1; the end panel **contains** the shipped ladder label `L1–L45` and never a stale `L1–L5` |
+| `refusal.spec.ts` | 95 | desktop | the **triple freeze** at every refusal the par route walks through: no move, no flip (phase + glyph + chip label), **no position change** (pixel read-back), no history entry, never a win; plus "an opening refusal costs nothing" for every level that has one (now including L16–L45) — each row's wall-clock budget is the par-derived `refusalRouteEnvelopeMs(ref.par)`, so L21–L45 arrived with their own envelopes (par 22, 23 and 24 read the **240 s cap** — the third, par-24, named at R-005c, §1.17; par 18, 19 and 20 land inside the formula at 202 / 212 / 223 s, and R-006c's batch re-used par 22 and 24 so **no new cap row arrived there**, §1.18; **R-007c's par 26 is a fourth cap-binding row** — uncapped 285 s → cap 240 s, `+45_000 ms` / **+18.75 %**, §1.19) and no test edit; **plus (R-004d, §1.16)** the Act II refusal **classes** — one census row (published `refusedThenEnteredTiles = 17` per rung, `T ≡ R ≡ 0`, the class partition of every refused press, `refusedAtPortalEnds = 0`) and one browser row per new rung freezing a `phase-wall` and a `door-without-switch` refusal (then proving the due move still counts) and driving the off-phase portal press, which is an ordinary step |
+| `latch-door.spec.ts` | 82 | desktop | R-D1 a closed door refuses entry like a wall; R-D7 a door closed **under** the player strands them legally; the discriminating pair — *same tile, same phase, same direction, opposite verdict* — for all **forty** latch levels (L6–L45, the dataset's derived contiguous tail — the rule, not a typed list), in-core and through the UI |
 | `portal.spec.ts` | 6 | desktop | the **portal column is every level from L11's debut to the tail** (the rule; QA-011 retired the typed `[11…15]` literal); M2 crossing at L11: the par route's teleport leg (one press, **non-adjacent** arrival); a portal is active **only** in phase B — the same press, same latch, other phase, is an ordinary step; the HUD spends exactly one move and exactly one flip across the crossing; a phase-A step onto an end that is active *now* does not re-trigger (clause 6); zero console/page errors over the whole walk |
 | `controls.spec.ts` | 8 | desktop | undo is a **real inverse** (counter + phase + tile, unwound in order, `Z` ≡ button); restart is a fresh session, not a rewind, and the level is playable again; `Enter` ≡ `Next`; no control flips the phase on its own (ADR-0008 clause 2) |
 | `input-replay.spec.ts` | 4 | desktop | TICKET-QA-005-1 (fixed by R-004b): one press/release cycle in one frame window is exactly one move, **two are exactly two** (the regression pin, no `test.fail()` left), the paced helper isolates the rules from the frame window, and a burst spread across frames is applied once per pair |

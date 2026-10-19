@@ -281,6 +281,30 @@ const PINS: Readonly<Record<number, DifficultyPin>> = {
   38: { L: 22, B: 1.4, T: 0, R: 0, M: 4, D: 46.2, dexec: 26.2, bRaw: 2.6217, forced: 0.1435, lookahead: 21, states: 920 },
   39: { L: 24, B: 1.3953, T: 0, R: 0, M: 4, D: 48.185897, dexec: 28.185897, bRaw: 2.6752, forced: 0.1432, lookahead: 23, states: 936 },
   40: { L: 24, B: 1.4851, T: 0, R: 0, M: 4, D: 48.455319, dexec: 28.455319, bRaw: 2.7319, forced: 0.1404, lookahead: 23, states: 940 },
+  // R-007 — Act III batch 1, the **first act opener** in the set (`l041`–`l045`), graduated
+  // from the LV-018 shelf to the root by R-007's byte-parity `git mv` (`src/levels/README.md`
+  // §2i/§7f). The five rows below are the **regenerated sidecar's** records 41–45
+  // (`docs/level-difficulty.report.json`, the law) re-read on the ROOT bytes by the shipped
+  // metric functions — the same read-out `scripts/solve-levels.ts` prints (`difficultyExec`),
+  // never a note. Shape in one column: `M = 4` ×5 (M1+M3+M2), `T ≡ R ≡ 0` ×5 (§4 holds —
+  // 0 dead, `noUnrecoverableOk` true), full coverage `49/49` ×5 (the whole 7 × 7 board, the
+  // same frame axis R-006a's closing batch opened), the par ladder is the **derived**
+  // `20 / 22 / 24 / 26 / 26` (Act III's band is 20–28, so 28 is withheld for the tail and the
+  // batch closes on a repeated 26 the way batch 4 closed on a repeated 24 — §2i prints its
+  // honest fourth step `26 → 26`), and `D_exec` climbs 24.257329 → 30.455319 with the §7.3.1
+  // **cross-act** seam between the batches: L41 lands 4.197990 *below* L40 (28.455319), the
+  // act opener's labelled relief (R-007's `ACT_III_B1_OPEN_RELIEF`, delta −4.197990,
+  // published before the bytes). `B` is inside the law band `[1.25, 1.6875]` on 5/5 (1.4191 / 1.4129 / 1.4046 /
+  // 1.4084 / 1.4851), so the opener adds no named excursion, and the **act's** registered
+  // maximum moves off the R-006a tail onto L45's 30.455319 — a measured **+2.000000**
+  // (`ACT_III_TAIL_ADVANTAGE`), with **2.607181** of derived-exact headroom to
+  // `ACT_III_EXEC_BAND[1]` (33.0625; §7.9). `lookaheadDepth ≡ L − 1` holds on 5/5
+  // (19 / 21 / 23 / 25 / 25), so the alternative reading of `T` is still not the missing lever.
+  41: { L: 20, B: 1.4191, T: 0, R: 0, M: 4, D: 44.257329, dexec: 24.257329, bRaw: 2.6015, forced: 0.1498, lookahead: 19, states: 921 },
+  42: { L: 22, B: 1.4129, T: 0, R: 0, M: 4, D: 46.238773, dexec: 26.238773, bRaw: 2.6068, forced: 0.1490, lookahead: 21, states: 913 },
+  43: { L: 24, B: 1.4046, T: 0, R: 0, M: 4, D: 48.213816, dexec: 28.213816, bRaw: 2.6228, forced: 0.1469, lookahead: 23, states: 912 },
+  44: { L: 26, B: 1.4084, T: 0, R: 0, M: 4, D: 50.225216, dexec: 30.225216, bRaw: 2.6487, forced: 0.1444, lookahead: 25, states: 928 },
+  45: { L: 26, B: 1.4851, T: 0, R: 0, M: 4, D: 50.455319, dexec: 30.455319, bRaw: 2.7319, forced: 0.1404, lookahead: 25, states: 940 },
 };
 
 describe("LV-007B · item 3 — the shipped dataset's difficulty table, measured", () => {
@@ -512,6 +536,19 @@ describe("LV-007C · item 2 — `D_exec` is a derived reading of the published t
       "26.20",
       "28.19",
       "28.46",
+      // R-007 — Act III batch 1, the act **opener**, dataset order: the five registered
+      // rungs' measured execution axis (24.257329 / 26.238773 / 28.213816 / 30.225216 /
+      // 30.455319), the same column `docs/level-difficulty.md` §5.2 and the sidecar print.
+      // "24.26" is L41, the first ever **cross-act** relief instance (4.197990 below L40);
+      // the last value is Act III's registered tail (L45 30.455319, +2.000000 over the
+      // R-006a tail). Par 26 — L44/L45 — is the new rung whose derived refusal envelope is
+      // CAP-BOUND (240 s): the first par value the family has not seen before since R-005c's
+      // 24, named on `refusalRouteEnvelopeMs` (helpers/levels.ts, §1.19).
+      "24.26",
+      "26.24",
+      "28.21",
+      "30.23",
+      "30.46",
     ]);
   });
 });

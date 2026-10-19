@@ -664,6 +664,51 @@ export const DOCUMENTED_LESSONS: readonly DocumentedLesson[] = [
     evidence:
       "docs/level-design.md §7.3 (the `act-peak` clause read over the whole registered act `ACT_II_REGISTERED_IDS` (L21–L40): 28.455319 exceeds Act I's registered peak 24.729412 by +3.725907, and the pre-registration standard 28.339426 at L35 by +0.115893) + §7.3.2 (the act-close carrier obligation — the carrier is now this rung; the obligation itself was DISCHARGED at L35 by R-005a and is not re-fired here, so this is a READING and not a new gate) + §7.8 item 1 + §7.9 (headroom 29.0625 − 28.455319 = 0.607181 from the derived band end; the printed operand 29.06 would say 0.604681) · docs/decisions/design-0005-move-depth-stars-and-100-level-acts.md + docs/decisions/design-0006-act-close-peak-and-relief-label-form.md + docs/decisions/design-0007-band-endpoint-law-and-c-path-standing.md · docs/ai-native-pipeline.md §8.24 (LV-017 authoring: the closing rung takes the within-par maximum 28.455319 vs its minimum 28.185897, a printed departure; `--peak=28.7` failed exactly one gate on exactly one rung) · measured on the ROOT bytes: par 24 (solver-stamped), D_exec 28.455319 (sidecar record 40 = 28.45531914893617), B 1.4851 (in band), coverage 49/49, T ≡ R ≡ 0, M 4, dualPhaseTiles 7, all-OFF UNSATISFIABLE (11/940 states, no goal state), parRoutes 30/30 press-then-cross, refusedBeforeEnteredTiles 24, step Δpar +0 / ΔD_exec +0.269422 · docs/level-difficulty.md §5.2 · src/levels/README.md §2h",
   },
+  {
+    levelId: 41,
+    lesson:
+      "Act III's OPENING rung and the act's labelled SEAM: the opener anchors at the par floor (20) while Act II closed at par 24, so the rung lands −4.197990 BELOW the previous act's registered tail — §7.3's interior relaxation at a ΔM = 0 boundary, registered as §7.3.1 instance 5 and never presented as a dip",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.10 (GD-012/ADR-design-0008: band [23.7500, 33.0625] derived-exact; §7.10.2's derived opener multiset [20, 22, 24, 26, 26]; §7.10.4's pre-published act-open relief bound [−4.705319, −1.392819]; §7.10.5's zero-new-mechanics stance) + §7.3 (interior freedom at an act's first rung) + §7.3.1 (instance 5, the register's first fill-in-before-existence: bound b28ed97, value db78a13, bytes 568c136) · docs/ai-native-pipeline.md §8.26 (LV-018 authoring) + §8.27 (R-007 registration) · measured on the ROOT bytes: par 20 (solver-stamped), D_exec 24.257329 (sidecar record 41 = 24.25732899022801), B 1.4191 (in Act III's band), coverage 49/49, T ≡ R ≡ 0, M 4, dualPhaseTiles 7, all-OFF UNSATISFIABLE (11/921 states, no goal state), parRoutes 48/48 press-then-cross, refusedBeforeEnteredTiles 25 · NO REGISTERED PER-RUNG GATE FAMILY CLOSES FOR ACT III YET — the act-2-batch-* obligations key on Act II id lists and their ladders, so dispatching one here would mis-key these boards. BOOKED REMEDY (named, not invented): an `act-3-batch-1` obligation behind an ACT_III_B1_LADDER-keyed reader plus one control per new code in the policy-negative-controls Record — design + QA work, the R-005a2/R-006c precedent one act later. Until it lands the rungs' proof is the `--act=3 --family=g --ladder=41…45` run (5/5 ACCEPT, 65/65 named controls) and scripts/attest-r007-reg45.ts keeps asserting the gap's existence ([0] families) so it cannot outlive its remedy silently · docs/level-difficulty.md §5.2 · src/levels/README.md §2i",
+  },
+  {
+    levelId: 42,
+    lesson:
+      "the opener's clean unit step: Δpar +2 buys ΔD_exec +1.981444 on the same five-door / forced 5-press device, and the batch's widest route set (336 shortest routes) all execute the shared press order",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.10.2 (O1/O2/O6: the P2-exact window's second rung, within-par minimum) + §7.8 item 4 (anti-mirror: this multiset shares no par with Act II's registered sets at 20/22 — coinciding pars printed, never hidden) · docs/ai-native-pipeline.md §8.26 (LV-018 authoring) + §8.27 (R-007 registration) · measured on the ROOT bytes: par 22 (solver-stamped), D_exec 26.238773 (sidecar record 42 = 26.238773274917854), B 1.4129 (in band), coverage 49/49, T ≡ R ≡ 0, M 4, dualPhaseTiles 7, all-OFF UNSATISFIABLE (11/913 states, no goal state), parRoutes 336/336 press-then-cross, refusedBeforeEnteredTiles 25, step Δpar +2 / ΔD_exec +1.981444 · obligation NULL with the remedy booked by name on L41's row (no ACT_III-keyed per-rung family exists yet) · docs/level-difficulty.md §5.2 · src/levels/README.md §2i",
+  },
+  {
+    levelId: 43,
+    lesson:
+      "the rung where Act III's climb crosses back above the previous act's tail: D_exec 28.213816 sits BELOW Act II's registered 28.455319 by 0.241503, so the act's maximum has not yet left the comparator — the boundary moment is measured, not assumed",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.10.2 (O6: within-par minimum) + §7.3 (the across-act clause rides the act's MEASURED MAXIMUM, never a given rung) · docs/ai-native-pipeline.md §8.26 (LV-018 authoring) + §8.27 (R-007 registration) · measured on the ROOT bytes: par 24 (solver-stamped), D_exec 28.213816 (sidecar record 43 = 28.213815789473685), B 1.4046 (in band), coverage 49/49, T ≡ R ≡ 0, M 4, dualPhaseTiles 7, all-OFF UNSATISFIABLE (11/912 states, no goal state), parRoutes 27/27 press-then-cross, refusedBeforeEnteredTiles 26, step Δpar +2 / ΔD_exec +1.975043 · the batch's own interior behaviour is printed rather than smoothed: the cross-act rise is carried by L45 alone, and this row is the evidence that a per-member reading would have been wrong · obligation NULL, remedy booked on L41's row · docs/level-difficulty.md §5.2 · src/levels/README.md §2i",
+  },
+  {
+    levelId: 44,
+    lesson:
+      "the opener's deepest rung: par 26 is the first Act III par beyond Act II's ceiling-band floor, and the batch's Δpar +2 step continues with ΔD_exec +2.011400 — the largest interior step of the batch",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.10.2 (O1: the window's fourth member; O3's reservation − this rung still tops out 31.0625, below any par-28 tail rung's 31.7500 floor) + §7.10.3 (Act III's par band runs 20–28, so 26 is in-band and 28 is withheld for the tail) · docs/ai-native-pipeline.md §8.26 (LV-018 authoring) + §8.27 (R-007 registration) · measured on the ROOT bytes: par 26 (solver-stamped), D_exec 30.225216 (sidecar record 44 = 30.22521551724138), B 1.4084 (in band), coverage 49/49, T ≡ R ≡ 0, M 4, dualPhaseTiles 7, all-OFF UNSATISFIABLE (11/928 states, no goal state), parRoutes 27/27 press-then-cross, refusedBeforeEnteredTiles 25, maxDepth 47 (the batch's deepest search), step Δpar +2 / ΔD_exec +2.011400 · obligation NULL, remedy booked on L41's row · docs/level-difficulty.md §5.2 · src/levels/README.md §2i",
+  },
+  {
+    levelId: 45,
+    lesson:
+      "Act III's REGISTERED TAIL after R-007: the closing rung takes the within-par MAXIMUM 30.455319 (against this par's registered minimum) — +2.000000 above Act II's registered tail, with 2.607181 of derived-exact headroom under Act III's ceiling 33.0625; §7.3.2's carrier for Act III is L51–L60, so this is a READING, not a discharge",
+    obligation: null,
+    switchRequired: "required",
+    evidence:
+      "docs/level-design.md §7.10.2 (O2/O6: the truncated top repeated at its within-par maximum — the act's maximum lands as late as the family permits) + §7.3 (the across-act clause: 30.455319 − 28.455319 = +2.000000) + §7.3.2 (the carrier obligation sits on L51–L60 and is NOT re-fired here) + §7.9 (headroom 33.0625 − 30.455319 = 2.607181 from the derived band end; the printed operand 33.06 would say 2.604681) · docs/ai-native-pipeline.md §8.27 · measured on the ROOT bytes: par 26 (solver-stamped), D_exec 30.455319 (sidecar record 45 = 30.45531914893617), B 1.4851 (in band), coverage 49/49, T ≡ R ≡ 0, M 4, dualPhaseTiles 7, all-OFF UNSATISFIABLE (11/940 states, no goal state), parRoutes 30/30 press-then-cross, refusedBeforeEnteredTiles 24, step Δpar +0 / ΔD_exec +0.230104 · obligation NULL, remedy booked on L41's row (an ACT_III_B1_LADDER-keyed `act-3-batch-1` obligation + one control per new code) · docs/level-difficulty.md §5.2 · src/levels/README.md §2i",
+  },
 ];
 
 export function documentedLesson(levelId: number): DocumentedLesson | null {
@@ -1916,7 +1961,14 @@ export const ACT_II_R006A_TAIL_HEADROOM_TO_EXEC_CEILING = 0.607181;
 export interface ActSeamReliefSpec {
   /** §7.3.1's instance number in `docs/level-design.md` (1 = the registered act-open). */
   readonly instance: number;
-  readonly kind: "batch-seam";
+  /**
+   * §7.3.1's register carries **two** kinds, and R-007 is where the second one becomes a
+   * constant rather than a paragraph: `batch-seam` (an interior seam, instances 2–4) and
+   * `act-open` (an act's first rung against the previous act's registered tail — instance 1
+   * at `L20→L21`, instance 5 at `L40→L41`). The union is widened **here**, in the commit that
+   * registers the first `act-open` spec, and no existing instance's `kind` moves.
+   */
+  readonly kind: "batch-seam" | "act-open";
   readonly fromLevelId: number;
   readonly toLevelId: number;
   /** The registered tail the seam drops from (`L25` / `L30`). */
@@ -2078,6 +2130,263 @@ export const ACT_II_SEAM_RELIEFS_ALL: readonly ActSeamReliefSpec[] = [
   ACT_II_R006A_SEAM_RELIEF,
 ];
 
+// ── Act III (GD-012 · docs/level-design.md §7.10) ─────────────────────────────
+//
+// Act III's band is **derived from its own `par` band on the same formula**, never extrapolated
+// from Act II's (ADR-design-0008 RULING A + the ADR's own handover item (b): "`ACT_III_EXEC_BAND`
+// should be **computed**, per LV-016's pattern"). Deriving it here — rather than re-typing the
+// published `[23.75, 33.06]` — is §7.9's notation law applied to a third band: **the derived-exact
+// value is the operand, the printed form is display text**.
+//
+// The one number this file does NOT derive is the comparator §7.3's across-act clause reads for
+// Act III: **Act II's registered maximum**, which is L40's measured `28.455319` — read from
+// `ACT_II_R006A_REGISTERED_TAIL_EXEC` (alias-typed below, so the two cannot drift apart).
+
+/** Act III's `par` band, read from §7.2's acts table (the plan of record), inclusive (§7.9). */
+export const ACT_III_PAR_FLOOR = 20;
+export const ACT_III_PAR_CEILING = 28;
+export const ACT_III_PAR_BAND: readonly [number, number] = [
+  ACT_III_PAR_FLOOR,
+  ACT_III_PAR_CEILING,
+];
+
+/** The measured `B` band, re-derived from the L1–L15 basis every run, never widened (§7.0). */
+export const ACT_III_B_BAND: readonly [number, number] = BLOCK_L1619_B_BAND;
+
+/**
+ * Act III's `D_exec` band, **computed** as `[PAR_FLOOR + 3·B_lo, PAR_CEILING + 3·B_hi]`.
+ * Both endpoints are dyadic ⇒ IEEE-754 bit-exact: `20 + 3·1.2500 = 23.7500` and
+ * `28 + 3·1.6875 = 33.0625`. Inclusive at both ends (§7.9).
+ */
+export const ACT_III_EXEC_BAND: readonly [number, number] = [
+  ACT_III_PAR_FLOOR + 3 * ACT_III_B_BAND[0],
+  ACT_III_PAR_CEILING + 3 * ACT_III_B_BAND[1],
+];
+
+/**
+ * The opener's `par` multiset, **derived** by §7.10.2's O1/O2 and quoted here as the derived
+ * value (the `H`/device census selects *boards*, never pars): the P2-exact five-member window
+ * `[20, 22, 24, 26, 28]` with the ceiling **withheld**, the 5th rung repeating the truncated top.
+ */
+export const ACT_III_OPENER_PAR_MULTISET: readonly number[] = [20, 22, 24, 26, 26];
+
+/** The truncated top the opener repeats at its 5th rung (O2's "within-par maximum"). */
+export const ACT_III_OPENER_TOP_PAR = ACT_III_OPENER_PAR_MULTISET[4] as number;
+
+/**
+ * **O3's reservation margin, derived — not taste.** Every opener rung tops out at
+ * `26 + 3·1.6875 = 31.0625`, while any `par 28` tail rung bottoms at `28 + 3·1.2500 = 31.7500`:
+ * the difference is **0.6875**, and it is what makes §7.3.2's `act-close` satisfiable **by
+ * construction** on `L51–L60` regardless of the opener's realised `B`. Consuming the ceiling
+ * destroys the guarantee.
+ */
+export const ACT_III_CEILING_RESERVATION_MARGIN =
+  ACT_III_PAR_CEILING + 3 * ACT_III_B_BAND[0] - (ACT_III_OPENER_TOP_PAR + 3 * ACT_III_B_BAND[1]);
+
+/** Act III batch 1 = the opener (`L41–L45`). Shelf candidates until a registration train moves them. */
+export const ACT_III_B1_IDS: readonly number[] = [41, 42, 43, 44, 45];
+
+/**
+ * §7.3.1 **instance 5** — the `act-open` seam `L40→L41`, **pre-published** by §7.10.4 before the
+ * rung existed. The bound is law; the exact value is a **fill-in before the bytes, never after**
+ * (see {@link ACT_III_B1_OPEN_RELIEF_EXEC} / {@link ACT_III_B1_OPEN_RELIEF_DELTA}). The comparator
+ * is **Act II's registered tail** (L40's measured `28.455319`), alias-typed so it cannot drift.
+ */
+export const ACT_III_B1_OPEN_RELIEF_LEVEL_ID = 41;
+export const ACT_III_B1_OPEN_RELIEF_PREVIOUS_LEVEL_ID = ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID;
+export const ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC = ACT_II_R006A_REGISTERED_TAIL_EXEC;
+export const ACT_III_B1_OPEN_RELIEF_DELTA_RANGE: readonly [number, number] = [-4.705319, -1.392819];
+
+/**
+ * **The FILL-IN** — §7.10.4's exact value, written **before any board byte** (LV-018 census commit;
+ * the bytes land in the commit that follows, so the order is git-provable). `_EXEC` is L41's
+ * measured `24.257329` at `par 20` / `B 1.4191`, taken from the published-budget census on the
+ * `7×7`/`CX = 1` frame (4402 accepts of 20000 judged, pool by par `20:171 · 21:333 · 22:387 ·
+ * 23:561 · 24:512 · 25:653 · 26:599 · 27:630 · 28:556`); `_DELTA` is **derived** from it, never
+ * re-typed, so the label and the comparator cannot drift apart.
+ *
+ * **The operand is the house-style display form, and its exact value is published beside it**
+ * (§7.9, and `F-L41-1`): the rung's measured `D_exec` is the double `24.25732899022801` and the
+ * seam's is `−4.197990009771988`, i.e. the 6-decimal forms above are display text whose residue is
+ * `|Δ| ≈ 9.8e-9` — inside `LAW_PRECISION` (`5e-7`), which is why every reader compares with `near()`
+ * and why `author-l21.ts` prints both forms rather than an equality. Act II's registered tails are
+ * carried the same way (`28.339426` for the sidecar's `28.33942558746736`).
+ *
+ * Both checks passed on the writing run: the delta sits **inside** §7.10.4's published union
+ * `[−4.705319, −1.392819]` **and** inside the admissible first-rung half for `par 20`
+ * (`[−4.705319, −3.392819]`). The decomposition is `Δpar = −4` (L40 `par 24` → L41 `par 20`, the
+ * dominant term) `+ 3·ΔB = −0.197971` (`B 1.4851 → 1.4191`; the printed forms are display
+ * roundings, §7.9) `= −4.197990`. A value outside either range is a **STOP-AND-ROUTE to GD**, and
+ * `author-l21.ts` refuses to `--write` on one.
+ */
+export const ACT_III_B1_OPEN_RELIEF_EXEC = 24.257329;
+export const ACT_III_B1_OPEN_RELIEF_DELTA =
+  ACT_III_B1_OPEN_RELIEF_EXEC - ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC;
+
+/**
+ * The **admissible first-rung split** of the published bound — §7.10.4's own arithmetic: the
+ * seam is the union of *L41 at `par 20`* ⇒ `[−4.705319, −3.392819]` and *L41 at `par 22`* ⇒
+ * `[−2.705319, −1.392819]`. These are **checked ranges**, so a fill-in that lands in the union but
+ * in neither admissible half is **outside** the label, not inside it.
+ */
+export const ACT_III_B1_OPEN_RELIEF_ADMISSIBLE_FIRST_RUNGS: readonly {
+  readonly par: number;
+  readonly deltaRange: readonly [number, number];
+}[] = [
+  { par: 20, deltaRange: [-4.705319, -3.392819] },
+  { par: 22, deltaRange: [-2.705319, -1.392819] },
+];
+
+// ── R-007 — Act III's opener registered: the tail law leaves Act II's basis ────
+//
+// Act II's four-registration shape, applied to an **act boundary** for the first time. The
+// reason is unchanged and it is not decoration: a law that compares an act's maximum against a
+// constant *restamped at the moment of registration* is self-confirming. So the previous act's
+// registered tail keeps its own constant (here **alias-typed** to `ACT_II_R006A_REGISTERED_TAIL_*`,
+// so "the comparator is the tail the previous registration left" is a compile-time fact), the new
+// act's tail gets its own constant, and the gap between them is a measured quantity with a pinned
+// identity: a single edit to either side fails.
+//
+// **Nothing above this line moved.** Every R-004a, R-005a and R-006a constant, the twenty
+// registered Act II ladder rows and the four §7.3.1 labels are byte-identical across this
+// registration; the 40 prior rungs' pars (17–28 ×40) are untouched, and **no Act II rung is
+// re-stamped** — the widening is `ACT_III_*` additions plus the clause sets below.
+
+/**
+ * **R-007** — the **frozen pre-registration standard**: Act II's registered tail as it stood
+ * *before* this ticket. **Alias-typed** to the R-006a constants (never re-typed), so the standard
+ * cannot drift from the tail the previous registration left — the R-003d rule, read across an act
+ * boundary for the first time.
+ */
+export const ACT_III_PRE_R007_REGISTERED_TAIL_LEVEL_ID = ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID;
+
+/** **R-007** — the pre-registration standard's value: `L40`'s registered `28.455319`. */
+export const ACT_III_PRE_R007_REGISTERED_TAIL_EXEC = ACT_II_R006A_REGISTERED_TAIL_EXEC;
+
+/** The rung that carries Act III's registered maximum **after** R-007 (§7.3.2's carrier is `L51–L60`; this is a reading). */
+export const ACT_III_REGISTERED_TAIL_LEVEL_ID = 45;
+
+/** **R-007** — the post-registration Act III tail: `L45`'s `D_exec`, the Solver's read-out of the ROOT bytes. */
+export const ACT_III_REGISTERED_TAIL_EXEC = 30.455319;
+
+/**
+ * **R-007** — the measured gap over the pre-registration standard:
+ * `30.455319 − 28.455319 = +2.000000`. §7.3.2's `act-close` obligation for Act III is carried by
+ * `L51–L60` and is **not** discharged — let alone re-fired — by this opener, so what this number
+ * records is a **reading**: the act's registered maximum after its first batch, carried by the
+ * batch's *last* rung. The guard checks the *derived* difference, so neither end can be edited alone.
+ */
+export const ACT_III_TAIL_ADVANTAGE = 2.0;
+
+/**
+ * **R-007** — §7.3's `act-peak` clause read across the act boundary: Act III's registered maximum
+ * exceeds Act II's registered tail (`28.455319`) by `+2.000000`. Act II's own across-act record
+ * ({@link ACT_II_R006A_REGISTERED_PEAK_ADVANTAGE_VS_ACT_I} `3.725907`) is **not** re-stamped: each
+ * registration's reading stays its own datum, so the three act-level readings cannot be swapped.
+ */
+export const ACT_III_REGISTERED_PEAK_ADVANTAGE_VS_ACT_II = 2.0;
+
+/**
+ * **R-007** — §7.9's **derived-exact** headroom from Act III's registered tail (after this
+ * registration) to **Act III's** `D_exec` ceiling:
+ *
+ * ```text
+ * ACT_III_EXEC_BAND[1] − tail = 33.0625 − 30.455319 = 2.607181
+ * ```
+ *
+ * The comparison operand is the **derived band** (`28 + 3·1.6875`), never the printed
+ * `[23.75, 33.06]`; a printed `33.06` operand would say `2.604681`, a `0.0025` lie — LV-016's
+ * sliver law, third band.
+ */
+export const ACT_III_TAIL_HEADROOM_TO_EXEC_CEILING = 2.607181;
+
+/**
+ * Act III batch 1's **registered rows** (LV-018's shelf booking, re-measured on the ROOT bytes by
+ * R-007 **before any law edit**): pars **20 / 22 / 24 / 26 / 26** — §7.10.2's derived (P2-exact,
+ * ceiling-reserved) multiset, ABSENT-never-substituted at the withheld `par 28` — `D_exec`
+ * **24.257329 / 26.238773 / 28.213816 / 30.225216 / 30.455319**, `B` **1.4191 / 1.4129 / 1.4046 /
+ * 1.4084 / 1.4851**, all five on `7 × 7` (the `CX = 1` frame §7.10.5 prefers) with **49/49**
+ * coverage and `T ≡ R ≡ 0`.
+ *
+ * A **registered row set** exactly like {@link ACT_II_B1_LADDER} / {@link ACT_II_B2_B3_LADDER} /
+ * {@link ACT_II_B4_LADDER}, and for the same reason: a restamp of any single rung is visible against
+ * it. Two measured facts are printed rather than smoothed. (a) `Δpar ≥ 2` holds on **3 of 4** steps
+ * (the last step is `Δpar 0`, `26 → 26` — O2's repeated truncated top). (b) The **closing rung takes
+ * the within-par maximum** (`30.455319` against that par's registered minimum) so that the act's
+ * maximum lands as late as the family permits; the act's own tail movement is `+2.000000` over the
+ * Act II standard, and `L43`/`L44` sit at `28.213816` / `30.225216`.
+ */
+export const ACT_III_B1_LADDER: readonly ActIILadderRow[] = [
+  { id: 41, par: 20, dexec: 24.257329, b: 1.4191, grid: [7, 7], coverage: 49 },
+  { id: 42, par: 22, dexec: 26.238773, b: 1.4129, grid: [7, 7], coverage: 49 },
+  { id: 43, par: 24, dexec: 28.213816, b: 1.4046, grid: [7, 7], coverage: 49 },
+  { id: 44, par: 26, dexec: 30.225216, b: 1.4084, grid: [7, 7], coverage: 49 },
+  { id: 45, par: 26, dexec: 30.455319, b: 1.4851, grid: [7, 7], coverage: 49 },
+];
+
+/**
+ * **R-007 / §7.3.1 instance 5** — Act III's `act-open` seam relief (`L40→L41`), **pre-published by
+ * GD-012 §7.10.4 as a bound** and **filled in before the bytes existed**. `L40 = 28.455319`
+ * (registered, Act II's tail) → `L41 = 24.257329`, `ΔD_exec = −4.197990`, band `[23.75, 33.0625]`
+ * (printed `[23.75, 33.06]`).
+ *
+ * **Provenance — the register's first fill-in-before-existence, and it is git-datable.**
+ * `b28ed97` (2026-10-19 19:08:32 +0800) published §7.10.4's *bound* before any census or byte;
+ * `db78a13` (2026-10-19 **19:22:17** +0800) wrote the §7.10.4 **fill-in** — the exact `_EXEC` /
+ * `_DELTA` constants, committed **one commit before `l041.json` existed**; the five boards landed at
+ * `568c136` (2026-10-19 **19:56:24** +0800). The fill-in therefore predates the bytes it explains by
+ * **34 min 7 s**, and it was verified INSIDE the pre-published bound before `--write`: the delta sits
+ * in the union `[−4.705319, −1.392819]` **and** in the admissible `par 20` half
+ * `[−4.705319, −3.392819]` ({@link ACT_III_B1_OPEN_RELIEF_ADMISSIBLE_FIRST_RUNGS}). Every earlier
+ * instance of this register was label-before-census; this one is **value-before-existence**, which is
+ * the stronger order §7.10.4's wording ("filled in against this pre-published form") asks for.
+ *
+ * The label below is GD-012 §7.10.4's text quoted **verbatim**, with the fill-in's decomposition
+ * recorded beside it and nothing else added.
+ */
+export const ACT_III_B1_OPEN_RELIEF: ActSeamReliefSpec = {
+  instance: 5,
+  kind: "act-open",
+  fromLevelId: 40,
+  toLevelId: 41,
+  fromExec: 28.455319,
+  toExec: 24.257329,
+  delta: -4.19799,
+  label:
+    "RELIEF LABEL — `act-open` seam L40→L41 · `ΔD_exec ∈ [−4.705319, −1.392819]` (exact value filled " +
+    "in against this pre-published form once L41's `par` is selected; `par` term `−4` at the band floor) " +
+    "· band `[23.75, 33.0625]` (printed `[23.75, 33.06]`). Interior relaxation at a `ΔM = 0` boundary, " +
+    "on the execution axis only — never a dip, never a claim of lower felt difficulty, and never the " +
+    "thing that satisfies a clause. §6's dip law does not fire: Act III introduces no mechanic unit " +
+    "(`M` unchanged; §7.10.5) — the both-pair object is variety inside §7.2's Act III family, one verb " +
+    "deeper than Act II's multi-pocket chain. `act-peak`/`act-close` ride on the act's measured maximum, " +
+    "and the carrier obligation sits on `L51–L60` (§7.3.2). The relief is largely an artifact of the " +
+    "measurement design: §7.10.2's opener ladder is derived (floor-anchored, P2-exact, ceiling reserved " +
+    "for the tail), so the `par` term drops by 4 by construction. The label asserts no ease the " +
+    "instrument cannot see — `D_exec` is blind to comprehension (`M`/`T` are not terms in it), so how " +
+    "the seam reads is a labelled Playtest hypothesis (§7.3.3; the star-era instrument reads `NOT " +
+    "TESTABLE, n = 0`), not a result. **FILL-IN (written before the bytes, commit `db78a13` " +
+    "2026-10-19 19:22:17 +0800; the five boards landed at `568c136` 2026-10-19 19:56:24 +0800): " +
+    "`ΔD_exec = −4.197990`, decomposition `Δpar = −4` (L40 `par 24` → L41 `par 20`, the dominant " +
+    "term) `+ 3·ΔB = −0.197971` (`B` `1.4851` → `1.4191`; printed forms are display roundings, §7.9), " +
+    "measured on L41's registered bytes as `24.25732899022801 − 28.45531914893617 = " +
+    "−4.19799015793...`; verified inside the published union AND inside the `par 20` admissible half " +
+    "before `--write`.**",
+};
+
+/**
+ * **R-007** — every §7.3.1 instance this law file carries, **across both registered acts**, in
+ * instance order (1–4 in Act II's law, 5 at the act boundary). `ACT_II_SEAM_RELIEFS_ALL` keeps its
+ * name and its three instances untouched — a list that grew by *appending* Act III's label to it
+ * would make an Act-II-named constant describe an Act III seam. This one is the register the
+ * **reading** resolves registered halves against; each clause stays scoped to the instances its own
+ * registration published.
+ */
+export const ACT_SEAM_RELIEFS_ALL: readonly ActSeamReliefSpec[] = [
+  ...ACT_II_SEAM_RELIEFS_ALL,
+  ACT_III_B1_OPEN_RELIEF,
+];
+
 // ── The clause ids ────────────────────────────────────────────────────────────
 
 /** The clause ids {@link actScaleTailGuards} reports (a closed union: a new clause is a compile error). */
@@ -2097,7 +2406,13 @@ export type ActTailClauseId =
   | "act-tail-r006a-tail-pin"
   | "act-tail-r006a-pre-standard"
   | "act-tail-r006a-exec-headroom"
-  | "act-tail-r006a-seam-reliefs";
+  | "act-tail-r006a-seam-reliefs"
+  | "act-tail-r007-registered-rows"
+  | "act-tail-r007-tail-pin"
+  | "act-tail-r007-peak-advantage"
+  | "act-tail-r007-pre-standard"
+  | "act-tail-r007-exec-headroom"
+  | "act-tail-r007-seam-reliefs";
 
 /**
  * **R-004a's** six clauses, by name — the subset `scripts/attest-r004a-act2.ts` owns a
@@ -2138,6 +2453,27 @@ export const ACT_TAIL_R006A_CLAUSE_IDS: readonly ActTailClauseId[] = [
   "act-tail-r006a-pre-standard",
   "act-tail-r006a-exec-headroom",
   "act-tail-r006a-seam-reliefs",
+];
+
+/**
+ * **R-007's** six clauses, by name — the subset `scripts/attest-r007-reg45.ts` owns a control for.
+ * R-007 is the first registration to add clauses for a **different act**, so its set carries both
+ * shapes: `act-tail-r007-registered-rows` / `-pre-standard` / `-exec-headroom` / `-seam-reliefs`
+ * mirror the previous trains, and two are new because the act boundary is new —
+ * `act-tail-r007-tail-pin` (Act III's own maximum, re-derived) and
+ * `act-tail-r007-peak-advantage` (the **across-act** rise, read against the previous act's
+ * registered tail). The four lists **partition** the reported set (asserted as a coverage reading by
+ * all four instruments — `6 + 5 + 5 + 6 = 22`, 0 unclaimed — so a twenty-third clause with no home
+ * reddens a printed row rather than slipping in). The split stays *per registration*, not per act:
+ * a clause belongs to the ticket that had to prove it.
+ */
+export const ACT_TAIL_R007_CLAUSE_IDS: readonly ActTailClauseId[] = [
+  "act-tail-r007-registered-rows",
+  "act-tail-r007-tail-pin",
+  "act-tail-r007-peak-advantage",
+  "act-tail-r007-pre-standard",
+  "act-tail-r007-exec-headroom",
+  "act-tail-r007-seam-reliefs",
 ];
 
 /** One measured act-scale clause. Deliberately **not** a {@link NamedGate}: it is an act-level
@@ -2284,6 +2620,40 @@ export interface ActScaleLawReading {
    * stop reproducing the pinned value.
    */
   readonly execCeiling: number;
+  /**
+   * **R-007** — Act III's measured peak over {@link ACT_III_B1_IDS}: the first act boundary in
+   * this register, so the act's own maximum needs its own reading (reading it off Act II's
+   * `actII` field would publish Act II's tail as "Act III's maximum" — the stale-reading failure
+   * R-004a named, one act later).
+   */
+  readonly actIII: ActPeakReading;
+  /**
+   * **R-007** — the measured rows of Act III batch 1, in registered order, read off the root
+   * bytes. The clause compares them against {@link ActScaleLawReading.actIIIBatchTable}.
+   */
+  readonly actIIIBatchRows: readonly ActIILadderRow[];
+  /**
+   * **R-007** — the registered rows the Act III clause is judged against. Production binds
+   * {@link ACT_III_B1_LADDER}; injectable for the same reason
+   * {@link ActScaleLawReading.actIIB4Table} is — a control has to be able to restamp **one row**
+   * of the table and watch the clause name the rung.
+   */
+  readonly actIIIBatchTable: readonly ActIILadderRow[];
+  /**
+   * **R-007** — the pre-registration standard Act III's tail is measured against: production binds
+   * {@link ACT_III_PRE_R007_REGISTERED_TAIL_EXEC}, which is itself **alias-typed** to Act II's
+   * R-006a tail constant. Injectable so a control can move the standard and show the rise clause
+   * refuses it.
+   */
+  readonly preR007Standard: number;
+  /**
+   * **R-007** — the `D_exec` ceiling the Act III headroom clause derives against: production binds
+   * the **derived-exact** {@link ACT_III_EXEC_BAND}`[1]` (`28 + 3·1.6875 = 33.0625`); injectable so
+   * a control can narrow the band and watch the derived headroom stop reproducing the pinned value.
+   * Deliberately a **separate field** from {@link ActScaleLawReading.execCeiling} (Act II's
+   * `29.0625`): one field for two bands would silently re-point an already-shipped clause.
+   */
+  readonly actIIIExecCeiling: number;
 }
 
 /** Build the law's reading from measurements, binding the terminal-rung clause to the live constants. */
@@ -2298,6 +2668,10 @@ export function actScaleLawReading(measured: {
   readonly actIIBatchRows: readonly ActIILadderRow[];
   /** R-006a: measured rows of batch 4 (in `ACT_II_B4_LADDER` order). */
   readonly actIIB4Rows: readonly ActIILadderRow[];
+  /** R-007: Act III batch 1's measured peak (in `ACT_III_B1_IDS` order-wise). */
+  readonly actIII: ActPeakReading;
+  /** R-007: measured rows of Act III batch 1 (in `ACT_III_B1_LADDER` order). */
+  readonly actIIIBatchRows: readonly ActIILadderRow[];
   /** R-005a/R-006a: the measured seam readings; the registered halves are **filled in from the law** here. */
   readonly seams: readonly {
     readonly fromLevelId: number;
@@ -2311,6 +2685,7 @@ export function actScaleLawReading(measured: {
     preR004aStandard: ACT_II_B1_PRE_R004A_REGISTERED_TAIL_EXEC,
     preR005aStandard: ACT_II_PRE_R005A_REGISTERED_TAIL_EXEC,
     preR006aStandard: ACT_II_PRE_R006A_REGISTERED_TAIL_EXEC,
+    preR007Standard: ACT_III_PRE_R007_REGISTERED_TAIL_EXEC,
     actOpenRelief: ACT_II_B1_OPEN_RELIEF_EXEC,
     l20Tail: {
       ids: BLOCK_L1619_IDS,
@@ -2319,14 +2694,15 @@ export function actScaleLawReading(measured: {
     },
     actIIBatchTable: ACT_II_B2_B3_LADDER,
     actIIB4Table: ACT_II_B4_LADDER,
+    actIIIBatchTable: ACT_III_B1_LADDER,
     // The registered half of each seam is read from the §7.3.1 spec the law publishes, keyed by
     // the rung pair — a seam whose rungs the law does not name gets no registered half at all,
     // and the clause reports the missing instance rather than inventing one. The lookup spans
-    // **every** instance this file carries (`ACT_II_SEAM_RELIEFS_ALL`), while each clause stays
-    // scoped to the instances its own registration published.
+    // **every** instance this file carries (`ACT_SEAM_RELIEFS_ALL`, both acts), while each clause
+    // stays scoped to the instances its own registration published.
     seams: measured.seams.map((seam) => {
       const spec =
-        ACT_II_SEAM_RELIEFS_ALL.find(
+        ACT_SEAM_RELIEFS_ALL.find(
           (s) =>
             s.fromLevelId === seam.fromLevelId && s.toLevelId === seam.toLevelId,
         ) ?? null;
@@ -2338,21 +2714,27 @@ export function actScaleLawReading(measured: {
       };
     }),
     execCeiling: ACT_II_EXEC_BAND[1],
+    actIIIExecCeiling: ACT_III_EXEC_BAND[1],
   };
 }
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) < LAW_PRECISION;
 
 /**
- * §7.3's `act-peak` clause as sixteen measured clauses, each with an anti-tautology guard.
+ * §7.3's `act-peak` clause as **twenty-two** measured clauses, each with an anti-tautology guard.
  * Six are **R-004a's** (the Act I pin, batch 1's record, the across-act rise, the
  * pre-registration standard, the un-restamped L20 tail, and the act-open relief), five are
  * **R-005a's** (the ten registered rows, the moved tail, the moved pre-standard, the
- * `§7.9` headroom identity, and the two §7.3.1 seam labels), and five are **R-006a's**
+ * `§7.9` headroom identity, and the two §7.3.1 seam labels), five are **R-006a's**
  * (batch 4's registered rows, the tail moved a fourth time, its pre-standard, its `§7.9`
- * headroom, and §7.3.1's fourth instance). {@link ACT_TAIL_R004A_CLAUSE_IDS} / {@link
- * ACT_TAIL_R005A_CLAUSE_IDS} / {@link ACT_TAIL_R006A_CLAUSE_IDS} name the split so that the
- * three instruments' control tables can be checked to *partition* this list:
+ * headroom, and §7.3.1's fourth instance), and six are **R-007's** — the first set written
+ * **across an act boundary** (Act III batch 1's registered rows, Act III's own tail pin, the
+ * across-act rise against the previous act's registered tail, its pre-standard, its `§7.9`
+ * headroom against **Act III's** ceiling, and §7.3.1's fifth instance, the register's first
+ * `act-open` species). {@link ACT_TAIL_R004A_CLAUSE_IDS} / {@link
+ * ACT_TAIL_R005A_CLAUSE_IDS} / {@link ACT_TAIL_R006A_CLAUSE_IDS} / {@link ACT_TAIL_R007_CLAUSE_IDS}
+ * name the split so that the four instruments' control tables can be checked to *partition* this
+ * list: `6 + 5 + 5 + 6 = 22`, **0 unclaimed** across both registered acts.
  *
  * **One basis rule, and it is not decoration.** A clause that states a property of *the act*
  * (3, 12–16) reads {@link ActScaleLawReading.actII} — the **live** registered act — while a
@@ -2473,6 +2855,11 @@ export function actScaleTailGuards(
     execCeiling,
     preR005aStandard,
     preR006aStandard,
+    actIII,
+    actIIIBatchRows,
+    actIIIBatchTable,
+    preR007Standard,
+    actIIIExecCeiling,
   } = reading;
   const advantage = actII.dexec - actI.dexec;
   const registeredAdvantage =
@@ -2604,6 +2991,75 @@ export function actScaleTailGuards(
     };
   });
   const seams4Ok = seamReadings4.every((s) => s.ok);
+
+  // ── R-007 readings ─────────────────────────────────────────────────────────
+  // The first **act boundary** in the register, so the two things that had one implementation per
+  // act now have two readings each: Act III's own maximum (`actIII`, from the root bytes) and the
+  // previous act's registered tail (`preR007Standard`, alias-typed to R-006a's constant). The Act
+  // III headroom derives against **Act III's** ceiling — a separate field from Act II's
+  // `execCeiling`, because one field for two bands would silently re-point an already-shipped
+  // clause (`act-tail-r005a/r006a-exec-headroom` must keep reading 29.0625).
+  const actIIITailInBand =
+    actIII.dexec >= ACT_III_EXEC_BAND[0] && actIII.dexec <= ACT_III_EXEC_BAND[1];
+  const actIIIHeadroom = actIIIExecCeiling - actIII.dexec;
+  const actIIIAcrossActAdvantage = actIII.dexec - ACT_II_R006A_REGISTERED_TAIL_EXEC;
+  const registeredActIIIAcrossActAdvantage =
+    ACT_III_REGISTERED_TAIL_EXEC - ACT_III_PRE_R007_REGISTERED_TAIL_EXEC;
+  const rowsRegisteredA3 = ACT_III_B1_LADDER.every((expected) => {
+    const measuredRow = rowOf(actIIIBatchRows, expected.id);
+    const tableRow = rowOf(actIIIBatchTable, expected.id);
+    return (
+      measuredRow !== null &&
+      tableRow !== null &&
+      near(measuredRow.dexec, expected.dexec) &&
+      measuredRow.par === expected.par &&
+      measuredRow.grid[0] === expected.grid[0] &&
+      measuredRow.grid[1] === expected.grid[1] &&
+      measuredRow.coverage === expected.coverage &&
+      toTolerance(measuredRow.b, expected.b) &&
+      near(tableRow.dexec, expected.dexec) &&
+      tableRow.par === expected.par
+    );
+  });
+  const restampedRowsA3 = ACT_III_B1_LADDER.filter((expected) => {
+    const measuredRow = rowOf(actIIIBatchRows, expected.id);
+    return measuredRow !== null && !near(measuredRow.dexec, expected.dexec);
+  }).map((r) => `L${String(r.id)}`);
+  // §7.3.1's fifth instance — the first `act-open` species in this law file. Its band is Act III's
+  // derived-exact band, and BOTH ends of it must sit inside it (the departing rung is Act II's
+  // registered tail, which §7.10.1's floor sits 4.705319 below — the interior-freedom shape).
+  const seamReadings5 = [ACT_III_B1_OPEN_RELIEF].map((spec) => {
+    const seam =
+      seams.find(
+        (s) => s.fromLevelId === spec.fromLevelId && s.toLevelId === spec.toLevelId,
+      ) ?? null;
+    const derivedDelta = seam === null ? Number.NaN : seam.toExec - seam.fromExec;
+    const admissiblePar =
+      ACT_III_B1_OPEN_RELIEF_ADMISSIBLE_FIRST_RUNGS.find(
+        (r) => spec.delta >= r.deltaRange[0] && spec.delta <= r.deltaRange[1],
+      ) ?? null;
+    return {
+      spec,
+      seam,
+      derivedDelta,
+      admissiblePar: admissiblePar?.par ?? null,
+      ok:
+        seam !== null &&
+        near(seam.fromExec, seam.registeredFrom) &&
+        near(seam.toExec, seam.registeredTo) &&
+        near(seam.registeredFrom, spec.fromExec) &&
+        near(seam.registeredTo, spec.toExec) &&
+        near(seam.registeredDelta, spec.delta) &&
+        near(derivedDelta, seam.registeredDelta) &&
+        spec.delta >= ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[0] &&
+        spec.delta <= ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[1] &&
+        seam.fromExec >= ACT_III_EXEC_BAND[0] &&
+        seam.fromExec <= ACT_III_EXEC_BAND[1] &&
+        seam.toExec >= ACT_III_EXEC_BAND[0] &&
+        seam.toExec <= ACT_III_EXEC_BAND[1],
+    };
+  });
+  const seams5Ok = seamReadings5.every((s) => s.ok);
 
   return [
     {
@@ -2932,6 +3388,110 @@ export function actScaleTailGuards(
         `PROVENANCE, which is what makes it registrable at all: the label was published in the rule commit BEFORE the census and before the bytes (see ACT_II_R006A_SEAM_RELIEF). ` +
         `Label, verbatim, as registered: "${ACT_II_R006A_SEAM_RELIEF.label.slice(0, 96)}…"`,
     },
+    // ── R-007 — Act III's opener registered: six clauses, the first act boundary ──
+    {
+      clause: "act-tail-r007-registered-rows",
+      label:
+        `R-007 / §7.10.2 — Act III's five opener rungs reproduce their registered row table (par ${ACT_III_B1_LADDER.map((r) => String(r.par)).join("/")}, D_exec ${String(ACT_III_B1_LADDER[0]?.dexec.toFixed(6))} … ${String(ACT_III_B1_LADDER[4]?.dexec.toFixed(6))}, grid 7×7, coverage 49) at the law's precision`,
+      status: rowsRegisteredA3 && restampedRowsA3.length === 0 ? "PASS" : "FAIL",
+      detail:
+        `The "never re-stamp a registered rung" duty applied at the act boundary: a restamp of ANY single one of the five FAILs here and is named (measured-restamped rows: ${restampedRowsA3.length === 0 ? "none" : restampedRowsA3.join(", ")}). ` +
+        `Rows read: ${ACT_III_B1_LADDER.map((r) => `L${String(r.id)} par=${String(r.par)}`).join(" · ")}. ` +
+        `ANTI-TAUTOLOGY: the clause compares the MEASURED rows (root bytes) against BOTH the registered table (injectable) and the pinned constant set, so editing the table alone or the bytes alone FAILs. ` +
+        `§7.10.2's multiset is ${ACT_III_OPENER_PAR_MULTISET.join("/")} and the measured rungs are exactly it: the withheld \`par ${String(ACT_III_PAR_CEILING)}\` is ABSENT and was never substituted (O2/O5), and O3's reservation margin re-derives as ${ACT_III_CEILING_RESERVATION_MARGIN.toFixed(4)}.`,
+    },
+    {
+      clause: "act-tail-r007-tail-pin",
+      label:
+        `R-007 / §7.3.2 — Act III's registered maximum, re-derived over its registered ids (${String(ACT_III_B1_IDS[0])}–${String(ACT_III_B1_IDS[ACT_III_B1_IDS.length - 1] ?? 0)}), is ${ACT_III_REGISTERED_TAIL_EXEC.toFixed(6)} at L${String(ACT_III_REGISTERED_TAIL_LEVEL_ID)} (carrier obligation L51–L60, so this is a READING, not a discharge)`,
+      status:
+        near(actIII.dexec, ACT_III_REGISTERED_TAIL_EXEC) &&
+        actIII.levelId === ACT_III_REGISTERED_TAIL_LEVEL_ID &&
+        actIIITailInBand
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `measured Act III max D_exec=${actIII.dexec.toFixed(6)} at L${String(actIII.levelId)}; registered ${ACT_III_REGISTERED_TAIL_EXEC.toFixed(6)} at L${String(ACT_III_REGISTERED_TAIL_LEVEL_ID)}; ` +
+        `inside the act's derived band [${ACT_III_EXEC_BAND[0].toFixed(4)}, ${String(ACT_III_EXEC_BAND[1])}] (printed [${ACT_III_EXEC_BAND[0].toFixed(2)}, ${ACT_III_EXEC_BAND[1].toFixed(2)}]; §7.9). ` +
+        `ANTI-TAUTOLOGY: a relabel onto another rung, or a basis that drops a registered rung, disagrees with the re-derived reading and FAILs here. ` +
+        `§7.3.2's \`act-close\` for Act III is carried by L51–L60 and is NOT re-fired by this opener — the same posture R-006a took inside Act II after R-005a discharged it, so this clause reads a value rather than asserting an obligation.`,
+    },
+    {
+      clause: "act-tail-r007-peak-advantage",
+      label:
+        `R-007 / §7.3 — the ACT BOUNDARY: Act III's measured act maximum strictly exceeds the PREVIOUS act's registered tail, and the registered gap is the measured gap (registered ${ACT_III_REGISTERED_TAIL_EXEC.toFixed(6)} − ${ACT_III_PRE_R007_REGISTERED_TAIL_EXEC.toFixed(6)} = ${ACT_III_REGISTERED_PEAK_ADVANTAGE_VS_ACT_II.toFixed(6)})`,
+      status:
+        actIIIAcrossActAdvantage > 0 &&
+        near(registeredActIIIAcrossActAdvantage, ACT_III_REGISTERED_PEAK_ADVANTAGE_VS_ACT_II) &&
+        near(actIIIAcrossActAdvantage, ACT_III_REGISTERED_PEAK_ADVANTAGE_VS_ACT_II)
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `measured Act III max ${actIII.dexec.toFixed(6)} (L${String(actIII.levelId)}) − Act II's registered tail ${ACT_II_R006A_REGISTERED_TAIL_EXEC.toFixed(6)} (L${String(ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID)}) = ${actIIIAcrossActAdvantage.toFixed(6)}; ` +
+        `registered ${ACT_III_REGISTERED_TAIL_EXEC.toFixed(6)} − ${ACT_III_PRE_R007_REGISTERED_TAIL_EXEC.toFixed(6)} = ${registeredActIIIAcrossActAdvantage.toFixed(6)} vs pinned ${ACT_III_REGISTERED_PEAK_ADVANTAGE_VS_ACT_II.toFixed(6)}. ` +
+        `ANTI-TAUTOLOGY, both directions: restamp Act III's tail upward and the measured (or the registered) gap stops reproducing the pin; relabel it onto a rung that is not Act III's maximum and the re-derived side moves instead. ` +
+        `THE COMPARATOR IS ALIAS-TYPED: \`ACT_III_PRE_R007_REGISTERED_TAIL_*\` IS \`ACT_II_R006A_REGISTERED_TAIL_*\`, so a later edit to Act II's tail moves this standard with it rather than silently freezing a value this clause would then be judged against. ` +
+        `§7.3's interior freedom still holds on the act's FIRST rung: L41 lands ${(ACT_III_B1_OPEN_RELIEF_DELTA).toFixed(6)} BELOW the previous act's tail, which is the labelled, registered plateau relaxation (clause 22) — the across-act rise is carried by the act's maximum, never by every member.`,
+    },
+    {
+      clause: "act-tail-r007-pre-standard",
+      label:
+        `R-007 / §7.3.2 — the R-003d shape ACROSS AN ACT BOUNDARY: the frozen pre-registration standard is the previous act's registered tail (${ACT_III_PRE_R007_REGISTERED_TAIL_EXEC.toFixed(6)} at L${String(ACT_III_PRE_R007_REGISTERED_TAIL_LEVEL_ID)}), and Act III's tail strictly exceeds it by the measured ${ACT_III_TAIL_ADVANTAGE.toFixed(6)}`,
+      status:
+        near(ACT_III_PRE_R007_REGISTERED_TAIL_EXEC, ACT_II_R006A_REGISTERED_TAIL_EXEC) &&
+        near(ACT_III_PRE_R007_REGISTERED_TAIL_LEVEL_ID, ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID) &&
+        near(preR007Standard, ACT_II_R006A_REGISTERED_TAIL_EXEC) &&
+        ACT_III_REGISTERED_TAIL_EXEC - preR007Standard > 0 &&
+        near(ACT_III_REGISTERED_TAIL_EXEC - preR007Standard, ACT_III_TAIL_ADVANTAGE)
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `standard read ${preR007Standard.toFixed(6)} at L${String(ACT_III_PRE_R007_REGISTERED_TAIL_LEVEL_ID)}; Act III tail ${ACT_III_REGISTERED_TAIL_EXEC.toFixed(6)}; derived gap ${(ACT_III_REGISTERED_TAIL_EXEC - preR007Standard).toFixed(6)} vs pinned ${ACT_III_TAIL_ADVANTAGE.toFixed(6)}. ` +
+        `ANTI-TAUTOLOGY, and it is the whole point of keeping the standard: emptying the move — restamping the standard to the post value — leaves the rise identity unsatisfied and FAILs loudly, and a control that injects a moved standard is refused by name. ` +
+        `The standard is ALIAS-TYPED to Act II's R-006a tail constant, so "the standard is the tail the previous registration left" is a compile-time fact rather than a comment; Act II's own across-act record ${ACT_II_R006A_REGISTERED_PEAK_ADVANTAGE_VS_ACT_I.toFixed(6)} and batch 1's ${ACT_II_B1_PEAK_ADVANTAGE.toFixed(6)} stay pinned elsewhere and are not restated here.`,
+    },
+    {
+      clause: "act-tail-r007-exec-headroom",
+      label:
+        `R-007 / §7.9 — Act III's registered tail keeps DERIVED-EXACT headroom to ITS OWN act ceiling: ${ACT_III_EXEC_BAND[1].toFixed(4)} − ${ACT_III_REGISTERED_TAIL_EXEC.toFixed(6)} = ${ACT_III_TAIL_HEADROOM_TO_EXEC_CEILING.toFixed(6)} (no rounded operand survives; the printed [23.75, 33.06] would say ${(33.06 - ACT_III_REGISTERED_TAIL_EXEC).toFixed(6)})`,
+      status:
+        near(actIII.dexec, ACT_III_REGISTERED_TAIL_EXEC) &&
+        actIIIHeadroom > 0 &&
+        near(actIIIHeadroom, ACT_III_TAIL_HEADROOM_TO_EXEC_CEILING) &&
+        near(actIIIExecCeiling, ACT_III_EXEC_BAND[1])
+          ? "PASS"
+          : "FAIL",
+      detail:
+        `ceiling read ${actIIIExecCeiling.toFixed(4)} (the derived-exact ACT_III_EXEC_BAND[1] = ${String(ACT_III_PAR_CEILING)} + 3·${ACT_III_B_BAND[1].toFixed(4)} = ${ACT_III_EXEC_BAND[1].toFixed(4)}); measured Act III tail ${actIII.dexec.toFixed(6)}; derived headroom ${actIIIHeadroom.toFixed(6)} vs pinned ${ACT_III_TAIL_HEADROOM_TO_EXEC_CEILING.toFixed(6)}. ` +
+        `ANTI-TAUTOLOGY, both single-edit directions: narrow Act III's band and the derived headroom falls below the pin; restamp the tail upward and it falls the other way — either edit FAILs here without touching the other constant. ` +
+        `The Act II headroom clauses keep reading THEIR ceiling (${ACT_II_EXEC_BAND[1].toFixed(4)}) through a separate field, so this clause cannot satisfy them and they cannot satisfy it: a band swap is a FAIL, not a shared number. ` +
+        `O3's guarantee survives the registration as a measured fact: the opener tops out at ${(ACT_III_OPENER_TOP_PAR + 3 * ACT_III_B_BAND[1]).toFixed(4)} while any \`par ${String(ACT_III_PAR_CEILING)}\` tail rung bottoms at ${(ACT_III_PAR_CEILING + 3 * ACT_III_B_BAND[0]).toFixed(4)} — margin ${ACT_III_CEILING_RESERVATION_MARGIN.toFixed(4)} — so \`act-close\` stays satisfiable on L51–L60 by construction.`,
+    },
+    {
+      clause: "act-tail-r007-seam-reliefs",
+      label:
+        `R-007 / §7.3.1 — the fifth PRE-PUBLISHED relief, and the register's first \`act-open\` species: ${seamReadings5.map((s) => `instance ${String(s.spec.instance)} \`${s.spec.kind}\` L${String(s.spec.fromLevelId)}→L${String(s.spec.toLevelId)} ΔD_exec=${s.spec.delta.toFixed(6)}`).join(" · ")} (bound [${ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[0].toFixed(6)}, ${ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[1].toFixed(6)}], band DERIVED-EXACT [${ACT_III_EXEC_BAND[0].toFixed(2)}, ${String(ACT_III_EXEC_BAND[1])}]; direction NOT part of the clause)`,
+      status: seams5Ok ? "PASS" : "FAIL",
+      detail:
+        seamReadings5
+          .map(
+            (s) =>
+              `instance ${String(s.spec.instance)} (${s.spec.kind}) L${String(s.spec.fromLevelId)}→L${String(s.spec.toLevelId)}: measured ${s.seam === null ? "MISSING" : `${s.seam.fromExec.toFixed(6)}→${s.seam.toExec.toFixed(6)}`} · ` +
+              `registered ${s.seam === null ? "n/a" : `${s.seam.registeredFrom.toFixed(6)}→${s.seam.registeredTo.toFixed(6)}`} · derived Δ ${s.derivedDelta.toFixed(6)} vs published ${s.spec.delta.toFixed(6)} · ` +
+              `publish-before-bytes bound [${ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[0].toFixed(6)}, ${ACT_III_B1_OPEN_RELIEF_DELTA_RANGE[1].toFixed(6)}] · admissible first-rung par ${s.admissiblePar === null ? "NONE (outside every admissible half!)" : String(s.admissiblePar)} · ok=${String(s.ok)}`,
+          )
+          .join(" | ") +
+        `. THE TIGHT MARGINS ARE PRINTED AS MEASURED READINGS, not smoothed: the derived Δ differs from the published −4.197990 by ` +
+        `${seamReadings5[0] === undefined || seamReadings5[0].seam === null ? "n/a" : Math.abs(seamReadings5[0].derivedDelta - ACT_III_B1_OPEN_RELIEF.delta).toExponential(4)} ` +
+        `and the L40 end by ` +
+        `${seamReadings5[0] === undefined || seamReadings5[0].seam === null ? "n/a" : Math.abs(seamReadings5[0].seam.fromExec - ACT_III_B1_OPEN_RELIEF.fromExec).toExponential(4)} ` +
+        `against LAW_PRECISION ${LAW_PRECISION.toExponential(1)} — both inside it. ` +
+        `The stored constant is the 6-decimal display form and the measured double is 24.25732899022801 / −4.19799015793… (F-L41-1: readers compare with \`near\`, never with \`===\`). ` +
+        `THE BOUND IS CHECKED AS A BOUND, not as prose: the registered delta must land inside §7.10.4's published union AND the union is split by O5's admissible first rungs (${ACT_III_B1_OPEN_RELIEF_ADMISSIBLE_FIRST_RUNGS.map((r) => `par ${String(r.par)} ⇒ [${r.deltaRange[0].toFixed(6)}, ${r.deltaRange[1].toFixed(6)}]`).join(" · ")}), so a fill-in that sits in the union but in neither admissible half is OUTSIDE the label — the clause prints the half it matched by name. ` +
+        `THE DIRECTION IS NOT PART OF THE STATUS: this seam DROPS (it is the act boundary), while the four interior rungs of Act III's opener RISE (+1.981444, +1.975043, +2.011400, +0.230104; the last step is par-flat, so its rise is all branching), so a validator demanding monotony would have refused the registered seam and a law demanding a drop would refuse the interior rungs. ` +
+        `PROVENANCE, which is what makes it registrable: the BOUND was published at \`b28ed97\` before any census or byte, the VALUE was filled in at \`db78a13\` BEFORE l041.json existed, and the bytes landed at \`568c136\` — the register's first fill-in-before-existence (see ACT_III_B1_OPEN_RELIEF). ` +
+        `Label, verbatim, as registered: "${ACT_III_B1_OPEN_RELIEF.label.slice(0, 96)}…"`,
+    },
   ];
 }
 
@@ -2967,9 +3527,18 @@ export function measureActScaleReading(
   levels: readonly Level[],
 ): ActScaleLawReading {
   const ids = levels.map((level) => level.id);
+  // Act I's basis is the **complement** of the registered later acts. That definition was exact
+  // while the dataset held two acts; R-007 opens a third, so the complement must name the new
+  // act boundary too or Act I's "measured peak" silently becomes Act III's (this is the
+  // stale-reading failure mode the frozen-era-basis comment above names, one act further out).
+  // Add the next registered act here when it opens — `actI` is a reading about §7.3's
+  // `act-peak` clause, which is scoped to one act and must never absorb a later act's tail.
   const actIPeak = actPeakOf(
     levels,
-    ids.filter((id) => !ACT_II_REGISTERED_IDS.includes(id)),
+    ids.filter(
+      (id) =>
+        !ACT_II_REGISTERED_IDS.includes(id) && !ACT_III_B1_IDS.includes(id),
+    ),
   );
   const measuredRowOf = (id: number): ActIILadderRow | null => {
     const level = levels.find((l) => l.id === id);
@@ -3014,10 +3583,16 @@ export function measureActScaleReading(
     actIIB4Rows: ACT_II_B4_LADDER.map(
       (row) => measuredRowOf(row.id) ?? { ...row, dexec: Number.NaN, b: Number.NaN },
     ),
+    // R-007: Act III's own peak and rows, measured from the same set — the act boundary needs its
+    // own reading, and reading it off `actII` would publish Act II's tail as Act III's maximum.
+    actIII: actPeakOf(levels, ACT_III_B1_IDS) ?? { levelId: 0, dexec: Number.NaN },
+    actIIIBatchRows: ACT_III_B1_LADDER.map(
+      (row) => measuredRowOf(row.id) ?? { ...row, dexec: Number.NaN, b: Number.NaN },
+    ),
     // Every §7.3.1 instance this file carries is MEASURED here, while each clause reads its own
     // registration's subset: a seam the caller's set does not contain comes back NaN and the
     // clause that names it FAILs, rather than being silently skipped.
-    seams: ACT_II_SEAM_RELIEFS_ALL.map((spec) => ({
+    seams: ACT_SEAM_RELIEFS_ALL.map((spec) => ({
       fromLevelId: spec.fromLevelId,
       toLevelId: spec.toLevelId,
       fromExec: seamRung(spec.fromLevelId),
