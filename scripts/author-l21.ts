@@ -977,6 +977,92 @@
  * per-rung `act-3-batch-2` obligation family (that is design + QA work, the R-005a2/R-006c
  * precedent), does **not** move `ACT_III_REGISTERED_TAIL_*` (registered — a shelf file moves no
  * registered constant), and does **not** legislate `L51–L60`'s ladders or the reservation's release.
+ *
+ * ── AMENDMENT — FINDING F-L46-1, published BEFORE the fix byte and before any board byte ────────
+ *
+ * Found the F-L36-1 way: by reading a printed line against the run that printed it, with no source
+ * reading. STEP 2's census (published above) was executed **as published** — identical command,
+ * `exit 0`, **146.12 s**, `20000` judged — and its readings contradict the ladder published above
+ * them. The fault is in the **instrument**, and it is named here rather than absorbed into the batch.
+ *
+ * 1. **What is on screen.** The header line prints `D_exec max over the L1–L15 basis = 30.455319`
+ *    and, **on that same line**, `basis ids [1, 2, …, 15, 41, 42, 43, 44, 45]`. The label names a
+ *    fifteen-id basis; the measurement names a twenty-id one. That disagreement **on screen** is the
+ *    F-L36-1 signature one act later, and it is again why the fault was findable without reading code.
+ * 2. **What is wrong.** `measureCut()` (this file) excludes `BLOCK_L1619_IDS` and
+ *    `ACT_II_REGISTERED_IDS` (L21–L40). **R-007 registered L41–L45**, so the basis silently became
+ *    `[1…15, 41…45]` and `cut.floor` became **30.455319** — Act III's **own** registered tail. The
+ *    exclusion list was extended for Act II at F-L36-1 and not extended for Act III at R-007: the same
+ *    mechanism, the same one-call-site-behind shape, **fifth occurrence** (R-003c/R-003d → R-004a →
+ *    R-005a → F-L36-1 → this). At LV-018 the identical list still printed `14.969697`, because no Act
+ *    III board existed in the root — so the fault is **registration-driven**, not a mistake in the
+ *    authoring rule this ticket published.
+ * 3. **The measured consequence — and it is not cosmetic.** The `escalation` gate is
+ *    `dexec > ctx.cut.floor`, so pre-fix it silently means *"`D_exec` > the registered Act III tail"*.
+ *    Three receipts; the first two are from the record, the third needs no run at all.
+ *    - **This batch, pre-fix** (STEP 2 as published): **`1138` accept(s)** of `20000` judged, *"accepts
+ *      by par"* reading **`par 27: 609`** (`D_exec 31.129450 … 31.429336`) and **`par 28: 529`**
+ *      (`32.157895 … 32.448936`) — i.e. **`par 22` and `par 24` have no accepts at all** (and neither
+ *      has any par below `27`). Refusal ledger: `derived-two-room-door 219 · escalation 3063 ·
+ *      escalation+g5-identity-broken 1032 · g5-identity-broken 111 · par-out-of-band 7794 ·
+ *      unsolvable 6643`; the accounting identity closes exactly (`1138 + 18862 = 20000`).
+ *    - **The recorded A/B (one-to-one, not an argument).** §8 of `scripts/author-l41-l45.transcript.md`
+ *      records the **identical** command for batch 5 (`--batch=5` the only difference, the
+ *      F-L41-2-repaired arm): **`4201` accept(s)** with **every** par `20 … 28` populated, and its
+ *      `par 27` / `par 28` rows are **`609` / `529` accept(s)** over the **same** `D_exec` ranges to
+ *      the digit. So the pre-fix reading here **is** that pool truncated by the `escalation` gate:
+ *      `4201 − 3063 = 1138` **exactly**. The truncation is total rather than approximate because the
+ *      recorded pools' own maxima (`par 24: … 28.455319`, `par 26: … 30.455319`) coincide with the
+ *      registered tails `L40`/`L45` and the gate is **strict** (`>`): with `D_exec = par + 3·B` and
+ *      `B ≤ 1.6875`, `D_exec > 30.455319` needs `par > 25.392819` at best, and in this pool nothing at
+ *      or below `par 26` reaches it — `par 24` and `par 26` are refused **to their last member**.
+ *    - **It is not an Act III-only breakage.** At the same frame the **Act II** path prints
+ *      `basis ids [1…15, 41…45]` too, so its `escalation` gate demands `D_exec > 30.455319` while the
+ *      same invocation prints its own band ceiling `29.0625` (`ACT_II_EXEC_BAND[1]`): the two are
+ *      **jointly unsatisfiable by arithmetic alone** — pre-fix, *every* Act II authoring census at
+ *      this frame necessarily returns `0 accept(s)`, whatever the frame's capacity is. No run is
+ *      needed to see it; it is on the first two lines of any Act II invocation.
+ * 4. **The pre-registered falsification test, answered in the order it was published.** The TEST above
+ *    fires when `par 22`'s pool is empty **while** an alternative tie-break member's window is
+ *    populated (`24`), and this lane additionally pre-registered that **`22` and `24` both empty** ⇒
+ *    `Δpar = 0` and the label is void ⇒ STOP. The pre-fix census *appears* to satisfy both legs. It is
+ *    **not** permitted to count as one, for the test's own reason: the test is a statement about **the
+ *    pool**, and the pre-fix pool is a statement about **a broken instrument**. Order executed:
+ *    **(a)** this finding published **before the fix moves** (this commit), naming the cause as the
+ *    instrument and never the law; **(b)** the fix lands; **(c)** the falsification test is **re-run on
+ *    the repaired instrument with the byte-identical command**; **(d)** the post-fix reading is
+ *    published **beside** the pre-fix one, both in the census record. If the repaired census still
+ *    leaves `par 22` or `par 24` empty, the pre-registered **STOP fires on the real reading** and this
+ *    ticket returns to GD with `B6`'s fallback untouched and no rung written. A batch that reports only
+ *    the census taken after the instrument was repaired is reporting the half it likes (F-L36-1 item 6,
+ *    restated for this batch).
+ * 5. **The fix, in the next commit, and it is not a tuning.** `measureCut()` excludes
+ *    `ACT_III_B1_IDS` **in addition to** `ACT_II_REGISTERED_IDS` — and, so that a sixth occurrence is
+ *    harder, the printed clause is **derived from the two constants** (it names the ids it actually
+ *    excluded) rather than being a fixed string, so the label can no longer disagree with `basis ids`
+ *    on screen. Blast radius, as a bound: the `escalation` gate and **two printed lines**; **no** band,
+ *    weight, metric, gate meaning, law constant, accept, registered number or byte moves, and nothing
+ *    is inherited from the recorded pool. **Revert path:** dropping `ACT_III_B1_IDS` restores
+ *    `30.455319` and re-truncates the census to `par 27`/`par 28`; both directions are re-measured,
+ *    never remembered.
+ * 6. **What the finder must not do.** (a) The truncation is **not** evidence about the device class or
+ *    the frame — §7.10.5's YAGNI clause and item 114's ceiling-wording law: a filter's verdict is not a
+ *    reading about a device. (b) It is **not** a `B6` event: `B6` is about *the pool*, and no pool has
+ *    yet been measured at this frame with a repaired instrument. (c) It is **not** licence to invent a
+ *    rule that a shelf rung's `D_exec` must exceed the registered root maximum — F-L36-1 item 4 stands
+ *    verbatim (that relation is an **id** relation, and `L31` sits at `23.204167`, below its era's
+ *    registered maximum). (d) No par is re-banded, no rung substituted, no ladder re-picked, no frame
+ *    switched and no `--peak` typed.
+ * 7. **Two readings from the same pre-fix frame, disclosed here so they are not surprises later.**
+ *    (a) The clone-guard receipt reads **`41` geometry key(s) taken over `45` root file(s)**
+ *    (`l001`–`l045`): the guard walks the **root**, non-recursively, so it must **not** grow when this
+ *    batch's five shelf files land in `src/levels/candidates/` — their five keys are checked **against**
+ *    those `41` keys (`41` registered + the batch's five, `0` collisions permitted). (b) STEP 1's
+ *    capacity receipt reads **`46` sealed rooms** in the favourable `parity`/`arrival` class
+ *    (`size 1: 35 · size 3: 3 · size 4: 8`, of which **`11`** are multi-tile — a walk-sealed room the
+ *    chain needs) with a **maximum pairwise-disjoint set of `8`** rooms; the device needs `5`
+ *    (landing pocket + `R2` + `R3` + `R4` + the goal's own seal), so the frame is not the constraint
+ *    this ticket is fighting — the instrument was.
  */
 
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
