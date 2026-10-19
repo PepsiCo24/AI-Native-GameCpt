@@ -2078,6 +2078,113 @@ export const ACT_II_SEAM_RELIEFS_ALL: readonly ActSeamReliefSpec[] = [
   ACT_II_R006A_SEAM_RELIEF,
 ];
 
+// ── Act III (GD-012 · docs/level-design.md §7.10) ─────────────────────────────
+//
+// Act III's band is **derived from its own `par` band on the same formula**, never extrapolated
+// from Act II's (ADR-design-0008 RULING A + the ADR's own handover item (b): "`ACT_III_EXEC_BAND`
+// should be **computed**, per LV-016's pattern"). Deriving it here — rather than re-typing the
+// published `[23.75, 33.06]` — is §7.9's notation law applied to a third band: **the derived-exact
+// value is the operand, the printed form is display text**.
+//
+// The one number this file does NOT derive is the comparator §7.3's across-act clause reads for
+// Act III: **Act II's registered maximum**, which is L40's measured `28.455319` — read from
+// `ACT_II_R006A_REGISTERED_TAIL_EXEC` (alias-typed below, so the two cannot drift apart).
+
+/** Act III's `par` band, read from §7.2's acts table (the plan of record), inclusive (§7.9). */
+export const ACT_III_PAR_FLOOR = 20;
+export const ACT_III_PAR_CEILING = 28;
+export const ACT_III_PAR_BAND: readonly [number, number] = [
+  ACT_III_PAR_FLOOR,
+  ACT_III_PAR_CEILING,
+];
+
+/** The measured `B` band, re-derived from the L1–L15 basis every run, never widened (§7.0). */
+export const ACT_III_B_BAND: readonly [number, number] = BLOCK_L1619_B_BAND;
+
+/**
+ * Act III's `D_exec` band, **computed** as `[PAR_FLOOR + 3·B_lo, PAR_CEILING + 3·B_hi]`.
+ * Both endpoints are dyadic ⇒ IEEE-754 bit-exact: `20 + 3·1.2500 = 23.7500` and
+ * `28 + 3·1.6875 = 33.0625`. Inclusive at both ends (§7.9).
+ */
+export const ACT_III_EXEC_BAND: readonly [number, number] = [
+  ACT_III_PAR_FLOOR + 3 * ACT_III_B_BAND[0],
+  ACT_III_PAR_CEILING + 3 * ACT_III_B_BAND[1],
+];
+
+/**
+ * The opener's `par` multiset, **derived** by §7.10.2's O1/O2 and quoted here as the derived
+ * value (the `H`/device census selects *boards*, never pars): the P2-exact five-member window
+ * `[20, 22, 24, 26, 28]` with the ceiling **withheld**, the 5th rung repeating the truncated top.
+ */
+export const ACT_III_OPENER_PAR_MULTISET: readonly number[] = [20, 22, 24, 26, 26];
+
+/** The truncated top the opener repeats at its 5th rung (O2's "within-par maximum"). */
+export const ACT_III_OPENER_TOP_PAR = ACT_III_OPENER_PAR_MULTISET[4] as number;
+
+/**
+ * **O3's reservation margin, derived — not taste.** Every opener rung tops out at
+ * `26 + 3·1.6875 = 31.0625`, while any `par 28` tail rung bottoms at `28 + 3·1.2500 = 31.7500`:
+ * the difference is **0.6875**, and it is what makes §7.3.2's `act-close` satisfiable **by
+ * construction** on `L51–L60` regardless of the opener's realised `B`. Consuming the ceiling
+ * destroys the guarantee.
+ */
+export const ACT_III_CEILING_RESERVATION_MARGIN =
+  ACT_III_PAR_CEILING + 3 * ACT_III_B_BAND[0] - (ACT_III_OPENER_TOP_PAR + 3 * ACT_III_B_BAND[1]);
+
+/** Act III batch 1 = the opener (`L41–L45`). Shelf candidates until a registration train moves them. */
+export const ACT_III_B1_IDS: readonly number[] = [41, 42, 43, 44, 45];
+
+/**
+ * §7.3.1 **instance 5** — the `act-open` seam `L40→L41`, **pre-published** by §7.10.4 before the
+ * rung existed. The bound is law; the exact value is a **fill-in before the bytes, never after**
+ * (see {@link ACT_III_B1_OPEN_RELIEF_EXEC} / {@link ACT_III_B1_OPEN_RELIEF_DELTA}). The comparator
+ * is **Act II's registered tail** (L40's measured `28.455319`), alias-typed so it cannot drift.
+ */
+export const ACT_III_B1_OPEN_RELIEF_LEVEL_ID = 41;
+export const ACT_III_B1_OPEN_RELIEF_PREVIOUS_LEVEL_ID = ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID;
+export const ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC = ACT_II_R006A_REGISTERED_TAIL_EXEC;
+export const ACT_III_B1_OPEN_RELIEF_DELTA_RANGE: readonly [number, number] = [-4.705319, -1.392819];
+
+/**
+ * **The FILL-IN** — §7.10.4's exact value, written **before any board byte** (LV-018 census commit;
+ * the bytes land in the commit that follows, so the order is git-provable). `_EXEC` is L41's
+ * measured `24.257329` at `par 20` / `B 1.4191`, taken from the published-budget census on the
+ * `7×7`/`CX = 1` frame (4402 accepts of 20000 judged, pool by par `20:171 · 21:333 · 22:387 ·
+ * 23:561 · 24:512 · 25:653 · 26:599 · 27:630 · 28:556`); `_DELTA` is **derived** from it, never
+ * re-typed, so the label and the comparator cannot drift apart.
+ *
+ * **The operand is the house-style display form, and its exact value is published beside it**
+ * (§7.9, and `F-L41-1`): the rung's measured `D_exec` is the double `24.25732899022801` and the
+ * seam's is `−4.197990009771988`, i.e. the 6-decimal forms above are display text whose residue is
+ * `|Δ| ≈ 9.8e-9` — inside `LAW_PRECISION` (`5e-7`), which is why every reader compares with `near()`
+ * and why `author-l21.ts` prints both forms rather than an equality. Act II's registered tails are
+ * carried the same way (`28.339426` for the sidecar's `28.33942558746736`).
+ *
+ * Both checks passed on the writing run: the delta sits **inside** §7.10.4's published union
+ * `[−4.705319, −1.392819]` **and** inside the admissible first-rung half for `par 20`
+ * (`[−4.705319, −3.392819]`). The decomposition is `Δpar = −4` (L40 `par 24` → L41 `par 20`, the
+ * dominant term) `+ 3·ΔB = −0.197971` (`B 1.4851 → 1.4191`; the printed forms are display
+ * roundings, §7.9) `= −4.197990`. A value outside either range is a **STOP-AND-ROUTE to GD**, and
+ * `author-l21.ts` refuses to `--write` on one.
+ */
+export const ACT_III_B1_OPEN_RELIEF_EXEC = 24.257329;
+export const ACT_III_B1_OPEN_RELIEF_DELTA =
+  ACT_III_B1_OPEN_RELIEF_EXEC - ACT_III_B1_OPEN_RELIEF_PREVIOUS_EXEC;
+
+/**
+ * The **admissible first-rung split** of the published bound — §7.10.4's own arithmetic: the
+ * seam is the union of *L41 at `par 20`* ⇒ `[−4.705319, −3.392819]` and *L41 at `par 22`* ⇒
+ * `[−2.705319, −1.392819]`. These are **checked ranges**, so a fill-in that lands in the union but
+ * in neither admissible half is **outside** the label, not inside it.
+ */
+export const ACT_III_B1_OPEN_RELIEF_ADMISSIBLE_FIRST_RUNGS: readonly {
+  readonly par: number;
+  readonly deltaRange: readonly [number, number];
+}[] = [
+  { par: 20, deltaRange: [-4.705319, -3.392819] },
+  { par: 22, deltaRange: [-2.705319, -1.392819] },
+];
+
 // ── The clause ids ────────────────────────────────────────────────────────────
 
 /** The clause ids {@link actScaleTailGuards} reports (a closed union: a new clause is a compile error). */
