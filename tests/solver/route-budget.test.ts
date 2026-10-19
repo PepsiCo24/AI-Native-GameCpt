@@ -724,6 +724,27 @@ const PINS: Readonly<Record<number, ShippedPin>> = {
   38: { shortest: 22, reachable: 920, positions: 49, maxDepth: 42, dualPhaseTiles: 7, refusedThenEnteredTiles: 25, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,2", "2,5", "3,0", "3,1", "3,3", "3,4", "3,6", "4,1", "4,2", "4,5", "4,6", "5,2", "5,4", "5,5", "6,1", "6,3", "6,5", "6,6"], deadStates: 0, unrecoverableStates: 0, parRoutes: 48, embedRoutes: 48, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 11, cost: { visits: 260, lookaheadVisits: 3169, prunedChildren: 453 } },
   39: { shortest: 24, reachable: 936, positions: 49, maxDepth: 42, dualPhaseTiles: 7, refusedThenEnteredTiles: 25, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,4", "3,1", "3,3", "3,5", "3,6", "4,2", "4,4", "4,5", "5,1", "5,2", "5,5", "5,6", "6,0", "6,1", "6,3", "6,4", "6,6"], deadStates: 0, unrecoverableStates: 0, parRoutes: 162, embedRoutes: 162, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 11, cost: { visits: 653, lookaheadVisits: 4478, prunedChildren: 998 } },
   40: { shortest: 24, reachable: 940, positions: 49, maxDepth: 44, dualPhaseTiles: 7, refusedThenEnteredTiles: 24, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,6", "3,1", "3,5", "4,2", "4,4", "4,6", "5,1", "5,2", "5,3", "5,5", "5,6", "6,0", "6,1", "6,3", "6,4", "6,5"], deadStates: 0, unrecoverableStates: 0, parRoutes: 30, embedRoutes: 30, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 11, cost: { visits: 196, lookaheadVisits: 3857, prunedChildren: 335 } },
+  // R-007 — Act III batch 1, the **act opener** (`l041`–`l045`), graduated from the
+  // LV-018 shelf to the root by R-007's byte-parity `git mv`. Transcribed from the
+  // regenerated sidecar's records 41–45 (`docs/level-difficulty.report.json`) and
+  // re-measured by the CLI's own `routeWalk` read-out — the five rows every projection
+  // below reads, never a note. All five are §4-clean (`deadStates 0`,
+  // `unrecoverableStates 0`) and full-coverage `49/49` (the whole 7 × 7 board, the frame
+  // axis R-006a's closing batch opened), so `positions` stays **49** ×5 and
+  // `dualPhaseTiles` stays **7** ×5 — the same pair reach on the same frame, which is
+  // why the opener adds to the column's *length* and not to its alphabet.
+  // `allOffGoalReachable: false` ×5 with an all-OFF subgraph of **11** states, exactly
+  // as batch 4 read it. `parRoutes` = `embedRoutes` **48 / 336 / 27 / 27 / 30** (L42 the
+  // opener's widest by an order of magnitude), `shortest` **20 / 22 / 24 / 26 / 26** and
+  // `maxDepth` **40 / 42 / 46 / 47 / 46**. The refused column is the records' own in
+  // **four** groups, never inferred: `l041`/`l042` share one 25-tile list, `l043` a
+  // 26-tile list, `l044` a second 25-tile list and `l045` a 24-tile list that differs
+  // from both 25-tile groups (several entries in, several out — not a truncation).
+  41: { shortest: 20, reachable: 921, positions: 49, maxDepth: 40, dualPhaseTiles: 7, refusedThenEnteredTiles: 25, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,2", "2,5", "3,0", "3,1", "3,3", "3,4", "3,6", "4,1", "4,2", "4,5", "4,6", "5,2", "5,3", "5,5", "6,1", "6,2", "6,4", "6,6"], deadStates: 0, unrecoverableStates: 0, parRoutes: 48, embedRoutes: 48, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 11, cost: { visits: 222, lookaheadVisits: 2891, prunedChildren: 345 } },
+  42: { shortest: 22, reachable: 913, positions: 49, maxDepth: 42, dualPhaseTiles: 7, refusedThenEnteredTiles: 25, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,2", "2,5", "3,0", "3,1", "3,3", "3,4", "3,6", "4,1", "4,2", "4,5", "4,6", "5,2", "5,3", "5,5", "6,1", "6,2", "6,4", "6,6"], deadStates: 0, unrecoverableStates: 0, parRoutes: 336, embedRoutes: 336, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 11, cost: { visits: 1338, lookaheadVisits: 6313, prunedChildren: 2145 } },
+  43: { shortest: 24, reachable: 912, positions: 49, maxDepth: 46, dualPhaseTiles: 7, refusedThenEnteredTiles: 26, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,3", "2,6", "3,1", "3,2", "3,4", "3,5", "4,2", "4,3", "4,4", "4,6", "5,1", "5,2", "5,3", "5,5", "6,0", "6,1", "6,3", "6,4"], deadStates: 0, unrecoverableStates: 0, parRoutes: 27, embedRoutes: 27, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 11, cost: { visits: 198, lookaheadVisits: 2485, prunedChildren: 439 } },
+  44: { shortest: 26, reachable: 928, positions: 49, maxDepth: 47, dualPhaseTiles: 7, refusedThenEnteredTiles: 25, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,3", "2,6", "3,1", "3,2", "3,4", "3,5", "4,2", "4,3", "4,6", "5,1", "5,2", "5,5", "6,0", "6,1", "6,3", "6,4", "6,6"], deadStates: 0, unrecoverableStates: 0, parRoutes: 27, embedRoutes: 27, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 11, cost: { visits: 201, lookaheadVisits: 3063, prunedChildren: 441 } },
+  45: { shortest: 26, reachable: 940, positions: 49, maxDepth: 46, dualPhaseTiles: 7, refusedThenEnteredTiles: 24, refusedThenEnteredTileList: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,6", "3,1", "3,5", "4,2", "4,4", "4,6", "5,1", "5,2", "5,3", "5,5", "5,6", "6,0", "6,1", "6,3", "6,4", "6,5"], deadStates: 0, unrecoverableStates: 0, parRoutes: 30, embedRoutes: 30, embedForced: true, allOffGoalReachable: false, allOffReachableStates: 11, cost: { visits: 198, lookaheadVisits: 3881, prunedChildren: 337 } },
 };
 
 /** Everything the CLI prints for a level, projected off the audit — one object, one diff. */
@@ -825,8 +846,10 @@ describe("LV-007B · n-11 — the shipped L1–L10 numbers are unchanged (LV-008
     // 6 ×5** (`720/740/766/772/766` states — the pair reach there is the six tiles of
     // row 0). R-006a's batch 4 closes the column: the `CX = 1` frame taken **wider**
     // (7 × 7, `positions` 49, `936/920/920/936/940` states) appends **7 ×5** — the pair
-    // reach on that frame. The column is a *list*, so a registered level with an
-    // unexpected pair-reach fails here by value.
+    // reach on that frame. R-007's Act III opener appends **7 ×5** more (the same
+    // frame, the same pair reach: `921/913/912/928/940` states), so the column's tail is
+    // **ten** 7s and its *alphabet* is unchanged. The column is a *list*, so a registered
+    // level with an unexpected pair-reach fails here by value.
     expect(
       table
         .filter((pin) => pin.dualPhaseTiles > 0)
@@ -834,6 +857,7 @@ describe("LV-007B · n-11 — the shipped L1–L10 numbers are unchanged (LV-008
     ).toEqual([
       21, 19, 16, 20, 15, 24, 24, 18, 18, 18, 12, 12, 12, 12, 12,
       12, 12, 12, 12, 12, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7,
+      7, 7, 7, 7, 7,
     ]);
     // The escalation count of the CLI run is one, and it is gate (iv)'s — unchanged
     // by n-11 but printed next to the same lines, so it is pinned with them.

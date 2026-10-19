@@ -27,7 +27,7 @@
  * is a **test** file, so this is not a second production path.
  *
  * The file list is discovered from the directory; the hand-pinned count is
- * {@link EXPECTED_LEVEL_COUNT} (the dataset's **40**-level ladder — R-002 tree →
+ * {@link EXPECTED_LEVEL_COUNT} (the dataset's **45**-level ladder — R-002 tree →
  * R-003's L11 unlock at `f484e23` → LV-009-B's L12–L15 block, ADR-design-0003 §8 →
  * R-003c's L16–L19 registration at `208c5eb`/`a75b420` → LV-011/R-003d's L20 sealed
  * landing, registered at `4deeb50` → **R-004a's Act II batch 1** (`l021`–`l025`,
@@ -35,7 +35,9 @@
  * (`l026`–`l035`, graduated from the shelf by the byte-parity `git mv` of
  * `agent/level/r-005a-reg35`, `src/levels/README.md` §2g) → **R-006a's Act II batch 4,
  * the act's closing rungs** (`l036`–`l040`, the same byte-parity `git mv` off the
- * LV-017 shelf; `src/levels/README.md` §2h + the sidecar's **40** records), which
+ * LV-017 shelf; `src/levels/README.md` §2h + the sidecar's **40** records) → **R-007's
+ * Act III batch 1, the act opener** (`l041`–`l045`, the same byte-parity `git mv` off the
+ * LV-018 shelf; `src/levels/README.md` §2i + the sidecar's **45** records), which
  * `playthrough.spec.ts`
  * compares the discovered set against. **Every other inventory is derived**
  * (QA-005c OQ2): {@link datasetIds}, {@link doorLevelIds}, {@link discoveredFileIds}
@@ -92,6 +94,17 @@ import { sameVec } from "@/core/state/types";
  * grown the *playable registry* to 40 rows in the same train, so this count is the
  * last pin the 40-level train needed — and it is re-taken **after** the sidecar, which
  * is why the two agree by measurement rather than by assertion.
+ * **R-007c re-pinned 40 → 45** when R-007 registered Act III batch 1, the act **opener**,
+ * at the dataset root (`src/levels/l041.json … l045.json`, the byte-parity `git mv` off
+ * the LV-018 shelf, `src/levels/README.md` §7f; the sidecar regenerated from the
+ * registered bytes to **45** records; `npm run levels` = 45/45 ok · 0 errors ·
+ * 218 warnings, `0` multi-switch-door). This is the first pin re-take across an
+ * **act boundary**, so the same train's second tooth (`l16-l20-candidates.test.ts`'s
+ * "two tails" row) had to be re-pointed in the same pass: the dataset's tail is now
+ * `ACT_III_REGISTERED_TAIL_LEVEL_ID` (45), while **both** frozen standards
+ * (`ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID` = 40, `ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID`
+ * = 35) stay exactly where their own registrations left them — R-007b had already grown
+ * the *playable registry* to 45 rows, so this count is again the last pin the train needed.
  * The pin moves **only** with a registration commit — it is the alarm, and the
  * registration is the event the alarm is *for*.
  *
@@ -114,11 +127,16 @@ import { sameVec } from "@/core/state/types";
  * precedent) and **R-005b the L26–L35 rows** (`agent/gameplay/r-005b-serve35`,
  * `1660f83`: registry serves 35, boot proof ids 1..35 in order), and **R-006b the
  * L36–L40 rows** (`agent/gameplay/r-006b-serve40`, `657be5036`: registry serves 40,
- * boot proof ids 1..40 in order, next-after-L35 = 36, `?level=36→35` / `?level=40→39`).
- * With those rows stacked the registry ships the same forty, and the
- * UI-walk specs (playthrough rows for every level, the `L1→L40` unlock chain,
- * `?level=36..40`) resolve off it and run green. The two registry-dependent unit
- * rows and the chain spec followed R-005b's and R-006b's rows, which is why R-005c's
+ * boot proof ids 1..40 in order, next-after-L35 = 36, `?level=36→35` / `?level=40→39`),
+ * and **R-007b the L41–L45 rows** (`agent/gameplay/r-007b-serve45`: registry serves 45,
+ * boot proof ids 1..45 in order with `l046` at **x0** — the phantom-row guard — and the
+ * full 44-step chain ending at 45, so this pin landed on an already-45 registry).
+ * With those rows stacked the registry ships the same forty-five, and the
+ * UI-walk specs (playthrough rows for every level, the `L1→L45` unlock chain,
+ * `?level=36..40`, `?level=41..45`) resolve off it and run green. The two
+ * registry-dependent unit
+ * rows and the chain spec followed R-005b's, R-006b's and R-007b's rows, which is why
+ * R-005c's, R-006c's
  * and this ticket's single
  * count re-take above is the whole migration: a *dependency* this dossier names
  * rather than a pin this file may paper over. The
@@ -126,7 +144,7 @@ import { sameVec } from "@/core/state/types";
  * move, whether or not the registry follows — and that independence is exactly what
  * keeps the registry rows *measurable* instead of self-fulfilling.
  */
-export const EXPECTED_LEVEL_COUNT = 40;
+export const EXPECTED_LEVEL_COUNT = 45;
 
 /**
  * The dataset directory — resolved **lazily**, at call time, so importing this
@@ -553,7 +571,7 @@ export function cheapestDoorFixtures(ref: LevelRef): {
   return { occupancy, refusedEntry };
 }
 
-/** Levels that ship at least one door — the dataset's latch levels (L6–L40). */
+/** Levels that ship at least one door — the dataset's latch levels (L6–L45). */
 export function levelsWithDoors(
   refs: readonly LevelRef[],
 ): readonly LevelRef[] {
@@ -682,7 +700,7 @@ export function cheapestPortalFixtures(ref: LevelRef): {
   return { teleport, inactive, pair };
 }
 
-/** Levels that ship at least one portal — the dataset's M2 levels (L11–L40). */
+/** Levels that ship at least one portal — the dataset's M2 levels (L11–L45). */
 export function levelsWithPortals(
   refs: readonly LevelRef[],
 ): readonly LevelRef[] {
@@ -1068,6 +1086,44 @@ export function refusalCensus(ref: LevelRef): RefusalCensus {
  * 240 s cap (par 22 and par 24 re-used, not re-derived) — **zero re-migration**, and the
  * cap's standing signal is neither widened nor silenced. The round that reads them fresh
  * is `tests/e2e/README.md` §1.18.
+ *
+ * ── R-007c: the Act III opener (L41–L45) walks the family to par 26 — the FIRST new ──
+ * **value above the cap since par 24, and it binds the cap a fourth time.** R-007's
+ * opener (`l041`–`l045`, `src/levels/README.md` §2i/§7f) parses at
+ * **20 / 22 / 24 / 26 / 26** — par 20, 22 and 24 are values the family already carries
+ * (par 20 was added by R-006a's batch 4 and lands *inside* the formula at 223 s; par 22
+ * and par 24 are the standing cap rows named at R-004c and R-005c), while **par 26 is
+ * new**. Three of the five new rows are therefore absorbed by the standing table with
+ * **zero re-migration**; the other two are the par-26 rung, and par 26 is *not* inside
+ * the formula:
+ *
+ * ```
+ * cloudUpperS(26)           = 5.9 × (1.17 × 26 − 1.28 + 3.0) = 5.9 × 32.14   = 189.626 s
+ * uncapped envelope (26)    = ceil(1.5 × 189.626) × 1000      = ceil(284.439) = 285_000 ms
+ * refusalRouteEnvelopeMs(26)= min(240_000, max(90_000, 285_000))              = 240_000 ms
+ * exceedance over the cap at par 26 = 285_000 − 240_000                       = +45_000 ms (+18.75 %)
+ * ```
+ *
+ * So **par 26 joins par 22, par 23 and par 24 as a named cap-binding row** — the fourth
+ * distinct par value the cap stops, and the first one the derivation has *not* seen
+ * before (22 → 24 were standing rows; 26 is read here for the first time). The par-24
+ * cap-binding row therefore **keeps its name** (it is not re-pointed, and L43/L44 ride
+ * it unchanged) *and* gains a successor above it. The exceedance is written out rather
+ * than hidden by the `min`: at par 26 the uncapped form would read **285 s**, i.e. the
+ * cap is doing 45 s of work on this rung.
+ *
+ * **What this re-reads about the cap's standing signal.** The cap has now stopped the
+ * derived form on **four** distinct par values (22, 23, 24, 26) — the first three named
+ * at R-004c/R-005c, the fourth here — so the signal stays loud instead of quiet, and it is
+ * *strengthened*: the two most recent of those values are 15 s (par 24) and 45 s (par 26)
+ * above the cap, so the exceedance is growing faster than the formula's slope, not
+ * levelling off.
+ * The envelope's own re-derivation (its cloud factor, or the cap) remains a **cloud-datum
+ * question** — QA-024's `4.40×` is the walk-class datum and the refusal family's is
+ * `5.9×` — and no fresh cloud round exists at 45 levels, so R-007c **registers the
+ * par-26 row and leaves both the cap and the formula standing**. Zero code moved: this
+ * is the same function, re-read. Every assertion in `refusal.spec.ts` is untouched —
+ * wall clock only. The round that reads these rows fresh is `tests/e2e/README.md` §1.19.
  */
 export function refusalRouteEnvelopeMs(par: number): number {
   /** Least-squares slope of the five local rows against par. */
@@ -1082,7 +1138,7 @@ export function refusalRouteEnvelopeMs(par: number): number {
   const SAFETY = 1.5;
   /** The constant this migration replaces — kept as a floor, so it only ever widens. */
   const FLOOR_MS = 90_000;
-  /** The ticket's absolute cap. It binds at par ≥ 22 (22, 23 and 24 all read it — see above). */
+  /** The ticket's absolute cap. It binds at par ≥ 22 (22, 23, 24 and 26 all read it — see above). */
   const CAP_MS = 240_000;
 
   const cloudUpperS =

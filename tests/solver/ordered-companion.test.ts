@@ -207,7 +207,7 @@ describe("LV-007B · item 2 — a trapped refusal is history-dependence, not a d
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("LV-007B · item 2 — the shipped latch levels are orderable latches", () => {
-  it("the ordered list is a subset of the unordered one on all ten shipped boards", () => {
+  it("the ordered list is a subset of the unordered one on every shipped latch board", () => {
     for (const id of SHIPPED_IDS) {
       const result = solve(shippedBoard(id));
       const unordered = new Set(result.refusedThenEnteredTileList);
@@ -268,7 +268,7 @@ describe("LV-007B · item 2 — the shipped latch levels are orderable latches",
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("LV-007C — gate (iii)'s switch to the ordered reader changes no shipped verdict", () => {
-  it("both forms report equal tile lists on all ten — so no shipped gate verdict can move", () => {
+  it("both forms report equal tile lists on every shipped level — so no shipped gate verdict can move", () => {
     // Iron proof ①, as an assertion rather than a sentence: gate (iii) is the only
     // reader that changed, and its verdict is `refusedBeforeEnteredTiles > 0`. On
     // every shipped level the ordered list *equals* the unordered one, so the
@@ -501,6 +501,36 @@ const ORDERED_PINS: Readonly<
     ordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,4", "3,1", "3,3", "3,5", "3,6", "4,2", "4,4", "4,5", "5,1", "5,2", "5,5", "5,6", "6,0", "6,1", "6,3", "6,4", "6,6"],
   },
   40: {
+    unordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,6", "3,1", "3,5", "4,2", "4,4", "4,6", "5,1", "5,2", "5,3", "5,5", "5,6", "6,0", "6,1", "6,3", "6,4", "6,5"],
+    ordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,6", "3,1", "3,5", "4,2", "4,4", "4,6", "5,1", "5,2", "5,3", "5,5", "5,6", "6,0", "6,1", "6,3", "6,4", "6,5"],
+  },
+  // R-007 — Act III batch 1 (`l041`–`l045`), the act **opener**, registered at the root.
+  // The device is the same `7 × 7` / `CX = 1` frame batch 4 closed on, read at Act III's
+  // derived par ladder `20 / 22 / 24 / 26 / 26`, coverage 49/49 ×5, so the latch is again
+  // witnessed rather than merely load-bearing and the ordered reader **equals** the
+  // unordered one on 5/5 — ADR-0002's coincidence holds across the act boundary too. The
+  // counts are the records' measured column: 25 tiles on `l041`/`l042`, **26** on `l043`
+  // (the opener's widest refusal surface — the first rung of the set to reach 26), 25 on
+  // `l044` (a *different* 25 from the first pair) and 24 on the closing rung `l045`. That
+  // is **four** groups on five rungs, which is why the rows are read out of the sidecar
+  // rather than inferred from a neighbour.
+  41: {
+    unordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,2", "2,5", "3,0", "3,1", "3,3", "3,4", "3,6", "4,1", "4,2", "4,5", "4,6", "5,2", "5,3", "5,5", "6,1", "6,2", "6,4", "6,6"],
+    ordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,2", "2,5", "3,0", "3,1", "3,3", "3,4", "3,6", "4,1", "4,2", "4,5", "4,6", "5,2", "5,3", "5,5", "6,1", "6,2", "6,4", "6,6"],
+  },
+  42: {
+    unordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,2", "2,5", "3,0", "3,1", "3,3", "3,4", "3,6", "4,1", "4,2", "4,5", "4,6", "5,2", "5,3", "5,5", "6,1", "6,2", "6,4", "6,6"],
+    ordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,2", "2,5", "3,0", "3,1", "3,3", "3,4", "3,6", "4,1", "4,2", "4,5", "4,6", "5,2", "5,3", "5,5", "6,1", "6,2", "6,4", "6,6"],
+  },
+  43: {
+    unordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,3", "2,6", "3,1", "3,2", "3,4", "3,5", "4,2", "4,3", "4,4", "4,6", "5,1", "5,2", "5,3", "5,5", "6,0", "6,1", "6,3", "6,4"],
+    ordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,3", "2,6", "3,1", "3,2", "3,4", "3,5", "4,2", "4,3", "4,4", "4,6", "5,1", "5,2", "5,3", "5,5", "6,0", "6,1", "6,3", "6,4"],
+  },
+  44: {
+    unordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,3", "2,6", "3,1", "3,2", "3,4", "3,5", "4,2", "4,3", "4,6", "5,1", "5,2", "5,5", "6,0", "6,1", "6,3", "6,4", "6,6"],
+    ordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,3", "2,6", "3,1", "3,2", "3,4", "3,5", "4,2", "4,3", "4,6", "5,1", "5,2", "5,5", "6,0", "6,1", "6,3", "6,4", "6,6"],
+  },
+  45: {
     unordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,6", "3,1", "3,5", "4,2", "4,4", "4,6", "5,1", "5,2", "5,3", "5,5", "5,6", "6,0", "6,1", "6,3", "6,4", "6,5"],
     ordered: ["1,0", "1,1", "1,2", "1,3", "1,4", "1,5", "1,6", "2,0", "2,6", "3,1", "3,5", "4,2", "4,4", "4,6", "5,1", "5,2", "5,3", "5,5", "5,6", "6,0", "6,1", "6,3", "6,4", "6,5"],
   },
