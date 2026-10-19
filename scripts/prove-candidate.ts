@@ -175,8 +175,17 @@ function measureCut(): { floor: number; l15Par: number; n: number; basis: readon
     // commit). The cut is still **frozen at L1–L15 = 14.969697**. The law's own id set
     // (`ACT_II_REGISTERED_IDS`, batch 1 + 2 + 3) is what the filter reads, so a future
     // registration extends the law once and this instrument follows it.
+    //
+    // R-007: same rule, **first act boundary** — Act III's opener (L41–L45) lands in the
+    // root, and the cut basis read 30.455319, so EVERY new rung was refused by
+    // `escalation  D_exec=24.257329 > CUT 30.455319` (measured, not remembered: that is
+    // the first line of the R-007 registration run). `ACT_III_B1_IDS` is the law's own
+    // id list for the act, so the exclusion grows by the act rather than by five typed
+    // ids. The cut stays **frozen at L1–L15 = 14.969697** — the across-act escalation
+    // belongs to §7.3's `act-peak` clause (`actScaleTailGuards`), never to a moving cut.
     if (BLOCK_L1619_IDS.includes(level.id)) continue;
     if (ACT_II_REGISTERED_IDS.includes(level.id)) continue;
+    if (ACT_III_B1_IDS.includes(level.id)) continue;
     basis.push(level.id);
     const d = analyseDifficulty(level, explore(level));
     if (d.Dexec !== null && d.Dexec > floor) floor = d.Dexec;
@@ -1118,9 +1127,16 @@ function multiPocketGates(
 // ── run ───────────────────────────────────────────────────────────────────────
 
 const cut = measureCut();
+// F-R007-2 (R-007, disclosed): this line's exclusion clause printed **Act II's** id list while
+// `measureCut()` had just been extended to exclude **Act III's** opener as well, so the label
+// under-reported its own reading — the F-L41-4 class one line further down. The clause is now
+// **derived from the two constants** (`ACT_II_REGISTERED_IDS` + `ACT_III_B1_IDS`) instead of
+// re-typing one of them, so the next act boundary cannot leave it behind again. Eye-readers: the
+// trim in the attest instruments (`cutLine.replace(/ \(the L16.*$/, "")`) and their
+// `D_exec max … basis ids […]` regex both stop before this clause, so no transcript byte moved.
 console.log(`prove-candidate — CUT re-measured from the shipped set: D_exec max = ${cut.floor.toFixed(6)} ` +
   `· par(L15) = ${String(cut.l15Par)} · ${String(cut.n)} shipped files · basis ids [${cut.basis.join(", ")}] ` +
-  `(the L16–L20 block and the registered Act II batches [${ACT_II_REGISTERED_IDS.join(", ")}] are excluded from their own filter — see measureCut)`);
+  `(the L16–L20 block, the registered Act II batches [${ACT_II_REGISTERED_IDS.join(", ")}] and Act III batch 1 [${ACT_III_B1_IDS.join(", ")}] are excluded from their own filter — see measureCut)`);
 console.log(
   `family ${FAMILY}${FAMILY === "g" ? " (Act II multi-pocket — §7.2 / §7.4 stage G)" : " (the L20 sealed landing — §6.2.6)"}` +
     ` · act ${String(ACT)}` +
