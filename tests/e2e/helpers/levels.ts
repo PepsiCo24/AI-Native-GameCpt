@@ -27,14 +27,16 @@
  * is a **test** file, so this is not a second production path.
  *
  * The file list is discovered from the directory; the hand-pinned count is
- * {@link EXPECTED_LEVEL_COUNT} (the dataset's **35**-level ladder — R-002 tree →
+ * {@link EXPECTED_LEVEL_COUNT} (the dataset's **40**-level ladder — R-002 tree →
  * R-003's L11 unlock at `f484e23` → LV-009-B's L12–L15 block, ADR-design-0003 §8 →
  * R-003c's L16–L19 registration at `208c5eb`/`a75b420` → LV-011/R-003d's L20 sealed
  * landing, registered at `4deeb50` → **R-004a's Act II batch 1** (`l021`–`l025`,
  * registered at `50e9ac0`/`178d9d8`) → **R-005a's Act II batches 2 + 3**
  * (`l026`–`l035`, graduated from the shelf by the byte-parity `git mv` of
- * `agent/level/r-005a-reg35`, `src/levels/README.md` §2g + the sidecar's
- * **35** records), which `playthrough.spec.ts`
+ * `agent/level/r-005a-reg35`, `src/levels/README.md` §2g) → **R-006a's Act II batch 4,
+ * the act's closing rungs** (`l036`–`l040`, the same byte-parity `git mv` off the
+ * LV-017 shelf; `src/levels/README.md` §2h + the sidecar's **40** records), which
+ * `playthrough.spec.ts`
  * compares the discovered set against. **Every other inventory is derived**
  * (QA-005c OQ2): {@link datasetIds}, {@link doorLevelIds}, {@link discoveredFileIds}
  * and {@link inventoryViolation} — so an unlock costs one pin, not three, while a
@@ -82,6 +84,14 @@ import { sameVec } from "@/core/state/types";
  * dataset root (`src/levels/l021.json … l025.json`, registered at `50e9ac0` and
  * published at `178d9d8`; `npm run levels` = 25/25 PASS, the sidecar regenerated to
  * 25 records).
+ * **R-006c re-pinned 35 → 40** when R-006a registered Act II batch 4, the act's
+ * closing rungs, at the dataset root (`src/levels/l036.json … l040.json`, the
+ * byte-parity `git mv` off the LV-017 shelf, `src/levels/README.md` §7e; the sidecar
+ * regenerated from the registered bytes to **40** records and byte-stable on a second
+ * run; `npm run levels` = 40/40 ok · 0 errors · 183 warnings). R-006b had already
+ * grown the *playable registry* to 40 rows in the same train, so this count is the
+ * last pin the 40-level train needed — and it is re-taken **after** the sidecar, which
+ * is why the two agree by measurement rather than by assertion.
  * The pin moves **only** with a registration commit — it is the alarm, and the
  * registration is the event the alarm is *for*.
  *
@@ -102,18 +112,21 @@ import { sameVec } from "@/core/state/types";
  * L16–L19 rows (`a75b420`), GAME-002 the L20 row (`4deeb50`), **R-004b the
  * L21–L25 rows** (`agent/gameplay/r-004b-serve25`, `1f72420`, the GAME-002
  * precedent) and **R-005b the L26–L35 rows** (`agent/gameplay/r-005b-serve35`,
- * `1660f83`: registry serves 35, boot proof ids 1..35 in order). With that row
- * stacked the registry ships the same thirty-five, and the
- * UI-walk specs (playthrough rows for every level, the `L1→L35` unlock chain,
- * `?level=26..35`) resolve off it and run green. The two registry-dependent unit
- * rows and the chain spec followed R-005b's row, which is why R-005c's single
+ * `1660f83`: registry serves 35, boot proof ids 1..35 in order), and **R-006b the
+ * L36–L40 rows** (`agent/gameplay/r-006b-serve40`, `657be5036`: registry serves 40,
+ * boot proof ids 1..40 in order, next-after-L35 = 36, `?level=36→35` / `?level=40→39`).
+ * With those rows stacked the registry ships the same forty, and the
+ * UI-walk specs (playthrough rows for every level, the `L1→L40` unlock chain,
+ * `?level=36..40`) resolve off it and run green. The two registry-dependent unit
+ * rows and the chain spec followed R-005b's and R-006b's rows, which is why R-005c's
+ * and this ticket's single
  * count re-take above is the whole migration: a *dependency* this dossier names
  * rather than a pin this file may paper over. The
  * dataset pin stays independent on purpose: it is the alarm that fires when the files
  * move, whether or not the registry follows — and that independence is exactly what
  * keeps the registry rows *measurable* instead of self-fulfilling.
  */
-export const EXPECTED_LEVEL_COUNT = 35;
+export const EXPECTED_LEVEL_COUNT = 40;
 
 /**
  * The dataset directory — resolved **lazily**, at call time, so importing this
@@ -540,7 +553,7 @@ export function cheapestDoorFixtures(ref: LevelRef): {
   return { occupancy, refusedEntry };
 }
 
-/** Levels that ship at least one door — the dataset's latch levels (L6–L35). */
+/** Levels that ship at least one door — the dataset's latch levels (L6–L40). */
 export function levelsWithDoors(
   refs: readonly LevelRef[],
 ): readonly LevelRef[] {
@@ -669,7 +682,7 @@ export function cheapestPortalFixtures(ref: LevelRef): {
   return { teleport, inactive, pair };
 }
 
-/** Levels that ship at least one portal — the dataset's M2 levels (L11–L35). */
+/** Levels that ship at least one portal — the dataset's M2 levels (L11–L40). */
 export function levelsWithPortals(
   refs: readonly LevelRef[],
 ): readonly LevelRef[] {
@@ -1033,6 +1046,28 @@ export function refusalCensus(ref: LevelRef): RefusalCensus {
  * re-derivation is a cloud-datum question (QA-024's `4.40×` is the walk-class datum; the
  * refusal family's is `5.9×`) and no fresh cloud round exists at 35 levels yet. This is
  * wall clock only — every assertion in the spec is untouched.
+ *
+ * ── R-006c: Act II batch 4 (L36–L40) — two new par values, and both land INSIDE ──
+ * R-006a's closing batch (`l036`–`l040`, the byte-parity `git mv` off the LV-017 shelf,
+ * `src/levels/README.md` §7e) walks the refusal family to par
+ * **18 / 20 / 22 / 24 / 24**: par 18 and par 20 are *new* values for the family, while
+ * par 22 and par 24 are the standing cap-binding rows above. Both new rungs land
+ * **inside the formula**, so no cap row is added and no number moves:
+ *
+ * ```
+ * cloudUpperS(18)          = 5.9 × (1.17 × 18 − 1.28 + 3.0) = 5.9 × 22.78   = 134.402 s
+ * envelope(18)             = ceil(1.5 × 134.402) × 1000      = ceil(201.603) = 202_000 ms
+ *                            → INSIDE the formula (202 s < cap), no cap-binding
+ *
+ * cloudUpperS(20)          = 5.9 × (1.17 × 20 − 1.28 + 3.0) = 5.9 × 25.12   = 148.208 s
+ * envelope(20)             = ceil(1.5 × 148.208) × 1000      = ceil(222.312) = 223_000 ms
+ *                            → INSIDE the formula (223 s < cap), no cap-binding
+ * ```
+ *
+ * So the five new refusal rows ride par 18's 202 s, par 20's 223 s and the standing
+ * 240 s cap (par 22 and par 24 re-used, not re-derived) — **zero re-migration**, and the
+ * cap's standing signal is neither widened nor silenced. The round that reads them fresh
+ * is `tests/e2e/README.md` §1.18.
  */
 export function refusalRouteEnvelopeMs(par: number): number {
   /** Least-squares slope of the five local rows against par. */
