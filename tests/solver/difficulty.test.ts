@@ -305,6 +305,36 @@ const PINS: Readonly<Record<number, DifficultyPin>> = {
   43: { L: 24, B: 1.4046, T: 0, R: 0, M: 4, D: 48.213816, dexec: 28.213816, bRaw: 2.6228, forced: 0.1469, lookahead: 23, states: 912 },
   44: { L: 26, B: 1.4084, T: 0, R: 0, M: 4, D: 50.225216, dexec: 30.225216, bRaw: 2.6487, forced: 0.1444, lookahead: 25, states: 928 },
   45: { L: 26, B: 1.4851, T: 0, R: 0, M: 4, D: 50.455319, dexec: 30.455319, bRaw: 2.7319, forced: 0.1404, lookahead: 25, states: 940 },
+  // R-008 — Act III batch 2, the act's **second half** (`l046`–`l050`), graduated from the
+  // LV-019 shelf to the root by R-008's byte-parity `git mv` (`src/levels/README.md`
+  // §2j/§7g). The five rows below are the **regenerated sidecar's** records 46–50
+  // (`docs/level-difficulty.report.json`, the law) re-read on the ROOT bytes by the shipped
+  // metric functions — the same read-out `scripts/solve-levels.ts` prints (`difficultyExec`),
+  // never a note. Shape in one column: `M = 4` ×5, `T ≡ R ≡ 0` ×5 (§4 holds — 0 dead,
+  // `noUnrecoverableOk` true), full coverage `49/49` ×5 on the same `7 × 7` frame, the par
+  // ladder is the **published multiset** `22 / 24 / 26 / 26 / 26` (`ACT_III_B2_PAR_MULTISET`;
+  // the P2 window's `par 28` is **withheld**, never substituted — B3/B4's truncate-and-fill
+  // is what turns the ladder's last two rungs into a *repeat* of the reserved top rather than
+  // a rising step, so `Δpar ≥ 2` holds on 2 of 4 steps and that count is printed rather than
+  // smoothed), and `D_exec` climbs 26.242489 → 30.417021 with the §7.3.1 **intra-act** seam
+  // between the batches: L46 lands **4.212830 below** L45 (30.455319) — instance 6's `batch-seam`
+  // label, `ACT_III_B2_SEAM_RELIEF` (−4.212830, inside the union `[−4.705319, −1.392819]` **and**
+  // inside `par 22`'s own half `[−4.705319, −3.392819]`), filled in from a census commit that
+  // precedes the board bytes (bound `b28ed97` → fill-in `db78a13` → bytes `568c136`). The five
+  // steps then read the honest shape rather than a template: `46→47 +1.973815` (par +2), `47→48
+  // +2.011117` (par +2), `48→49 +0.000143` and `49→50 +0.189457` — the last two are the steps the
+  // **repeated `par 26`** cannot express, which is why they are printed as measured values and not
+  // as a Δ law. `B` is inside the law band `[1.25, 1.6875]` on 5/5 (1.4142 / 1.4054 / 1.4091 /
+  // 1.4092 / 1.4723), so the batch adds no named excursion, and the **act's** registered maximum
+  // does NOT move: L50's 30.417021 sits **0.038298 below** L45's registered tail
+  // (`ACT_III_REGISTERED_TAIL_EXEC`), which is the R-008 zero-move — re-derived, not assumed
+  // (`act-tail-r008-tail-zero-move`, `scripts/attest-r008-reg50.ts`). `lookaheadDepth ≡ L − 1` holds
+  // on 5/5 (21 / 23 / 25 / 25 / 25), so the alternative reading of `T` is still not the missing lever.
+  46: { L: 22, B: 1.4142, T: 0, R: 0, M: 4, D: 46.242489, dexec: 26.242489, bRaw: 2.6352, forced: 0.1266, lookahead: 21, states: 932 },
+  47: { L: 24, B: 1.4054, T: 0, R: 0, M: 4, D: 48.216304, dexec: 28.216304, bRaw: 2.6, forced: 0.1283, lookahead: 23, states: 920 },
+  48: { L: 26, B: 1.4091, T: 0, R: 0, M: 4, D: 50.227421, dexec: 30.227421, bRaw: 2.6507, forced: 0.1447, lookahead: 25, states: 919 },
+  49: { L: 26, B: 1.4092, T: 0, R: 0, M: 4, D: 50.227564, dexec: 30.227564, bRaw: 2.6752, forced: 0.1432, lookahead: 25, states: 936 },
+  50: { L: 26, B: 1.4723, T: 0, R: 0, M: 4, D: 50.417021, dexec: 30.417021, bRaw: 2.7319, forced: 0.1404, lookahead: 25, states: 940 },
 };
 
 describe("LV-007B · item 3 — the shipped dataset's difficulty table, measured", () => {
@@ -549,6 +579,21 @@ describe("LV-007C · item 2 — `D_exec` is a derived reading of the published t
       "28.21",
       "30.23",
       "30.46",
+      // R-008 — Act III batch 2, the act's second half, dataset order: the five registered
+      // rungs' measured execution axis (26.242489 / 28.216304 / 30.227421 / 30.227564 /
+      // 30.417021), the same column `docs/level-difficulty.md` §5.2 and the sidecar print.
+      // "26.24" is L46, the first ever **intra-act** relief instance (4.212830 below L45,
+      // instance 6's `ACT_III_B2_SEAM_RELIEF`); the last value is the dataset tail, which is
+      // NOT the act's registered tail: L50's 30.417021 sits 0.038298 BELOW L45's 30.455319,
+      // so the tail constant did not move (R-008's zero-move). Par 22 — L46 — repeats the
+      // par-22 CAP-BOUND row, and par 24/26 (L47 / L48–L50) repeat the standing par-24 and
+      // par-26 CAP-BOUND rows on `refusalRouteEnvelopeMs` (helpers/levels.ts, §1.20), so the
+      // whole batch is absorbed with ZERO re-migration and NO fifth cap row.
+      "26.24",
+      "28.22",
+      "30.23",
+      "30.23",
+      "30.42",
     ]);
   });
 });

@@ -27,7 +27,7 @@
  * is a **test** file, so this is not a second production path.
  *
  * The file list is discovered from the directory; the hand-pinned count is
- * {@link EXPECTED_LEVEL_COUNT} (the dataset's **45**-level ladder — R-002 tree →
+ * {@link EXPECTED_LEVEL_COUNT} (the dataset's **50**-level ladder — R-002 tree →
  * R-003's L11 unlock at `f484e23` → LV-009-B's L12–L15 block, ADR-design-0003 §8 →
  * R-003c's L16–L19 registration at `208c5eb`/`a75b420` → LV-011/R-003d's L20 sealed
  * landing, registered at `4deeb50` → **R-004a's Act II batch 1** (`l021`–`l025`,
@@ -37,7 +37,9 @@
  * the act's closing rungs** (`l036`–`l040`, the same byte-parity `git mv` off the
  * LV-017 shelf; `src/levels/README.md` §2h + the sidecar's **40** records) → **R-007's
  * Act III batch 1, the act opener** (`l041`–`l045`, the same byte-parity `git mv` off the
- * LV-018 shelf; `src/levels/README.md` §2i + the sidecar's **45** records), which
+ * LV-018 shelf; `src/levels/README.md` §2i + the sidecar's **45** records) → **R-008's
+ * Act III batch 2, the act's second half** (`l046`–`l050`, the same byte-parity `git mv` off
+ * the LV-019 shelf; `src/levels/README.md` §2j/§7g + the sidecar's **50** records), which
  * `playthrough.spec.ts`
  * compares the discovered set against. **Every other inventory is derived**
  * (QA-005c OQ2): {@link datasetIds}, {@link doorLevelIds}, {@link discoveredFileIds}
@@ -108,6 +110,23 @@ import { sameVec } from "@/core/state/types";
  * The pin moves **only** with a registration commit — it is the alarm, and the
  * registration is the event the alarm is *for*.
  *
+ * **R-008c re-pinned 45 → 50** when R-008 registered Act III batch 2, the act's **second
+ * half**, at the dataset root (`src/levels/l046.json … l050.json`, the byte-parity `git mv`
+ * off the LV-019 shelf, `src/levels/README.md` §2j/§7g; the sidecar regenerated from the
+ * registered bytes to **50** records → `npm run levels` read live in this ticket). This is
+ * the first pin re-take **inside** an act — every earlier take crossed a boundary or was
+ * absorbed by one — and it is exactly the case where the "dataset tail ≡ act tail" shorthand
+ * breaks: R-008 widened Act III's **registered id set** to `41–50` but its re-derivation found
+ * the act's measured `D_exec` peak **unchanged at L45** (`ACT_III_REGISTERED_TAIL_LEVEL_ID`
+ * stays 45, now *interior*), so this pin names `ACT_III_REGISTERED_IDS.at(-1)` and **not** the
+ * tail constant. `l16-l20-candidates.test.ts`'s "two tails" row was re-pointed in the same
+ * pass (§1.20) — **the re-point had to land before this lever moved**, because the row's old
+ * form (`EXPECTED_LEVEL_COUNT ≡ ACT_III_REGISTERED_TAIL_LEVEL_ID`) would have gone red on the
+ * new count and, worse, a lever-first order would have made "50" look like the act's tail and
+ * re-stamped a *peak law* with a *census number*. Teeth first, lever second. R-008b had
+ * already grown the *playable registry* to 50 rows (`?level=51→50` phantom-row guard, the full
+ * 49-step chain), so this count is again the last pin the train needed.
+ *
  * **This is the one deliberately hand-typed dataset pin** (QA-005c, OQ2 ruling at
  * project-status item 58; re-affirmed by QA-011): a dataset change cannot silently
  * re-baseline the suite. QA-011's migration rule was derivation-first — every other
@@ -130,13 +149,16 @@ import { sameVec } from "@/core/state/types";
  * boot proof ids 1..40 in order, next-after-L35 = 36, `?level=36→35` / `?level=40→39`),
  * and **R-007b the L41–L45 rows** (`agent/gameplay/r-007b-serve45`: registry serves 45,
  * boot proof ids 1..45 in order with `l046` at **x0** — the phantom-row guard — and the
- * full 44-step chain ending at 45, so this pin landed on an already-45 registry).
- * With those rows stacked the registry ships the same forty-five, and the
- * UI-walk specs (playthrough rows for every level, the `L1→L45` unlock chain,
- * `?level=36..40`, `?level=41..45`) resolve off it and run green. The two
+ * full 44-step chain ending at 45, so this pin landed on an already-45 registry), and
+ * **R-008b the L46–L50 rows** (`agent/gameplay/r-008b-serve50`: registry serves 50, boot
+ * proof ids 1..50 in order with `l051` at **x0** — the same phantom-row guard — and the
+ * full 49-step chain ending at 50).
+ * With those rows stacked the registry ships the same fifty, and the
+ * UI-walk specs (playthrough rows for every level, the `L1→L50` unlock chain,
+ * `?level=36..40`, `?level=41..45`, `?level=46..50`) resolve off it and run green. The two
  * registry-dependent unit
- * rows and the chain spec followed R-005b's, R-006b's and R-007b's rows, which is why
- * R-005c's, R-006c's
+ * rows and the chain spec followed R-005b's, R-006b's, R-007b's and R-008b's rows, which is why
+ * R-005c's, R-006c's, R-007c's
  * and this ticket's single
  * count re-take above is the whole migration: a *dependency* this dossier names
  * rather than a pin this file may paper over. The
@@ -144,7 +166,7 @@ import { sameVec } from "@/core/state/types";
  * move, whether or not the registry follows — and that independence is exactly what
  * keeps the registry rows *measurable* instead of self-fulfilling.
  */
-export const EXPECTED_LEVEL_COUNT = 45;
+export const EXPECTED_LEVEL_COUNT = 50;
 
 /**
  * The dataset directory — resolved **lazily**, at call time, so importing this
@@ -571,7 +593,15 @@ export function cheapestDoorFixtures(ref: LevelRef): {
   return { occupancy, refusedEntry };
 }
 
-/** Levels that ship at least one door — the dataset's latch levels (L6–L45). */
+/**
+ * Levels that ship at least one door — the dataset's latch levels (L6–L50).
+ *
+ * R-008c: the range is **derived** (the door-bearing ids are read off the shipped files and
+ * compared against {@link EXPECTED_LEVEL_COUNT}), so the 45 → 50 re-take moved this label
+ * only — the assertion itself healed off the pin. R-008's five rungs all ship doors (the
+ * `§1` latch shape, one switch per door per `l16-l20-candidates.test.ts`), so the label's
+ * upper bound is the dataset tail.
+ */
 export function levelsWithDoors(
   refs: readonly LevelRef[],
 ): readonly LevelRef[] {
@@ -700,7 +730,13 @@ export function cheapestPortalFixtures(ref: LevelRef): {
   return { teleport, inactive, pair };
 }
 
-/** Levels that ship at least one portal — the dataset's M2 levels (L11–L45). */
+/**
+ * Levels that ship at least one portal — the dataset's M2 levels (L11–L50).
+ *
+ * R-008c: same derived range as the door list above; R-008's five rungs keep Act III's M2
+ * vocabulary (the act's portals are inherited from the opener's frame), so the upper bound is
+ * again the dataset tail rather than a typed 45.
+ */
 export function levelsWithPortals(
   refs: readonly LevelRef[],
 ): readonly LevelRef[] {
@@ -1124,6 +1160,24 @@ export function refusalCensus(ref: LevelRef): RefusalCensus {
  * par-26 row and leaves both the cap and the formula standing**. Zero code moved: this
  * is the same function, re-read. Every assertion in `refusal.spec.ts` is untouched —
  * wall clock only. The round that reads these rows fresh is `tests/e2e/README.md` §1.19.
+ *
+ * ── R-008c: Act III batch 2 (L46–L50) adds NO new par value, so this function is re-read ──
+ * **and again not re-derived.** R-008's five rungs parse at **22 / 24 / 26 / 26 / 26**
+ * (the published multiset `ACT_III_B2_PAR_MULTISET`, ABSENT-never-substituted at the
+ * withheld `par 28`) — every one of those three values is already a **standing cap-binding
+ * row** (22 and 24 named at R-004c/R-005c, 26 named at R-007c). So the batch is absorbed by
+ * the standing table with **zero re-migration**, the par-26 rung **keeps its name** (it is
+ * not re-pointed, and it does not gain a successor here), and the cap's standing signal stays
+ * at **four** distinct par values rather than five. That is the *expected* reading — a new
+ * cap-binding row would mean the vocabulary had grown a par **above 26**, and B3 explicitly
+ * withholds `par 28` for the `L51–L60` tail. The plain refusal run (no throttle) is what
+ * measures it, and `tests/e2e/README.md` §1.20 quotes the live result either way.
+ *
+ * ```
+ * par-26 row re-read at 50 rungs: cloudUpperS(26) = 189.626 s (unchanged, par-derived only)
+ *                                 refusalRouteEnvelopeMs(26) = min(240_000, 285_000) = 240_000 ms
+ *                                 → the SAME row L43/L44/L48/L49/L50 ride. No fifth cap row.
+ * ```
  */
 export function refusalRouteEnvelopeMs(par: number): number {
   /** Least-squares slope of the five local rows against par. */

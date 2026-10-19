@@ -28,6 +28,20 @@
  * `jsdom` is opted into per file (the config's default environment is `node`,
  * `vite.config.ts` documents this directive). No Phaser is imported: the HUD is DOM
  * only (§7.2), and the board is not part of this claim.
+ *
+ * ── R-008c: the drift guard is anchored, and the guard is proved in both directions ──
+ * The QA-005 pin's expectation was a *bare* `not.toContain("L1–L5")`. That is only a
+ * sound negation while the honest label is short enough not to contain the stranded
+ * string; when R-008b grew the registry to **50** rows the end panel correctly rendered
+ * `L1–L50 cleared · L 50: moves 26`, which **contains `L1–L5` as a prefix** — so the row
+ * reddened on a *correct* HUD and, worse, the negation had become unfalsifiable-good
+ * (no honest future label can satisfy it *and* the strands it named are all prefixes of
+ * the honest one). This file now asserts the law the guard always meant — **no stranded
+ * range**, i.e. `L1–L5` not followed by a further digit — with a lookahead, and pins the
+ * matcher's non-vacuity in **both** directions on strings, so the anchor cannot silently
+ * become a no-op. The `not.toContain("L1–L5")` form now survives **as an assertion** nowhere in
+ * `tests/**` — the two occurrences that remain are this file's and
+ * `playthrough.spec.ts`'s own explanatory prose (grep-checked in `tests/e2e/README.md` §1.20).
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -158,12 +172,35 @@ describe("the end panel copy (TICKET-QA-005-2)", () => {
     expect(mounted.title()).toBe("原型结束 / Prototype over");
     expect(mounted.nextHidden()).toBe(true);
     const body = mounted.body();
-    expect(body).not.toContain("L1–L5"); // the pinned defect, gone
-    // …and the whole drift class is gone: no *other* stale range either. The exact
-    // equality below is what really holds this line, but the pair of negations names
-    // both instances the repo has actually shipped (five, then ten, then eleven).
-    expect(body).not.toContain("L1–L10");
-    expect(body).not.toContain("L1–L11");
+    // The drift-class guard, **ANCHORED** (R-008c — item 166's substring-negation trap).
+    // A bare `not.toContain("L1–L5")` was true when the honest label was shorter than the
+    // stranded one's successor; at 50 rungs the *correct* label `L1–L50` CONTAINS `L1–L5`
+    // as a prefix, so the unanchored form reddens on a **correct** HUD (the R-008b finding,
+    // and the reason this row was still red at that tip while :139 had healed). The law the
+    // guard actually means is "no *stranded* range": `L1–L5` not followed by a further
+    // digit. Expressing it with a lookahead keeps the guard honest for every future rung,
+    // because the honest label can never satisfy the pattern.
+    const strandedRange = (end: number): RegExp =>
+      new RegExp(`L1\u2013L${String(end)}(?!\\d)`);
+    // The endpoints named: every range the repo has actually shipped (five, then ten, then
+    // eleven) plus the two honest labels this train retires (forty, then forty-five) — the
+    // last one being the *immediately* previous label, so a HUD left one registration behind
+    // is caught by the same guard.
+    for (const strandedEnd of [5, 10, 11, 40, 45]) {
+      expect(body).not.toMatch(strandedRange(strandedEnd));
+    }
+    // NON-VACUITY, BOTH DIRECTIONS, **on the matcher itself** — a lookahead that never
+    // matches would be as worthless as the unanchored form it replaces:
+    //   (a) a genuinely stranded historical label still fires (`toMatch`, so the *negated*
+    //       assertion above would have reddened on it);
+    expect("L1\u2013L5 cleared").toMatch(strandedRange(5));
+    expect("L1\u2013L45 cleared \u00B7 L 45: moves 26").toMatch(strandedRange(45));
+    //   (b) …and the honest derived label does **not** — the exact string the shipped HUD
+    //       renders today, which the unanchored `not.toContain("L1–L5")` wrongly rejected.
+    //       Asserting it positively keeps the two directions in one place, so neither can
+    //       drift without the other failing.
+    expect(LAST_LADDER).not.toMatch(strandedRange(5));
+    expect(LAST_LADDER).toMatch(/L1\u2013L\d+/);
     expect(body).toContain(`${LAST_LADDER} cleared`);
     expect(body).toContain(LAST_LABEL);
     expect(body).toContain(`moves ${String(LAST.par)}`); // the e2e's own contract
