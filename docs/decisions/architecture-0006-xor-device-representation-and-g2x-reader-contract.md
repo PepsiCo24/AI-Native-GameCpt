@@ -57,7 +57,7 @@ door. **Duplicate ids inside one switch's `targets` are inert:** `sw.targets.inc
 boolean test (`solid.ts:102`), so `["d1","d1","d1"]` behaves exactly like `["d1"]`. Measured: the two
 boards' six-move walks are **identical** (`1:false 2:true 3:false 3:false 3:false 3:false`), and the
 validator emits `errors=0` **and zero warnings** for the duplicate form (it counts distinct switch ids:
-`alreadyCounted`, `src/core/level/index.ts:601`). **Ruling: duplicate entries stay legal and inert. No
+`alreadyCounted`, `src/core/level/index.ts:607`). **Ruling: duplicate entries stay legal and inert. No
 schema tightening** — a `.refine`/uniqueness clause would be a schema change for zero capability, would
 risk rejecting shipped bytes, and would let an author believe a one-switch board is an XOR board. An
 XOR board is **≥ 2 switches**, full stop. `docs/level-design.md` §7.10.8 C1 already says "≥ 2 switches
@@ -71,7 +71,7 @@ claim holds, and no second derivation is owed.
 
 **Disk, strongest form.** `grep -n "targets" scripts/room-derivation.ts` → **no match in the whole
 file** (132 lines). The function reads `phaseAWalls` / `phaseBWalls` / `doors[].tiles` / in-bounds
-connectivity only, and `switchIds` is built from `sw.tile` alone (`:110`). `doorsCoveringTwoRooms`
+connectivity only, and `switchIds` is built from `sw.tile` alone (`:109`). `doorsCoveringTwoRooms`
 (`:124–132`) is a fold over the derived `doorIds`. A door tile is a blocker in **every** phase and
 **every** switch state (`blocked`, `:73`), so no switch write can move a region boundary.
 
@@ -229,14 +229,14 @@ the remedy is one line in `policy.ts`.
 
 **Disk.** Instance 6: `ACT_III_B2_SEAM_RELIEF_PREVIOUS_LEVEL_ID = ACT_III_REGISTERED_TAIL_LEVEL_ID`
 (`policy.ts:2515`) and `ACT_III_B2_SEAM_RELIEF_PREVIOUS_EXEC = ACT_III_REGISTERED_TAIL_EXEC`
-(`policy.ts:2518`), with `ACT_III_B2_SEAM_RELIEF_EXEC = 26.242489` (`:2546`) and
-`_DELTA = EXEC − PREVIOUS_EXEC` (`:2547–2548`). The referents are **literals today** —
+(`policy.ts:2518`), with `ACT_III_B2_SEAM_RELIEF_EXEC = 26.242489` (`:2550`) and
+`_DELTA = EXEC − PREVIOUS_EXEC` (`:2551–2552`). The referents are **literals today** —
 `ACT_III_REGISTERED_TAIL_LEVEL_ID = 45` (`:2312`), `ACT_III_REGISTERED_TAIL_EXEC = 30.455319`
 (`:2315`) — so the alias is correct today and reads `−4.212830` (verified: `26.242489 − 30.455319 = −4.21283`,
 and the published `0.038298 = 30.455319 − 30.417021` also reproduces). **How R-008 typed the two
 classes** is visible in the same file: the pre-ticket **standard** is an **alias**
 (`ACT_III_PRE_R008_REGISTERED_TAIL_LEVEL_ID/_EXEC = ACT_III_REGISTERED_TAIL_*`, `:2584/:2587`) while the
-registered **values** are **literals** (`:2312/:2315`, `:2606/:2607`, `ACT_III_B2_LADDER` rows `:2611–2617`).
+registered **values** are **literals** (`:2312/:2315`, `:2619/:2620`, `ACT_III_B2_LADDER` declared `:2605`, rows `:2606–2610`).
 **GD's FORM is confirmed by the shipped typing.** ⇒ instance 6's `_PREVIOUS_EXEC` is a *registered
 instance's published left side* reached through the **standard's** channel — the wrong channel. Once the
 released `par 28` class lands, the act maximum moves off `L45` by construction (`≥ 31.7500 > 30.455319`),
@@ -268,11 +268,11 @@ obligation — not a new mechanism, not a new law):**
 
 - **`ACT_III_PRE_R008_REGISTERED_TAIL_*` (`policy.ts:2584/:2587`) is an alias to a *moving* referent.**
   `ACT_III_REGISTERED_TAIL_EXEC` is defined over the **growing** act id set (`ACT_III_REGISTERED_IDS`,
-  `policy.ts:2572–2576`) — which is precisely why it will move. So the shipped **pre-ticket standard**
+  `policy.ts:2573–2576`) — which is precisely why it will move. So the shipped **pre-ticket standard**
   shares `F-GD014-1`'s hazard: at that registration it silently becomes the **new** tail rather than the
   standard "as it stood before R-008". **Law I am adding here:** an alias is admissible only when its
   referent is **frozen by construction** (a literal, or a measurement over a **closed, already-registered**
-  id set — e.g. a batch peak, `ACT_III_B2_BATCH_PEAK_EXEC = 30.417021`, `policy.ts:2606/:2607`, which is
+  id set — e.g. a batch peak, `ACT_III_B2_BATCH_PEAK_EXEC = 30.417021`, `policy.ts:2619/:2620`, which is
   why instance 7's comparator may keep an alias form); it is **not** admissible for a value defined over a
   set that still grows. The ticket that moves the act tail **re-pins the pre-ticket standard to the
   literal it published** — one line, same form as (1) above.
@@ -280,7 +280,7 @@ obligation — not a new mechanism, not a new law):**
   (`= ACT_III_REGISTERED_TAIL_EXEC − ACT_III_PRE_R008_REGISTERED_TAIL_EXEC`, both sides the same
   constant) ⇒ it reads `0.000000` for **any** value of the tail. It is a **label**, not a measurement, and
   **must never be cited as evidence that the act maximum did not move**; the measurement that can move is
-  the live `actIIIWidened` reading (`policy.ts:3504–3505`).
+  the live `actIIIWidened` reading (`policy.ts:3503–3505`; the value it compares is assigned at `:4232`).
 
 ## 6. Boundary statement (AGENTS §3) — unchanged, and provably untouched
 
@@ -310,9 +310,9 @@ Renderer (Phaser)  →  Gameplay  →  Core Logic (pure TS)  ←  Solver
 | 2 | `src/core/rules/solid.ts:73–75` — `baseDoorOpen`; measured `base(red) A=true B=false`, `base(blue) A=false B=true` | (i) + §4.2: the base **strictly alternates** with the phase |
 | 3 | `src/core/rules/applyMove.ts:114–119` (step 1 identity on illegal, legality on the **pre-move** state) and `:154–162` (step 4 flip, step 5 absolute `resolveDoorsOpen`) | §4.2 clause 3: legality reads the entry state; openness is recomputed **after** the flip |
 | 4 | `src/core/rules/solid.ts:220–226` — `switchAt` returns **one** switch; `applyMove.ts` step 3 (portal landing triggers nothing) | §4.2: at most **one** toggle per move ⇒ the parity/base cancellation is exact |
-| 5 | `src/core/level/index.ts:176` (`targets: z.array(z.string().min(1))`), `:601` (`alreadyCounted` per-switch dedupe), `:622` (the `[multi-switch-door]` warning text), `:292` (`LevelWarningCodeSchema`) | (i) no schema/validator change owed; **duplicate ids are inert**; the warning stays a warning (ADR-architecture-0003 R5) |
+| 5 | `src/core/level/index.ts:176` (`targets: z.array(z.string().min(1))`), `:607` (`alreadyCounted` per-switch dedupe), `:622` (the `[multi-switch-door]` warning text), `:292` (`LevelWarningCodeSchema`) | (i) no schema/validator change owed; **duplicate ids are inert**; the warning stays a warning (ADR-architecture-0003 R5) |
 | 6 | Measured: `validateLevel` on the 7×3 XOR board → `errors=0 warnings=1 codes=["multi-switch-door"]`; on the duplicate-targets board → `errors=0 warnings=[]`; walks identical | (i) end-to-end, not inferred |
-| 7 | `scripts/room-derivation.ts` — `grep -n "targets"` → **no match** (file, 132 lines); `derivedWalkSealedRooms` at `:69`, blocked-tile rule at `:73`, `switchIds` from `sw.tile` at `:110`, `doorsCoveringTwoRooms` at `:124` | (ii) the covering derivation is **targets-blind** |
+| 7 | `scripts/room-derivation.ts` — `grep -n "targets"` → **no match** (file, 132 lines); `derivedWalkSealedRooms` at `:69`, blocked-tile rule at `:73`, `switchIds` from `sw.tile` at `:109`, `doorsCoveringTwoRooms` at `:124` | (ii) the covering derivation is **targets-blind** |
 | 8 | Measured: all **50** shipped levels, `targets` mutated (dangling id + duplicated ids) → derived `doorIds` per room and the `doorsCoveringTwoRooms` output **moved in 0 / 50** | (ii) invariance is **measured**, not argued |
 | 9 | `scripts/author-l21.ts:1964/:1987` and `scripts/prove-candidate.ts:275/:293` — `targetsBySwitch` + `targets.includes(doorId)`, **no openness read** | (iii) both readers are membership-only ⇒ unsound under XOR |
 | 10 | `src/core/solver/bfs.ts:647–660` — `ArrivalRecord { state, direction, embedded, toggledOn, toggledOff }`; `src/core/state/types.ts:58–63` — `SearchState { player, phase, doorsOpen, switchesOn }`; measured record keys `state,direction,embedded,toggledOn,toggledOff` / `player,phase,doorsOpen,switchesOn` | (iii) **the records already carry the state** ⇒ the item's refusal condition does **not** fire; `direction` even carries the moves for the replay |
@@ -321,7 +321,7 @@ Renderer (Phaser)  →  Gameplay  →  Core Logic (pure TS)  ←  Solver
 | 13 | Measured over the same routes: door-tile crossings **30 847** — `doorsOpen[d]` true at the crossing **arrival**: **0**; at the crossing **entry state**: **30 847** | §4.2 clause 3 is off by one index |
 | 14 | Measured (counterfactual replay on the 7×3 board): with `s1`'s press suppressed at step 1 and `doorsOpen` recomputed by `resolveDoorsOpen`, replaying `right,right,right` under `applyMove` ends at `(3,1)` — the step-4 crossing **fails** | §4.3 leg 2 is executable with exported core functions only, and it is decisive |
 | 15 | `src/core/rules/solid.ts:113` — `resolveDoorsOpen` is **exported**; `src/core/solver/bfs.ts:650` — `direction` on the record | §4.3 needs **no** new core surface |
-| 16 | `policy.ts:2312/:2315` (registered values **literal**), `:2515/:2518` (instance 6 **aliased** to them), `:2546–2548` (published `26.242489` / derived delta), `:2584/:2587` (pre-ticket standard **aliased**), `:2606/:2607` (batch peak **literal**), `:2572–2576` (the **growing** registered id set), `:2611–2617` (`ACT_III_B2_LADDER` rows literal), `:2631–2632` (self-cancelling zero-move), `:3140` (`near`), `:3504–3505` (the live widened reading) | (iv) GD's FORM is the shipped typing; the remedy shape is exact; two second instances of the class disclosed |
+| 16 | `policy.ts:2312/:2315` (registered values **literal**), `:2515/:2518` (instance 6 **aliased** to them), `:2550` + `:2551–2552` (published `26.242489` / derived delta), `:2584/:2587` (pre-ticket standard **aliased**), `:2619/:2620` (batch peak **literal**), `:2573–2576` (the **growing** registered id set), `:2605` declared + rows `:2606–2610` (`ACT_III_B2_LADDER` rows literal), `:2631–2632` (self-cancelling zero-move), `:3140` (`near`), `:3503–3505` (the live widened reading, assigned at `:4232`) | (iv) GD's FORM is the shipped typing; the remedy shape is exact; two second instances of the class disclosed |
 | 17 | Arithmetic recomputed: `26.242489 − 30.455319 = −4.21283` ✓; `30.455319 − 30.417021 = 0.038298` ✓ | the published numbers reproduce from the constants, read not retyped |
 
 **What is *not* evidence here.** The probes are my own instruments, not accepted deliverable code — they
@@ -358,3 +358,61 @@ never staged; `git add -A` was never run (paths were added explicitly).
   test is unsatisfiable; the crossing index is the **entry** state, and the effective-press witness is the
   counterfactual). GD owns that text; the Architect does not edit it.
 - **Both the STOP-AND-ROUTE threshold and the register's constant form stand as ruled above.**
+
+---
+
+## 10. Erratum (2026-10-20) — **ARCH-006b**: the line-cite re-pin (**values and verdicts unchanged**)
+
+The design lane's independent re-verification of this ADR (GD-014b, `docs/project-status.md` item 168) came
+out **concordant on every value and verdict** and caught **drifted pointers**. A pointer that lands on an
+`ACT_III_B2_LADDER` **row** while claiming a **peak constant** is exactly how an alias gets mis-read a
+registration later, so the *whole* cite surface of this review is re-pinned below — the design lane's four
+finds **and** this lane's own audit of the pointers it originated — every row **measured against disk at
+this ticket's base** (`develop` `816e8af`), never remembered. **No value, threshold, verdict, ruling or
+normative sentence moves:** the adjudication record of §1–§9 stands exactly as published, and the
+front-matter blockquote's count of GD-014's own off-by-one cites (`:11–13`) is a statement about *that*
+dispatch and is left verbatim.
+
+| # | pointer as published (**wrong**) | corrected (**measured**) | what the old pointer actually landed on |
+|---|---|---|---|
+| 1 | `policy.ts:2546` — `ACT_III_B2_SEAM_RELIEF_EXEC` (§5 `:232`; Evidence 16) | **`:2550`** | a doc-comment line of the fill-in block |
+| 2 | `policy.ts:2547–2548` — `_DELTA` (§5 `:233`; Evidence 16) | **`:2551–2552`** | the tail of the same doc-comment |
+| 3 | `policy.ts:2606/:2607` — `ACT_III_B2_BATCH_PEAK_*` (§5 `:239`/`:275`; Evidence 16; `docs/architecture.md` §17.4) | **`:2619/:2620`** | **`ACT_III_B2_LADDER` rows `L46`/`L47`** — the mis-read this erratum exists to stop |
+| 4 | `policy.ts:2611–2617` — `ACT_III_B2_LADDER` rows (§5 `:239`; Evidence 16) | **declared `:2605`, rows `:2606–2610`** | the array's closing `];` and the peak constant's doc-comment |
+| 5 | `policy.ts:2572–2576` — `ACT_III_REGISTERED_IDS` (§5 `:271`; Evidence 16; `docs/architecture.md` §17.4) | **`:2573–2576`** | the preceding one-line doc-comment (`:2572`) |
+| 6 | `src/core/level/index.ts:601` — `alreadyCounted` (§2 `:60`; Evidence 5; `docs/architecture.md` §17.1) | **`:607`** | the counting-rule comment block (`:593–604`), which does not contain the identifier |
+| 7 | `scripts/room-derivation.ts:110` — `switchIds` from `sw.tile` (§3 `:74`; Evidence 7) | **`:109`** | `hasGoal` (`:110`) — the **next** field of the same object literal |
+| 8 | `policy.ts:3504–3505` — "the live `actIIIWidened` reading" (§5 `:283`; `docs/architecture.md` §17.4) | **`:3503–3505`** (guard incl. its `const`; the value is assigned at `:4232`) | the two compared operands without the binding that names the guard |
+
+Items 1–5 are GD-014b's four finds (its (a)–(d); 1 + 2 are one find read as two pointers). Items 6–8 are
+**this lane's own** audit: the same class, in the same file, one ticket later — **cite-as-label drift**, in
+which the line number is real and the *name* written in front of it belongs to a neighbouring construct.
+**Every verdict is unaffected, because each claim is true of the corrected line and false of the old one:**
+`switchIds` **is** built from `sw.tile` alone at `:109`; the validator **does** count distinct switch ids
+through `alreadyCounted` at `:607`; `30.417021` **is** the batch peak, read at `:2619/:2620`; the ladder's
+rows **are** `:2606–2610`; the registered id set **is** `:2573–2576`; `26.242489` **is** `:2550`.
+
+**Re-verified in the same sitting and left unchanged** (the rest of the cite surface): `src/core/rules/solid.ts`
+`:93–106` (`doorIsOpen`), `:73–75` (`baseDoorOpen`), `:102` (`includes` is a boolean), `:113`
+(`resolveDoorsOpen` **exported**), `:220–226` (`switchAt` returns one switch); `src/core/rules/applyMove.ts`
+`:114–119` (step 1 identity on illegal; legality on the pre-move state), `:136–151` (a portal's landing tile
+triggers nothing), `:154–155` (step 4 flip), `:154–162` (step 5 absolute `resolveDoorsOpen`);
+`src/core/level/index.ts` `:176`, `:292`, `:622`; `scripts/room-derivation.ts` (**no `targets` match in 132
+lines**), `:69–116`, `:73`, `:124–132`; `scripts/author-l21.ts` `:1964`, `:1968–1991` (inside the
+press-then-cross reader), `:1987`; `scripts/prove-candidate.ts` `:275`, `:279–297` (inside the same reader),
+`:293`; `src/core/solver/bfs.ts` `:647–660`, `:650`; `src/core/state/types.ts` `:58–63`, `:107`;
+`src/game/renderer/cell-state.ts` `:171`; `src/core/solver/policy.ts` `:2312`, `:2315`, `:2515`, `:2518`,
+`:2584`, `:2587`, `:2631–2632`, `:3140` (`near`, exact). **§4.2 / §4.3 / §4.4 carry no re-pin at all: not
+one line of the refused-literal quotation, of the corrected contract or of the STOP-AND-ROUTE text changed,
+and their cites (`solid.ts:73–75`, `applyMove.ts:154–155` / `:136–151`, `solid.ts:220–226`, `solid.ts:113`,
+`types.ts:107`) are exact as written.**
+
+**One residue outside this pen, named and not edited.** The same `policy.ts:2572–2576` pointer was copied
+into the **design lane's** files (`docs/level-design.md:1767` and `:1822`, from §17.4's text, and the
+`docs/architecture.md` V1.0 change-log row). Single-writer forbids the Architect from editing either; the
+corrected pointer is `:2573–2576` whenever their owners next open those files, and `docs/architecture.md`
+carries its own V1.1 row for §17.
+
+**Read-only proof for this ticket.** `git diff --cached --numstat` against the base: exactly **two** paths —
+this ADR and `docs/architecture.md`; `src/**` **0**, `scripts/**` **0**, `tests/**` **0**. Every line number
+above was read from disk at the base commit; `git add -A` was not run.
