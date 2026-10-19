@@ -491,6 +491,19 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
       "28.21",
       "30.23",
       "30.46",
+      // R-008 — Act III batch 2, the act's second half, dataset order: the five registered
+      // rungs' measured execution axis (26.242489 / 28.216304 / 30.227421 / 30.227564 /
+      // 30.417021), mirrored out of `tests/solver/difficulty.test.ts`'s table (this file's
+      // own parsed `HAND_PINS`), so the builder still cannot agree with itself. "26.24" is
+      // L46, the first **intra-act** relief instance (4.212830 below L45); the last value is
+      // the dataset's terminal rung, L50 30.417021 — which is NOT the act's registered tail
+      // (L45 30.455319, 0.038298 above it): the two columns deliberately end on *different*
+      // rungs, which is the R-008 zero-move read from the mirror side.
+      "26.24",
+      "28.22",
+      "30.23",
+      "30.23",
+      "30.42",
     ]);
     expect(HAND_PINS.get(11)?.dexec.toFixed(2)).toBe("8.57");
     expect(HAND_PINS.get(12)?.dexec.toFixed(2)).toBe("8.23");
@@ -521,6 +534,13 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
     // registered tail (L45 30.455319, +2.000000 over the R-006a tail).
     expect(HAND_PINS.get(41)?.dexec.toFixed(2)).toBe("24.26");
     expect(HAND_PINS.get(45)?.dexec.toFixed(2)).toBe("30.46");
+    // R-008 — batch 2's mirrors read from the parsed table on both ends as well: the first
+    // INTRA-act relief instance (L46 26.242489, 4.212830 below L45 — instance 6's
+    // `ACT_III_B2_SEAM_RELIEF`) and the dataset's terminal rung (L50 30.417021), which is
+    // **not** the act's registered tail: it sits 0.038298 below L45's 30.455319, so the
+    // pair above and this pair disagree *by design* and neither can drift silently.
+    expect(HAND_PINS.get(46)?.dexec.toFixed(2)).toBe("26.24");
+    expect(HAND_PINS.get(50)?.dexec.toFixed(2)).toBe("30.42");
   });
 });
 

@@ -50,7 +50,7 @@ const SHIPPED_LEVELS = fileURLToPath(new URL("../../src/levels/", import.meta.ur
 
 const SCRATCH_ROOT = mkdtempSync(join(tmpdir(), "ps-level-inventory-"));
 
-/** `l019.json` for the pinned count — the file name the mutations move. */
+/** `l050.json` for the current pinned count — the file name the mutations move. */
 const lastFile = `l${String(EXPECTED_LEVEL_COUNT).padStart(3, "0")}.json`;
 
 /** A clone of the shipped `src/levels/`, so a mutation can never touch the repo. */
@@ -142,15 +142,57 @@ describe("mutation probe — the alarm fires when the dataset moves (both direct
     const dir = scratchCopy("renumbered");
     // The dataset's ids come from the parsed level (`id`), not from the file name,
     // so a level whose own id is wrong is invisible to the count: only the
-    // contiguity tooth can see it.
+    // contiguity tooth can see it. **R-008c derives the collision target from the pin**
+    // rather than typing it: the probe used a literal `50`, which was count-blind at a
+    // 45-rung pin but became *count-neutral-and-ladder-clean-adjacent* the moment the pin
+    // reached 50 — at that value `l005`'s id collides with the tail and the count still
+    // reads 50, so the ladder tooth is the only detector (which is what this row claims).
     const file = join(dir, "l005.json");
     const level = JSON.parse(readFileSync(file, "utf8")) as { id: number };
-    level.id = 50;
+    level.id = EXPECTED_LEVEL_COUNT;
     writeFileSync(file, JSON.stringify(level));
 
     const { ids, verdict } = gateOver(dir);
     expect(ids.length, "the count alone would NOT catch this").toBe(EXPECTED_LEVEL_COUNT);
     expect(verdict, "the contiguity tooth must fire on its own").not.toBeNull();
     expect(verdict).toContain("ladder");
+  });
+
+  it("RENUMBER, the other direction: an id ABOVE the tail is *still* invisible to the count", () => {
+    const dir = scratchCopy("renumbered-above");
+    const file = join(dir, "l005.json");
+    const level = JSON.parse(readFileSync(file, "utf8")) as { id: number };
+    level.id = EXPECTED_LEVEL_COUNT + 1;
+    writeFileSync(file, JSON.stringify(level));
+
+    const { ids, verdict } = gateOver(dir);
+    // The count tooth compares the *number of levels*, not the largest id: no renumber can
+    // ever move it (the file count is unchanged), so this direction is count-blind exactly
+    // like the tail collision above. Asserting that is the point — a "pin covers renumbers
+    // too" belief is false, and the ladder tooth is what actually covers them.
+    expect(ids.length, "a renumber cannot move the level count").toBe(EXPECTED_LEVEL_COUNT);
+    expect(verdict, "the ladder tooth fires above the tail as well").not.toBeNull();
+    expect(verdict).toContain("ladder");
+  });
+
+  it("ADD, the other direction: a *clean* append leaves the ladder sound, so the pin alone fires", () => {
+    const dir = scratchCopy("added-clean");
+    const raw = JSON.parse(readFileSync(join(dir, lastFile), "utf8")) as {
+      id: number;
+    };
+    raw.id = EXPECTED_LEVEL_COUNT + 1;
+    writeFileSync(
+      join(dir, `l${String(EXPECTED_LEVEL_COUNT + 1).padStart(3, "0")}.json`),
+      JSON.stringify(raw),
+    );
+
+    const { ids, verdict } = gateOver(dir);
+    // Non-vacuity of the *pin*: the derived ladder is perfectly happy here, so a
+    // self-derived inventory would report `null` and the unlock would ship silently.
+    expect(ids, "a clean append keeps the ladder contiguous").toEqual(
+      contiguousIds(EXPECTED_LEVEL_COUNT + 1),
+    );
+    expect(verdict, "the count is the only tooth that can fire on a clean append").not.toBeNull();
+    expect(verdict).toContain(String(EXPECTED_LEVEL_COUNT));
   });
 });

@@ -392,7 +392,123 @@ test.describe("par route → win → HUD contract", () => {
     // row is not scheduler-fragile and that the envelope survives cloud-class starvation
     // *shape* locally, but it does **not** prove it fits a starvation day, because QA-024
     // measured rate 20 at only 2.62× local while the cloud ran at 4.40×.
-    test.setTimeout(1_617_000);
+    //
+    // ── R-008c: THE 50-LEVEL CHAIN, RE-MEASURED FROM THIS TIP AND RE-DERIVED — the ──────
+    //    ADR-architecture-0005 chain-envelope law's FIRST LIVE APPLICATION (CAD-2 anchor) ──
+    // R-008 registered Act III batch 2 (the `L46`–`L50` interior ladder), so this row now
+    // walks **L1 → L50** — 50 par routes, 50 HUD reads, 49 `Next` clicks, **829 moves**
+    // (`M(45) = 705` + `par(46…50) = 22 + 24 + 26 + 26 + 26 = 124`, the two published ladder
+    // multisets, `ACT_III_B1_PAR_MULTISET` / `ACT_III_B2_PAR_MULTISET` and the five landed
+    // files), i.e. **+17.59 %** on the 45-rung chain (705 → 829). Semantics INTACT, one row
+    // as before: entry only at L1, every transition through the dialog's own `Next`, no
+    // `?level=` mid-chain hop, no skipped rung, no thinning — ADR-0005's CAD-5
+    // (`docs/architecture.md` §16.3), which is the clause this row is the *carrier* of.
+    // `REF` walks the dataset in order and `EXPECTED_LEVEL_COUNT` is what ends it.
+    //
+    // ── THE LAW THIS DERIVATION IS AN INSTANCE OF (cited, not re-derived) ───────────────
+    // `docs/architecture.md` §16.1 / ADR-architecture-0005 LAW-1 publish the general form
+    // and, in the same section, the rule that governs here: *the number that ships is a
+    // third thing and is never a fit output* —
+    //   `LOCAL_TOTAL(N) = c_move·M(N) + c_rung·N` (fit, forecast faces only)
+    //   `envelope(N)    = ceil(SAFETY × CLOUD_RATE × measured_local(N)) × 1000`  ← the shipped form
+    // with `M(N) = Σ par(1..N)` off the sidecar, `SAFETY = 1.5` (item 77(d), ℓ `:333`),
+    // `CLOUD_RATE = 4.40` (QA-024's booked cloud datum, `:241`–`:242`; a *cloud* run-rate,
+    // never a throttle rate — item 131/146) and `ρ = 0.08` on the alarm face only. LAW-4:
+    // **the law alarms, it never edits**; this block is the STOP-and-measure order of
+    // §16.6 discharged (`trigger(50) = 2_078_000` stood 1.29× above the live `1_617_000`).
+    //
+    // TWO fresh local runs at this tip (`--retries=0`, one worker, no throttle, JSON
+    // reporter, `PS_E2E_PORT` 5265 / 5266), **both GREEN**:
+    //
+    // | run | local total |
+    // |---|---|
+    // | A | **270 215 ms = 270.215 s** ✓ green |
+    // | B | **274 684 ms = 274.684 s** ✓ green |
+    //
+    // Spread **+1.654 %** on a 4.5-minute wall clock — the same tenth-of-a-run leverage
+    // every era has measured (R-005c 166.564 → 183.718, R-006c 191.060 → 211.602, R-007c
+    // 232.144 → 244.875) — so the derivation reads the **worse** sample, per CAD-2.
+    //
+    // DERIVATION (LAW-1's shipped-constant form: formula + inputs + result):
+    //   measuredLocal50 = **274.684 s** — the worse of the two plain runs, measured here.
+    //   cloudFullChainS(50) = 4.40 × 274.684                     = 1_208.6096 s
+    //   envelopeMs          = ceil(1.5 × 1_208.6096) × 1000
+    //                       = ceil(1_812.9144) × 1000            = **1_813_000 ms**
+    //   (at run A's 270.215 s the same form gives `ceil(1_784.419) = 1_784_000 ms`; the worse
+    //    observation is carried, so the constant below is 1_813_000.)
+    //
+    // FALSIFICATION, as arithmetic: **the live 1_617_000 ms is FALSIFIED AT 50 RUNGS by this
+    // measurement** — `1_813_000 / 1_617_000 =` **1.1212×** over it. It prices 705 moves
+    // where the row now walks 829, and re-pricing it at 50 rungs by its own form is exactly
+    // the 1_208.6096 s above, so **the old number may not be re-used** (§16.1's law: each
+    // constant is falsified on the rung count it was derived for). Five constants have
+    // shipped and all five have fallen; this is the sixth, the first derived under the law
+    // rather than by the ritual the law replaced.
+    //
+    // LAW FORECAST vs MEASUREMENT, quoted as ratios because the law's faces are **forecasts**
+    // and this measurement governs (§16.1):
+    //   • law point face `envelope(50) = 1_924_000 ms` (§16.6, fit `c_move = 0.296754`,
+    //     `c_rung = 0.909297` over 25/35/40/45) → shipped/point = 1_813_000 / 1_924_000 =
+    //     **0.9423×**, i.e. **5.77 % BELOW the forecast**;
+    //   • law alarm face `trigger(50) = 2_078_000 ms` → **0.8725×**;
+    //   • raw local vs that fit's own `LOCAL_TOTAL(50) = 291.474 s` →
+    //     274.684 / 291.474 = **0.9424×** (**5.76 % under**), i.e. the fit over-priced the
+    //     50-rung tip by the same 5.8 % — in-domain behaviour, not a contradiction (LAW-3's
+    //     in-sample band is −5.31 % @35 … +6.04 % @25).
+    //   • **STOP check** (this dispatch's condition: a measured local above `1.6 ×` the fitted
+    //     point): `1.6 × 291.474 = 466.358 s` vs measured **274.684 s** = **0.59×** ⇒ **the
+    //     STOP did NOT fire** and the number above is shippable as measured.
+    //   • the level lane's own pre-alert (`src/levels/README.md` §7f item 10a / §7g item 10 —
+    //     a **forecast**, quoted beside, never adopted) read `1_901_000 ms` off a move-weighted
+    //     `localTotal(50) = 287.9452 s`: shipped/forecast = **0.9537×** (**4.63 % under**), and
+    //     the forecast's local total is **4.83 % above** the measurement — the same
+    //     move-linear model error R-007c diagnosed at 45 rungs (`:369`–`:371`), now measured
+    //     a second time.
+    //
+    // THE PAIR IS A ROLLING FIT OUTPUT AND WAS RE-SOLVED HERE (LAW-2: a fifth observation
+    // drops the oldest; the pair is a *reading*, never a typed number). Over the last four
+    // carried observations 35/40/45/50 (`M = 479/587/705/829`, carried locals
+    // 183.718 / 211.602 / 244.875 / 274.684) least squares now gives **`c_move = 0.092401
+    // s/move`, `c_rung = 3.968394 s/rung`** — visibly a different pair, and the reason is
+    // structural rather than a mistake: in this window `M` and `N` are nearly collinear
+    // (`M/N` runs 13.69 → 16.58), so the two-parameter split is weakly identified and the
+    // re-solve slides weight onto the rung term. Fit quality, both readings: in-sample
+    // residuals −0.31 % / +0.65 % / −0.47 % / +0.12 %, leave-one-out ≤ 0.97 % — every one
+    // inside `ρ = 0.08`, so **CAD-4's reversion triggers did not fire** either (no red chain
+    // run, no LOO residue beyond `ρ`, no new act opened). Quoted as a reading; the measurement
+    // ships, the fit only alarms.
+    //
+    // PRE-REGISTERED 55/60-ERA FACES, BY THE LAW (the re-solved pair through
+    // `LOCAL_TOTAL(N) = c_move·M(N) + c_rung·N`, then §16.1's two faces). `M(55) = 963` and
+    // `M(60) = 1_101` are **both published ladders, not projections**: GD-014's `L51–L55` law
+    // `[24, 26, 28, 28, 28]` (`docs/level-design.md` §7.10.9.2 ⇒ `829 + 134`) and GD-015's
+    // `L56–L60` law `[26, 28, 28, 28, 28]` (§7.10.11 ⇒ `963 + 138`). **DISCLOSURE:** §7.10.11
+    // is **not in this ticket's own tree** (`fa92d92`'s `level-design.md` stops at §7.10.10) —
+    // it landed on `develop` afterwards — so the `1_101` row is quoted from that tip, and the
+    // Act III band floor / mid / ceiling rows are kept **beside** it as the bracket for the
+    // case where batch 3's *realised* multiset moves the ladder (GD-015's named
+    // B7-vs-batch-3 conditional, whose outcome is LV-020's to print):
+    //   • `N = 55`, `M = 963`   → `LOCAL_TOTAL = 307.244 s` → point **2_028_000 ms**, trigger **2_191_000 ms**
+    //   • `N = 60`, `M = 1_101` → `339.837 s` → point **2_243_000 ms**, trigger **2_423_000 ms** (GD-015's law ladder)
+    //   • `N = 60`, `M = 1_063` → `336.326 s` → point **2_220_000 ms**, trigger **2_398_000 ms** (band floor)
+    //   • `N = 60`, `M = 1_083` → `338.174 s` → point **2_232_000 ms**, trigger **2_411_000 ms** (band mid)
+    //   • `N = 60`, `M = 1_103` → `340.022 s` → point **2_245_000 ms**, trigger **2_424_000 ms** (band ceiling)
+    // CAD-1's arm is recomputed at every era regardless; by CAD-3 the **55-era owes the trigger
+    // recompute only** (a non-multiple-of-10, act-interior era) and the **60-era owes the CAD-2
+    // anchor measurement** (a multiple of 10). **None of these faces may be shipped as a
+    // constant** — LAW-4; the constant ships only from a fresh two-run measurement at the tip.
+    //
+    // THROTTLE ARM (necessary, never sufficient) — re-run at 50 rungs on these bytes, once,
+    // `PS_E2E_CPU_THROTTLE=20` (`helpers/throttle.ts`), **1 passed**, row duration
+    // **672 919 ms = 672.919 s**: **2.45×** this row's own carried plain walk
+    // (`672.919 / 274.684`; 2.49× against run A's 270.215 s) and **37.1 %** of the new
+    // envelope (`672.919 / 1_812.9144`) — against the 45-rung arm's 2.30× / 34.8 %
+    // (`:388`–`:394`), i.e. the arm's own scale-up tracked the walk and did not jump. A green
+    // there proves the row is not scheduler-fragile and that the envelope survives
+    // cloud-class starvation *shape* locally; it does **not** prove the envelope fits a
+    // starvation day, because QA-024 measured rate 20 at only 2.62× local while the cloud ran
+    // at 4.40× — the necessary-not-sufficient law, restated rather than relaxed.
+    test.setTimeout(1_813_000);
 
     // QA-024 starvation arm (opt-in, inert unless `PS_E2E_CPU_THROTTLE` is set —
     // `helpers/throttle.ts`): the cloud crossing this envelope is derived from
@@ -462,12 +578,48 @@ test.describe("par route → win → HUD contract", () => {
       // Fixed (R-004b): `hud.ts` now reads the ladder range from the registry's own
       // list (`ladderLabelOf`), so the end panel names the levels that shipped
       // instead of the stale `L1–L5` prototype literal. Pin removed.
+      //
+      // ── R-008c: the "not `L1–L5`" clause was a bare substring negation, and at 50 rungs
+      //    it reddened on a CORRECT panel — reproduced here, then anchored ───────────────
+      // REPRODUCE (whole-file plain round at this tip, `PS_E2E_PORT=5267`, `--retries=0`,
+      // JSON reporter): **`1 failed / 53 passed` in 12.2 m**, the lone red being *this* row —
+      // `Expected substring: not "L1–L5"` against `Received string: "L1–L5`**`0 cleared · L 50:
+      // moves 26"` (the JSON's diff, at `:470`). ROOT CAUSE: at the 50-rung registry the end
+      // panel is *correct*, and the honest label has the stranded prototype literal as a
+      // **prefix** — `"L1–L50 cleared…".includes("L1–L5")` is true — so the negation stopped
+      // meaning "no stranded range" and started meaning "the ladder is shorter than six
+      // rungs". It was invisible to `npx vitest run` (this file is a `.spec.ts`, outside the
+      // unit gate), so the trap would have surfaced on the first cloud round instead of here.
+      // FIX: assert the law the clause always meant — **no stranded range**, i.e. `L1–L5` not
+      // followed by a further digit — with a lookahead, and prove the matcher's non-vacuity in
+      // **both** directions. The same shape is pinned in
+      // `tests/unit/hud-end-panel-copy.test.ts` (README §1.20), and the bare form now survives
+      // **as an assertion** nowhere in `tests/**` — the strings that remain are that file's and
+      // this one's own prose explaining the trap.
       await openLevel(page, levelUrl(EXPECTED_LEVEL_COUNT));
       await pressRoute(page, refOf(REFS, EXPECTED_LEVEL_COUNT).route);
       await expect(page.locator(".ps-overlay")).toBeVisible();
       const won = await hud(page);
       expect(won.dialogTitle).toBe("原型结束 / Prototype over");
-      expect(won.dialogBody).not.toContain("L1–L5");
+      const strandedRange = (end: number): RegExp => new RegExp(`L1–L${String(end)}(?!\\d)`);
+      // Every ladder label this train has actually shipped (five, ten, eleven) plus the two
+      // this train retires (forty, then forty-five — the immediately previous label, so a HUD
+      // left one registration behind is caught by the same guard).
+      for (const strandedEnd of [5, 10, 11, 40, 45]) {
+        expect(won.dialogBody, `no stranded L1–L${String(strandedEnd)}`).not.toMatch(
+          strandedRange(strandedEnd),
+        );
+      }
+      // NON-VACUITY, BOTH DIRECTIONS, on the matcher itself — the point of the anchoring (an
+      // exact-equality reading of the same clause would be the *third* way to be wrong here:
+      // it would pin the panel's whole copy to one registration era):
+      //   (a) a genuinely stranded historical label still fires, i.e. the negations above are
+      //       capable of reddening at all;
+      expect("L1–L5 cleared").toMatch(strandedRange(5));
+      //   (b) …and the honest derived label does **not** — written as the verbatim string this
+      //       round's failure diff carried, so the reproduction above is pinned as a string,
+      //       not only as a memory of a red run.
+      expect("L1–L50 cleared · L 50: moves 26").not.toMatch(strandedRange(5));
       // MINOR-2 (RV-007, QA-005c): close the composition-root chain end-to-end. The
       // panel's range comes from the registry's own list (`ladderLabelOf`) and the
       // dataset pins the same count, so the shipped string must name the ladder the

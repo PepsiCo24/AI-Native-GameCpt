@@ -70,8 +70,10 @@ import {
   ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID,
   ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID,
   ACT_III_B1_IDS,
+  ACT_III_B2_IDS,
   ACT_III_PRE_R007_REGISTERED_TAIL_EXEC,
   ACT_III_PRE_R007_REGISTERED_TAIL_LEVEL_ID,
+  ACT_III_REGISTERED_IDS,
   ACT_III_REGISTERED_TAIL_EXEC,
   ACT_III_REGISTERED_TAIL_LEVEL_ID,
   auditLevel,
@@ -214,27 +216,36 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
    * literal (`[]` → `l021`–`l025` → `l026`–`l035` → `[]` → `l036`–`l040` → `[]` → **`[]`**)
    * is why a shelf file can never be justified by a re-typed count.
    *
-   * The **successor references now agree again, because both halves moved together**:
-   * the unbooked extra this row must refuse is **`l046.json`** — absent from the shelf
-   * *and* from the root (`documentedLesson(46)` null) — and the root's own absence clause
-   * (the two-tails row below) also stops at **45**, so `l046.json` is simultaneously the
-   * shelf's next unbooked name and the dataset's next rung. R-005c-b held those two
-   * subjects apart because at *its* tip `l036.json` was a booked shelf file while the root
-   * still stopped at 35; R-006a's and R-007's registrations closed that gap twice over, so
-   * the same id is unbooked in both readings. The list stays a
-   * **live guard rather than a count**: the
-   * assertion below is *set equality*, so an unbooked extra (`l046.json`) on the
-   * shelf and a vanished member of the booking (with five names, `l040.json` gone) both
-   * fail by name —
-   * QA-012 and QA-018 proved the populated direction non-vacuously, QA-014 the empty one
-   * and QA-026 the ten-name one (`cp`-in / `mv`-out probes, `tests/e2e/README.md` §1.12);
-   * R-005c proved the `[]` reading at 35, R-005c-b the five-name one at 35, **R-006c
+   * **R-008c re-takes the same empty reading a fourth time — on a 50-rung root, and again
+   * it costs this file *no literal edit*.** R-008 graduated Act III's batch 2
+   * (`l046`–`l050`) off the **LV-019** shelf by the same byte-parity `git mv`, so
+   * `src/levels/candidates/` holds `README.md` and nothing else and this literal stays
+   * `[]`. The literal's history is now
+   * `[]` → `l021`–`l025` → `l026`–`l035` → `[]` → `l036`–`l040` → `[]` → `[]` → **`[]`**.
+   *
+   * **The two successor subjects SPLIT APART again at this tip.** At R-007c they coincided
+   * (`l046.json` was both the root's next rung and the shelf's next unbooked name); R-008
+   * moved the root onto `l046`–`l050`, so they no longer do. The root's absence clause below
+   * now stops at **50** — its successor is **`l051.json`** — while the *shelf's* next
+   * unbooked name is still **`l046.json`**, a file the root now **holds**. This is exactly
+   * the R-005c-b shape, re-taken at a larger rung: the two readings must be kept apart by
+   * scope, and the absence clause derives its successor as `maxShipped + 1` rather than
+   * typing it, which is what keeps it honest on either shape.
+   *
+   * The list stays a **live guard rather than a count**: the assertion below is *set
+   * equality*, so an unbooked extra (`l046.json` on the shelf, `l051.json` on the root)
+   * and a vanished member of the booking (with five names, `l040.json` gone) both fail by
+   * name — QA-012 and QA-018 proved the populated direction non-vacuously, QA-014 the empty
+   * one and QA-026 the ten-name one (`cp`-in / `mv`-out probes, `tests/e2e/README.md`
+   * §1.12); R-005c proved the `[]` reading at 35, R-005c-b the five-name one at 35, **R-006c
    * re-proved both directions on its 40-rung `[]` reading** — the *extra* direction on the
    * shelf (`cp l040.json candidates/l041.json` → red at the set-equality row) and the
    * *absent* direction, which for an empty booking is the root clause rather than a removed
    * member (`cp l040.json l041.json` in `src/levels/` → red at the absence-clause row) —
-   * and **R-007c re-proves both on this 45-rung `[]` reading** the same way, with the
-   * successor one rung up (`l046.json`): quoted in `tests/e2e/README.md` §1.19.
+   * **R-007c re-proved both on its 45-rung `[]` reading** and **R-008c re-proves both on this
+   * 50-rung `[]` reading** the same way, with the shelf successor still one rung *below* the
+   * root's (`l046.json` vs `l051.json`, the rung reserved for the `par 28` `L51–L60` tail):
+   * quoted in `tests/e2e/README.md` §1.19/§1.20.
    */
   const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = [];
 
@@ -268,7 +279,7 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     }
   });
 
-  it("two tails, two facts: the block's tail stays rung 20 while the dataset's tail is the pinned 45 — never a re-stamp", () => {
+  it("two tails, two facts: the block's tail stays rung 20 while the dataset's tail is the pinned 50 — never a re-stamp", () => {
     const blockMax = BLOCK_IDS.at(-1) as number;
     const maxShipped = Math.max(...shipped.map((level) => level.id));
 
@@ -301,14 +312,40 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     // wrong reason** at the R-007 tip: at the 40-rung pin it passed only because
     // `EXPECTED_LEVEL_COUNT` happened to equal *Act II's* tail, so the pin at 45 would
     // have owed this row a decision. The decision is made here, by act boundary.
-    expect(EXPECTED_LEVEL_COUNT).toBe(ACT_III_REGISTERED_TAIL_LEVEL_ID);
+    //
+    // **R-008c re-points this pair a third time — and this time the two subjects SPLIT
+    // apart again.** R-008 widened Act III's *registered id set* to `41–50`
+    // (`ACT_III_REGISTERED_IDS` = batch 1 ++ batch 2), so the act's own id set now ends at
+    // **`ACT_III_REGISTERED_IDS.at(-1)` = 50**, which is what the dataset pin names. The
+    // **tail constant is deliberately NOT the same fact**: R-008's re-derivation found the
+    // act's measured `D_exec` peak unchanged at **L45** (`ACT_III_REGISTERED_TAIL_EXEC`,
+    // `30.455319`; the batch's own peak `30.417021` sits `0.038298` below it), so
+    // `ACT_III_REGISTERED_TAIL_LEVEL_ID` stays **45** and is now *interior* to the act's id
+    // set. Re-pointing this row at the tail constant — the R-007c reading — would therefore
+    // be **green for the wrong reason twice over**: at the 50-rung lever it would simply be
+    // a stale `45`, and it would paper over the R-008 widening the row is supposed to show.
+    // The pair below is (dataset pin ≡ act id-set tail) and (act id-set tail ≢ act tail
+    // constant), i.e. the dataset's tail is the *last registered id*, never the *carrier of
+    // the act's peak*.
+    expect(EXPECTED_LEVEL_COUNT).toBe(ACT_III_REGISTERED_IDS.at(-1));
+    // The TOOTH, naming the interior batch: the id set's tail must NOT collapse back onto
+    // the response constant it used to be. `ACT_III_REGISTERED_TAIL_LEVEL_ID === 45` is
+    // literally batch 1's last id, so this `not.toBe` is the only assertion here that a
+    // **pre-R-008 id set** (`[...ACT_III_B1_IDS]`, the array this constant is still equal
+    // to) cannot satisfy. Non-vacuity is asserted, not intended, below this row in the
+    // `R-008c` describe block — which *runs* the pre-widening array against the tooth and
+    // requires the rejection.
+    expect(ACT_III_REGISTERED_IDS.at(-1)).not.toBe(ACT_III_REGISTERED_TAIL_LEVEL_ID);
+    expect(ACT_III_REGISTERED_IDS.at(-1)).toBe(ACT_III_B2_IDS.at(-1));
     expect(ACT_III_REGISTERED_TAIL_LEVEL_ID).toBe(ACT_III_B1_IDS.at(-1));
     // NON-VACUITY, both directions, asserted rather than intended:
-    //   (a) the constant this row now reads is **not** a synonym of the one it replaced —
-    //       Act III's tail strictly exceeds Act II's frozen tail, and the *aliased*
-    //       pre-R-007 standard is literally the wrong act's tail, so a re-point back at
-    //       either of those two reddens this row. The `not.toBe` is the tooth: it is the
-    //       only assertion here that a *wrong act's tail* cannot satisfy.
+    //   (a) the tail constant this row still pins by value is **not** a synonym of the one
+    //       it replaced — Act III's tail strictly exceeds Act II's frozen tail, and the
+    //       *aliased* pre-R-007 standard is literally the wrong act's tail, so a re-point
+    //       back at either of those two reddens this row. The `not.toBe` is the tooth: it is
+    //       the only assertion here that a *wrong act's tail* cannot satisfy. (R-008c keeps
+    //       this block intact: R-008 widened the act's *id set* but moved **no** tail
+    //       constant, so every value here is byte-identical to R-007c's reading.)
     //   (b) the frozen standards stay where their own registrations left them, so
     //       "re-derivation, never re-stamping" is visible as a *value* comparison and not
     //       only as a live-set one.
@@ -338,12 +375,32 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     // names carries that constant's own measured `D_exec` on the ROOT bytes, and the
     // pre-R-007 standard's value (Act II's 28.455319, alias-typed) is *different* —
     // which is what keeps this comparison from being satisfied by any 45-rung tail.
-    const tailLevel = readLevel(LEVELS_DIR, tailFile);
-    const tailDiff = analyseDifficulty(tailLevel, explore(tailLevel));
-    expect(tailDiff.Dexec as number).toBeCloseTo(ACT_III_REGISTERED_TAIL_EXEC, 6);
+    //
+    // **R-008c: the rung the constant names is no longer the dataset tail.** At R-007c
+    // `maxShipped === ACT_III_REGISTERED_TAIL_LEVEL_ID === 45`, so this half could be read
+    // off `maxShipped` and still be the constant's own rung. R-008 moved the dataset tail to
+    // L50 while leaving the act's peak carrier at L45, so the *value* half must now be read
+    // from the constant's rung — read `ACT_III_REGISTERED_TAIL_LEVEL_ID`, never
+    // `maxShipped`, or this row would compare L45's constant against L50's bytes and go
+    // red for the wrong reason. That is exactly the drift a re-pointed-but-untested pair
+    // would hide, so the two rungs are asserted to be *different* right here.
+    const actTailFile = `l${String(ACT_III_REGISTERED_TAIL_LEVEL_ID).padStart(3, "0")}.json`;
+    expect(actTailFile).not.toBe(tailFile);
+    const actTailLevel = readLevel(LEVELS_DIR, actTailFile);
+    const actTailDiff = analyseDifficulty(actTailLevel, explore(actTailLevel));
+    expect(actTailDiff.Dexec as number).toBeCloseTo(ACT_III_REGISTERED_TAIL_EXEC, 6);
     expect(ACT_III_REGISTERED_TAIL_EXEC).not.toBe(
       ACT_III_PRE_R007_REGISTERED_TAIL_EXEC,
     );
+    // …and the **interior batch did not overtake the registered tail** — the R-008 zero-move
+    // read off the live bytes rather than trusted: the dataset's own terminal rung (L50)
+    // carries a `D_exec` strictly below the act's registered tail, which is *why* the tail
+    // constant is still L45 and why the pair above reads two different rungs. A future batch
+    // that did overtake would redden this row and force the tail re-derivation to be an
+    // explicit decision instead of a silent one.
+    const tailLevel = readLevel(LEVELS_DIR, tailFile);
+    const tailDiff = analyseDifficulty(tailLevel, explore(tailLevel));
+    expect(tailDiff.Dexec as number).toBeLessThan(ACT_III_REGISTERED_TAIL_EXEC);
     // The tail's lesson row exists, and its `obligation` is the **honestly null** one
     // R-005a2 recorded: the `act-2-batch-2` / `act-2-batch-3` dispatchers behind an
     // `ACT_II_B2_B3_LADDER`-keyed reader are booked (`src/levels/README.md` §7 item 7),
@@ -352,26 +409,38 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     // obligation (or lost its row) fails here by name. R-007's opener repeats the
     // reading rather than upgrading it: the Act III tail's remedy is booked on **L41's**
     // row as an `ACT_III_B1_LADDER`-keyed `act-3-batch-1` obligation (`policy.ts:45`'s
-    // own evidence line), so the tail still carries `null`.
+    // own evidence line), so the tail still carries `null`. **R-008c reads the same `null`
+    // one rung further up**: R-008 registered `l046`–`l050` with the batch-2 remedy
+    // *booked, not landed* — `policy.ts`'s L46 evidence line books an `act-3-batch-2`
+    // obligation behind an `ACT_III_B2_LADDER`-keyed reader plus one control per new code,
+    // and until that lands the rungs' proof is the `--act=3 --family=g --ladder=46…50`
+    // run — so `L50`'s lesson row exists and its obligation is still honestly `null`. The
+    // assertion is re-derived from `maxShipped`, so it followed the tail without an edit;
+    // its prose is what moved.
     expect(documentedLesson(maxShipped), `l${String(maxShipped)} lesson row`).not.toBeNull();
     expect(documentedLesson(maxShipped)?.obligation).toBeNull();
 
     // …and the ABSENCE clause, re-pointed at the *new* max rather than deleted: rung
     // max+1 must have no **registered** file, no lesson row and no obligation
-    // (`l046.json` absent from `src/levels/` · `documentedLesson(46)` null · no shipped
-    // id above 45 — all three true on the 45-rung root, `src/levels/README.md` §7f). All
+    // (`l051.json` absent from `src/levels/` · `documentedLesson(51)` null · no shipped
+    // id above 50 — all three true on the 50-rung root, `src/levels/README.md` §7g). All
     // three are
     // re-derived from the live set, so the clause stays live
     // instead of becoming prose. QA-025's scoping still holds: the subject is the *root*
     // set (`LEVELS_DIR`), never the shelf, so a shelf byte cannot falsify it. At the
-    // R-007c tip the two subjects **coincide** again — R-007 registered `l041`–`l045`, so
-    // the shelf is empty and `l046.json` is both the root's successor and the shelf's next
-    // unbooked name (at R-005c-b they did not, which is why that row scoped them apart; no
-    // scoping words are needed now, and none are removed — the *derived* `maxShipped + 1`
-    // is what keeps this clause honest either way).
+    // R-007c tip the two subjects **coincided** (R-007 registered `l041`–`l045`, so the
+    // shelf was empty and `l046.json` was both the root's successor and the shelf's next
+    // unbooked name); **R-008c re-splits them** — R-008 registered `l046`–`l050`, so the
+    // root's successor is now `l051.json` while the shelf's next unbooked name is back to
+    // `l046.json` (the R-005c-b shape), and the root clause is scoped to `LEVELS_DIR` by
+    // construction, so the shelf's `l046.json-shape` absence claim cannot touch it. The
+    // *derived* `maxShipped + 1` is what keeps this clause honest on either shape, which is
+    // why R-008c re-points it **without typing a new rung**: the file name and the message
+    // both rebuild themselves from the live max.
+    const absentSuccessorFile = `l${String(maxShipped + 1).padStart(3, "0")}.json`;
     expect(
-      existsSync(join(LEVELS_DIR, `l${String(maxShipped + 1).padStart(3, "0")}.json`)),
-      "no registered l046.json: the registered dataset stops at the pinned count",
+      existsSync(join(LEVELS_DIR, absentSuccessorFile)),
+      `no registered ${absentSuccessorFile}: the registered dataset stops at the pinned count`,
     ).toBe(false);
     expect(documentedLesson(maxShipped + 1)).toBeNull();
     expect(
@@ -607,5 +676,48 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
       };
       expect(validateLevel(overlap).ok).toBe(false);
     });
+  });
+});
+/**
+ * ── R-008c · the two-tails tooth, proved non-vacuous ──────────────────────────
+ *
+ * The `two tails, two facts` row reads the **dataset tail** off the act's *id set*
+ * (`ACT_III_REGISTERED_IDS.at(-1)`) and carries a `not.toBe` tooth against the act's
+ * **tail constant** (`ACT_III_REGISTERED_TAIL_LEVEL_ID`). A negated assertion is worth
+ * exactly what it can reject, so this block *runs* the regression the tooth exists to
+ * catch — the pre-R-008 id set, which is literally `[...ACT_III_B1_IDS]` — and requires
+ * the tooth's shape to reject it. Nothing here reads the dataset; it is a property of
+ * the two policy constants, which is why it belongs in this file (the shelf + tails pin)
+ * rather than in a policy suite that would re-say it.
+ *
+ * Why the *id set* is the right subject and the constant is the right tooth: R-008 moved
+ * the id set to `41–50` while deliberately leaving the peak carrier at L45, so the pair
+ * (dataset tail ≡ id-set tail) and (id-set tail ≢ tail constant) are two *different*
+ * facts. The first is a census fact about the register; the second is the Act III *peak*
+ * law. A single assertion that collapsed them would be green under a re-stamp in either
+ * direction — which is precisely the class of defect R-007d flagged (green for the wrong
+ * reason) and this ticket had to re-point.
+ */
+describe("R-008c · the Act III id-set tail tooth is not vacuous", () => {
+  it("rejects the pre-widening id set: `[...ACT_III_B1_IDS].at(-1)` IS the tail constant, so the tooth reddens", () => {
+    // The regression the tooth catches, constructed from policy constants only.
+    const preWideningIdSetTail = [...ACT_III_B1_IDS].at(-1);
+    // Non-vacuity, direction (a): the hypothetical regression really does collide with the
+    // constant — i.e. the tooth would fire. Asserted by *evaluating* the very assertion
+    // shape used in the row, so this cannot drift from it. If a future registration moved
+    // `ACT_III_REGISTERED_TAIL_LEVEL_ID` off batch 1's last id, this row reddens first,
+    // which is the honest place for that discovery to surface.
+    expect(() =>
+      expect(preWideningIdSetTail).not.toBe(ACT_III_REGISTERED_TAIL_LEVEL_ID),
+    ).toThrow();
+    // Non-vacuity, direction (b): the *shipped* id set is genuinely wider than that
+    // regression — its tail differs from the constant, so the tooth is satisfied by real
+    // bytes and not only by the hypothetical.
+    expect(ACT_III_REGISTERED_IDS.at(-1)).not.toBe(preWideningIdSetTail);
+    // …and the widening is *interior*: the pre-widening tail is still a member of the
+    // shipped set (a re-stamp that dropped it would be caught by the register rows, but
+    // this is the membership reading the tooth's prose depends on).
+    expect(ACT_III_REGISTERED_IDS).toContain(preWideningIdSetTail);
+    expect(ACT_III_REGISTERED_TAIL_LEVEL_ID).toBe(preWideningIdSetTail);
   });
 });
