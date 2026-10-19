@@ -1,5 +1,5 @@
 /**
- * Level registry — loads the authored L1–L45 files and **validates every one**
+ * Level registry — loads the authored L1–L50 files and **validates every one**
  * before it can reach the board.
  *
  * `docs/architecture.md` §7 / ADR-0004: schema → rule validation → (solver, at CI
@@ -71,6 +71,11 @@ import l042 from "@/levels/l042.json";
 import l043 from "@/levels/l043.json";
 import l044 from "@/levels/l044.json";
 import l045 from "@/levels/l045.json";
+import l046 from "@/levels/l046.json";
+import l047 from "@/levels/l047.json";
+import l048 from "@/levels/l048.json";
+import l049 from "@/levels/l049.json";
+import l050 from "@/levels/l050.json";
 
 interface LevelSource {
   readonly file: string;
@@ -259,6 +264,61 @@ export const LEVEL_SOURCES: readonly LevelSource[] = [
   { file: "l043.json", raw: l043 },
   { file: "l044.json", raw: l044 },
   { file: "l045.json", raw: l045 },
+  // L46–L50 is R-008's registered **Act III batch 2** — the act's first **interior**
+  // batch, and the first time §7.3's act-scale tail law is read over a **widened**
+  // basis *inside* an act (`docs/ai-native-pipeline.md` §8.29 / `src/levels/README.md`
+  // §2j + §7g, `docs/level-design.md` §7.10.6 B1–B7 + §7.10.7, ADR `design-0009`):
+  // moved out of `src/levels/candidates/` by `git mv`, rename 100 %, `sha256` **and**
+  // git blobs identical on both sides (`d5f26dea…` · `55b9c88f…` · `c6c0e12a…` ·
+  // `2866324b…` · `25d5b11a…` == `0b2eca575a…` · `7f2809707c…` · `2a7da5cfda…` ·
+  // `e8ad4e8fef…` · `38107bcaec…`), no content edit during the move, and the shelf is
+  // EMPTY again (its `README.md` only) — `l051.json` is absent from the root **and**
+  // the shelf by reading both directories, and `L51–L60` stays **UNBOOKED** here
+  // (§7.3.2's `act-close` carrier: no ladder, no par multiset, no preview published on
+  // this row; the `H`/XOR device question stays open between GD + Architect, `U-002`).
+  // All five are `switchRequired: required` like the L16–L20 latch block and every
+  // batch above — all-OFF is a measured no-goal state (UNSATISFIABLE ×5, `11/932` ·
+  // `11/920` · `11/919` · `11/936` · `11/940`) — and each carries its own per-member
+  // gates (`ACT_III_B2_LADDER` in `@/core/solver/policy`): par **22 / 24 / 26 / 26 /
+  // 26**, `par == shortestSolution` 5/5 at `D_exec` 26.242489 / 28.216304 / 30.227421 /
+  // 30.227564 / 30.417021, coverage 49/49 ×5, `T ≡ R ≡ 0` ×5, `M = 4` ×5
+  // (`LADDER RESULT: PASS`, 65/65 named controls on the `--act=3 --family=g
+  // --ladder=46…50` run). **No new `POLICY_VIOLATION_CODES` were needed and nothing
+  // was grafted onto `BLOCK_L1619_IDS`** — the `act-3-batch-1` / `act-3-batch-2`
+  // obligation family is BOOKED BY NAME on the policy rows (an `ACT_III_*_LADDER`-keyed
+  // reader plus one control per new code; design + QA work), never invented here.
+  // **The act tail did not move**: `ACT_III_REGISTERED_TAIL_EXEC` is the maximum over
+  // the widened basis and is still `30.455319` at L45, the derived
+  // `ACT_III_B2_TAIL_ZERO_MOVE = 0.000000` is **computed** (the comparator runs over
+  // all ten rungs, `rungs at or above the tail: []`), the batch's own peak is pinned as
+  // the clause's **runner-up** (`30.417021` at L50, `0.038298` strictly below), and the
+  // pre-R-008 standard stays named and alias-typed (`ACT_III_PRE_R008_…` = `30.455319`
+  // at L45) so neither end can be re-stamped alone. §7.3.2's `act-close` belongs to
+  // `L51–L60` and is **neither discharged nor re-fired**, so no `act-close` branch was
+  // invented; four injections (a higher mid-batch rung, peak-at-tail, a moved standard,
+  // `NaN`) all refuse, and the derived-midpoint probe exits 1 on **exactly** `l050` at
+  // `(30.417021 + 33.0625) / 2 = 31.739760638297874` (derived operand, never typed).
+  // The batch opens on a **labelled** seam: L46 lands `−4.212830` below the tail
+  // (§7.3.1 instance 6, `Δpar −4` + `3·ΔB −0.212811`) inside the union
+  // `[−4.705319, −1.392819]` *and* inside `par 22`'s own half `[−4.705319, −3.392819]`,
+  // with provenance git-dated — rule `1d6c90f` 22:39:26 → fill-in `fe445b5` 23:12:26
+  // (**before** `l046.json` existed on either path) → bytes `f956f4d` 23:26:06. The
+  // registration did **not** move the block law (`BLOCK_L1619_IDS` is still `[16 … 20]`,
+  // `block-l1619-tail-ceiling` still judges L20 at par 20 / `D_exec` 24.729412; L20
+  // **not** re-stamped), did **not** widen the cut (frozen L1–L15 at 14.969697, now
+  // measured on **50** files), and re-stamped **no** earlier row — the forty-five
+  // L1–L45 rows above survive unchanged. Same shape of input as L1–L45: five rows, no
+  // new scene logic, no new painter seam — the door / switch / portal painters all
+  // shipped before them, so serving `?level=46..50` and the L1→L50 chain is exactly
+  // this data edit and nothing else (`GameSession.next` walks this array, so the chain
+  // needs no second literal). The files stay read-only inputs here (`src/levels/**` is
+  // Level AI + Solver's); the consumer pins that still read 45 are QA's (`R-008c`,
+  // `src/levels/README.md` §7g), not this row's.
+  { file: "l046.json", raw: l046 },
+  { file: "l047.json", raw: l047 },
+  { file: "l048.json", raw: l048 },
+  { file: "l049.json", raw: l049 },
+  { file: "l050.json", raw: l050 },
 ];
 
 export interface LoadReport {
@@ -327,7 +387,7 @@ export function startIndexForLevel(levels: readonly Level[], requested: number |
 }
 
 /**
- * `L1–L45` — the **shipped ladder's own range**, derived from the playable list.
+ * `L1–L50` — the **shipped ladder's own range**, derived from the playable list.
  *
  * The end panel's copy must name the ladder the player actually cleared, so it is
  * computed from the registry rather than written down: QA-005 pinned the stale
