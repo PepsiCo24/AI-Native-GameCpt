@@ -69,6 +69,11 @@ import {
   ACT_II_REGISTERED_IDS,
   ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID,
   ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID,
+  ACT_III_B1_IDS,
+  ACT_III_PRE_R007_REGISTERED_TAIL_EXEC,
+  ACT_III_PRE_R007_REGISTERED_TAIL_LEVEL_ID,
+  ACT_III_REGISTERED_TAIL_EXEC,
+  ACT_III_REGISTERED_TAIL_LEVEL_ID,
   auditLevel,
   BLOCK_L1619_IDS,
   BLOCK_L1619_NAMED_B_EXCURSIONS,
@@ -199,26 +204,37 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
    * empty reading R-005c took at 35 rungs, re-taken here at 40 by the directory scan
    * itself rather than asserted from memory.
    *
+   * **R-007c re-takes the same empty reading a third time — on a 45-rung root, and it is
+   * still `[]` *without an edit*.** R-007 registered Act III's opener (`l041`–`l045`) off
+   * the **LV-018** shelf by the same byte-parity `git mv`, so `src/levels/candidates/`
+   * holds `README.md` and nothing else again and this literal — the lever R-006c had
+   * already taken — needs no re-booking at all. What R-007d's group 0 measured is exactly
+   * that: the shelf row is *green* at the new tip (`expected [] to deeply equal []`) while
+   * only the two **successor** references below move. Keeping the whole history in one
+   * literal (`[]` → `l021`–`l025` → `l026`–`l035` → `[]` → `l036`–`l040` → `[]` → **`[]`**)
+   * is why a shelf file can never be justified by a re-typed count.
+   *
    * The **successor references now agree again, because both halves moved together**:
-   * the unbooked extra this row must refuse is **`l041.json`** — absent from the shelf
-   * *and* from the root (`documentedLesson(41)` null) — and the root's own absence clause
-   * (the two-tails row below) also stops at **40**, so `l041.json` is simultaneously the
+   * the unbooked extra this row must refuse is **`l046.json`** — absent from the shelf
+   * *and* from the root (`documentedLesson(46)` null) — and the root's own absence clause
+   * (the two-tails row below) also stops at **45**, so `l046.json` is simultaneously the
    * shelf's next unbooked name and the dataset's next rung. R-005c-b held those two
    * subjects apart because at *its* tip `l036.json` was a booked shelf file while the root
-   * still stopped at 35; R-006a's registration closed that gap, so the same id is
-   * unbooked in both readings. The list stays a
+   * still stopped at 35; R-006a's and R-007's registrations closed that gap twice over, so
+   * the same id is unbooked in both readings. The list stays a
    * **live guard rather than a count**: the
-   * assertion below is *set equality*, so an unbooked extra (`l041.json`) on the
+   * assertion below is *set equality*, so an unbooked extra (`l046.json`) on the
    * shelf and a vanished member of the booking (with five names, `l040.json` gone) both
    * fail by name —
    * QA-012 and QA-018 proved the populated direction non-vacuously, QA-014 the empty one
    * and QA-026 the ten-name one (`cp`-in / `mv`-out probes, `tests/e2e/README.md` §1.12);
-   * R-005c proved the `[]` reading at 35, R-005c-b the five-name one at 35, and **R-006c
-   * re-proves both directions on this 40-rung `[]` reading** — the *extra* direction on the
+   * R-005c proved the `[]` reading at 35, R-005c-b the five-name one at 35, **R-006c
+   * re-proved both directions on its 40-rung `[]` reading** — the *extra* direction on the
    * shelf (`cp l040.json candidates/l041.json` → red at the set-equality row) and the
    * *absent* direction, which for an empty booking is the root clause rather than a removed
    * member (`cp l040.json l041.json` in `src/levels/` → red at the absence-clause row) —
-   * quoted in `tests/e2e/README.md` §1.18.
+   * and **R-007c re-proves both on this 45-rung `[]` reading** the same way, with the
+   * successor one rung up (`l046.json`): quoted in `tests/e2e/README.md` §1.19.
    */
   const BOOKED_CANDIDATE_IDS_IN_SHELF: readonly string[] = [];
 
@@ -252,7 +268,7 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     }
   });
 
-  it("two tails, two facts: the block's tail stays rung 20 while the dataset's tail is the pinned 40 — never a re-stamp", () => {
+  it("two tails, two facts: the block's tail stays rung 20 while the dataset's tail is the pinned 45 — never a re-stamp", () => {
     const blockMax = BLOCK_IDS.at(-1) as number;
     const maxShipped = Math.max(...shipped.map((level) => level.id));
 
@@ -274,19 +290,42 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
     // (`docs/project-status.md` item 114: the pocket census is unmeasured at ≥ 11, so
     // neither "9 is the largest" nor any other ceiling may be published).
     expect(maxShipped).toBe(EXPECTED_LEVEL_COUNT);
-    // The act's **registered** tail is the dataset's tail (R-005a moved the act maximum
-    // off batch 1's peak 27.604651 onto L35; **R-006a moved it again onto L40**), and the
-    // law's own constants name that rung — so this is read off `ACT_II_REGISTERED_IDS` /
-    // the live tail-level constant rather than a typed 40. The R-005a constant is kept as
-    // its own datum (the *pre-registration standard* §7.3.2 forbids re-stamping), so it is
-    // the R-006a one that must equal the dataset pin — a move that left the standard
-    // pointing at the new tail would fail right here.
-    expect(EXPECTED_LEVEL_COUNT).toBe(ACT_II_REGISTERED_IDS.at(-1));
-    expect(EXPECTED_LEVEL_COUNT).toBe(ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID);
+    // **WHICH ACT's tail is no longer a detail a value comparison can leave implicit.**
+    // R-005a moved the act maximum off batch 1's peak 27.604651 onto L35, **R-006a moved
+    // it again onto L40**, and **R-007 moved it across the first ACT BOUNDARY in the
+    // register onto L45** (`ACT_III_REGISTERED_TAIL_LEVEL_ID`). Every one of those three
+    // moves is a *pre-registration standard* step (§7.3.2: re-derivation, never
+    // re-stamping), so the row reads the **live Act III** constant — from
+    // `src/core/solver/policy.ts`, never typed here — while each earlier act's tail keeps
+    // its own frozen datum. This is exactly the row R-007d flagged as **green for the
+    // wrong reason** at the R-007 tip: at the 40-rung pin it passed only because
+    // `EXPECTED_LEVEL_COUNT` happened to equal *Act II's* tail, so the pin at 45 would
+    // have owed this row a decision. The decision is made here, by act boundary.
+    expect(EXPECTED_LEVEL_COUNT).toBe(ACT_III_REGISTERED_TAIL_LEVEL_ID);
+    expect(ACT_III_REGISTERED_TAIL_LEVEL_ID).toBe(ACT_III_B1_IDS.at(-1));
+    // NON-VACUITY, both directions, asserted rather than intended:
+    //   (a) the constant this row now reads is **not** a synonym of the one it replaced —
+    //       Act III's tail strictly exceeds Act II's frozen tail, and the *aliased*
+    //       pre-R-007 standard is literally the wrong act's tail, so a re-point back at
+    //       either of those two reddens this row. The `not.toBe` is the tooth: it is the
+    //       only assertion here that a *wrong act's tail* cannot satisfy.
+    //   (b) the frozen standards stay where their own registrations left them, so
+    //       "re-derivation, never re-stamping" is visible as a *value* comparison and not
+    //       only as a live-set one.
+    expect(ACT_III_REGISTERED_TAIL_LEVEL_ID).toBeGreaterThan(
+      ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID,
+    );
+    expect(ACT_III_REGISTERED_TAIL_LEVEL_ID).not.toBe(
+      ACT_III_PRE_R007_REGISTERED_TAIL_LEVEL_ID,
+    );
+    expect(ACT_III_PRE_R007_REGISTERED_TAIL_LEVEL_ID).toBe(
+      ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID,
+    );
+    expect(ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID).toBe(40);
+    expect(ACT_II_REGISTERED_IDS.at(-1)).toBe(ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID);
     // …and the R-005a standard is left where R-005a put it. Re-stamping it to the new
-    // tail is exactly the move §7.3.2's "re-derivation, never re-stamping" law forbids, and
-    // it is the failure mode a *value* comparison cannot see from the live set alone — so
-    // the frozen standard is asserted by its own number, beside the live one.
+    // tail is exactly the move §7.3.2's law forbids, and it is the failure mode a *live*
+    // comparison cannot see — so the frozen standard is asserted by its own number too.
     expect(ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID).toBe(35);
     expect(ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID).not.toBe(EXPECTED_LEVEL_COUNT);
     const tailFile = `l${String(maxShipped).padStart(3, "0")}.json`;
@@ -294,31 +333,45 @@ describe("L16–L20 block — derived obligations, re-measured per run", () => {
       existsSync(join(LEVELS_DIR, tailFile)),
       `${tailFile} is the registered terminal rung and must live in the root set`,
     ).toBe(true);
+    // The **value** axis of the same reading, so the pair (level id, `D_exec`) is pinned
+    // as a pair and a wrong act's tail reddens on either half: the rung the constant
+    // names carries that constant's own measured `D_exec` on the ROOT bytes, and the
+    // pre-R-007 standard's value (Act II's 28.455319, alias-typed) is *different* —
+    // which is what keeps this comparison from being satisfied by any 45-rung tail.
+    const tailLevel = readLevel(LEVELS_DIR, tailFile);
+    const tailDiff = analyseDifficulty(tailLevel, explore(tailLevel));
+    expect(tailDiff.Dexec as number).toBeCloseTo(ACT_III_REGISTERED_TAIL_EXEC, 6);
+    expect(ACT_III_REGISTERED_TAIL_EXEC).not.toBe(
+      ACT_III_PRE_R007_REGISTERED_TAIL_EXEC,
+    );
     // The tail's lesson row exists, and its `obligation` is the **honestly null** one
     // R-005a2 recorded: the `act-2-batch-2` / `act-2-batch-3` dispatchers behind an
     // `ACT_II_B2_B3_LADDER`-keyed reader are booked (`src/levels/README.md` §7 item 7),
     // so R-005c may not invent a family to make this row read a value. Asserting `null`
     // is the honest reading — and it is *not* vacuous: a tail that gained a fabricated
-    // obligation (or lost its row) fails here by name.
+    // obligation (or lost its row) fails here by name. R-007's opener repeats the
+    // reading rather than upgrading it: the Act III tail's remedy is booked on **L41's**
+    // row as an `ACT_III_B1_LADDER`-keyed `act-3-batch-1` obligation (`policy.ts:45`'s
+    // own evidence line), so the tail still carries `null`.
     expect(documentedLesson(maxShipped), `l${String(maxShipped)} lesson row`).not.toBeNull();
     expect(documentedLesson(maxShipped)?.obligation).toBeNull();
 
     // …and the ABSENCE clause, re-pointed at the *new* max rather than deleted: rung
     // max+1 must have no **registered** file, no lesson row and no obligation
-    // (`l041.json` absent from `src/levels/` · `documentedLesson(41)` null · no shipped
-    // id above 40 — all three true on the 40-rung root, `src/levels/README.md` §7e). All
+    // (`l046.json` absent from `src/levels/` · `documentedLesson(46)` null · no shipped
+    // id above 45 — all three true on the 45-rung root, `src/levels/README.md` §7f). All
     // three are
     // re-derived from the live set, so the clause stays live
     // instead of becoming prose. QA-025's scoping still holds: the subject is the *root*
     // set (`LEVELS_DIR`), never the shelf, so a shelf byte cannot falsify it. At the
-    // R-006c tip the two subjects **coincide** again — R-006a registered `l036`–`l040`, so
-    // the shelf is empty and `l041.json` is both the root's successor and the shelf's next
+    // R-007c tip the two subjects **coincide** again — R-007 registered `l041`–`l045`, so
+    // the shelf is empty and `l046.json` is both the root's successor and the shelf's next
     // unbooked name (at R-005c-b they did not, which is why that row scoped them apart; no
     // scoping words are needed now, and none are removed — the *derived* `maxShipped + 1`
     // is what keeps this clause honest either way).
     expect(
       existsSync(join(LEVELS_DIR, `l${String(maxShipped + 1).padStart(3, "0")}.json`)),
-      "no registered l041.json: the registered dataset stops at the pinned count",
+      "no registered l046.json: the registered dataset stops at the pinned count",
     ).toBe(false);
     expect(documentedLesson(maxShipped + 1)).toBeNull();
     expect(

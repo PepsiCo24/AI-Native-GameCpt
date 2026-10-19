@@ -478,6 +478,19 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
       "26.20",
       "28.19",
       "28.46",
+      // R-007 — Act III batch 1, the act **opener**, dataset order: the five registered
+      // rungs' measured execution axis (24.257329 / 26.238773 / 28.213816 / 30.225216 /
+      // 30.455319), mirrored out of `tests/solver/difficulty.test.ts`'s table (this
+      // file's own parsed `HAND_PINS`), so the builder still cannot agree with itself.
+      // "24.26" is L41, the first **cross-act** relief instance (4.197990 below L40);
+      // the last value is Act III's registered tail, L45 30.455319 (+2.000000 over the
+      // R-006a tail). Par 26 — L44/L45 — is the value whose derived refusal envelope is
+      // CAP-BOUND (240 s), the first par the family has not seen since R-005c's 24.
+      "24.26",
+      "26.24",
+      "28.21",
+      "30.23",
+      "30.46",
     ]);
     expect(HAND_PINS.get(11)?.dexec.toFixed(2)).toBe("8.57");
     expect(HAND_PINS.get(12)?.dexec.toFixed(2)).toBe("8.23");
@@ -503,6 +516,11 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
     // tail (L40 28.455319, +0.115893 over the R-005a tail).
     expect(HAND_PINS.get(36)?.dexec.toFixed(2)).toBe("22.30");
     expect(HAND_PINS.get(40)?.dexec.toFixed(2)).toBe("28.46");
+    // R-007 — the opener's mirrors read from the parsed table on both ends as well: the
+    // first cross-act relief instance (L41 24.257329, 4.197990 below L40) and Act III's
+    // registered tail (L45 30.455319, +2.000000 over the R-006a tail).
+    expect(HAND_PINS.get(41)?.dexec.toFixed(2)).toBe("24.26");
+    expect(HAND_PINS.get(45)?.dexec.toFixed(2)).toBe("30.46");
   });
 });
 
