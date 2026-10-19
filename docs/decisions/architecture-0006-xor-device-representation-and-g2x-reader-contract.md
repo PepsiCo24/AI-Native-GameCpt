@@ -416,3 +416,32 @@ carries its own V1.1 row for §17.
 **Read-only proof for this ticket.** `git diff --cached --numstat` against the base: exactly **two** paths —
 this ADR and `docs/architecture.md`; `src/**` **0**, `scripts/**` **0**, `tests/**` **0**. Every line number
 above was read from disk at the base commit; `git add -A` was not run.
+
+---
+
+**`ARCH-006c` (2026-10-20) — the durable cite form; one row (values and verdicts unchanged).**
+
+RV-014's read-only audit of LV-020 — the pass that cleared GO with **zero number mismatches** — caught that
+the three `src/core/solver/policy.ts` pointers that `architecture-0005` and `docs/architecture.md`
+§16.5/§16.6 borrowed from ARCH-005 had **decayed**: exact at their own base (`470c145`), they were
+**+45 / +45 / +47** lines stale once R-008's insertions landed above them. Re-measured from disk at **this**
+ticket's base (`develop` `4f1ddde`), never remembered.
+
+| # | pointer as published (**wrong**; exact at its ARCH-005 base `470c145`) | corrected (**measured**; base `4f1ddde`) | what the old pointer actually landed on |
+|---|---|---|---|
+| 1 | `policy.ts:1566`–`:1568` (`ACT_II_PAR_BAND` — the three declarator lines `FLOOR` / `CEILING` / `BAND`); `:2146`–`:2148` (`ACT_III_PAR_BAND`, same shape); `:2438` (`ACT_III_B2_PAR_MULTISET`, its declarator) | **symbol-anchored, integer dropped**: `src/core/solver/policy.ts` **`export const ACT_II_PAR_BAND`** (declarator `:1613` at this base), **`export const ACT_III_PAR_BAND`** (`:2193`), **`export const ACT_III_B2_PAR_MULTISET`** (`:2485`) — each declarator `grep`-**unique** (measured **1** match each) | `:1566`–`:1568` = a validator block's closing `}`, a blank line and `return gates;`; `:2146`–`:2148` = three continuation lines of a **policy message string**; `:2438` = a bare `//` line — **no band, no multiset, no declarator** |
+
+**LAW (cite form, ruled by this ticket).** *Cites into an era-decaying file anchor by **symbol**, not by
+line.* Where the referent is a **named top-level declaration**, the cite is **path + declarator** and carries
+**no integer**; a line number survives only where the referent has **no name to cite** (a bare expression, a
+table row, an indented block), and any such cite is **era-stamped** ("measured at base `<sha>`"). *One-line
+derivation:* the symbol is already printed in the same sentence, so the integer disambiguates nothing, while
+its upkeep recurs every era **by construction** — this finding is +45/+45/+47 inside a single era, and GD-015
+hand-re-pinned a `policy.ts` pointer the same day.
+
+**Applied** to the four prose sites across **two** files (`docs/architecture.md` §16.5/§16.6, base
+`:486`/`:493`; `architecture-0005`'s References line, base `:6`, and its two restatements, base
+`:116`/`:123`) — **five lines, nine cite-tokens, cite-token-only**; every changed hunk sits inside a citation
+parenthesis. The ARCH-005 change-log row in `docs/architecture.md` **keeps its stale trio verbatim** as that
+era's published record (a dated row is a measurement at its own base, never a live pointer) and is
+**superseded by name** by that file's `V1.2` row; the old→new mapping above is where it resolves.
