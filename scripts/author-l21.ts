@@ -554,6 +554,154 @@
  *    item 114's law). Nor is any earlier transcript re-stamped: batch-2/3's records are print
  *    records of the instrument as it was, and repairing a label does not re-write history.
  *
+ * ── LV-018 · THE ACT III OPENER (`--batch=5 --act=3`, Act III batch 1 = L41–L45) ────────────────
+ *
+ * Law this pass implements, **quoted from `docs/level-design.md` §7.10 (GD-012 as ADOPTED and
+ * USER-APPROVED 2026-10-19) and from `docs/decisions/design-0008-…` RULING D — never re-tasted**.
+ * The constants the selection rule must *quote* are named here **before** the census and before
+ * any byte, so the ladder is a derivation and not a preference:
+ *
+ * - **`EXEC_FLOOR = 23.7500`** — §7.10.1's derived-exact band floor, `20 + 3·1.2500` over
+ *   `PAR_FLOOR = 20` and the measured `B` band `[1.2500, 1.6875]`.
+ * - **`EXEC_CEILING = 33.0625`** — `28 + 3·1.6875` over `PAR_CEILING = 28`; both endpoints dyadic
+ *   ⇒ bit-exact, **inclusive at both ends** (§7.9), and compared **from the formula, never from
+ *   the printed `[23.75, 33.06]`**.
+ * - **Act II's registered tail `28.455319`** — L40's measured `D_exec`
+ *   (`ACT_II_R006A_REGISTERED_TAIL_EXEC`, read from the law module, never typed). The band's floor
+ *   sits **`23.7500 − 28.455319 = −4.705319`** below it, i.e. the previous act's tail is strictly
+ *   inside Act III's band (§7.3 interior freedom).
+ * - **ceiling reservation margin `0.6875`** — §7.10.2 O3: opener rungs top out at
+ *   `26 + 3·1.6875 = 31.0625` while any `par 28` tail rung bottoms at `28 + 3·1.2500 = 31.7500`,
+ *   and `31.7500 > 31.0625` by exactly **0.6875**. The reservation is **derived**, so Act III's
+ *   `act-close` (§7.3.2, carrier `L51–L60`) stays satisfiable **by construction**.
+ * - **relief instance 5 label, pre-published** (§7.10.4): **`ΔD_exec ∈ [−4.705319, −1.392819]`**,
+ *   decomposition `ΔD_exec = Δpar + 3·ΔB` with the `par` term shown beside it; registration-side
+ *   constants proposed there as `ACT_III_B1_OPEN_RELIEF_LEVEL_ID = 41` +
+ *   `ACT_III_B1_OPEN_RELIEF_DELTA_RANGE`.
+ *
+ * ── THE LADDER — §7.10.2 O1–O6, executed as a derivation (never a search) ─────────
+ *
+ * **`[20, 22, 24, 26, 26]`.** O1: `L_i = PAR_FLOOR + 2·(i−1)` over `[20, 28]` gives the P2-exact
+ * five-member window `20, 22, 24, 26, 28` (LV-017's derivation, same constants, applied to Act
+ * III's band). O2: the derived top rung **`par 28` is withheld** (the ceiling is reserved for the
+ * tail) and the 5th rung **repeats the truncated top** at its within-par **maximum**. O3: why the
+ * reservation is derived — the `0.6875` margin above. O4: **anti-mirror** against every registered
+ * Act II multiset (`[17,18,20,21,23]`, `[19,22,22,24,24]`, `[18,20,22,24,24]`, `[18,20,22,24,24]`)
+ * and every other Act III batch's; coinciding pars are **printed, never hidden**. O5: **empty pool
+ * ⇒ ABSENT, never substituted** — no out-of-set par is substituted, the shortfall is absorbed by
+ * within-par repeats at the highest available derived par (LV-017's descending fill, verbatim), and
+ * a batch that cannot populate **five rungs** from the truncated set **STOP-AND-ROUTES to GD**; it
+ * never silently extends to the ceiling. O6: the **final rung** takes the within-par **maximum**
+ * `D_exec`, every earlier rung the **minimum** (LV-017 rule 4 / LV-015's tie-break).
+ *
+ * Every admitted rung is **in band by construction** (`par 20` ⇒ `[23.75, 25.0625]`; `par 26` ⇒
+ * `[29.75, 31.0625]`; both ⊆ `[23.75, 33.0625]`), so a rung outside the band is a **broken rule**,
+ * not a nuance. The opener **carries no `act-peak` / `act-close` branch** (RULED, §7.10.2): §7.3.2's
+ * carrier is `L51–L60`, and §7.3's `act-peak` binds the act's **measured** maximum, read per batch.
+ * What this batch *does* carry is §7.3.1's **`act-open` relief instance 5**.
+ *
+ * ── THE DEVICE AND THE FRAME (published before the run, per RULING D) ────────────
+ *
+ * §7.10.5 / ADR-design-0008 RULING D orders the axes: *"1. the **`CX = 1`** frames that
+ * LV-015/LV-017 measured … over any new frame… 2. the **4-pocket / 5-door / 5-press device class**
+ * … **before any deeper chain** — a **5-pocket** device is refused by §7.2's published family text
+ * and is **not censused**."* So this batch takes **that device class** (the 4-pocket ordered chain
+ * `p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4 < p4 < d5`, five walk-sealed rooms + the goal's own seal)
+ * on the **`7×7` @ `CX = 1`** frame — the proven `CX=1` frame whose room capacity LV-017 measured
+ * (`46 / 31 / 31 / 46`, maximum pairwise-disjoint **8**), i.e. the frame that admits the class with
+ * the most headroom, and the act's largest lawful board (49 tiles).
+ *
+ * **Explicit NON-CLAIM, published so it cannot be read in later.** This batch does **not** carry
+ * the act's `H` (both-pair) composition and does **not** use the **XOR multi-switch door**: the
+ * ratified pacing (§7.10.4 / §7.10.5, dispatch U-002) puts the XOR debut in the act's **second
+ * half**, and the both-pair verb needs a forcing mechanism (a pocket whose only entrance is the
+ * second pair) whose gate family does not exist yet — §7.5 requires *"one negative control per new
+ * gate named by its measured refusal"*, so inventing that gate family here would be **new gate
+ * law**, which is a GD/Architect decision and **not** this ticket's. The `H` census is therefore
+ * **booked forward, by name**, to the act's second-half ticket; this batch's new axis is the
+ * **par axis** (`26` — a par no registered rung has) inside Act III's own band. A lane that later
+ * reads this batch as "Act III = Act II's device" is reading a **non-claim** as a claim.
+ *
+ * ── THE RELIEF FILL-IN (instance 5) — the procedure this run must execute ────────
+ *
+ * §7.10.4's label is **pre-published**; its **exact value is a FILL-IN BEFORE THE BYTES, NEVER
+ * AFTER**. In order, and git-dated:
+ *
+ * 1. this rule block is committed **first** (docstring alone — the law-before-census order is
+ *    provable by commit timestamps);
+ * 2. the census runs and the selection picks **L41's `par` and `D_exec`**;
+ * 3. `ΔD_exec := D_exec(L41) − 28.455319` is **computed from those two measured numbers**, written
+ *    into the census/rule record **with its decomposition** (`Δpar` at L40's par `24` ⇒ `−4` at the
+ *    band floor, and `3·ΔB` beside it), and **checked inside the pre-published bound**
+ *    `[−4.705319, −1.392819]` — the admissible first rungs are exactly L41 at `par 20` ⇒
+ *    `[−4.705319, −3.392819]` and at `par 22` ⇒ `[−2.705319, −1.392819]`, and the union is the
+ *    published bound;
+ * 4. **only then** may a board byte be written (`--write`), and the same value is planted in
+ *    `ACT_III_B1_OPEN_RELIEF_EXEC` / `_DELTA` (policy) so the registration ticket cites a constant
+ *    instead of re-typing a number.
+ *
+ * A fill-in that lands **outside** the bound is a **STOP-AND-ROUTE to GD**: it would mean the
+ * opener's first rung is not the floor-anchored rung §7.10.2 derived, and no later re-pick may
+ * "repair" it (that is exactly the after-the-fact fitting §7.10.4 forbids).
+ *
+ * ── THE CENSUS COMMANDS (published before the run; the dossier quotes them) ──────
+ *
+ * ```
+ *   STEP 1 — the frame's room capacity at the batch's own frame (a measurement, not a wish):
+ *     a) npx tsx scripts/author-l21.ts --stage=roomcap --act=3 --cx=1 --h=7 --maxsize=4
+ *   STEP 2 — the batch's pool over Act III's own par band, on its own frame:
+ *     b) npx tsx scripts/author-l21.ts --stage=g --act=3 --batch=5 --pockets=4 --cx=1 --h=7 \
+ *          --pocketsize=4 --qmax=4 --paircap=40 --budget=20000 --cap=400 --parmin=20 --parmax=28
+ *   STEP 3 — the selection (dry run, then --write):
+ *     c) npx tsx scripts/author-l21.ts --stage=s --act=3 --batch=5 --parmin=20 --parmax=28 \
+ *          --accepts=<b's dump>
+ *     d) npx tsx scripts/author-l21.ts --stage=s --act=3 --batch=5 --parmin=20 --parmax=28 --write \
+ *          --accepts=<b's dump>
+ *   STEP 4 — the proof on the LANDED bytes (prover, family `g`, Act III gate set):
+ *     e) npx tsx scripts/prove-candidate.ts --act=3 --family=g --ladder=41,42,43,44,45 \
+ *          --dir=src/levels/candidates
+ *     f) npx tsx scripts/prove-candidate.ts --act=3 --family=g --ladder=41,42,43,44,45 \
+ *          --measure-controls --dir=src/levels/candidates
+ *     g) npx tsx scripts/prove-candidate.ts --act=3 --family=g --ladder=41,42,43,44,45 \
+ *          --peak=<derived midpoint> --dir=src/levels/candidates
+ * ```
+ *
+ * **Published fallback (in order), so an empty frame is never a silent frame change.** If the
+ * `7×7`@`CX=1` frame yields no admissible rung at all, the *only* fallback is to re-run the
+ * **identical device and the identical derived ladder on the only other frame this class has ever
+ * been non-empty on — `7×6` @ `CX=1`** (batch 3's frame), with every key re-checked against the
+ * registered set; if **that** is empty too, nothing is written and the census is reported as a
+ * **NAMED ACT LIMITATION** briefed to the Game Designer. A borrowed par, a re-banded act, a
+ * substituted rung and a silent frame switch are **not** remedies.
+ *
+ * **The falsification probe is DERIVED, never typed.** `--peak` receives the **midpoint** of the
+ * batch's measured peak rung and the comparator it must clear — for Act III the comparator is
+ * **Act II's registered maximum `28.455319`** (§7.3's across-act clause: act *n*'s measured maximum
+ * exceeds act *n−1*'s), so `--peak = (our peak rung's D_exec + 28.455319)/2`; the run must exit 1
+ * failing **exactly one gate on exactly one rung** (`act-peak`, the ladder's peak rung) with the
+ * control battery still 13×5 = 65 caught. A probe that fails nothing, or fails more than the peak
+ * rung, is a finding about the instrument and is published as one.
+ *
+ * **Band membership is proven BOTH directions, derived-exact:** the accepted rungs must sit inside
+ * `[23.7500, 33.0625]` **inclusive** (derived from the formula, §7.9), and the *same* arithmetic is
+ * re-read as the refusal side — a mutation that pushes a rung one unit past an endpoint must be
+ * caught by `act3-par-band` / `act3-exec-band` **by name** (the two negative controls that carry
+ * this batch's band law).
+ *
+ * **Deferred, with its scope stated (unchanged).** The `--pocketsize ≥ 11` probe stays **DEFERRED**:
+ * `≤ 10` is closed by measurement (`scripts/author-l20-p10.transcript.md` §10), **`≥ 11` remains
+ * unmeasured**, and **no ceiling wording is published in either direction** (item 114's law).
+ *
+ * **Enumeration SIZES may be predicted per the `D2` orbit law (ADR-architecture-0004 Ruling 4),
+ * results never.** The far rectangle `Γ_F = [CX+1, W−1] × [0, H−1]` is a rectangle, so
+ * `σ_x : x ↦ CX + W − x` is an automorphism of it **and of the boundary operator**, and it
+ * **preserves checkerboard parity** (`x ↦ 8 − x` changes `x+y` by an even amount), so the
+ * candidate-count `K` is constant on each `σ_x` orbit (`(2,y) ↔ (6,y)`, `(3,y) ↔ (5,y)`, `(4,y)`
+ * fixed at `CX = 1`, `W = 7`). Any such figure printed by this run is labelled **PREDICTED** and is
+ * a statement about **sizes only**; **accepts are never inherited** (`g_leak` fails equivariance —
+ * the column is on the left and the board edge on the right), and nothing is inherited across
+ * frames, caps or instruments.
+ *
  * Stages:
  *
  *   0.  **preflight law** — the parity/judging-phase rule re-derived from the shipped
