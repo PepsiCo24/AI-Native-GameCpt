@@ -1,5 +1,5 @@
 /**
- * Level registry — loads the authored L1–L35 files and **validates every one**
+ * Level registry — loads the authored L1–L40 files and **validates every one**
  * before it can reach the board.
  *
  * `docs/architecture.md` §7 / ADR-0004: schema → rule validation → (solver, at CI
@@ -61,6 +61,11 @@ import l032 from "@/levels/l032.json";
 import l033 from "@/levels/l033.json";
 import l034 from "@/levels/l034.json";
 import l035 from "@/levels/l035.json";
+import l036 from "@/levels/l036.json";
+import l037 from "@/levels/l037.json";
+import l038 from "@/levels/l038.json";
+import l039 from "@/levels/l039.json";
+import l040 from "@/levels/l040.json";
 
 interface LevelSource {
   readonly file: string;
@@ -168,6 +173,39 @@ export const LEVEL_SOURCES: readonly LevelSource[] = [
   { file: "l033.json", raw: l033 },
   { file: "l034.json", raw: l034 },
   { file: "l035.json", raw: l035 },
+  // L36–L40 is R-006a's registered Act II batch 4 — the act's **closing** batch
+  // (the act-scale tail law's successor clause, `docs/ai-native-pipeline.md` §7.3 /
+  // `src/levels/README.md` §2h): moved out of `src/levels/candidates/` by `git mv`,
+  // rename 100 %, `sha256` **and** git blobs identical on both sides (`adff8c1e…` ·
+  // `c0eb8660…` · `76dcc3e0…` · `241d669d…` · `e6f7359d…`), no content edit during the
+  // move, and the shelf is EMPTY again. All five are `switchRequired: required` like
+  // the L16–L20 latch block and batches 1–3 above — all-OFF is a measured no-goal
+  // state (UNSATISFIABLE ×5) — and each carries its own per-member gates
+  // (`ACT_II_B4_LADDER` in `@/core/solver/policy`): par **18 / 20 / 22 / 24 / 24**,
+  // `par == shortestSolution` 5/5 at `D_exec` 22.301282 / 24.252174 / 26.200000 /
+  // 28.185897 / 28.455319, coverage 49/49 ×5, `T ≡ R ≡ 0` ×5 (`LADDER RESULT: PASS`).
+  // Batch 4 is the act's **new registered tail** — it raises the act maximum to L40's
+  // `D_exec` 28.455319, `+0.115893` over the R-005a tail (28.339426 at L35) it
+  // supersedes, `+3.725907` over Act I's peak — but §7.3.2's act-close obligation was
+  // already **discharged at L35** by R-005a, so this registration adds **no** peak
+  // clause and re-runs no obligation (§6 does not fire: `ΔM = 0`, no new mechanic).
+  // The opening rung is the **labelled seam** (L36 lands `−6.038144` below L35, the
+  // fourth instance of §7.3.1's relief clause, band [19.75, 29.0625]): a named relief,
+  // never a silent dip. The registration did **not** move the block law
+  // (`BLOCK_L1619_IDS` is still `[16 … 20]`, `block-l1619-tail-ceiling` still judges
+  // L20 at par 20 / `D_exec` 24.729412; L20 **not** re-stamped), did **not** widen the
+  // cut (frozen L1–L15 at 14.969697, now measured on 40 files), and re-stamped **no**
+  // earlier row — the fifteen L21–L35 rows above survive unchanged. Same shape of
+  // input as L1–L35: five rows, no new scene logic, no new painter seam — the door /
+  // switch / portal painters all shipped before them, so serving `?level=36..40` and
+  // the L1→L40 chain is exactly this data edit and nothing else (`GameSession.next`
+  // walks this array, so the chain needs no second literal). The files stay read-only
+  // inputs here (`src/levels/**` is Level AI + Solver's).
+  { file: "l036.json", raw: l036 },
+  { file: "l037.json", raw: l037 },
+  { file: "l038.json", raw: l038 },
+  { file: "l039.json", raw: l039 },
+  { file: "l040.json", raw: l040 },
 ];
 
 export interface LoadReport {
@@ -236,7 +274,7 @@ export function startIndexForLevel(levels: readonly Level[], requested: number |
 }
 
 /**
- * `L1–L35` — the **shipped ladder's own range**, derived from the playable list.
+ * `L1–L40` — the **shipped ladder's own range**, derived from the playable list.
  *
  * The end panel's copy must name the ladder the player actually cleared, so it is
  * computed from the registry rather than written down: QA-005 pinned the stale
