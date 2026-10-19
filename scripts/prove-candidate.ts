@@ -66,6 +66,7 @@ import {
   ACT_III_B2_HALF_CEILING_EXEC,
   ACT_III_B2_IDS,
   ACT_III_B2_PAR_MULTISET,
+  ACT_III_REGISTERED_IDS,
   ACT_III_B_BAND,
   ACT_III_EXEC_BAND,
   ACT_III_OPENER_PAR_MULTISET,
@@ -211,9 +212,24 @@ function measureCut(): { floor: number; l15Par: number; n: number; basis: readon
     // id list for the act, so the exclusion grows by the act rather than by five typed
     // ids. The cut stays **frozen at L1–L15 = 14.969697** — the across-act escalation
     // belongs to §7.3's `act-peak` clause (`actScaleTailGuards`), never to a moving cut.
+    //
+    // R-008: the SIXTH occurrence, and the first one where the act **grew inside itself**
+    // rather than a new act opening. The pre-fix reading is recorded verbatim: with
+    // L46–L50 registered and this line still reading `ACT_III_B1_IDS`, the cut basis read
+    // `30.417021` (L50's own `D_exec`) with `basis ids [1…15, 46…50]`, and the ladder
+    // refused all five rungs — `FAIL escalation  D_exec=26.242489 > CUT 30.417021` ×5,
+    // `GATES: REJECT — escalation`, `LADDER RESULT: FAIL (0/5 …)`, exit 1. The exclusion
+    // therefore reads **`ACT_III_REGISTERED_IDS`** (the registered set, not batch 1's
+    // five ids), which is what R-007's own comment meant by "grows by the act". The cut
+    // is still **frozen at L1–L15 = 14.969697**.
+    // F-R008-2 (named, not repaired here): the `missingExcluded` tooth this file's sibling
+    // gained at F-L46-1 is **inverse-only** — it catches an excluded id that is absent from
+    // the root, not a registered id that is missing from the exclusion. This direction is
+    // caught by the printed `basis ids [ … ]` clause and by the escalation verdict above
+    // (loud), not by that tooth.
     if (BLOCK_L1619_IDS.includes(level.id)) continue;
     if (ACT_II_REGISTERED_IDS.includes(level.id)) continue;
-    if (ACT_III_B1_IDS.includes(level.id)) continue;
+    if (ACT_III_REGISTERED_IDS.includes(level.id)) continue;
     basis.push(level.id);
     const d = analyseDifficulty(level, explore(level));
     if (d.Dexec !== null && d.Dexec > floor) floor = d.Dexec;
@@ -1183,7 +1199,7 @@ const cut = measureCut();
 // `D_exec max … basis ids […]` regex both stop before this clause, so no transcript byte moved.
 console.log(`prove-candidate — CUT re-measured from the shipped set: D_exec max = ${cut.floor.toFixed(6)} ` +
   `· par(L15) = ${String(cut.l15Par)} · ${String(cut.n)} shipped files · basis ids [${cut.basis.join(", ")}] ` +
-  `(the L16–L20 block, the registered Act II batches [${ACT_II_REGISTERED_IDS.join(", ")}] and Act III batch 1 [${ACT_III_B1_IDS.join(", ")}] are excluded from their own filter — see measureCut)`);
+  `(the L16–L20 block, the registered Act II batches [${ACT_II_REGISTERED_IDS.join(", ")}] and the registered Act III set [${ACT_III_REGISTERED_IDS.join(", ")}] are excluded from their own filter — see measureCut)`);
 console.log(
   `family ${FAMILY}${FAMILY === "g" ? " (Act II multi-pocket — §7.2 / §7.4 stage G)" : " (the L20 sealed landing — §6.2.6)"}` +
     ` · act ${String(ACT)}` +
