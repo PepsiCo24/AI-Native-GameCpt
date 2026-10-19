@@ -728,6 +728,62 @@
  * Solvability is never asserted here: `par` comes from the BFS solver, every gate
  * number from the shipped readers, and a candidate that fails is **dropped with its
  * measurement** (ADR-0004 — no repair path, no tuning loop).
+ *
+ * ── F-L41-2 — THE AUTHORING FILTER AND THE PROVER'S GATE DISAGREE ABOUT A BOARD (found by the
+ *    prover, published BEFORE the line that fixes it moves) ─────────────────────────────────────
+ *
+ * **What was measured.** The five rungs of this batch's first selection were written and proved;
+ * **`l044.json` was REJECTED by `g6-room-structure` on its own landed bytes**:
+ *
+ *   `FAIL g6-room-structure rooms=6 …; covering doors distinct=false [d1 d2 d3 d4 d5 d4]`
+ *   `g2-room-exit-door 6 walk-sealed room(s) derived from the bytes [d1:3,0+4,0+4,1+5,0 · d2:6,2 ·
+ *    d3:3,3 · d4:5,5 · d5:3,6 · d4:6,6]`
+ *
+ * i.e. that rung's door `d4` seals **two** walk-sealed rooms: the intended `R4 = {5,5}` and the
+ * **corner cell `{6,6}`**, whose only two in-frame neighbours (`5,6`, `6,5`) are exactly `d4`'s two
+ * tiles — so the single door encloses two regions. Legal geometry, solvable board (par 26 stamped by
+ * the solver, `180/180` press-then-cross), **but outside this device's class**, which is what the
+ * gate says and this tool did not.
+ *
+ * **Why the tool did not say it.** The generator's `g6` verdict is computed against the context it
+ * **declared** while building the device — `ctx.rooms = [pocket, room2, room3, room4]` plus
+ * `ctx.goalRoom` — so it checks "the declared rooms are well formed and `d1`..`d5` cover distinct
+ * *declared* rooms". The prover **re-derives** the rooms **from the bytes** and checks the derived
+ * covering list for duplicates. A door that incidentally encloses a second region is invisible to
+ * the declaration and visible to the derivation — the two agree on every board whose doors enclose
+ * exactly what was declared, and disagree here. This is `F-L36-1`'s shape one layer down (there a
+ * *label* and a *measurement* disagreed; here a *declaration* and a *derivation* disagree), and its
+ * remedy has the same form: make the two read **one** truth source rather than two copies of a law.
+ *
+ * **What this clause does, and what it does NOT do.**
+ *
+ *   - **Nothing is repaired.** `l044.json` is not edited, not re-targeted, not shrunk: a board whose
+ *     bytes fail a gate is **rejected and re-drawn from its own pool**, which is the same treatment
+ *     the clone guard and the rung-key-distinct clause already give a row (both print their skips).
+ *   - **The refusal is counted where every other refusal is counted.** The check runs in the
+ *     generator's enumeration, immediately after the par-band filter and before `judge`, so it lands
+ *     in the rejection histogram as its own row, in the upstream skip counters **and** in the
+ *     identity the census must close (`accepts + par-out-of-band + unsolvable + g5-identity-broken +
+ *     derived-two-room-door = judged`). A filter that hides is how a pool becomes a claim.
+ *   - **The derivation is shared, not copied.** The law moves to `scripts/room-derivation.ts`
+ *     (`derivedWalkSealedRooms`), which **both** `scripts/prove-candidate.ts` (its `g6`, `g2`, `g5`
+ *     and control readers) and this tool import. Two implementations of "the rooms of a board" is
+ *     the defect, so the fix is one implementation, and the prover's output over **all 20 registered
+ *     Act II rungs (L21–L40)** is required to stay **byte-identical** across the extraction — the
+ *     A/B receipt is in the census record.
+ *   - **Scope, stated rather than implied.** The clause is applied to **this act's** enumeration
+ *     (`ACT === 3`) in this ticket. It is not a weakening of Act II's record: the prover already
+ *     passes `g6` on **20/20** registered Act II rungs, so the clause refuses **nothing** on the
+ *     registered corpus (measured, not asserted — `--stage=struct` reads any directory). Re-baselining
+ *     a *registered* act's census by inserting a filter into it is a different ticket's business.
+ *   - **The census before the fix is kept, not overwritten.** The first census (4402 accepts of 20000
+ *     judged, committed at `db78a13`) stays in the record as the **pre-fix instrument's** reading,
+ *     beside the post-fix one, exactly as `F-L36-1`'s pre-fix reading was kept beside its repair —
+ *     because the whole point of the receipt is that a reader can see what the filter moved.
+ *   - **The fill-in is unaffected, and that is checked rather than assumed.** §7.10.4's value comes
+ *     from **L41 at `par 20`**; if the clause moves that rung, the constant filled in at `db78a13` is
+ *     re-derived and re-published **before** any board byte is written (the fill-in's own rule: before
+ *     the bytes, never after).
  */
 
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
