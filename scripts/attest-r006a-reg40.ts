@@ -50,6 +50,15 @@
  * `STOP_AND_ROUTE` (exit 1) is the only honest answer to a disagreement: the registered bytes are
  * immutable and are never re-authored to fit a later reading (ADR-0004).
  *
+ * **`refreshed:` R-008 (registration of `l046`–`l050`).** The reported clause set grew from
+ * twenty-two to **twenty-eight** when R-008's six clauses (the first written as an act's basis
+ * widened *inside* the act) landed, so this file's partition row — a statement about the current
+ * shape of the law rather than about R-006a's five rungs — gained `ACT_TAIL_R008_CLAUSE_IDS` and the
+ * fifth instrument's name. Nothing else moved: all twenty-eight clauses still PASS on the registered
+ * bytes, R-006a's five controls still fail exactly their own clauses, the five rows still reproduce
+ * on the bytes, the single moved pin is still the only one, and the earlier rungs are still
+ * un-restamped. The same *refresh, not relax* this file performed at R-007.
+ *
  *   npx tsx scripts/attest-r006a-reg40.ts
  *   npx tsx scripts/attest-r006a-reg40.ts --origin=<sha>:src/levels/candidates   # override the byte-identity source
  */
@@ -96,6 +105,7 @@ import {
   ACT_TAIL_R005A_CLAUSE_IDS,
   ACT_TAIL_R006A_CLAUSE_IDS,
   ACT_TAIL_R007_CLAUSE_IDS,
+  ACT_TAIL_R008_CLAUSE_IDS,
   LAW_PRECISION,
   actScaleTailGuards,
   allOffShortestSolution,
@@ -553,34 +563,39 @@ check(
 );
 // The partition, in the four-instrument form. R-006a grew the reported set from eleven to
 // sixteen and R-007 grew it to twenty-two (six + five + five + six, the last set written across an
-// act boundary); the invariant that keeps a NEW clause from riding along with no instrument is that
-// the four registrations' clause lists are pairwise disjoint AND cover every reported clause AND
+// R-007 opened the fourth registration list (R-007's six, the first written across an act
+// boundary) and R-008 the fifth (six clauses, the first written as an act's basis widened *inside*
+// the act); the invariant that keeps a NEW clause from riding along with no instrument is that
+// the five registrations' clause lists are pairwise disjoint AND cover every reported clause AND
 // together equal the reported count. Sum vs distinct catches an overlap; the unclaimed list
-// catches a clause with no home. **Refreshed at R-007, not relaxed**: the R-007 list joins the
+// catches a clause with no home. **Refreshed at R-008, not relaxed**: the R-008 list joins the
 // claimed union and every R-006a assertion below is unchanged.
 const claimedClauses = new Set([
   ...ACT_TAIL_R004A_CLAUSE_IDS,
   ...ACT_TAIL_R005A_CLAUSE_IDS,
   ...ACT_TAIL_R006A_CLAUSE_IDS,
   ...ACT_TAIL_R007_CLAUSE_IDS,
+  ...ACT_TAIL_R008_CLAUSE_IDS,
 ]);
 const claimedSum =
   ACT_TAIL_R004A_CLAUSE_IDS.length +
   ACT_TAIL_R005A_CLAUSE_IDS.length +
   ACT_TAIL_R006A_CLAUSE_IDS.length +
-  ACT_TAIL_R007_CLAUSE_IDS.length;
+  ACT_TAIL_R007_CLAUSE_IDS.length +
+  ACT_TAIL_R008_CLAUSE_IDS.length;
 const unclaimedClauses = registered.filter(
   (c) => !claimedClauses.has(c.clause),
 );
 check(
-  "the clause split PARTITIONS the reported set across four instruments, and this one owns R-006a's five",
+  "the clause split PARTITIONS the reported set across five instruments, and this one owns R-006a's five",
   claimedClauses.size === registered.length &&
     claimedSum === claimedClauses.size &&
     unclaimedClauses.length === 0,
   `reported ${String(registered.length)} = R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} (scripts/attest-r004a-act2.ts) + ` +
     `R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} (scripts/attest-r005a-reg35.ts) + ` +
     `R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} [${ACT_TAIL_R006A_CLAUSE_IDS.join(", ")}] (here) + ` +
-    `R-007 ${String(ACT_TAIL_R007_CLAUSE_IDS.length)} (scripts/attest-r007-reg45.ts) = ` +
+    `R-007 ${String(ACT_TAIL_R007_CLAUSE_IDS.length)} (scripts/attest-r007-reg45.ts) + ` +
+    `R-008 ${String(ACT_TAIL_R008_CLAUSE_IDS.length)} (scripts/attest-r008-reg50.ts) = ` +
     `${String(claimedSum)} claimed · ${String(claimedClauses.size)} distinct · ${String(unclaimedClauses.length)} unclaimed`,
 );
 // A named reading rather than a claim: the ONE pin expression that moved at this ticket. Nothing
