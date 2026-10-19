@@ -1,8 +1,10 @@
-# `src/levels/candidates/` — the proposal shelf (**OCCUPIED** by Act II batch 4, `l036`–`l040`: authored here, proven here, **unregistered**)
+# `src/levels/candidates/` — the proposal shelf (**EMPTY**: this file and nothing else)
 
 > Owner: **Level AI + Solver** (AGENTS.md §4). The dataset itself is one directory up:
 > `src/levels/README.md` §0 lists it, §2e documents the **registered** L16–L20 block, §2f the
-> **registered** Act II batch 1, and **§2g the registered Act II batches 2 + 3**.
+> **registered** Act II batch 1, §2g the **registered** Act II batches 2 + 3, and
+> **§2h the registered Act II batch 4 (`l036`–`l040`)** — the five rungs that last occupied this
+> shelf, graduated by **R-006a**.
 
 This directory is the **shelf, not the ship**: a candidate is authored here, proven here, and only
 moved into `src/levels/` root by a deliberate registration ticket. It sits *inside* `src/levels/`
@@ -11,13 +13,65 @@ on purpose — the three readers that own the shipped-set census walk the root *
 report length, and `src/game/levels/level-registry.ts`'s explicit imports), so a candidate on the
 shelf is visible to a human and invisible to every gate that counts shipped levels.
 
-## Current state: **OCCUPIED** by `l036`–`l040` (five files, and `README.md` beside them)
+## Current state: **EMPTY** — `README.md` and nothing else
+
+**R-006a graduated the last occupants.** On this tree `readdirSync("src/levels/candidates")` filtered
+on `l\d+\.json` returns **`[]`**: the five Act II batch-4 rungs `l036.json` … `l040.json` were
+`git mv`'d into `src/levels/` root, so this shelf's live reading is **empty**, exactly as it was
+between R-005a and LV-017.
+
+| subject | value |
+|---|---|
+| shelf reading (`l\d+\.json` in this directory) | **`[]`** — zero level files |
+| booking literal (`tests/solver/l16-l20-candidates.test.ts` `BOOKED_CANDIDATE_IDS_IN_SHELF`) | still the **five MEASURED names** `l036.json` … `l040.json` (R-005c-b's reading, taken when the shelf held them) — **stale by one merge**, and therefore **RED here by name**, not by count |
+| the unbooked extra this row refuses | **`l041.json`** — absent from this shelf *and* from the root; the successor reference was re-pointed `l036` → `l041` at **R-005c-b** |
+| the ROOT's successor (a different subject, and it stays root-scoped) | `src/levels/l041.json` — absent; `documentedLesson(41)` is `null`; no shipped id exceeds the pinned max. **Green**, and a shelf byte cannot falsify it |
+| who re-books the staleness | **R-006c** (QA's lane) — the re-book is the empty set **`[]`**, because the shelf really is empty again |
+
+**The successor-absence clause and the booking literal are two different subjects, and only one of
+them is owed a re-point.** QA-025 scoped the absence clause to the **root** set (`LEVELS_DIR`) as the
+*derived* `maxShipped + 1` — *"the subject is the **root** set, never the shelf"* — so it needed no
+edit when the shelf filled at LV-017 and needs none now that it has emptied at R-006a. The **shelf's**
+own successor lives in the booking row's docstring, and R-005c-b had already moved it to
+**`l041.json`**: `l036.json` was a *booked* shelf file at that reading, so dropping it in was green by
+construction, and only `l041.json` could discriminate. That remains the right subject for the shelf
+row after this graduation too — `l036`…`l040` are now root rungs, so re-pointing the shelf's extra at
+any of them would assert a *registered* rung rather than the shelf's next unbooked name. Nothing in
+this file re-points it: `tests/**` is **off this lane** and was not edited.
+
+## Graduation provenance (R-006a) — the byte identity of the five files that used to occupy this shelf
+
+Those five files (`l036.json` … `l040.json`, the **Act II batch 4** rungs authored and proven by
+LV-017 on those very bytes) were moved into the dataset root by **R-006a** with `git mv`, **no content
+edit during the move**, rename 100 %, and `sha256` **and** git blobs identical on both sides (5 files
+/ 0 insertions / 0 deletions). Root blob == `e30bbaccf:src/levels/candidates` blob **5/5**:
+
+| file | root blob (`e30bbaccf:` shelf blob) | `sha256` | `par` (solver) | `D_exec` | `B` | all-OFF world | gates / controls |
+|---|---|---|---|---|---|---|---|
+| `l036.json` | `adff8c1e50db…` | `5b23e8ee…` | 18 | 22.301282 | 1.4338 | UNSATISFIABLE | 20/20 ok · 13/13 caught |
+| `l037.json` | `c0eb8660…` | `cd4c8edb…` | 20 | 24.252174 | 1.4174 | UNSATISFIABLE | 20/20 ok · 13/13 caught |
+| `l038.json` | `76dcc3e0…` | `a65ab804…` | 22 | 26.200000 | 1.4000 | UNSATISFIABLE | 20/20 ok · 13/13 caught |
+| `l039.json` | `241d669d…` | `e5f9e8be…` | 24 | 28.185897 | 1.3953 | UNSATISFIABLE | 20/20 ok · 13/13 caught |
+| `l040.json` | `e6f7359d3679…` | `701e46ee…` | 24 | 28.455319 | 1.4851 | UNSATISFIABLE | 20/20 ok · 13/13 caught |
+
+Every number in that table was **re-measured on the root bytes before any law edit**, and the five
+rows are now in `docs/level-difficulty.md` §5.2 and in the regenerated
+`docs/level-difficulty.report.json` (**40** records). The registration's own law — the act's
+**registered maximum** moves from L35's `28.339426` to L40's `28.455319` by re-derivation, never by
+re-stamping, and the act-close obligation stays discharged at L35 — lives in `@/core/solver/policy`
+and is re-derived per run by `scripts/attest-r006a-reg40.ts` (transcript
+`scripts/attest-r006a-reg40.transcript.md`), beside the two older instruments it extends. The
+per-rung table, the derived ladder and the seam label are in `src/levels/README.md` §2h.
+
+## The shelf-era record for those five — LV-017's measurement, kept because a registration is a byte-copy
 
 **LV-017 wrote the closing batch of Act II here.** `l036.json` … `l040.json` are the
 **4-pocket / 5-door / 5-press** member of §7.2's `pocket count 1–4` axis — the act's **published
 family ceiling** for this device, i.e. a *law* statement, **not** a census ceiling (the ≥ 11-pocket
-probe stays DEFERRED below) — on §7.4's **second frame** (`7×7`, `CX = 1`). They are on the shelf,
-proven on these very bytes, and **unregistered**. The authoring record is
+probe stays DEFERRED below) — on §7.4's **second frame** (`7×7`, `CX = 1`). They were on the shelf,
+proven on these very bytes, and **unregistered**; R-006a has since moved them, so the paths in the
+commands below read `--dir=src/levels/candidates` **as the shelf era ran them**, and the same ladder
+is re-run today with `--dir=src/levels`. The authoring record is
 `scripts/author-l36-l40.transcript.md`; the proof is
 `scripts/prove-candidate-l3640.transcript.md`; the pipeline record is
 `docs/ai-native-pipeline.md` **§8.24**. Nothing here may be read as a proof — every number below is
@@ -60,7 +114,9 @@ coincide with a registered one; that is a coincidence of the band's finite integ
 **printed** so it is never implied away. The five files carry **5 distinct §6.1.4 seal-inclusive
 keys**, and `prove-candidate`/`author-l21` both report **0 collisions against the registered keys** —
 measured against the **31 distinct geometry keys held by the 35 registered root files** (0 of 2091
-accepts were refused by the clone clause).
+accepts were refused by the clone clause). At R-006a's tip that same census reads **36 distinct keys
+over 40 root files**, and it still reproduces **31 over ids 1–35** — the published LV-017 reading —
+which is what catches a drift in the key itself (`scripts/attest-r006a-reg40.ts`, §6.1.4 clone guard).
 
 | rung | `par` | `D_exec` | `B` | prev-step `Δpar` | strictly-rising `D_exec` | Δ vs Act I peak `24.729412` |
 |---|---|---|---|---|---|---|
@@ -96,7 +152,7 @@ axis relaxation, **never a dip and never a felt-ease claim**; the felt half stay
 hypothesis (`NOT TESTABLE`, `n = 0`). Inside the batch the equal-par pair `L39 → L40` **rises**
 (`+0.269422`), so no second label is owed.
 
-## Act II batches 2 + 3 (`l026`–`l035`) — the shelf era this batch follows, kept as R-005a re-measured it
+## Act II batches 2 + 3 (`l026`–`l035`) — the shelf era batch 4 followed, kept as R-005a re-measured it
 
 **R-005a graduated the previous ten shelf files into the root.** `l026`–`l030` (Act II batch 2,
 authored and proven by **LV-014**; `scripts/author-l2630.transcript.md`,
@@ -105,10 +161,11 @@ and `l031`–`l035` (Act II batch 3, authored and proven by **LV-015**; `scripts
 `scripts/prove-candidate-l3135.transcript.md`, pipeline record §8.20) were moved into `src/levels/`
 root by R-005a with `git mv`, **no content edit during the move**, rename 100 %, `sha256` **and** git
 blobs identical on both sides (proven per file in `src/levels/README.md` §2g and re-proven on every run
-of `scripts/attest-r005a-reg35.ts`). They are **no longer on this shelf**: the shelf holds the five
-LV-017 files above, `docs/level-difficulty.report.json` reads **35** records, and
-`src/game/levels/level-registry.ts` imports neither the graduated ten nor the five shelf files
-(the registry row is GAME's edit, §7d).
+of `scripts/attest-r005a-reg35.ts`). They are **no longer on this shelf**: the shelf is **EMPTY** — the
+five LV-017 files that replaced the ten have themselves graduated (§2h / the R-006a block above),
+`docs/level-difficulty.report.json` reads **40** records, and `src/game/levels/level-registry.ts`
+imports neither the graduated fifteen nor anything from the shelf (the registry row is GAME's edit,
+§7e).
 
 The numbers below are kept as the **shelf-era record the registration re-measured** — every one of
 them survived the move unchanged, because a registration is a byte-copy and never a re-authoring.
@@ -195,53 +252,53 @@ published **before `--write`** and blessed for verbatim citation (**GD-011 RULIN
 (**GD-010 §7.3.1 instance 2**) beside it. Inside batch 3 the equal-par pairs **rise**
 (`+0.019191`, `+0.212483`) — instrument facts, not reliefs.
 
-## The booking is a **named live set** — and the measured literal at this tree is `l026`–`l035`, not `[]`
+## The booking is a **named live set** — and at this tree the literal names **five files that have graduated**, not `[]`
 
 `tests/solver/l16-l20-candidates.test.ts` walks this directory and pins the shelf's obligations:
-**set equality** with the booking literal `BOOKED_CANDIDATE_IDS_IN_SHELF` (a set comparison, never a
-length — `expect(shelf).toEqual([...BOOKED_CANDIDATE_IDS_IN_SHELF])`) and *every shelf rung strictly
-above the registered root max*, which is the dataset pin `EXPECTED_LEVEL_COUNT` (**35**), asserted on
-the spot so a shelf file cannot be justified by a dataset that moved without the pin moving.
+**set equality** with the booking literal `BOOKED_CANDIDATE_IDS_IN_SHELF` (`:207`–`:213`; a set
+comparison, never a length — `expect(shelf).toEqual([...BOOKED_CANDIDATE_IDS_IN_SHELF])` at `:226`)
+and *every shelf rung strictly above the registered root max*, which is the dataset pin
+`EXPECTED_LEVEL_COUNT` (`tests/e2e/helpers/levels.ts:116`), asserted on the spot so a shelf file
+cannot be justified by a dataset that moved without the pin moving.
 
-**The measured state, corrected here because a previous revision of this file described it wrongly.**
-This section used to say the literal "must flip to `[]`" after R-005a emptied the shelf, i.e. that the
-literal *was* `[]`. It is **not**: the literal at this tree is the **ten names `l026` … `l035`**, booked
-at **QA-026** (`d21f399`) when the shelf held those ten files, and R-005a's graduation moved the bytes
-to the root **without** re-booking it. So the row is **RED here by name** — the suite prints
-`AssertionError: expected [ 'l036.json', 'l037.json', …(3) ] to deeply equal [ 'l026.json', 'l027.json',
-…(8) ]` — and it was already red before LV-017 landed anything, for the older reason (`expected [] to
-deeply equal [ 'l026.json', …(9) ]`). Landing `l036`–`l040` did not create the red; it changed *which*
-mismatch the red reports. **The needed re-book is to the five files the shelf actually holds,
-`l036` … `l040`** (not `[]`, unless a registration graduates these five too). That half is a
-**booking-derived pin** owned by **R-005c** (`src/levels/README.md` §7d); `tests/**` is **off this lane
-and was not edited** — this file reports the red, it does not re-book it.
+**The measured state at R-006a's tip.** The shelf holds **0 level files** (this `README.md` and nothing
+else — `dir` lists one entry, and the suite's own filter on `l\d+\.json` finds none), while the booking
+literal still names **the five files `l036.json` … `l040.json`**. So the row is **RED here by name**:
+the suite prints `AssertionError: expected [] to deeply equal [ 'l036.json', 'l037.json', …(3) ]`.
+That is the **third** state this row has been in, and it is worth stating plainly which red is which,
+because each earlier revision of this section described a different one: the literal was `[]` while the
+shelf held five (R-004a's left-over, red the other way), then **ten names** (`l026` … `l035`, booked at
+QA-026 when the shelf held those ten, made stale by R-005a's graduation), and now **five names** that
+R-006a's graduation moved to the root. **R-006c re-books it to `[]`** — the empty-set reading R-005c
+proved non-vacuously — since nothing is on the shelf at all. That half is a **booking-derived pin**
+owned by **R-006c** (`src/levels/README.md` §7e); `tests/**` is **off this lane and was not edited** —
+this file reports the red, it does not re-book it.
 
-**The absence clause, by contrast, needs NO re-pointing — and the earlier revision of this section was
-wrong about that too.** It is the *other* assertion in the same block, and it is already **root-scoped
-and derived**, not typed: QA-025 re-pointed it at the **`LEVELS_DIR` (root) set** precisely because a
-shelved `l026.json` had existed since LV-014 — *"the subject is the **root** set, never the shelf"* —
-and asserted it as `maxShipped + 1`, i.e. `36` here. So it checks three live facts and **all three
-already hold and pass**: `src/levels/l036.json` does **not** exist (the file is on the shelf, at
-`src/levels/candidates/l036.json`), `documentedLesson(36)` is `null`, and no shipped id exceeds `35`.
-A shelf byte cannot falsify any of them, because the shelf is invisible to the root census — which is
-exactly why the clause is scoped that way and why it needs no edit when the shelf fills. The measured
-proof is in the suite itself: of this block's assertions, only the **set-equality** row is red
-(`expected [ 'l036.json', … ] to deeply equal [ 'l026.json', … ]`), and the absence clause is **not**
-among the failures.
+**The successor claim is the other half of that block, and it is green — with one prose-only exception.**
+`l041.json` is the next unbooked name, and it is **absent from the root and from the shelf** (measured
+by reading both directories, never assumed; `find src -name l041.json` returns nothing). QA-025 scoped
+the absence clause at the **`LEVELS_DIR` (root) set**, asserted as `maxShipped + 1` — *"the subject is
+the **root** set, never the shelf"* — and at this tip that is **`41`**: `src/levels/l041.json` does not
+exist, `documentedLesson(41)` is `null`, and no shipped id exceeds `40`. All three hold, and the clause
+is **not** among this block's failures (only `:215` and `:245` are red). What *is* stale is **prose,
+not a pin**: the comment block beside it (from `:288`) still says the root "stops at the pinned 35",
+and `:245`'s row is red with `expected 40 to be 35` — both read `EXPECTED_LEVEL_COUNT`, so both move
+with the single lever of §7e item 0. The close-out clause is also already true at this tip:
+`documentedLesson(40)?.obligation === null` (asserted at `:285`) now reads **L40**'s row, which R-006a's
+step 3 landed with `obligation: null` plus its booked remedy named — the **family half stays booked**,
+by name, rather than being closed by inventing an obligation.
 
 Two readings the pin's second half gives for free, both **derived relations, never ceiling claims**:
-`rootMax = 35 = EXPECTED_LEVEL_COUNT` and the five shelf ids are `36 … 40`, so each is **strictly
-above** it (5/5 — re-derived per run in the loop over `shelf`, not typed). That half is **live and
-green**: it re-derives on every run, so a shelf file at or below the root max is caught **as a live
-guard, not as a count**, and an unregistered extra and a vanished member both fail **by name**
-(QA-012/QA-018 proved the populated direction, QA-014 the empty one; QA-026 re-proved the populated
-direction on those ten bytes).
+`rootMax = 40 = EXPECTED_LEVEL_COUNT` and any future shelf ids would be `≥ 41`, so each would be
+**strictly above** it (re-derived per run in the loop over `shelf`, not typed). That half is **live**:
+it re-derives on every run, so a shelf file at or below the root max is caught **as a live guard, not
+as a count**, and an unregistered extra and a vanished member both fail **by name** (QA-012/QA-018
+proved the populated direction, QA-014 the empty one; QA-026 the ten-name one, R-005c-b both
+directions on the five-name one).
 
-History, kept honest: this file once carried a ⚠ paragraph saying the row was **RED** while the
-booking literal was still `[]` (the R-004a left-over) — true of the five-entry era; it was re-booked
-to the **ten names** at QA-026, and R-005a then left it stale in the other direction. The literal
-tracks the shelf, never a count — which is exactly why a stale literal is a *named* failure and not a
-silent pass.
+History, kept honest: this row's literal has always tracked the shelf, **never a count** — which is
+exactly why a stale literal is a *named* failure and not a silent pass, and why the red text is worth
+quoting in each era rather than remembered as "the shelf row is red".
 
 **A shelf rung must sit strictly above the registered root max** — a **derived rung relation,
 never a ceiling claim about any device**: `docs/project-status.md` item 114's law binds this prose
@@ -280,11 +337,16 @@ on both sides (10 files / 0 insertions). Root blob == `36ffe0b:src/levels/candid
 
 Every number in that table was **re-measured on the root bytes before any law edit**, and the ten
 rows are now in `docs/level-difficulty.md` §5.2 and in the regenerated
-`docs/level-difficulty.report.json` (**35** records). The registration's own law — the act's
-**maximum** carries §7.3's across-act obligation, both batch seams are the two **pre-published
-§7.3.1 reliefs** cited verbatim, and the act's registered tail moves by re-derivation, never by
+`docs/level-difficulty.report.json` (**40** records — the ten rows here were already there at 35 and
+are unchanged by R-006a's five; §2h). The registration's own law — the act's
+**maximum** carries §7.3's across-act obligation, the two batch seams it published are the two
+**pre-published §7.3.1 reliefs** cited verbatim (R-006a's step 2 added the act's *closing* seam as the
+**fourth** instance and re-pointed exactly one clause pin, without moving any R-004a / R-005a constant
+*value* — §2h), and the act's registered tail moves by re-derivation, never by
 re-stamping — lives in `@/core/solver/policy` and is re-derived per run by
-`scripts/attest-r005a-reg35.ts` (transcript `scripts/attest-r005a-reg35.transcript.md`).
+`scripts/attest-r005a-reg35.ts` (transcript `scripts/attest-r005a-reg35.transcript.md`, **body
+refreshed at R-006a**: its ladder stays scoped to the R-005a-era ids 26–35 and its control set is
+unchanged at **120** MATCH lines).
 
 ## Previous occupancy — Act II batch 1 (`l021`–`l025`), graduated by **R-004a**
 
@@ -304,7 +366,8 @@ move**, rename 100 %, and `sha256` **and** git blobs identical on both sides:
 
 Every number in that table was **re-measured on the registered root bytes before any law edit**, and
 the five rows are now in `docs/level-difficulty.md` §5.2 and in the regenerated
-`docs/level-difficulty.report.json` (**25** records at R-004a; **35** after R-005a). The registration's own law — the act's
+`docs/level-difficulty.report.json` (**25** records at R-004a; **35** after R-005a; **40** after
+R-006a). The registration's own law — the act's
 **maximum** carries §7.3's across-act obligation, while the act's *opening* rung sits below the
 previous act's peak as a **plateau relaxation at a `ΔM = 0` boundary**, never a dip — lives in
 `@/core/solver/policy` and is re-derived per run by `scripts/attest-r004a-act2.ts`. The
@@ -314,23 +377,28 @@ move at registration either: `BLOCK_L1619_IDS` is still `[16 … 20]` and L20 wa
 
 **Shelf history, in one line each.** `l016.json`–`l019.json` graduated by **R-003c**, `l020.json`
 by **R-003d** (blob `78acaed0…`), `l021.json`–`l025.json` by **R-004a**, `l026.json`–`l035.json` by
-**R-005a** — so the shelf has been emptied **three** times and re-occupied **four** times: `l026`–`l030`
-fresh by **LV-014**, `l031`–`l035` beside them by **LV-015**, and now `l036`–`l040` fresh by
-**LV-017**. Every graduation so far was a provenance-exact `git mv`; the shelf's current occupants are
-`l036.json` … `l040.json` — five files, **unregistered**, imported by no registry and present in no
-shipped-set census.
+**R-005a**, `l036.json`–`l040.json` by **R-006a** — so the shelf has been emptied **four** times and
+re-occupied **five**: `l026`–`l030` fresh by **LV-014**, `l031`–`l035` beside them by **LV-015**,
+`l036`–`l040` fresh by **LV-017**, and each occupancy graduated in turn. Every graduation so far was a
+provenance-exact `git mv`; the shelf's current occupants are **none** — `src/levels/candidates/` holds
+this `README.md` and nothing else, and the five R-006a rungs are registered root rows now
+(`src/levels/README.md` §2h).
 
 ## Working here
 
 ```bash
-node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l036.json --family=g --ladder=36,37,38,39,40 --dir=src/levels/candidates   # LV-017: the assertion pass on the FIVE shelf bytes (5/5 · 65/65 controls)
-node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l036.json --family=g --ladder=36,37,38,39,40 --measure-controls          # the expectation pass (13 MEASURED per rung × 5, no assertion — F-L16-3 order)
-node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l036.json --family=g --ladder=36,37,38,39,40 --peak=28.7                 # falsification: exit 1 · FAIL 4/5, exactly L40 on act-peak
-node_modules/.bin/tsx scripts/solve-levels.ts --audit src/levels/candidates   # an independent reader on the shelf (5/5 PASS)
+# ── R-006a: the five rungs are ROOT rows now — run these at --dir=src/levels ──
+node_modules/.bin/tsx scripts/prove-candidate.ts --family=g --ladder=36,37,38,39,40 --dir=src/levels   # R-006a: the assertion pass on the FIVE registered root bytes (5/5 ACCEPT · 65/65 controls)
+node_modules/.bin/tsx scripts/prove-candidate.ts --family=g --ladder=36,37,38,39,40 --dir=src/levels --measure-controls   # the expectation pass (13 MEASURED per rung × 5, no assertion — F-L16-3 order)
+node_modules/.bin/tsx scripts/prove-candidate.ts --family=g --ladder=36,37,38,39,40 --dir=src/levels --peak=28.7589095   # falsification: exit 1 · FAIL 4/5, exactly L40 on act-peak
+node_modules/.bin/tsx scripts/attest-r006a-reg40.ts            # R-006a: byte identity (5/5 vs e30bbaccf) + the batch-4 ladder + the 16-clause act-tail set + its control battery
+node_modules/.bin/tsx scripts/solve-levels.ts --audit src/levels   # an independent reader (40/40 PASS, par verified 40/40)
+# shelf-era path for the graduated five: no longer resolves (the bytes are in the root)
+node_modules/.bin/tsx scripts/prove-candidate.ts --family=g --ladder=36,37,38,39,40 --dir=src/levels/candidates   # → exit 1 (ENOENT on l036.json — the shelf is EMPTY; the attest's non-vacuity probe)
+node_modules/.bin/tsx scripts/prove-candidate.ts src/levels/candidates/l036.json --family=g --ladder=36,37,38,39,40 --dir=src/levels/candidates   # (historical, LV-017) the shelf-era assertion pass on the five
 node_modules/.bin/tsx scripts/prove-candidate.ts --family=g --ladder=26,27,28,29,30,31,32,33,34,35 --dir=src/levels   # R-005a: the assertion pass on the TEN **registered root** bytes (10/10 · 130/130)
 node_modules/.bin/tsx scripts/prove-candidate.ts --family=g --ladder=26,27,28,29,30,31,32,33,34,35 --dir=src/levels/candidates   # shelf-era path for the graduated ten: no longer resolves (the bytes are in the root)
 node_modules/.bin/tsx scripts/prove-candidate.ts --family=g --ladder=31,32,33,34,35 --dir=src/levels --measure-controls   # the expectation pass (13 measured)
-node_modules/.bin/tsx scripts/solve-levels.ts --audit src/levels   # an independent reader (35/35 PASS)
 node_modules/.bin/tsx scripts/attest-r005a-reg35.ts            # R-005a: byte identity + both ladders + the act tail/seam law + its control battery
 node_modules/.bin/tsx scripts/author-l21.ts --stage=g --batch=4 --pockets=4 --cx=1 --h=7 --pocketsize=4 \
     --qmax=4 --paircap=40 --budget=20000 --cap=400 --parmin=16 --parmax=24   # LV-017 stage G: batch 4's pool on the 7×7 / CX=1 frame (2091 accepts / 20000 judged — a FLOOR)
