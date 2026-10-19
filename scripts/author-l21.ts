@@ -1119,6 +1119,7 @@ import {
   ACT_III_PAR_BAND,
   ACT_III_PAR_CEILING,
   ACT_III_PAR_FLOOR,
+  ACT_III_REGISTERED_IDS,
   ACT_III_REGISTERED_TAIL_EXEC,
   ACT_I_REGISTERED_PEAK_EXEC,
   BLOCK_L1619_B_BAND,
@@ -1302,20 +1303,21 @@ function preflightLaw(): { boards: number; states: number; moves: number; bimoda
 const CUT_EXCLUDED_IDS: readonly number[] = [
   ...BLOCK_L1619_IDS,
   ...ACT_II_REGISTERED_IDS,
-  ...ACT_III_B1_IDS,
+  ...ACT_III_REGISTERED_IDS,
 ];
 const CUT_BASIS_CLAUSE =
   `L1–L15 with the L16–L20 block [${BLOCK_L1619_IDS.join(", ")}] and the registered blocks ` +
-  `[${[...ACT_II_REGISTERED_IDS, ...ACT_III_B1_IDS].join(", ")}] excluded`;
+  `[${[...ACT_II_REGISTERED_IDS, ...ACT_III_REGISTERED_IDS].join(", ")}] excluded`;
 
 /**
  * The two ceilings the batch is judged against, **re-measured from the root bytes on
  * every run**:
  * - `cut` = `max D_exec` over the frozen L1–L15 basis — the L16–L20 block **and** every
  *   registered Act II rung (`ACT_II_REGISTERED_IDS`) **and** every registered Act III rung
- *   (`ACT_III_B1_IDS`) excluded, exactly as `scripts/prove-candidate.ts`'s `measureCut()`
+ *   (the registered act set, `ACT_III_REGISTERED_IDS`) excluded, exactly as `scripts/prove-candidate.ts`'s `measureCut()`
  *   reads it: a registered block must not raise the filter judged against it — the R-003d
- *   lesson, then the R-004a lesson, then F-L36-1, then F-L46-1 one registration later;
+ *   lesson, then the R-004a lesson, then F-L36-1, then F-L46-1, then R-008's sixth occurrence (the act
+ *   growing inside itself) one registration later;
  * - `actI` = Act I's **measured maximum** `D_exec` over ids 1–20 — the number
  *   `docs/level-design.md` §7.3's `act-peak` clause compares against (24.729412 at
  *   R-003d, re-derived here rather than typed).
@@ -1403,8 +1405,22 @@ function measureCut(): {
      * same frame printed a gate (`> 30.455319`) its own band ceiling (`29.0625`) can never satisfy.
      * Revert path: dropping this line restores `30.455319` and re-truncates the census — both
      * directions re-measured, never remembered (see the header's F-L46-1 block).
+     *
+     * **R-008 (the SIXTH occurrence, measured pre-fix and recorded verbatim).** Registering
+     * `L46–L50` reproduced the same shape: with this line still keyed on batch 1, the basis
+     * silently became `[1…15, 46…50]` and `floor` became `30.417021` (L50's own `D_exec`) — the
+     * printed CUT line read
+     * `… = 30.417021 · … 30 excluded id(s), all present · … basis ids [1, …, 15, 46, 47, 48, 49, 50]`,
+     * i.e. the census pool for every further batch would have been filtered by the act's own
+     * closing rung. The line now reads the **registered act set** (`ACT_III_REGISTERED_IDS`).
+     * **F-R008-2 (named, not repaired in this train):** the `missingExcluded` tooth above is
+     * **inverse-only** — it fires when an excluded id is ABSENT from the root, never when a
+     * registered id is MISSING from the exclusion — so in this direction nothing refuses: the
+     * divergence is visible only in the printed floor and basis list, while the census itself
+     * truncates silently. That is the "label ⊃ measurement" class one turn further out, and it is
+     * published rather than patched mid-registration.
      */
-    if (ACT_III_B1_IDS.includes(level.id)) continue;
+    if (ACT_III_REGISTERED_IDS.includes(level.id)) continue;
     basis.push(level.id);
     if (d.Dexec !== null && d.Dexec > floor) floor = d.Dexec;
     if (d.B < bMin) bMin = d.B;
@@ -4553,7 +4569,7 @@ console.log(
     : `CUT divergence receipt (F-L36-1): FROZEN registered-blocks-excluded floor ${cut.floor.toFixed(6)} vs the pre-fix basis's ` +
         `${cut.staleFloor.toFixed(6)} (Δ ${(cut.staleFloor - cut.floor).toFixed(6)}) — the pre-fix list let the registered ` +
         `blocks raise the floor and silently turned the escalation gate into "D_exec > the registered act tail"; the generator now ` +
-        `excludes BLOCK_L1619_IDS + ACT_II_REGISTERED_IDS + ACT_III_B1_IDS (F-L46-1), the same law constants the prover's own ` +
+        `excludes BLOCK_L1619_IDS + ACT_II_REGISTERED_IDS + ACT_III_REGISTERED_IDS (F-L46-1 + R-008's sixth occurrence), the same law constants the prover's own ` +
         `measureCut() reads`,
 );
 const law = preflightLaw();

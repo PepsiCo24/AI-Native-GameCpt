@@ -20,10 +20,11 @@
  *        its measured `LADDER RESULT`). A control table re-implemented here would be a statement
  *        about *this file* instead of about the proof.
  *   [3/6] **§7.3's act-scale tail law** — the act peaks and the ten rows are **measured** and fed
- *        to `actScaleTailGuards`, which reports **twenty-two** clauses since R-007 opened Act III.
- *        R-004a owns six of them (`scripts/attest-r004a-act2.ts`), R-006a five
- *        (`scripts/attest-r006a-reg40.ts`), R-007 six (`scripts/attest-r007-reg45.ts`); the
- *        five this file owns are named here. The four sets partition the reported set, and
+ *        to `actScaleTailGuards`, which reports **twenty-eight** clauses since R-008 widened Act
+ *        III's basis inside the act. R-004a owns six of them (`scripts/attest-r004a-act2.ts`),
+ *        R-006a five (`scripts/attest-r006a-reg40.ts`), R-007 six
+ *        (`scripts/attest-r007-reg45.ts`), R-008 six (`scripts/attest-r008-reg50.ts`); the
+ *        five this file owns are named here. The five sets partition the reported set, and
  *        R-005a's three act-level clauses read the **frozen** era basis (`ACT_II_R005A_ERA_IDS`)
  *        rather than the live act — that is why this file's tail-pin control moves the era basis,
  *        not `actII`.
@@ -45,6 +46,15 @@
  *
  * `STOP_AND_ROUTE` (exit 1) is the only honest answer to a disagreement: the registered bytes are
  * immutable and are never re-authored to fit a later reading (ADR-0004).
+ *
+ * **`refreshed:` R-008 (registration of `l046`–`l050`).** The reported clause set grew from
+ * twenty-two to **twenty-eight** when R-008's six clauses (the first written as an act's basis
+ * widened *inside* the act) landed, so this file's partition row — which is a statement about the
+ * current shape of the law, not about R-005a's ten rungs — gained `ACT_TAIL_R008_CLAUSE_IDS` and
+ * the fifth instrument's name. Nothing else moved: all twenty-eight clauses still PASS on the
+ * registered bytes, R-005a's five controls still fail exactly their own clauses, the ten rows still
+ * reproduce on the bytes and the R-004a-era rungs are still un-restamped. The same *refresh, not
+ * relax* this file performed at R-007, and the same one R-004a's instrument carries at this ticket.
  *
  *   npx tsx scripts/attest-r005a-reg35.ts
  */
@@ -87,6 +97,7 @@ import {
   ACT_TAIL_R005A_CLAUSE_IDS,
   ACT_TAIL_R006A_CLAUSE_IDS,
   ACT_TAIL_R007_CLAUSE_IDS,
+  ACT_TAIL_R008_CLAUSE_IDS,
   LAW_PRECISION,
   actScaleTailGuards,
   allOffShortestSolution,
@@ -472,23 +483,26 @@ check(
   `${String(registered.filter((c) => c.status === "PASS").length)}/${String(registered.length)} clauses PASS`,
 );
 check(
-  "the clause split partitions the reported set (four instruments), and this instrument owns R-005a's five",
+  "the clause split partitions the reported set (five instruments), and this instrument owns R-005a's five",
   registered.length ===
     ACT_TAIL_R004A_CLAUSE_IDS.length +
       ACT_TAIL_R005A_CLAUSE_IDS.length +
       ACT_TAIL_R006A_CLAUSE_IDS.length +
-      ACT_TAIL_R007_CLAUSE_IDS.length &&
+      ACT_TAIL_R007_CLAUSE_IDS.length +
+      ACT_TAIL_R008_CLAUSE_IDS.length &&
     registered.every(
       (c) =>
         ACT_TAIL_R004A_CLAUSE_IDS.includes(c.clause) ||
         ACT_TAIL_R005A_CLAUSE_IDS.includes(c.clause) ||
         ACT_TAIL_R006A_CLAUSE_IDS.includes(c.clause) ||
-        ACT_TAIL_R007_CLAUSE_IDS.includes(c.clause),
+        ACT_TAIL_R007_CLAUSE_IDS.includes(c.clause) ||
+        ACT_TAIL_R008_CLAUSE_IDS.includes(c.clause),
     ),
   `reported ${String(registered.length)} = R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} (controlled by scripts/attest-r004a-act2.ts) + ` +
     `R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} [${ACT_TAIL_R005A_CLAUSE_IDS.join(", ")}] (controlled here) + ` +
     `R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} (controlled by scripts/attest-r006a-reg40.ts) + ` +
-    `R-007 ${String(ACT_TAIL_R007_CLAUSE_IDS.length)} (controlled by scripts/attest-r007-reg45.ts; refreshed here at R-007, not relaxed — every R-005a assertion above is unchanged)`,
+    `R-007 ${String(ACT_TAIL_R007_CLAUSE_IDS.length)} (controlled by scripts/attest-r007-reg45.ts) + ` +
+    `R-008 ${String(ACT_TAIL_R008_CLAUSE_IDS.length)} (controlled by scripts/attest-r008-reg50.ts; refreshed here at R-008, not relaxed — every R-005a assertion above is unchanged)`,
 );
 console.log("");
 
