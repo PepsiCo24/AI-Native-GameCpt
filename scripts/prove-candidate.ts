@@ -51,6 +51,8 @@ import { analyse, explore, forEachParRoute, goalReachableWithAllSwitchesOff } fr
 import { analyseDifficulty } from "@/core/solver/difficulty";
 import { applyMove, isLegalMove } from "@/core/rules";
 import { DIRECTIONS, move } from "@/core/state/move";
+import type { DerivedRoom } from "./room-derivation";
+import { derivedWalkSealedRooms, inBoundsNeighbours as sharedInBoundsNeighbours } from "./room-derivation";
 import { hashState } from "@/core/state/hash";
 import type { SearchState } from "@/core/state/types";
 import {
@@ -356,7 +358,7 @@ function judge(
         detail:
           "the multi-pocket device could not be derived from the landed bytes: §7.4's stage G needs exactly one portal pair, exactly one end " +
           "unreachable on foot (the landing), and ≥ 2 walk-sealed rooms each covered by exactly ONE openable door object. " +
-          `Measured: ${String(proven.portals.length)} portal(s), ${String(sealedRooms(proven).length)} sealed room(s)`,
+          `Measured: ${String(proven.portals.length)} portal(s), ${String(derivedWalkSealedRooms(proven).length)} sealed room(s)`,
       });
     } else {
       extras.push(...multiPocketGates(proven, graph, result, gview));
@@ -763,18 +765,13 @@ const ACT2_EXEC_BAND: readonly [number, number] = ACT === 3 ? ACT_III_EXEC_BAND 
 /** The batch's peak rung, when a ladder was given (§7.3: the across-act clause rides on the peak). */
 const PEAK_RUNG: number | null = LADDER.length > 0 ? Math.max(...LADDER) : null;
 
-interface RoomView {
-  readonly tiles: readonly Coord[];
-  readonly boundary: readonly Coord[];
-  /** Distinct door ids covering the boundary (exactly one, or the room is not sealed). */
-  readonly doorIds: readonly string[];
-  readonly doorTiles: readonly Coord[];
-  readonly wallTiles: readonly Coord[];
-  readonly freeTiles: readonly Coord[];
-  readonly switchIds: readonly string[];
-  readonly hasGoal: boolean;
-  readonly hasLanding: boolean;
-}
+/**
+ * `RoomView` **is** the shared derivation's room (`scripts/room-derivation.ts`), aliased so the
+ * proving side's type name is unchanged while the law itself lives in exactly one place —
+ * `F-L41-2`'s fix: the generator's filter and this prover's `g6` must not be two implementations
+ * of "the rooms of a board".
+ */
+type RoomView = DerivedRoom;
 
 interface GView {
   readonly landing: Coord;
@@ -786,73 +783,7 @@ interface GView {
 }
 
 /** The four tile-neighbours of `t` that are in bounds (the grid edge blocks by itself). */
-function inBoundsNeighbours(level: Level, t: Coord): Coord[] {
-  const out: Coord[] = [];
-  for (const d of DIRECTIONS) {
-    const n = at2(t, d);
-    if (n[0] < 0 || n[1] < 0 || n[0] >= level.width || n[1] >= level.height) continue;
-    out.push(n);
-  }
-  return out;
-}
-
-/**
- * Every **walk-sealed room** of the board, derived from the bytes: a maximal connected
- * set of tiles that are neither a phase wall nor a door tile, whose entire boundary is
- * covered by exactly one door object — no phase-wall boundary tile (F-L19-2: a wall on
- * the boundary makes its tile unstandable and the 42/42 coverage gate fails) and no
- * free boundary tile (an open leak).
- */
-function sealedRooms(level: Level): RoomView[] {
-  const wall = new Set([...level.phaseAWalls, ...level.phaseBWalls].map(coordKey));
-  const doorOf = new Map<string, string>();
-  for (const d of level.doors) for (const t of d.tiles) doorOf.set(coordKey(t), d.id);
-  const blocked = (t: Coord): boolean => wall.has(coordKey(t)) || doorOf.has(coordKey(t));
-  const seen = new Set<string>();
-  const rooms: RoomView[] = [];
-  for (let y = 0; y < level.height; y += 1) {
-    for (let x = 0; x < level.width; x += 1) {
-      const s = [x, y] as Coord;
-      if (seen.has(coordKey(s)) || blocked(s)) continue;
-      const tiles: Coord[] = [];
-      const q: Coord[] = [s];
-      seen.add(coordKey(s));
-      for (let i = 0; i < q.length; i += 1) {
-        const t = q[i] as Coord;
-        tiles.push(t);
-        for (const n of inBoundsNeighbours(level, t)) {
-          if (seen.has(coordKey(n)) || blocked(n)) continue;
-          seen.add(coordKey(n));
-          q.push(n);
-        }
-      }
-      const inside = new Set(tiles.map(coordKey));
-      const bmap = new Map<string, Coord>();
-      for (const t of tiles) for (const n of inBoundsNeighbours(level, t)) if (!inside.has(coordKey(n))) bmap.set(coordKey(n), n);
-      const boundary = [...bmap.values()].sort((p, q2) => coordKey(p).localeCompare(coordKey(q2)));
-      const doorIds = [...new Set(boundary.map((t) => doorOf.get(coordKey(t))).filter((id): id is string => id !== undefined))].sort();
-      const wallTiles = boundary.filter((t) => wall.has(coordKey(t)));
-      const freeTiles = boundary.filter((t) => !wall.has(coordKey(t)) && !doorOf.has(coordKey(t)));
-      // The room is a walk-sealed ROOM only when a single door object covers its whole
-      // boundary. Anything else (a wall boundary, two doors, an open leak) is a region,
-      // not a room, and the gate that wants a room will say so by name.
-      if (doorIds.length !== 1 || wallTiles.length > 0 || freeTiles.length > 0) continue;
-      const sorted = [...tiles].sort((p, q2) => coordKey(p).localeCompare(coordKey(q2)));
-      rooms.push({
-        tiles: sorted,
-        boundary,
-        doorIds,
-        doorTiles: boundary.filter((t) => doorOf.has(coordKey(t))),
-        wallTiles,
-        freeTiles,
-        switchIds: level.switches.filter((sw) => inside.has(coordKey(sw.tile))).map((sw) => sw.id),
-        hasGoal: inside.has(coordKey(level.goal)),
-        hasLanding: false,
-      });
-    }
-  }
-  return rooms;
-}
+const inBoundsNeighbours = (level: Level, t: Coord): Coord[] => sharedInBoundsNeighbours(level, t);
 
 function multiPocketFromBytes(level: Level): GView | null {
   if (level.portals.length !== 1) return null;
@@ -863,7 +794,7 @@ function multiPocketFromBytes(level: Level): GView | null {
   if (behind.length !== 1) return null;
   const landing = behind[0] as Coord;
   const near = coordKey(a) === coordKey(landing) ? b : a;
-  const rooms = sealedRooms(level).map((r) => ({
+  const rooms = derivedWalkSealedRooms(level).map((r) => ({
     ...r,
     hasLanding: r.tiles.some((t) => coordKey(t) === coordKey(landing)),
   }));

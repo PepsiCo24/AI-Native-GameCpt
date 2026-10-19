@@ -473,3 +473,154 @@ L45 par 26 · 30.455319 · B 1.4851 · chain  30/30    (O6: the batch's maximum 
   Designer + Architect territory; handing them over by name is the whole point of the NON-CLAIM.
 - **`--pocketsize ≥ 11` stays DEFERRED**, unchanged and with **no ceiling wording in either direction**:
   `≤ 10` is closed by measurement (`F-L20-3`), `≥ 11` remains unmeasured.
+## 8. Post-fix amendment — `F-L41-2` (the shared derivation) and `F-L41-3` (the probe that could not falsify)
+
+§1–§7 above are the **pre-fix** census and are kept **verbatim**, because a receipt that overwrites its
+own earlier reading cannot show what a filter moved. This section records what the clause published in the
+finding commit `e6d70fb` actually did when it ran, and it lands **before** the five bytes.
+
+### 8.1 `F-L41-2` implemented — one derivation, both callers
+
+The prover's walk-sealed-room reader moved to `scripts/room-derivation.ts`
+(`derivedWalkSealedRooms`, `doorsCoveringTwoRooms`), imported by **both** `scripts/prove-candidate.ts`
+(its `g6`, `g2`, `g5` and the negative-control readers) and `scripts/author-l21.ts` (the new clause). The
+generator's clause runs in the 4-pocket enumeration **immediately after the par-band filter and before
+`judge`**, is **scoped to `ACT === 3`** by construction, and counts its refusal in a histogram row, an
+upstream skip counter and the census identity — it never hides an accept and it never repairs one.
+
+**The ledger stage (`--stage=struct`) is the receipt, and it reproduces the prover's exact finding from
+the bytes.** Pre-fix, on the shelf:
+
+```
+  L44 l044.json: rooms=6 covering=[d1 d2 d3 d4 d5 d4] — door(s) covering TWO rooms: [d4] (OUT OF CLASS)
+struct ledger: 4 in class · 1 out of class [l044.json]
+```
+
+— byte-for-byte the covering list `g6-room-structure` printed when it **rejected** the written `l044`
+(`§` finding commit). Post-fix, after re-drawing, `struct ledger: 5 in class · 0 out of class`. And the
+audit's *other* half — **the clause must refuse nothing on the registered corpus** — is measured, not
+asserted: `--stage=struct --dir=src/levels` reads **40 in class · 0 out of class** (exit 0).
+
+**A/B, the semantics did not move.** Because the extraction and the type-widening touch a path Act II
+also walks, both A/Bs were re-run:
+
+| A/B | command | result |
+|---|---|---|
+| prover, 20 registered rungs | `prove-candidate.ts --family=g --ladder=21…40 --dir=src/levels` | **byte-identical** to the pre-extraction baseline; `LADDER RESULT: PASS (20/20, controls 260/260)` |
+| generator, Act II (no `--act`) | `author-l21.ts --stage=g --batch=4 --pockets=4 --cx=1 --h=7 --pocketsize=4 --qmax=4 --paircap=40 --budget=8000 --cap=400 --parmin=24 --parmax=24` | stdout differs **only** in the elapsed-seconds field and the `--accepts=` path; the `--accepts` dump is **byte-identical** (293 accepts, same histogram, same identity) |
+
+The `ACT === 3` guards (the clause itself, the skip-counter suffix, the identity line) are the *only*
+behavioural delta, so the Act II path is untouched by construction **and** by measurement.
+
+### 8.2 The post-fix census — the identity still closes, with one more term
+
+`--stage=g --act=3 --batch=5 --pockets=4 --cx=1 --h=7 --pocketsize=4 --qmax=4 --paircap=40 --budget=20000 --cap=400 --parmin=20 --parmax=28`
+(158.1 s, exit 0; classic `HIT` prefix, 417 groups, devices 10/348, 40-group cap on 9):
+
+```
+census: 4201 accept(s) of 20000 judged candidate(s) over 417 (R2,R3,R4) group(s) …
+  … derived two-room door (F-L41-2 — a door enclosing TWO derived walk-sealed rooms) 219
+rejection histogram:
+  par-out-of-band: 7794
+  unsolvable: 6643
+  g5-identity-broken: 1143
+  derived-two-room-door: 219
+census accounting identity …: accepts 4201 + refuses 15799 [derived-two-room-door 219 · g5-identity-broken 1143 · par-out-of-band 7794 · unsolvable 6643] = 20000 vs judged 20000 — CLOSES exactly
+```
+
+**Pre-fix → post-fix, A/B:** accepts `4402 → 4201` (−201); `g5-identity-broken` `1161 → 1143` (−18);
+new row `derived-two-room-door 219`. The arithmetic is a check, not a coincidence: of the 219 now-refused
+boards, **18** would also have failed `g5` had they reached `judge`, so the net accept loss is
+`219 − 18 = 201`. The identity closes **exactly** on both readings (pre-fix: `4402 + 7794 + 6643 + 1161 =
+20000`; post-fix: `4201 + 15799 = 20000`).
+
+### 8.3 §7.10.4's relief fill-in — **unchanged**, and that is checked rather than assumed
+
+The clause removes rungs from the pool, so the fill-in was re-derived from the post-fix pool **before any
+byte**:
+
+```
+L41 par 20 · D_exec 24.257329 · B 1.4191 vs L40 par 24 · D_exec 28.455319 · B 1.4851 → ΔD_exec = -4.197990
+exact -4.197990 · bound [-4.705319, -1.392819] → INSIDE · par-20 admissible half [-4.705319, -3.392819] → INSIDE
+```
+
+**Identical to the value committed at `db78a13`** — L41's par-20 minimum is stable across the filter, so
+the constant written in the census commit (`ACT_III_B1_OPEN_RELIEF_EXEC = 24.257329`,
+`ACT_III_B1_OPEN_RELIEF_DELTA = -4.197990`) stands and **no re-publication was needed**. The fill-in still
+precedes the bytes by one commit.
+
+### 8.4 Selection post-fix — only the defective rung moved
+
+Same ladder multiset `[20, 22, 24, 26, 26]`, same four rungs at byte level, **L44 re-drawn**:
+
+| rung | pre-fix | post-fix |
+|---|---|---|
+| L41 | par 20 · 24.257329 | par 20 · 24.257329 (identical) |
+| L42 | par 22 · 26.238773 | par 22 · 26.238773 (identical) |
+| L43 | par 24 · 28.213816 | par 24 · 28.213816 (identical) |
+| **L44** | **par 26 · 30.209890 (the board `g6` rejected)** | **par 26 · 30.225216 (fresh draw)** |
+| L45 | par 26 · 30.455319 | par 26 · 30.455319 (identical) |
+
+The five rung keys stay distinct, 0 collide with a shipped board, and O6's within-par maximum still lands
+on the closing rung. This is the falsifiable statement of §8.1: **the filter changed exactly the board the
+prover refused, and nothing else.**
+
+### 8.5 `F-L41-3` — the published probe derivation was a no-op (measured both ways)
+
+The tool's header, as committed at `b28ed97`, read `--peak = (our peak rung's D_exec + 28.455319)/2`. Since
+`--peak` **is** the comparator the peak rung must clear, a midpoint with a **below-peak** operand is itself
+below the peak — so `D_exec > peak` holds and nothing fails:
+
+```
+--peak=29.455319  →  exit 0 · RESULT: PASS  (a probe that fails nothing)
+--peak=31.7589095 →  exit 1 · exactly ONE FAIL, `act-peak` on exactly L45 · LADDER RESULT: FAIL (4/5 · controls 65/65)
+```
+
+The corrected operand sits **above** the peak and inside the act's band: the band's derived-exact ceiling
+`33.0625`, so `--peak = (30.455319 + 33.0625)/2 = 31.7589095`. The header paragraph is amended in this
+commit, quoting the superseded form so a reader sees what moved; the correction is a **root-cause fix to
+an operand**, not a re-tuning of the expectation. Finding published as `F-L41-3`.
+
+### 8.6 The proof on the landed bytes (details in the proving transcript)
+
+`prove-candidate.ts --act=3 --family=g --ladder=41,42,43,44,45 --dir=src/levels/candidates`:
+
+```
+L41 · par 20 · 24.257329 · 1.4191 · 49/49 · delta -4.197990
+L42 · par 22 · 26.238773 · 1.4129 · 49/49 · rise OK (1.981444)
+L43 · par 24 · 28.213816 · 1.4046 · 49/49 · rise OK (1.975043)
+L44 · par 26 · 30.225216 · 1.4084 · 49/49 · rise OK (2.011400)
+L45 · par 26 · 30.455319 · 1.4851 · 49/49 · rise OK (0.230104)
+batch peak: L45 at 30.455319 · §7.3 act-peak clause DISCHARGED · headroom to the Act III ceiling 33.0625: 2.607181
+LADDER RESULT: PASS (5/5 rung(s) ACCEPT, controls named: 65/65 across the 5 rung(s))
+```
+
+Plus: `--measure-controls` → `PASS (5/5, controls MEASURED, not asserted (F-L16-3): 65)`; the corrected
+`--peak` → exit 1 / one `act-peak` FAIL on exactly L45 / controls still 65/65; `solve-levels --audit
+src/levels/candidates` → `RESULT: PASS`; `npm run levels` → **40/40** unchanged; `docs/level-difficulty.report.json`
+→ **40 records**, not regenerated.
+
+### 8.7 The micro-fix this amendment also carries, and the red it books
+
+`src/core/level/index.ts`'s `multi-switch-door` prose carried a stale reading — "at most ONE switch per
+door in **L6–L35** … the **L36+** allowance is not quantified yet" — while shipped ids reach **40** and
+`§7.2`'s acts table moves the allowance to **Act III** (`L41–L60`, `§7.10.5`: no schema/core/validator
+change). The stale "L36+ / not quantified yet" claim is retired in the code comment and in the message;
+every pinned literal (`docs/level-design.md §1`, `L6–L35`, `never rejects a candidate`) is preserved, so
+`tests/solver/multi-switch-door-warning.test.ts` stays green (16/16) and `tests/**` is untouched. The
+**design-lane** half of the same finding (`docs/level-design.md:42`'s windows) is **not** this lane's file
+and is left as the named handoff it already was.
+
+**Booked, by design, never fixed here:** five new shelf files are `tests/solver/l16-l20-candidates.test.ts`'s
+shelf-set row's business; the booking literal is `[]` (R-006c, at 40 rungs) and only a registration ticket
+moves the bytes **and** re-books it. The suite is therefore **1 failed · 995 passed · 3 skipped (999)** —
+the single red is that row, at `tests/solver/l16-l20-candidates.test.ts:236`, and **the count of reds is
+unchanged by this batch's own doing** (base was 0 red at 996P/3S; one test moved from pass to fail).
+
+### 8.8 Cross-lane status of `F-L41-2`, restated for the return
+
+`F-L41-2` is **fixed for `ACT === 3` only**. Act II is not re-baselined by a filter inserted into its
+census — the prover already passes `g6` on 20/20 registered Act II rungs, so the clause refuses nothing
+there (measured: `--stage=struct --dir=src/levels` → 40/0). Whether the **`H` (both-pair) composition** and
+the **XOR door** enter the device class at all remains an explicit **NON-CLAIM** of this batch, booked
+forward by name to Game Designer + Architect; this lane does not decide it.

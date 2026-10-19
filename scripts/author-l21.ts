@@ -647,6 +647,10 @@
  * ── THE CENSUS COMMANDS (published before the run; the dossier quotes them) ──────
  *
  * ```
+ *   STEP 0 — the derived-structure ledger (F-L41-2: the generator's filter and the prover's gate
+ *            read ONE derivation; the registered corpus must be 0 out of class):
+ *     z) npx tsx scripts/author-l21.ts --stage=struct --dir=src/levels
+ *        npx tsx scripts/author-l21.ts --stage=struct --dir=src/levels/candidates
  *   STEP 1 — the frame's room capacity at the batch's own frame (a measurement, not a wish):
  *     a) npx tsx scripts/author-l21.ts --stage=roomcap --act=3 --cx=1 --h=7 --maxsize=4
  *   STEP 2 — the batch's pool over Act III's own par band, on its own frame:
@@ -663,7 +667,8 @@
  *     f) npx tsx scripts/prove-candidate.ts --act=3 --family=g --ladder=41,42,43,44,45 \
  *          --measure-controls --dir=src/levels/candidates
  *     g) npx tsx scripts/prove-candidate.ts --act=3 --family=g --ladder=41,42,43,44,45 \
- *          --peak=<derived midpoint> --dir=src/levels/candidates
+ *          --peak=31.7589095 --dir=src/levels/candidates
+ *          (the derived midpoint — see F-L41-3; the earlier (peak+28.455319)/2 form was a no-op)
  * ```
  *
  * **Published fallback (in order), so an empty frame is never a silent frame change.** If the
@@ -674,13 +679,26 @@
  * **NAMED ACT LIMITATION** briefed to the Game Designer. A borrowed par, a re-banded act, a
  * substituted rung and a silent frame switch are **not** remedies.
  *
- * **The falsification probe is DERIVED, never typed.** `--peak` receives the **midpoint** of the
- * batch's measured peak rung and the comparator it must clear — for Act III the comparator is
- * **Act II's registered maximum `28.455319`** (§7.3's across-act clause: act *n*'s measured maximum
- * exceeds act *n−1*'s), so `--peak = (our peak rung's D_exec + 28.455319)/2`; the run must exit 1
- * failing **exactly one gate on exactly one rung** (`act-peak`, the ladder's peak rung) with the
- * control battery still 13×5 = 65 caught. A probe that fails nothing, or fails more than the peak
- * rung, is a finding about the instrument and is published as one.
+ * **The falsification probe is DERIVED, never typed.** `--peak` is the **comparator the ladder's
+ * peak rung must clear** (§7.3: act *n*'s measured maximum must exceed act *n−1*'s), so a probe that
+ * *falsifies* must be a comparator the peak rung **fails** to clear — i.e. it must sit **above** the
+ * batch's own peak. The only derived choice that stays inside the act's band is the band's
+ * **derived-exact ceiling `33.0625`** (§7.10.1's top), so the probe is the **midpoint** of the
+ * batch's measured peak and that ceiling: `--peak = (our peak rung's D_exec + 33.0625)/2`; the run
+ * must exit 1 failing **exactly one gate on exactly one rung** (`act-peak`, the ladder's peak rung)
+ * with the control battery still 13×5 = 65 caught. A probe that fails nothing, or fails more than
+ * the peak rung, is a finding about the instrument and is published as one.
+ *
+ *   **F-L41-3 — the derivation as first published could not falsify (measured, both ways).** This
+ *   paragraph originally read `--peak = (our peak rung's D_exec + 28.455319)/2` — the midpoint with
+ *   the **below-peak** comparator `28.455319`, i.e. a value **beneath** the peak, so `D_exec > peak`
+ *   held and the probe exited **0** with `RESULT: PASS` (measured: `--peak=29.455319` over L41–L45,
+ *   exactly the "probe that fails nothing" the rule's own last sentence calls a finding). The
+ *   **operand** was wrong, not the intent: a falsifying comparator must sit above the peak. With
+ *   `--peak=31.7589095 = (30.455319 + 33.0625)/2` the run exits **1** failing **exactly one**
+ *   `act-peak` gate on **exactly** the peak rung L45, controls still `65/65` — the receipt the rule
+ *   asks for. The superseded form is quoted here so a reader sees what moved; no other probe-law
+ *   wording changed.
  *
  * **Band membership is proven BOTH directions, derived-exact:** the accepted rungs must sit inside
  * `[23.7500, 33.0625]` **inclusive** (derived from the formula, §7.9), and the *same* arithmetic is
@@ -838,6 +856,7 @@ import {
   auditLevel,
   firingSwitches,
 } from "@/core/solver/policy";
+import { doorsCoveringTwoRooms, derivedWalkSealedRooms } from "./room-derivation";
 
 const LEVELS_DIR = fileURLToPath(new URL("../src/levels/", import.meta.url));
 const OUT_DIR = fileURLToPath(new URL("../src/levels/candidates/", import.meta.url));
@@ -2573,6 +2592,7 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
     rooms34Adjacent: 0,
     noGoal: 0,
     s2OnSeal: 0,
+    derivedTwoRoomDoor: 0,
   };
   const misses: { reason: string; note: string; par: number; dexec: number; b: number; failing?: readonly Gate[] }[] = [];
   const room2Fail = new Map<string, number>();
@@ -2802,6 +2822,19 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
                         if (probe.par > 0) parHist.set(probe.par, (parHist.get(probe.par) ?? 0) + 1);
                         continue;
                       }
+                      // F-L41-2 — the generator's DECLARATION and the prover's DERIVATION are ONE
+                      // truth source now (`scripts/room-derivation.ts`): a door that encloses a second
+                      // derived region is refused HERE, counted in its own histogram row and skip
+                      // counter, and re-drawn from the pool like any other refusal (nothing repaired).
+                      // Act-scoped by construction: Act II's registered census is not re-baselined.
+                      if (ACT === 3) {
+                        const structure = doorsCoveringTwoRooms(draft);
+                        if (structure.duplicated.length > 0) {
+                          skip.derivedTwoRoomDoor += 1;
+                          histogram.set("derived-two-room-door", (histogram.get("derived-two-room-door") ?? 0) + 1);
+                          continue;
+                        }
+                      }
                       const { outcome, level } = judge(draft, ctx);
                       if (!outcome.accepted || level === null) {
                         histogram.set(outcome.reason, (histogram.get(outcome.reason) ?? 0) + 1);
@@ -2862,7 +2895,8 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
       `R4 sets not sealable ${String(skip.room4Unsealable)} ${[...room4Fail.entries()].map(([k, v]) => `(${k} ${String(v)})`).join(" ")} · ` +
       `R4 boundary outside the pool ${String(skip.room4BoundaryOutside)} · ${String(room4Sealed)} sealed R4 set(s) · ` +
       `SHAPE FILTER #2 (an R4 tile adjacent to an R2 or R3 tile) ${String(skip.rooms34Adjacent)} (0 expected by the seal law) · ` +
-      `no goal candidate ${String(skip.noGoal)} · s2 tile on the goal's seal or the goal itself ${String(skip.s2OnSeal)}`,
+      `no goal candidate ${String(skip.noGoal)} · s2 tile on the goal's seal or the goal itself ${String(skip.s2OnSeal)}` +
+      `${ACT === 3 ? ` · derived two-room door (F-L41-2 — a door enclosing TWO derived walk-sealed rooms) ${String(skip.derivedTwoRoomDoor)}` : ""}`,
   );
   console.log(
     `tile accounting: largest R3 pool seen ${String(maxR3Pool)} tile(s) · largest R4 pool seen ${String(maxR4Pool)} tile(s) · ` +
@@ -2872,6 +2906,14 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
     console.log(`room rejections: ${[...ROOM_FAIL.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}: ${String(v)}`).join(" · ")}`);
   console.log("rejection histogram:");
   for (const [k, v] of [...histogram.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${k}: ${String(v)}`);
+  if (ACT === 3) {
+    const refused = [...histogram.values()].reduce((a, b) => a + b, 0);
+    console.log(
+      `census accounting identity (F-L36-2 / F-L41-2 — every refusal is counted, so the census can close): ` +
+        `accepts ${String(accepts.length)} + refuses ${String(refused)} [${[...histogram.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([k, v]) => `${k} ${String(v)}`).join(" · ")}] ` +
+        `= ${String(accepts.length + refused)} vs judged ${String(total)} ${accepts.length + refused === total ? "— CLOSES exactly" : "— DOES NOT CLOSE (a refusal path is uncounted)"}`,
+    );
+  }
   console.log(
     `par census over the OUT-OF-BAND judged candidate(s) (the histogram counts only the members the par band refused; in-band members are enumerated by "accepts by par" and by the in-band refusal list — F-L36-2): ` +
       `${[...parHist.entries()].sort((a, b) => a[0] - b[0]).map(([k, v]) => `${String(k)}:${String(v)}`).join(" ")}`,
@@ -2900,6 +2942,57 @@ function stageLattice4(cut: { floor: number; actI: number; l15Par: number }, onl
   writeFileSync(ACCEPTS, `${JSON.stringify(accepts)}\n`);
   console.log(`wrote ${String(accepts.length)} accept(s) to ${ACCEPTS}`);
   return accepts;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 0c-bis. The DERIVED-STRUCTURE ledger — the receipt F-L41-2's clause is read with
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * **The derived-structure ledger** (`--stage=struct`): reads a directory of landed boards and
+ * reports, for each, the **walk-sealed rooms derived from its bytes** and whether any single door
+ * covers **two** of them (`F-L41-2`'s class boundary — `g6-room-structure`'s "covering doors
+ * distinct" clause).
+ *
+ * It exists because the clause that refuses such a board in `--stage=g` must be **measured, not
+ * asserted**: `--stage=struct --dir=src/levels` reads the **registered corpus** and shows the clause
+ * refuses **nothing** there (every registered rung is in class), while
+ * `--stage=struct --dir=src/levels/candidates` reads the shelf and names any out-of-class board.
+ * The reader is `scripts/room-derivation.ts` — the prover's own walk-sealed-room derivation — so
+ * the ledger and the gate cannot drift apart. Exit code is 1 when any board is out of class.
+ */
+function stageStruct(): void {
+  const dir = argOf("dir") ?? LEVELS_DIR;
+  const files = readdirSync(dir)
+    .filter((f) => f.endsWith(".json"))
+    .sort();
+  let inClass = 0;
+  const outOfClass: string[] = [];
+  console.log(
+    `\nstage S derived-structure ledger (F-L41-2): ${String(files.length)} board(s) in ${dir} · derivation scripts/room-derivation.ts (the prover's own walk-sealed-room reader)`,
+  );
+  for (const file of files) {
+    const raw: unknown = JSON.parse(readFileSync(join(dir, file), "utf8"));
+    const parsed = LevelSchema.safeParse(raw);
+    if (!parsed.success) {
+      console.log(`  ${file}: NOT A LEVEL (schema)`);
+      outOfClass.push(file);
+      continue;
+    }
+    const level = parsed.data;
+    const rooms = derivedWalkSealedRooms(level);
+    const { covering, duplicated } = doorsCoveringTwoRooms(level);
+    if (duplicated.length === 0) inClass += 1;
+    else outOfClass.push(file);
+    console.log(
+      `  L${String(level.id)} ${file}: rooms=${String(rooms.length)} covering=[${covering.join(" ")}]` +
+        `${duplicated.length === 0 ? " — every door covers <= 1 room (in class)" : ` — door(s) covering TWO rooms: [${duplicated.join(" ")}] (OUT OF CLASS)`}`,
+    );
+  }
+  console.log(
+    `struct ledger: ${String(inClass)} in class · ${String(outOfClass.length)} out of class ${outOfClass.length === 0 ? "(none — the clause refuses nothing on this corpus)" : `[${outOfClass.join(", ")}]`}`,
+  );
+  if (outOfClass.length > 0) process.exitCode = 1;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3820,12 +3913,13 @@ console.log(`clone guard (§6.1.4, seal-inclusive key): ${String(guard.size)} ge
 
 if (STAGE === "frame") frameCensus();
 else if (STAGE === "roomcap") stageRoomCap();
+else if (STAGE === "struct") stageStruct();
 else if (STAGE === "g") {
   if (POCKETS >= 4) stageLattice4(cut, argOf("only"));
   else if (POCKETS >= 3) stageLattice3(cut, argOf("only"));
   else stageLattice(cut, argOf("only"));
 } else if (STAGE === "s") stageSelect();
-else console.log(`unknown stage "${STAGE}" — use frame | g | s`);
+else console.log(`unknown stage "${STAGE}" — use frame | roomcap | struct | g | s`);
 
 void BLOCK_L1619_PAR_BASE;
 void BLOCK_L1619_TAIL_EXEC_CEILING;
