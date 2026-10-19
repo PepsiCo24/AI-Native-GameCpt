@@ -802,6 +802,181 @@
  *     from **L41 at `par 20`**; if the clause moves that rung, the constant filled in at `db78a13` is
  *     re-derived and re-published **before** any board byte is written (the fill-in's own rule: before
  *     the bytes, never after).
+ *
+ * ── LV-019 · ACT III BATCH 2 (`--batch=6 --act=3`, Act III batch 2 = L46–L50) ───────────────────
+ *
+ * **Governing law, cited by artifact and commit — not re-derived and not re-tasted.** The rule this
+ * pass executes is `docs/level-design.md` **§7.10.6** (the interior-batch rule **B1–B7**) and
+ * **§7.10.7** (the `L45→L46` `batch-seam` relief, register **§7.3.1 instance 6**, plus the
+ * register-wide relief-admissibility test), authored by **GD-013 / ADR-design-0009**, published
+ * **PRE-CENSUS** at commit **`1d6c90f`** (2026-10-19 22:39:26 +0800) and merged as **`64e79a9`**.
+ * This ticket **applies** that law. It does **not** re-derive the ladder, does **not** re-open the
+ * tie-break, and does **not** copy instance 5's value: the ladder and the bound below are **read from
+ * the law module** (`ACT_III_B2_PAR_MULTISET` and the `ACT_III_B2_SEAM_RELIEF_*` group, which
+ * `src/core/solver/policy.ts` now carries with §7.10.6/§7.10.7 cited in their docstrings).
+ *
+ * **B1 · anchor advance.** `A_ℓ = ACT_III_PAR_FLOOR + 2·(ℓ−1)` ⇒ for `ℓ = 2`, **`A₂ = 22`**: the
+ * ladder's floor advances by **exactly one P2 step** above the opener's anchor (`20`), and the P2
+ * window from it is `22, 24, 26, 28`. **This clause is the published TIE-BREAK, not a derivation** —
+ * §7.10.6's box says so in its own words: *"Where B3–B7 admit more than one multiset, take the one
+ * whose anchor is the smallest admissible advance above the previous batch's anchor"*, grounded in
+ * (i) minimum advance clearing B7, (ii) keeping **every value of the act's derived window in the
+ * act's par vocabulary** (a two-step advance leaves `22` with no home), (iii) the file's existing
+ * minimality conventions. **Clause (ii) is checkable, and this ticket pre-registers the one way its
+ * census may legitimately falsify it — see THE PRE-REGISTERED FALSIFICATION TEST below.**
+ *
+ * **B2 · self-check against published law.** At `ℓ = 1`, B1–B5 must reproduce
+ * `ACT_III_OPENER_PAR_MULTISET = [20, 22, 24, 26, 26]` **exactly**. This tool **runs that check**
+ * (it is one line) and prints it: the opener multiset is recomputed from B1–B4's own rule and compared
+ * with the registered constant, so a rule that stopped describing the opener would say so rather than
+ * wearing §7.10.2's clothes.
+ *
+ * **B3 · reservation scope + `par 27` refused, in arithmetic.** **Every** rung of `L41–L50` has
+ * `par ≤ ACT_III_OPENER_TOP_PAR = 26`: `26 + 3·1.6875 = 31.0625` while any `par 28` tail rung bottoms
+ * at `28 + 3·1.2500 = 31.7500`, margin **`0.6875`** (`ACT_III_CEILING_RESERVATION_MARGIN`); a `par 27`
+ * rung would measure `27 + 3·1.6875 = 32.0625 > 31.7500` by `0.3125` and is **INADMISSIBLE** — under
+ * **both** an inclusive and a strict reading, so no operator decides it (§7.9 pre-empted). Consequence
+ * enforced here, not asserted: **this batch's own ceiling is `31.0625`**, and the selection refuses
+ * any row above it, so §7.3.2's carrier obligation on `L51–L60` stays satisfiable **by construction**.
+ *
+ * **B4 · truncate + fill (O2/O5 verbatim).** The P2-exact window from `A₂` (`22, 24, 26, 28`) is
+ * **truncated** where B3 bites (`28` is withheld for the tail) and the shortfall is absorbed by
+ * **repeats at the truncated top** `26` (O5's descending fill, "at the highest available derived
+ * par"). Read out in law before this census: **`[22, 24, 26, 26, 26]`** = `L46 22 · L47 24 ·
+ * L48 26 · L49 26 · L50 26`.
+ *
+ * **B5 · within-par convention (O6) + the plural-same-par tie-break.** The **closing rung** takes the
+ * within-par **maximum** `D_exec`, every **earlier** rung the **minimum**; where **two or more**
+ * non-final rungs share a par — this batch has **two** non-final `par 26` rungs (`L48`, `L49`), the
+ * case the opener never exercised — they take the pool's **lowest** accepted `D_exec` values **in
+ * ascending id order**, tie-broken inside a value by **minimal `D_exec`, then enumeration order**
+ * (LV-015/LV-017). Both departures are printed per rung by the selection, never silent.
+ *
+ * **B6 · empty pool ⇒ ABSENT, never substituted.** A derived par absent from the pool is **absent**:
+ * no out-of-set par is substituted and no registered ladder's par is borrowed; the fill drops to the
+ * **next-lower derived** value (`22` absent ⇒ the ladder becomes `[24, 26, 26, 26, 26]`, the seam's
+ * `par` term `−2`, admissible half `[−2.705319, −1.392819]`). **The degenerate case is a
+ * STOP-AND-ROUTE, not a label:** if `22` **and** `24` are both absent the fill is forced up to `26`,
+ * the seam's `par` term is `0`, the label is **void — not a relief** — and this tool writes nothing.
+ *
+ * **B7 · anti-mirror (O4 verbatim, generalised).** The multiset must differ from **every** registered
+ * Act II multiset (`[17,18,20,21,23]` · `[19,22,22,24,24]` · `[18,20,22,24,24]`) **and** from every
+ * other Act III batch's (`ACT_III_OPENER_PAR_MULTISET = [20,22,24,26,26]`); **coinciding pars are
+ * printed, never hidden**. The distinct-par sets are `{22,24,26}` vs the opener's `{20,22,24,26}`, and
+ * the **multiset** differs (`26` repeated **three** times vs twice) — printed as a multiset
+ * comparison, because "shares pars" is not "is the same ladder".
+ *
+ * ── THE PRE-REGISTERED FALSIFICATION TEST (B1's clause (ii), published before the census) ───────
+ *
+ * B1 is **a tie-break, not a derivation**, and §7.10.6's box names the part a census may legitimately
+ * falsify: **clause (ii)** — *"keeps every value of the act's derived window in the act's par
+ * vocabulary"*. Stated so it can fail, and **before** any number is known:
+ *
+ * > **TEST.** The tie-break holds iff the census **supports the anchor it chooses**, i.e. iff `par 22`
+ * > has a non-empty admissible pool on the frame this batch's device is measured on. **FALSIFICATION
+ * > CONDITION:** if `par 22`'s pool is **empty** — so B1's anchor cannot be populated — **while an
+ * > alternative tie-break member's window can** (e.g. `24` non-empty), then clause (ii) has been
+ * > contradicted by measurement: the ladder `22` names leaves `22` with no home while the *next*
+ * > member of the same derived window does. The correct response is **STOP-AND-ROUTE to GD with the
+ * > falsification named** — **not** a silent switch to B6's descending-fill ladder, and **not** a
+ * > re-pick of the anchor by this lane. (B6's fallback is lawful only when it is *the pool* that
+ * > forces it, i.e. `22` empty; the falsification condition additionally requires the alternative to
+ * > be populated, which makes the census's own evidence disagree with clause (ii) rather than merely
+ * > under-supply it.) **What is NOT a falsification:** a pool that supports `22` but not the exact
+ * > `D_exec` this lane might have preferred — the ladder fixes pars, B5 fixes the row inside a par.
+ *
+ * ── THE DEVICE AND THE FRAME (the proven ones; §7.10.5's `ΔM = 0`, unchanged) ─────
+ *
+ * **Zero new mechanics.** The batch is **variety inside §7.2's Act III family** on the device class
+ * the opener registered — the **4-pocket / 5-door / 5-press** ordered chain
+ * (`p0 < d1 < p1 < d2 < p2 < d3 < p3 < d4 < p4 < d5`, five walk-sealed rooms + the goal's own seal) —
+ * on the proven **`7×7 @ CX = 1`** frame (`CX = 1` is §7.10.5's published preference; the `7×7` room
+ * capacity was measured at LV-018). No `par 28` rung is built (B3 reserves it for `L51–L60`), no
+ * 5-pocket device is censused (refused by §7.2's family text), no frame is changed silently.
+ * **Published fallback, in order:** if `7×7`@`CX=1` cannot populate the derived ladder, the only
+ * lawful retry is the **identical device and identical ladder on `7×6` @ `CX = 1`** (the opener's own
+ * published fallback, §7.10.2's read-outs); if that is empty too, nothing is written and the census is
+ * reported as a **NAMED ACT LIMITATION**. A borrowed par, a re-banded act, a substituted rung, a
+ * frame switch or a silent ladder switch are **not** remedies.
+ *
+ * **Explicit NON-CLAIM, published so it cannot be read in later.** This batch does **not** carry the
+ * act's `H` (both-pair) composition and does **not** use the **XOR multi-switch door**: **user ruling
+ * U-002** holds the XOR debut for the act's **second half** (`L51–L60`), and GD-013 states batch 2
+ * *"needs **no** device decision"* (the `H`/XOR device-contract question is booked to Game Designer +
+ * Architect and does **not** gate `L46–L50`; `docs/project-status.md` item 154). `ΔM = 0` ⇒ §6's dip
+ * law does **not** fire and no rung may be scored as a debut. A lane that later reads this batch as
+ * "Act III batch 2 = the XOR batch" is reading a **non-claim** as a claim.
+ *
+ * ── WHAT THIS BATCH CARRIES, AND WHAT IT DOES NOT ────────────────────────────────
+ *
+ * **It carries §7.3.1 instance 6** (the `batch-seam` relief `L45→L46`, pre-published at §7.10.7) and
+ * **it reports its measured peak**. It **carries no `act-peak` / `act-close` branch**: §7.3.2's
+ * carrier is `L51–L60`, and §7.3's `act-peak` binds the act's **measured maximum**, read per batch.
+ * Whether the front half's maximum lands on the **Midterm `L50`** or stays at **`L45`'s `30.455319`**
+ * is a **MEASUREMENT, never repaired by padding** (§7.10.6's own read-out) — so if this batch's
+ * closing rung measures below `L45`, that is printed and carried as a reading, not "fixed".
+ *
+ * ── THE RELIEF FILL-IN (instance 6) — the procedure this run must execute ────────
+ *
+ * §7.10.7's label is **pre-published with the exact value left a fill-in against it**; the order is
+ * the register's own, and it is git-datable:
+ *
+ * 1. this rule block is committed **first** (docstring alone — the law-before-census-before-bytes
+ *    order is provable by commit timestamps);
+ * 2. the census runs and the selection picks **L46's `par` and `D_exec`**;
+ * 3. `ΔD_exec := D_exec(L46) − ACT_III_REGISTERED_TAIL_EXEC (30.455319)` is **computed from those two
+ *    measured numbers** — never copied from instance 5 — written into the census record **with its
+ *    decomposition** (`Δpar` at `L45`'s `par 26` ⇒ `−4` at B1's anchor, `3·ΔB` beside it) and
+ *    **checked INSIDE the applicable half**: `par 22` ⇒ `[−4.705319, −3.392819]`; the B6 fallback
+ *    `par 24` ⇒ `[−2.705319, −1.392819]`; the published **union** is `[−4.705319, −1.392819]` and
+ *    **is not an interval** — a value inside the union but in neither half is **outside** the label;
+ * 4. **only then** may a board byte be written (`--write`), and the same value is planted in
+ *    `ACT_III_B2_SEAM_RELIEF_EXEC` / `_DELTA` (policy) so the registration ticket cites a constant
+ *    instead of re-typing a number. This step is **enforced at the write point**, not merely printed:
+ *    a value outside the union, or inside the union and in neither half, **writes nothing**.
+ *
+ * **The `+2` shift identity is a warning, not a template.** `22 − 30.455319 = 20 − 28.455319 =
+ * −8.455319`, so this seam's bound is **numerically identical** to instance 5's because both the
+ * anchor and the comparator advanced by exactly `2`. **The bound coincides; the value must not**:
+ * instance 5's `−4.197990` belongs to `L41`'s `B` (`1.4191`) and quoting it for `L46` would cite a
+ * different board. This tool **cannot** do that by construction — it computes `Δ` from L46's own
+ * measured `D_exec` — and the law-module verification line below prints the constant against the
+ * measurement on every run, so a stale literal reads as **DRIFTED** rather than passing silently.
+ *
+ * ── THE CENSUS COMMANDS (published before the run; the dossier quotes them) ──────
+ *
+ * ```
+ *   STEP 1 — the frame's room capacity at this batch's own frame (a re-measurement, not an inheritance):
+ *     a) npx tsx scripts/author-l21.ts --stage=roomcap --act=3 --batch=6 --cx=1 --h=7 --maxsize=4
+ *   STEP 2 — the batch's pool over Act III's own par band, on its own frame:
+ *     b) npx tsx scripts/author-l21.ts --stage=g --act=3 --batch=6 --pockets=4 --cx=1 --h=7 \
+ *          --pocketsize=4 --qmax=4 --paircap=40 --budget=20000 --cap=400 --parmin=20 --parmax=28 \
+ *          --accepts=<b's dump>
+ *   STEP 3 — the selection (dry run, then --write):
+ *     c) npx tsx scripts/author-l21.ts --stage=s --act=3 --batch=6 --parmin=20 --parmax=28 \
+ *          --accepts=<b's dump>
+ *     d) the identical command with --write                                  (the NEXT commit)
+ *   STEP 4 — the proof on the LANDED bytes (prover, family `g`, this batch's own gate set):
+ *     e) npx tsx scripts/prove-candidate.ts --act=3 --family=g --ladder=46,47,48,49,50 \
+ *          --dir=src/levels/candidates
+ *     f) … the same with --measure-controls, and with the DERIVED falsification `--peak` this run prints
+ * ```
+ *
+ * **The falsification probe is DERIVED, never typed, and sized to THIS batch.** `--peak` is the
+ * comparator the ladder's peak rung must clear (§7.3: act *n*'s measured maximum must exceed act
+ * *n−1*'s), so a probe that *falsifies* must sit **above** this batch's own peak — F-L41-3 is the
+ * measured record of a probe whose operand sat below it and was therefore a no-op. The only derived
+ * choice inside the act's band is the band's **derived-exact ceiling** `ACT_III_EXEC_BAND[1] =
+ * 33.0625`, so the probe is the **midpoint** `--peak = (this batch's peak rung's D_exec + 33.0625)/2`,
+ * printed by the census record for pasting. The run must exit **1** failing **exactly one** gate on
+ * **exactly** the peak rung (`act-peak`), controls still `65/65`. A probe that fails nothing, or
+ * fails more than the peak rung, is a finding about the instrument and is published as one.
+ *
+ * **What this ticket does NOT do** (named, so the boundaries are not inferred): it does **not**
+ * register the batch (`R-008`-era train), does **not** touch `tests/**`, does **not** add a
+ * per-rung `act-3-batch-2` obligation family (that is design + QA work, the R-005a2/R-006c
+ * precedent), does **not** move `ACT_III_REGISTERED_TAIL_*` (registered — a shelf file moves no
+ * registered constant), and does **not** legislate `L51–L60`'s ladders or the reservation's release.
  */
 
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
