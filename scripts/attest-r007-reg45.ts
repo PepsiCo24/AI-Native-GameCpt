@@ -11,11 +11,22 @@
  *   [1/6] **byte identity** — each new root file is `git`-hashed **and** `sha256`-hashed and
  *        compared with the shelf it was moved from at the dispatch base (`82dd808`, the parent
  *        of the tip the train was cut from). A check that cannot run (git cannot answer) is a
- *        FAILURE, never a skip. The shelf is *also* read: after this registration it must be
- *        **empty of level files** — batch 1 MOVED its five rungs, so a shelf still holding them
- *        would mean the move silently became a copy. The **successor name** is verified ABSENT
- *        from the root *and* from the shelf by reading both directories (`l046` does not exist
- *        yet, and this instrument must not assume it either way).
+ *        FAILURE, never a skip. The shelf is *also* read, and it is read as an **era state**
+ *        rather than as a constant: batch 1 MOVED its five rungs out of it, so a shelf still
+ *        holding any of `ACT_III_B1_IDS` would mean the move silently became a copy (two
+ *        byte-identical copies of one rung is exactly the drift `git mv` exists to prevent). At
+ *        R-007 the shelf was EMPTY; LV-019 later occupied it with a *different* batch
+ *        (`l046`–`l050`), and this refresh reads that occupancy instead of asserting the old
+ *        emptiness — no shelf file may carry a registered id, and every shelf id must be
+ *        strictly above the registered root maximum. The **successor name** is verified ABSENT
+ *        from the **root** by reading the directory (`l046` is still not registered); the shelf
+ *        holding it is printed, because a shelf file is a *candidate*, never a registered rung,
+ *        and this instrument must not assume either state.
+ *        *(Refresh, disclosed: R-007's original body asserted an EMPTY shelf and a successor
+ *        absent from BOTH directories. Both were era claims about the shelf at R-007's tip; LV-019's
+ *        occupancy falsified them lawfully — the shelf is a work surface, not a frozen artifact.
+ *        Precedent: R-006a's refresh of the R-005a attest. The five registered rungs' byte
+ *        identity, the roster, the ladder proof and every act-level clause are UNCHANGED.)*
  *   [2/6] **the five registered rows, re-measured on the ROOT bytes** — par (solver-stamped),
  *        `D_exec`, `B`, coverage, the all-OFF world, `T`/`R` and the audit's violation list,
  *        each against `ACT_III_B1_LADDER` (`@/core/solver/policy`, the law) and not against a
@@ -215,19 +226,34 @@ for (const id of ACT_III_B1_IDS) {
       : "NOT RUN — git could not answer; a check that did not run is never a pass",
   );
 }
-// The shelf is read as a *state*: a registration that MOVED five files leaves it empty, and a
-// shelf still holding them would mean the move silently became a copy (two byte-identical copies
-// of the same rung is exactly the drift `git mv` exists to prevent).
+// The shelf is read as an *era state*, not as a constant. A registration that MOVED five files
+// leaves it empty at that tip; a shelf still holding a moved rung would mean the move silently
+// became a copy (two byte-identical copies of the same rung is exactly the drift `git mv` exists
+// to prevent). LV-019 later *occupied* the shelf with a different batch (`l046`–`l050`), so the
+// durable reading is not "empty" but "no registered id, and every id above the registered root
+// max": a candidate is legal on the shelf precisely while it is NOT a registered rung.
 const shelfEntries = readdirSync(SHELF_DIR);
 const shelfLevels = shelfEntries.filter((n) => /^l\d+\.json$/.test(n));
+const shelfIds = shelfLevels.map((n) => Number(/^l(\d+)\.json$/.exec(n)?.[1] ?? Number.NaN));
+const rootMaxId = Math.max(...ACT_III_B1_IDS);
+const shelfHoldsRegistered = shelfIds.filter((id) => ACT_III_B1_IDS.includes(id));
+const shelfAboveRootMax = shelfIds.every((id) => id > rootMaxId);
 check(
-  "the shelf is EMPTY of level files (R-007 MOVED the five rungs; a copy would have left them)",
-  shelfLevels.length === 0,
+  "the shelf holds no registered rung and every shelf id is strictly above the registered root max (R-007 MOVED its five; a copy would have left them)",
+  shelfHoldsRegistered.length === 0 &&
+    shelfAboveRootMax &&
+    shelfIds.length === shelfLevels.length,
   `src/levels/candidates holds ${String(shelfLevels.length)} level file(s) ` +
-    `[${shelfEntries.join(" ")}] — README only`,
+    `[${shelfEntries.join(" ")}] — ids [${shelfIds.join(", ")}] (root max registered id ${String(rootMaxId)}); ` +
+    `shelf files carrying a registered id: [${shelfHoldsRegistered.join(", ")}]; ` +
+    `every shelf id above the root max = ${String(shelfAboveRootMax)} — at R-007's tip this read EMPTY, ` +
+    `and the reading is era-scoped so a later occupancy is *measured* here rather than forbidden`,
 );
 // The roster, read rather than assumed: 45 registered rungs, and the successor name ABSENT from
-// both directories. A registration that also created `l046` would be a second, un-booked move.
+// the ROOT. A registration that also created `l046` at the root would be a second, un-booked move.
+// The suffix of this check is scoped to the ROOT on purpose after LV-019: the shelf holding
+// `l046` is a lawful *candidate*, and the harm this check exists to catch is a rung becoming
+// *registered* (or registered twice) without a registration ticket.
 const rootNames = readdirSync(LEVELS_DIR).filter((n) => /^l\d+\.json$/.test(n));
 check(
   "the roster is exactly 45 registered rungs at the root, in one unbroken run",
@@ -238,10 +264,12 @@ check(
   `${String(rootNames.length)} files · first ${rootNames[0] ?? "n/a"} · last ${rootNames[44] ?? "n/a"} · ids 1…${String(rootNames.length)} with no gap`,
 );
 check(
-  `the successor name ${SUCCESSOR_NAME} is ABSENT from the root AND from the shelf (read, not assumed)`,
-  !rootNames.includes(SUCCESSOR_NAME) && !shelfEntries.includes(SUCCESSOR_NAME),
-  `root holds ${String(rootNames.filter((n) => n === SUCCESSOR_NAME).length)} and the shelf holds ` +
-    `${String(shelfEntries.filter((n) => n === SUCCESSOR_NAME).length)} — the shelf is UNBOOKED (Act III's next batch is not named by this ticket)`,
+  `the successor name ${SUCCESSOR_NAME} is ABSENT from the ROOT (read, not assumed)`,
+  !rootNames.includes(SUCCESSOR_NAME),
+  `root holds ${String(rootNames.filter((n) => n === SUCCESSOR_NAME).length)} ${SUCCESSOR_NAME} — the successor is ` +
+    `UNREGISTERED (Act III's next batch is not named by this ticket); the shelf holds ` +
+    `${String(shelfEntries.filter((n) => n === SUCCESSOR_NAME).length)} as a CANDIDATE (a shelf file is not a registration, ` +
+    `and the shelf's own reading above is what keeps that lawful)`,
 );
 console.log("");
 
@@ -473,8 +501,9 @@ check(
 
 // Non-vacuity, both halves of the section: a reader that cannot move is not evidence, and an
 // instrument that accepts the wrong directory is not reading the registered bytes. The exit-code
-// half is probed by pointing the SAME ladder at the now-EMPTY shelf — the directory the five bytes
-// were moved out of — which must exit non-zero rather than silently "proving" nothing.
+// half is probed by pointing the SAME ladder at the shelf (`src/levels/candidates`) — a directory
+// that does NOT hold the registered rungs (it was emptied by R-007 and is now occupied by a later
+// batch) — which must exit non-zero rather than silently "proving" nothing.
 const readCutBasis = (line: string): string | null =>
   /basis ids \[([\d, ]+)\]/.exec(line)?.[1] ?? null;
 const liveBasis = readCutBasis(cutLine ?? "");
@@ -488,12 +517,12 @@ const relabelledBasis = readCutBasis(
 );
 const shelfRun = proveCandidate([], "src/levels/candidates");
 check(
-  "the freezer clause can fail (both halves probed live) — the reader distinguishes a relabelled basis, and the prover refuses the EMPTY shelf",
+  "the freezer clause can fail (both halves probed live) — the reader distinguishes a relabelled basis, and the prover refuses a directory without the registered ladder",
   liveBasis === "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15" &&
     relabelledBasis === "16, 17, 18, 19, 20" &&
     shelfRun.exit !== 0,
   `live basis [${liveBasis ?? "n/a"}] vs the relabelled basis [${relabelledBasis ?? "n/a"}] — the reader distinguishes them; ` +
-    `a ladder pointed at the now-EMPTY shelf (src/levels/candidates) exits ${String(shelfRun.exit)} (required ≠ 0) — neither the reader nor the prover's exit code is an assumption`,
+    `a ladder pointed at the shelf (src/levels/candidates, which holds no registered rung) exits ${String(shelfRun.exit)} (required ≠ 0) — neither the reader nor the prover's exit code is an assumption`,
 );
 
 // ── §6.1.4 clone guard ───────────────────────────────────────────────────────

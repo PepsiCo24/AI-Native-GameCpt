@@ -2387,6 +2387,123 @@ export const ACT_SEAM_RELIEFS_ALL: readonly ActSeamReliefSpec[] = [
   ACT_III_B1_OPEN_RELIEF,
 ];
 
+// ── Act III batch 2 (GD-013 · `docs/level-design.md` §7.10.6 + §7.10.7) ───────
+//
+// **LV-019's law surface.** GD-013 published the interior-batch rule **B1–B7** and the `L45→L46`
+// seam's bound **before any `L46–L50` census existed** (law text at §7.10.6–§7.10.7, ADR at
+// `docs/decisions/design-0009-act-iii-interior-batch-and-batch-seam-relief.md`, provenance commit
+// `1d6c90f`, 2026-10-19 22:39:26 +0800). This block is the **level lane applying** that law, not
+// re-deriving it: every value below is either read from the law module (above) or is a derived
+// expression over those reads, so a lane that "re-tuned" the ladder would have to edit **this**
+// file and say so. The ladder is **not** searched — §7.10.6's own standard is "a rule, not a
+// search" — and `ACT_III_B2_PAR_MULTISET` is the published multiset, quoted rather than invented.
+//
+// **What is deliberately NOT here, and why it is not an omission.** Instance **6**'s full
+// `ActSeamReliefSpec` is **not appended to {@link ACT_SEAM_RELIEFS_ALL}** in this block: §7.10.7
+// registers the instance **with batch 2**, i.e. in the `R-008`-era train (ADR-design-0009's own
+// handoff item 2), exactly as instance 5 was appended by R-007 rather than by LV-018. What the
+// **authoring** lane owes — and what is here — is the pre-published **bound**, its **admissible
+// halves**, and the **fill-in-before-the-bytes** `_EXEC` / `_DELTA`.
+
+/**
+ * Act III batch 2 = **`L46–L50`** (§7.10.6's ladder; shelf candidates until the `R-008`-era
+ * registration moves them).
+ */
+export const ACT_III_B2_IDS: readonly number[] = [46, 47, 48, 49, 50];
+
+/**
+ * **B1 · the anchor, derived — never typed.** `A_ℓ = ACT_III_PAR_FLOOR + 2·(ℓ−1)`, so batch 2's
+ * anchor is `20 + 2·1 = 22`. §7.10.6's box publishes this as the **tie-break** (the smallest
+ * admissible advance above the previous batch's anchor), not as a derivation; clause (ii) of that
+ * box is checkable and a census may falsify it (see {@link ACT_III_B2_PAR_MULTISET}'s note).
+ */
+export const ACT_III_B2_ANCHOR_PAR = ACT_III_PAR_FLOOR + 2 * (2 - 1);
+
+/**
+ * **B4 · the batch-2 multiset, as PUBLISHED law — `[22, 24, 26, 26, 26]`** (`L46 22 · L47 24 ·
+ * L48 26 · L49 26 · L50 26`). Derivation shown so a reader can check it rather than trust it: the
+ * P2-exact window from the anchor is `22, 24, 26, 28`; **B3 truncates it at the reserved top**
+ * `26` (the `par 28` rung is withheld for `L51–L60`), and **B4's fill absorbs the shortfall by
+ * repeating the truncated top** (O5's descending fill), giving the multiset above.
+ *
+ * Its ceiling is {@link ACT_III_B2_HALF_CEILING_EXEC} `31.0625`, **strictly below** any `par 28`
+ * tail rung's floor `31.7500`, so §7.3.2's carrier obligation on `L51–L60` remains satisfiable
+ * **by construction** — which is what B3 is for.
+ *
+ * **B7's anti-mirror is against the registered Act II multisets and the Act III opener's**: the
+ * distinct-par sets are `{22,24,26}` (here) vs `{20,22,24,26}` (opener), and the **multisets**
+ * differ (`26` three times vs twice). The coinciding pars are a finite-integer-band fact and are
+ * **printed by the authoring tool, never hidden** (§7.10.6 B7).
+ */
+export const ACT_III_B2_PAR_MULTISET: readonly number[] = [22, 24, 26, 26, 26];
+
+/**
+ * **B3 · the half-wide ceiling, derived.** Every rung of `L41–L50` has `par ≤
+ * ACT_III_OPENER_TOP_PAR = 26`, so the first half's derived ceiling is
+ * `26 + 3·1.6875 = 31.0625` — and `31.0625 < 28 + 3·1.2500 = 31.7500` by the published margin
+ * {@link ACT_III_CEILING_RESERVATION_MARGIN} `0.6875`. A `par 27` rung would measure `32.0625`,
+ * `0.3125` **above** the tail floor: inadmissible under both an inclusive and a strict reading.
+ */
+export const ACT_III_B2_HALF_CEILING_EXEC =
+  ACT_III_OPENER_TOP_PAR + 3 * ACT_III_B_BAND[1];
+
+/**
+ * **§7.3.1 instance 6 (pre-published; registers with this batch in the `R-008`-era train).**
+ * `batch-seam` seam **`L45→L46`**, bound `ΔD_exec ∈ [−4.705319, −1.392819]` — the **union** of
+ * `par 22` ⇒ `[−4.705319, −3.392819]` (B1's anchor) and `par 24` ⇒ `[−2.705319, −1.392819]`
+ * (B6's descending-fill fallback), with the `par` term shown beside it (`−4`, then `−2`) and never
+ * folded in. The comparator is **Act III's registered tail** `L45 = 30.455319`, **alias-typed** to
+ * {@link ACT_III_REGISTERED_TAIL_EXEC} so the seam's left side cannot drift from the registered
+ * reading it measures — the R-007 alias discipline, one seam later.
+ *
+ * **The `+2` shift identity is a checkable coincidence, not a template.** `22 − 30.455319 = 20 −
+ * 28.455319 = −8.455319`, so this bound is numerically identical to instance 5's (both the anchor
+ * and the comparator advanced by exactly `2`). **The bound coincides; the value must not:**
+ * instance 5's `−4.197990` belongs to `L41`'s `B` (`1.4191`) and quoting it for `L46` would cite a
+ * different board's `B`. The value here is a **fill-in computed from L46's own measured `D_exec`**.
+ */
+export const ACT_III_B2_SEAM_RELIEF_LEVEL_ID = 46;
+
+/** **Instance 6's left side** — alias-typed to Act III's registered tail ({@link ACT_III_REGISTERED_TAIL_LEVEL_ID}). */
+export const ACT_III_B2_SEAM_RELIEF_PREVIOUS_LEVEL_ID = ACT_III_REGISTERED_TAIL_LEVEL_ID;
+
+/** **Instance 6's comparator** — `L45`'s registered `30.455319`, alias-typed (never re-typed). */
+export const ACT_III_B2_SEAM_RELIEF_PREVIOUS_EXEC = ACT_III_REGISTERED_TAIL_EXEC;
+
+/** **Instance 6's published bound** — the union; **not an interval** (see the admissible halves below). */
+export const ACT_III_B2_SEAM_RELIEF_DELTA_RANGE: readonly [number, number] = [-4.705319, -1.392819];
+
+/**
+ * **The admissible first-rung split** — `L46` at `par 22` ⇒ `[−4.705319, −3.392819]` (B1's anchor)
+ * and at `par 24` ⇒ `[−2.705319, −1.392819]` (B6's fallback). A fill-in that lands **inside the
+ * union and inside neither half is OUTSIDE the label**, which is why the authoring tool checks the
+ * half and not only the range, and why a failing value **writes nothing**.
+ */
+export const ACT_III_B2_SEAM_RELIEF_ADMISSIBLE_FIRST_RUNGS: readonly {
+  readonly par: number;
+  readonly deltaRange: readonly [number, number];
+}[] = [
+  { par: 22, deltaRange: [-4.705319, -3.392819] },
+  { par: 24, deltaRange: [-2.705319, -1.392819] },
+];
+
+/**
+ * **The FILL-IN** — §7.10.7's exact value, written **before any board byte** (LV-019's census commit;
+ * the five shelf boards land in the commit that follows, so the order is git-provable the same way
+ * instance 5's was: bound `b28ed97` → fill-in `db78a13` → bytes `568c136`). `_EXEC` is **L46's own
+ * measured `D_exec`** and `_DELTA` is **derived** from it, never re-typed, so the label and the
+ * comparator cannot drift apart. **It is not instance 5's number:** the bound coincides (`+2` shift
+ * identity) but the value belongs to this board's `B`.
+ *
+ * **Filled in LV-019, from the post-F-L46-1-repair census, before the bytes** (`26.242489` at `L46`,
+ * `par 22`, `B 1.4142`; derived `Δ −4.212830`, inside the union **and** inside `par 22`'s own half
+ * `[−4.705319, −3.392819]`). The exact measured double is `26.242489270386265` and the stored constant
+ * is its 6-decimal display form, so readers compare with `LAW_PRECISION`, never `===` (F-L41-1).
+ */
+export const ACT_III_B2_SEAM_RELIEF_EXEC = 26.242489; // LV-019's census: L46's own measured D_exec (inside par 22's half of the union)
+export const ACT_III_B2_SEAM_RELIEF_DELTA =
+  ACT_III_B2_SEAM_RELIEF_EXEC - ACT_III_B2_SEAM_RELIEF_PREVIOUS_EXEC;
+
 // ── The clause ids ────────────────────────────────────────────────────────────
 
 /** The clause ids {@link actScaleTailGuards} reports (a closed union: a new clause is a compile error). */

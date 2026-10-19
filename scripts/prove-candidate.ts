@@ -62,6 +62,10 @@ import {
   ACT_II_REGISTERED_IDS,
   ACT_II_R006A_REGISTERED_TAIL_EXEC,
   ACT_III_B1_IDS,
+  ACT_III_B2_ANCHOR_PAR,
+  ACT_III_B2_HALF_CEILING_EXEC,
+  ACT_III_B2_IDS,
+  ACT_III_B2_PAR_MULTISET,
   ACT_III_B_BAND,
   ACT_III_EXEC_BAND,
   ACT_III_OPENER_PAR_MULTISET,
@@ -795,6 +799,25 @@ const ACT2_PAR_BAND: readonly [number, number] = ACT === 3 ? ACT_III_PAR_BAND : 
  * the band endpoints and the measured `B` band, not new maths — and for Act III derived-exact, so
  * the `(29.06, 29.0625]` sliver §7.9 admits is admissible on Act II too, F-L31-1). */
 const ACT2_EXEC_BAND: readonly [number, number] = ACT === 3 ? ACT_III_EXEC_BAND : ACT_II_EXEC_BAND;
+/**
+ * **The batch's law line in the banner, keyed on the ladder's own first id** (LV-019).
+ *
+ * F-L41-4 / F-R007-2's class is *"a printed string that misdescribes its own reading"*. Act III now
+ * has **two** batches with different published laws, so a single act-3 fragment would name batch 1's
+ * multiset while proving batch 2's ladder. The fragment is therefore selected by **which batch's id
+ * list contains the ladder's first rung**, and **the `--batch=1` branch is kept literally as LV-018 /
+ * R-007 wrote it**, so those receipts stay byte-identical (the A/B is in the census record).
+ *
+ * A run with **no** `--ladder` keeps the batch-1 wording: a null-ladder act-3 invocation has no batch
+ * key to read, and every act-3 run in this repository's records passes an explicit ladder. That
+ * residual is named here rather than left to be discovered.
+ */
+const ACT3_LAW_LABEL =
+  LADDER.length > 0 && ACT_III_B2_IDS.includes(LADDER[0] as number)
+    ? `§7.10.6's batch-2 multiset [${ACT_III_B2_PAR_MULTISET.join(", ")}] (GD-013's B1–B7, B1's anchor ${String(
+        ACT_III_B2_ANCHOR_PAR,
+      )} published as a tie-break; B3's half ceiling ${ACT_III_B2_HALF_CEILING_EXEC.toFixed(4)}); batch ids [${ACT_III_B2_IDS.join(", ")}]`
+    : `§7.10.2's opener multiset [${ACT_III_OPENER_PAR_MULTISET.join(", ")}]; batch ids [${ACT_III_B1_IDS.join(", ")}]`;
 /** The batch's peak rung, when a ladder was given (§7.3: the across-act clause rides on the peak). */
 const PEAK_RUNG: number | null = LADDER.length > 0 ? Math.max(...LADDER) : null;
 
@@ -1165,7 +1188,7 @@ console.log(
   `family ${FAMILY}${FAMILY === "g" ? " (Act II multi-pocket — §7.2 / §7.4 stage G)" : " (the L20 sealed landing — §6.2.6)"}` +
     ` · act ${String(ACT)}` +
     (ACT === 3
-      ? ` (band [${String(ACT2_PAR_BAND[0])}, ${String(ACT2_PAR_BAND[1])}] par · [${String(ACT2_EXEC_BAND[0])}, ${String(ACT2_EXEC_BAND[1])}] D_exec, derived-exact §7.10.1; §7.10.2's opener multiset [${ACT_III_OPENER_PAR_MULTISET.join(", ")}]; batch ids [${ACT_III_B1_IDS.join(", ")}])`
+      ? ` (band [${String(ACT2_PAR_BAND[0])}, ${String(ACT2_PAR_BAND[1])}] par · [${String(ACT2_EXEC_BAND[0])}, ${String(ACT2_EXEC_BAND[1])}] D_exec, derived-exact §7.10.1; ${ACT3_LAW_LABEL})`
       : "") +
     ` · ${ACT === 3 ? "the previous act's registered maximum" : PEAK_NAME_LONG} the batch must clear: ${ACT1_PEAK.toFixed(6)}` +
     (PEAK_RUNG === null ? " (no --ladder: the across-act clause is reported per file)" : ` · ladder peak rung L${String(PEAK_RUNG)}`),
