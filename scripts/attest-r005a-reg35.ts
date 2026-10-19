@@ -20,12 +20,16 @@
  *        its measured `LADDER RESULT`). A control table re-implemented here would be a statement
  *        about *this file* instead of about the proof.
  *   [3/6] **§7.3's act-scale tail law** — the act peaks and the ten rows are **measured** and fed
- *        to `actScaleTailGuards`, which reports **eleven** clauses. R-004a owns six of them
- *        (`scripts/attest-r004a-act2.ts`); the five this file owns are named here.
+ *        to `actScaleTailGuards`, which reports **sixteen** clauses. R-004a owns six of them
+ *        (`scripts/attest-r004a-act2.ts`), R-006a five (`scripts/attest-r006a-reg40.ts`); the
+ *        five this file owns are named here. The three sets partition the reported set, and
+ *        R-005a's three act-level clauses read the **frozen** era basis (`ACT_II_R005A_ERA_IDS`)
+ *        rather than the live act — that is why this file's tail-pin control moves the era basis,
+ *        not `actII`.
  *   [4/6] **anti-tautology controls, one per R-005a clause** — a single-row restamp of the
  *        registered table, a restamped *measured* row, a relabelled tail, a restamped
  *        pre-registration standard, a narrowed `D_exec` ceiling, and a restamped seam. Each must
- *        FAIL **its own clause** by name, and the registered reading must PASS all eleven.
+ *        FAIL **its own clause** by name, and the registered reading must PASS all sixteen.
  *   [5/6] **the §7.3.1 seams and the sawtooth, probed in both directions** — the registered drops
  *        pass the clause (so "cross-batch monotony" is falsified by measurement, not by prose),
  *        an out-of-band seam FAILs, a measurement that omits a registered rung FAILs, and *every
@@ -69,13 +73,17 @@ import {
   ACT_II_PRE_R005A_REGISTERED_TAIL_LEVEL_ID,
   ACT_II_REGISTERED_IDS,
   ACT_II_REGISTERED_PEAK_ADVANTAGE_VS_ACT_I,
+  ACT_II_R005A_ERA_IDS,
   ACT_II_R005A_REGISTERED_TAIL_EXEC,
   ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID,
   ACT_II_R005A_TAIL_ADVANTAGE,
   ACT_II_R005A_TAIL_HEADROOM_TO_EXEC_CEILING,
+  ACT_II_R006A_SEAM_RELIEF,
   ACT_II_SEAM_RELIEFS,
+  ACT_II_SEAM_RELIEFS_ALL,
   ACT_TAIL_R004A_CLAUSE_IDS,
   ACT_TAIL_R005A_CLAUSE_IDS,
+  ACT_TAIL_R006A_CLAUSE_IDS,
   LAW_PRECISION,
   actScaleTailGuards,
   allOffShortestSolution,
@@ -310,7 +318,7 @@ try {
       tsxCli,
       "scripts/prove-candidate.ts",
       "--family=g",
-      `--ladder=${ACT_II_REGISTERED_IDS.slice(ACT_II_B1_IDS.length).join(",")}`,
+      `--ladder=${ACT_II_R005A_ERA_IDS.slice(ACT_II_B1_IDS.length).join(",")}`,
       "--dir=src/levels",
     ],
     { encoding: "utf8", cwd: REPO_DIR, maxBuffer: 64 * 1024 * 1024 },
@@ -362,15 +370,21 @@ check(
     `${String(perRung.filter((m) => m[1] === "13" && m[2] === "13").length)}/10 at 13/13 · ` +
     `LADDER ${ladderPass === null ? "n/a" : `PASS ${ladderPass[1]}/${ladderPass[2]} · controls named ${ladderPass[3]}/${ladderPass[4]}`}`,
 );
+// R-006a: this row used to type the census (`cutMatch[3] === "35"`). The typed total went
+// stale the moment batch 4 registered, and a stale census reddens the instrument without
+// saying anything about the rungs it exists to watch. It is now **instrument agreement**: the
+// prover's own file count must equal this instrument's own directory census. The *substance*
+// of the row — that the cut is still the L1–L15 basis, untouched by either Act II batch — is
+// unchanged, which is why the basis-ids operand stays typed: THAT is the frozen claim.
 check(
-  "the freezer holds at 35 shipped files (the cut is still the L1–L15 basis)",
+  "the freezer holds (the cut is still the L1–L15 basis; the shipped-file count agrees with the prover's own census)",
   cutMatch !== null &&
     Number(cutMatch[1]) === 14.969697 &&
     cutMatch[2] === "10" &&
-    cutMatch[3] === "35" &&
+    cutMatch[3] === String(shipped().length) &&
     cutMatch[4] === "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15",
   `CUT D_exec max = ${cutMatch?.[1] ?? "n/a"} · par(L15) = ${cutMatch?.[2] ?? "n/a"} · ` +
-    `${cutMatch?.[3] ?? "n/a"} shipped files · basis ids [${cutMatch?.[4] ?? "n/a"}] — the L16–L20 block and all fifteen registered Act II rungs are excluded from the cut's own filter`,
+    `${cutMatch?.[3] ?? "n/a"} shipped files (instrument census ${String(shipped().length)}) · basis ids [${cutMatch?.[4] ?? "n/a"}] — the L16–L20 block and every registered Act II rung are excluded from the cut's own filter`,
 );
 // Non-vacuity, both halves of the section: a reader that cannot move is not evidence, and an
 // instrument that accepts the wrong directory is not reading the registered bytes.
@@ -455,16 +469,20 @@ check(
   `${String(registered.filter((c) => c.status === "PASS").length)}/${String(registered.length)} clauses PASS`,
 );
 check(
-  "the clause split partitions the reported set, and this instrument owns R-005a's five",
+  "the clause split partitions the reported set (three instruments), and this instrument owns R-005a's five",
   registered.length ===
-    ACT_TAIL_R004A_CLAUSE_IDS.length + ACT_TAIL_R005A_CLAUSE_IDS.length &&
+    ACT_TAIL_R004A_CLAUSE_IDS.length +
+      ACT_TAIL_R005A_CLAUSE_IDS.length +
+      ACT_TAIL_R006A_CLAUSE_IDS.length &&
     registered.every(
       (c) =>
         ACT_TAIL_R004A_CLAUSE_IDS.includes(c.clause) ||
-        ACT_TAIL_R005A_CLAUSE_IDS.includes(c.clause),
+        ACT_TAIL_R005A_CLAUSE_IDS.includes(c.clause) ||
+        ACT_TAIL_R006A_CLAUSE_IDS.includes(c.clause),
     ),
   `reported ${String(registered.length)} = R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} (controlled by scripts/attest-r004a-act2.ts) + ` +
-    `R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} [${ACT_TAIL_R005A_CLAUSE_IDS.join(", ")}] (controlled here)`,
+    `R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} [${ACT_TAIL_R005A_CLAUSE_IDS.join(", ")}] (controlled here) + ` +
+    `R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} (controlled by scripts/attest-r006a-reg40.ts)`,
 );
 console.log("");
 
@@ -499,11 +517,11 @@ const tailControls: readonly {
   },
   {
     clause: "act-tail-r005a-tail-pin",
-    name: "RELABEL: the act's registered tail is moved onto L34 while keeping L35's value — the constant and the rung it belongs to disagree",
-    coupling: "named: the tail value is unchanged, so the neighbouring clauses stay green and the refusal is this clause's own",
+    name: "RELABEL: the R-005a ERA BASIS's registered tail is moved onto L34 while keeping L35's value — the constant and the rung it belongs to disagree",
+    coupling: "named: the tail value is unchanged, so the neighbouring clauses stay green and the refusal is this clause's own. R-006a re-pointed this clause at the FROZEN era basis (`actIIAtR005a`), so the control moves THAT basis — the identical mutation applied to the live `actII` would still be caught (clause 13) but would be caught by the WRONG clause, which is the failure this control exists to see",
     reading: {
       ...reading,
-      actII: {
+      actIIAtR005a: {
         levelId: ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID - 1,
         dexec: ACT_II_R005A_REGISTERED_TAIL_EXEC,
       },
@@ -564,7 +582,7 @@ check(
     `(R-004a's six are controlled in scripts/attest-r004a-act2.ts — the split is asserted there as a partition)`,
 );
 check(
-  "discrimination: the registered reading PASSes all eleven clauses while every control FAILs one",
+  "discrimination: the registered reading PASSes all sixteen clauses while every control FAILs one",
   registered.every((c) => c.status === "PASS") &&
     tailControls.every((c) =>
       actScaleTailGuards(c.reading).some((x) => x.status === "FAIL"),
@@ -589,10 +607,17 @@ const dexecOf = (id: number): number =>
 const seamFrom = dexecOf;
 /**
  * **The sawtooth, measured.** The registered act's `D_exec` is deliberately non-monotone at the
- * two batch seams (`L25→L26 −6.044410`, `L30→L31 −4.362098`) and rises elsewhere. §7.3's
- * `act-peak` clause rides on the act's **maximum**, and §7.3.1 makes a relief registrable by its
- * **pre-published label** — so a validator demanding cross-batch monotony would have refused two
- * *registered* rungs. That hypothesis is falsified here by measurement rather than argued away.
+ * batch seams (`L25→L26 −6.044410`, `L30→L31 −4.362098`, and — since R-006a registered batch 4 —
+ * `L35→L36 −6.038144`) and rises elsewhere. §7.3's `act-peak` clause rides on the act's
+ * **maximum**, and §7.3.1 makes a relief registrable by its **pre-published label** — so a
+ * validator demanding cross-batch monotony would have refused three *registered* rungs. That
+ * hypothesis is falsified here by measurement rather than argued away.
+ *
+ * The reading is over the **live act** (`ACT_II_REGISTERED_IDS`, L21–L40), and the named-instance
+ * list is `ACT_II_SEAM_RELIEFS_ALL` — every instance the law carries, not only R-005a's two.
+ * Scoping the *named* list to R-005a's own instances would have made R-006a's registered drop
+ * read as "unnamed", i.e. the hole this section exists to close would have been reported as open
+ * when it is in fact closed by a later registration.
  */
 const actIIExec = ACT_II_REGISTERED_IDS.map((id) => ({ id, dexec: seamFrom(id) }));
 const steps = actIIExec.slice(1).map((r, i) => ({
@@ -602,36 +627,40 @@ const steps = actIIExec.slice(1).map((r, i) => ({
 }));
 const drops = steps.filter((s) => s.delta < 0);
 const rises = steps.filter((s) => s.delta > 0);
-const namedSeams = ACT_II_SEAM_RELIEFS.map((s) => `${String(s.fromLevelId)}→${String(s.toLevelId)}`);
+const namedSeams = ACT_II_SEAM_RELIEFS_ALL.map((s) => `${String(s.fromLevelId)}→${String(s.toLevelId)}`);
 console.log(
   `  registered adjacent steps inside the act: ${steps.map((s) => `L${String(s.from)}→L${String(s.to)} ${s.delta >= 0 ? "+" : ""}${s.delta.toFixed(6)}`).join(" · ")}`,
 );
 check(
-  "§7.3.1 — the sawtooth is the registered reading, and the clause PASSes it (a monotony validator would have refused two registered rungs)",
-  drops.length === 2 &&
+  "§7.3.1 — the sawtooth is the registered reading, and the clause PASSes it (a monotony validator would have refused three registered rungs)",
+  drops.length === 3 &&
     drops.every((s) =>
-      ACT_II_SEAM_RELIEFS.some(
+      ACT_II_SEAM_RELIEFS_ALL.some(
         (spec) => spec.fromLevelId === s.from && spec.toLevelId === s.to,
       ),
     ) &&
     seamClause(reading) === "PASS" &&
-    rises.length === 12,
-  `drops ${String(drops.length)} (both named [${namedSeams.join(", ")}]) · rises ${String(rises.length)} (none labelled, none owed: §7.3 interior freedom) · ` +
+    rises.length === 16,
+  `drops ${String(drops.length)} (all named [${namedSeams.join(", ")}]) · rises ${String(rises.length)} (none labelled, none owed: §7.3 interior freedom) · ` +
     `clause act-tail-r005a-seam-reliefs on the registered reading = ${seamClause(reading)}`,
 );
 check(
   "§7.3.1 — no UNNAMED relief hides in the bytes (every adjacent drop is a named instance)",
   drops.every((s) =>
-    ACT_II_SEAM_RELIEFS.some(
+    ACT_II_SEAM_RELIEFS_ALL.some(
       (spec) => spec.fromLevelId === s.from && spec.toLevelId === s.to,
     ),
   ),
   `drops: ${drops.map((s) => `L${String(s.from)}→L${String(s.to)} ${s.delta.toFixed(6)}`).join(" · ")} · the law's instances: ` +
-    `${ACT_II_SEAM_RELIEFS.map((s) => `L${String(s.fromLevelId)}→L${String(s.toLevelId)} ${s.delta.toFixed(6)}`).join(" · ")} — ` +
+    `${ACT_II_SEAM_RELIEFS_ALL.map((s) => `L${String(s.fromLevelId)}→L${String(s.toLevelId)} ${s.delta.toFixed(6)}`).join(" · ")} — ` +
     "the seam clause judges only the pairs the law names, so this measurement is what closes the 'unnamed relief' hole",
 );
 // Non-vacuity on the same reader: an UNNAMED drop must be visible to it. The probe lowers one
-// copied rung so a fabricated third drop appears at a pair the law does not name.
+// copied rung so a fabricated third drop appears at a pair the law does not name. The filter is
+// `ACT_II_SEAM_RELIEFS_ALL` — every named instance, which since R-006a includes the registered
+// `L35→L36` drop. Scoping the filter to R-005a's two would have made the *registered* batch-4
+// drop show up as a fabricated one and the expectation below would read 2, not 1 — a control
+// broken by a later registration rather than by the reader it probes.
 const fabricated = actIIExec.map((r) => (r.id === 33 ? { ...r, dexec: 20 } : r));
 const fabricatedDrops = fabricated
   .slice(1)
@@ -643,16 +672,16 @@ const fabricatedDrops = fabricated
   .filter((s) => s.delta < 0)
   .filter(
     (s) =>
-      !ACT_II_SEAM_RELIEFS.some(
+      !ACT_II_SEAM_RELIEFS_ALL.some(
         (spec) => spec.fromLevelId === s.from && spec.toLevelId === s.to,
       ),
   );
 check(
-  "the unnamed-relief reader can fail (a fabricated third drop is named as unnamed)",
+  "the unnamed-relief reader can fail (a fabricated third drop is named as unnamed, with the three registered drops excluded)",
   fabricatedDrops.length === 1 &&
     fabricatedDrops[0]!.from === 32 &&
     fabricatedDrops[0]!.to === 33,
-  `fabricated drops at unnamed pairs: [${fabricatedDrops.map((s) => `L${String(s.from)}→L${String(s.to)} ${s.delta.toFixed(6)}`).join(", ")}] (required exactly L32→L33)`,
+  `fabricated drops at unnamed pairs: [${fabricatedDrops.map((s) => `L${String(s.from)}→L${String(s.to)} ${s.delta.toFixed(6)}`).join(", ")}] (required exactly L32→L33; the registered drops [${namedSeams.join(", ")}] are excluded by name)`,
 );
 // Direction 2: the BAND half has teeth — a seam endpoint outside the act band FAILs even when
 // the derived Δ happens to match its published value.
@@ -677,6 +706,42 @@ check(
   `registered reading ${seamClause(reading)}; L26 moved to ${(ACT_II_EXEC_BAND[1] + 1.5).toFixed(4)} (derived-exact band top ${ACT_II_EXEC_BAND[1].toFixed(4)}) ` +
     `with a self-consistent published Δ ⇒ seam clause FAIL`,
 );
+// Direction 2b: the clause's SCOPE did not widen. R-006a appended a third instance to the law's
+// register (`ACT_II_SEAM_RELIEFS_ALL`) and pointed a NEW clause at it; R-005a's clause must still
+// judge exactly its own two. So mutating R-006a's own instance — self-consistently, so the pair
+// itself remains coherent — has to leave this clause on PASS. If R-006a had widened
+// `ACT_II_SEAM_RELIEFS` in place instead of appending, "scoped to its own two" would be prose and
+// this row would FAIL.
+const r006aSeamMutated = actScaleTailGuards({
+  ...reading,
+  seams: reading.seams.map((s) =>
+    s.fromLevelId === ACT_II_R006A_SEAM_RELIEF.fromLevelId &&
+    s.toLevelId === ACT_II_R006A_SEAM_RELIEF.toLevelId
+      ? {
+          ...s,
+          toExec: 24,
+          registeredTo: 24,
+          registeredDelta: 24 - s.registeredFrom,
+        }
+      : s,
+  ),
+});
+check(
+  "the seam register grew by APPENDING — R-005a's two instances are untouched and the clause's scope did not widen to R-006a's",
+  ACT_II_SEAM_RELIEFS.length === 2 &&
+    ACT_II_SEAM_RELIEFS_ALL.length === 3 &&
+    ACT_II_SEAM_RELIEFS.every((s) => ACT_II_SEAM_RELIEFS_ALL.includes(s)) &&
+    !ACT_II_SEAM_RELIEFS.includes(ACT_II_R006A_SEAM_RELIEF) &&
+    ACT_II_SEAM_RELIEFS_ALL.includes(ACT_II_R006A_SEAM_RELIEF) &&
+    r006aSeamMutated.find((c) => c.clause === "act-tail-r005a-seam-reliefs")
+      ?.status === "PASS" &&
+    r006aSeamMutated.find((c) => c.clause === "act-tail-r006a-seam-reliefs")
+      ?.status === "FAIL" &&
+    seamClause(reading) === "PASS",
+  `instances ${String(ACT_II_SEAM_RELIEFS.length)} of ${String(ACT_II_SEAM_RELIEFS_ALL.length)} · R-006a instance ${String(ACT_II_R006A_SEAM_RELIEF.instance)} (L${String(ACT_II_R006A_SEAM_RELIEF.fromLevelId)}→L${String(ACT_II_R006A_SEAM_RELIEF.toLevelId)}): ` +
+    `mutated self-consistently ⇒ act-tail-r005a-seam-reliefs ${String(r006aSeamMutated.find((c) => c.clause === "act-tail-r005a-seam-reliefs")?.status)} (outside its scope) · ` +
+    `act-tail-r006a-seam-reliefs ${String(r006aSeamMutated.find((c) => c.clause === "act-tail-r006a-seam-reliefs")?.status)} (inside its own)`,
+);
 // Direction 3: a measurement that DROPS a registered rung cannot satisfy the clause. This is
 // the honest reading of "the instance must exist": the law's two instances are required, not
 // optional, and a dataset missing L31 (or L26) fails by name rather than skipping the check.
@@ -691,7 +756,7 @@ check(
   missingSeam?.status === "FAIL" &&
     (missingSeam.detail.includes("MISSING") ||
       missingSeam.detail.includes("NaN")),
-  `reading built from the 34 shipped files without L${String(ACT_II_B3_SEAM_RELIEF.toLevelId)}: clause ${String(missingSeam?.status)} — ` +
+  `reading built from the ${String(all.length - 1)} shipped files without L${String(ACT_II_B3_SEAM_RELIEF.toLevelId)} (census ${String(all.length)} − 1): clause ${String(missingSeam?.status)} — ` +
     `${(missingSeam?.detail ?? "").slice(0, 150)}…`,
 );
 /*
@@ -711,7 +776,7 @@ console.log(
   "           a rise seam published with a positive Δ would satisfy the same terms. Not probed live (that would mean re-implementing the clause here);",
 );
 console.log(
-  "           the two registered instances are drops and [6/6] reads their labels verbatim, which is what §7.3.1 makes registrable.",
+  "           every instance the law carries is a drop (R-005a's two here, R-006a's fourth in scripts/attest-r006a-reg40.ts) and [6/6] reads their labels verbatim, which is what §7.3.1 makes registrable.",
 );
 console.log("");
 

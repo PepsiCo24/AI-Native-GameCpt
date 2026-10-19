@@ -467,6 +467,17 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
       "26.07",
       "28.13",
       "28.34",
+      // R-006a — Act II batch 4, the act's closing rungs, dataset order: the five
+      // registered rungs' measured execution axis (22.301282 / 24.252174 / 26.200000 /
+      // 28.185897 / 28.455319), mirrored out of `tests/solver/difficulty.test.ts`'s
+      // table (this file's own parsed `HAND_PINS`), so the builder still cannot agree
+      // with itself. "22.30" is L36, §7.3.1's fourth relief instance (6.038144 below
+      // L35); the last value is the act's registered tail, L40 28.455319.
+      "22.30",
+      "24.25",
+      "26.20",
+      "28.19",
+      "28.46",
     ]);
     expect(HAND_PINS.get(11)?.dexec.toFixed(2)).toBe("8.57");
     expect(HAND_PINS.get(12)?.dexec.toFixed(2)).toBe("8.23");
@@ -487,6 +498,11 @@ describe("LV-007E · R3 — the report agrees with the hand-typed pins (a builde
     expect(HAND_PINS.get(26)?.dexec.toFixed(2)).toBe("21.56");
     expect(HAND_PINS.get(31)?.dexec.toFixed(2)).toBe("23.20");
     expect(HAND_PINS.get(35)?.dexec.toFixed(2)).toBe("28.34");
+    // R-006a — the batch-4 mirrors read from the parsed table on both ends too: §7.3.1's
+    // fourth relief instance (L36 22.301282, 6.038144 below L35) and the act's registered
+    // tail (L40 28.455319, +0.115893 over the R-005a tail).
+    expect(HAND_PINS.get(36)?.dexec.toFixed(2)).toBe("22.30");
+    expect(HAND_PINS.get(40)?.dexec.toFixed(2)).toBe("28.46");
   });
 });
 

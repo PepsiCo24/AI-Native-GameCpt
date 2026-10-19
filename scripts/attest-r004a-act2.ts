@@ -54,8 +54,10 @@ import {
   ACT_II_B1_REGISTERED_PEAK_EXEC,
   ACT_II_REGISTERED_IDS,
   ACT_II_R005A_REGISTERED_TAIL_EXEC,
+  ACT_II_R006A_REGISTERED_TAIL_EXEC,
   ACT_TAIL_R004A_CLAUSE_IDS,
   ACT_TAIL_R005A_CLAUSE_IDS,
+  ACT_TAIL_R006A_CLAUSE_IDS,
 
   ACT_I_REGISTERED_PEAK_EXEC,
   ACT_I_REGISTERED_PEAK_LEVEL_ID,
@@ -242,8 +244,11 @@ const all = shipped();
 // `measureActScaleReading`), shared with `scripts/attest-r005a-reg35.ts`: two transcripts of
 // the same law that measure it two ways is how a stale reading survives a registration.
 // R-004a's own change here is the Act I basis (it now excludes every registered Act II id,
-// not only batch 1's five) and the act-level maximum (which now spans L21–L35, while batch
-// 1's own record stays pinned in `act-tail-act-ii-peak-pin`).
+// not only batch 1's five) and the act-level maximum (which now spans L21–L40 after R-006a,
+// while batch 1's own record stays pinned in `act-tail-act-ii-peak-pin`). The act-level
+// reading is the LIVE act (`ACT_II_REGISTERED_IDS`); R-005a's three act-level clauses are the
+// ones re-pointed to the frozen era basis (`ACT_II_R005A_ERA_IDS`), and they are controlled
+// by `scripts/attest-r005a-reg35.ts`, not here.
 const reading: ActScaleLawReading = measureActScaleReading(all.map((s) => s.level));
 console.log(
   `  measured: Act I peak ${reading.actI.dexec.toFixed(6)} (L${String(reading.actI.levelId)}) · ` +
@@ -351,24 +356,39 @@ check(
     new Set(tailControls.map((c) => c.clause)).size === ACT_TAIL_R004A_CLAUSE_IDS.length &&
     ACT_TAIL_R004A_CLAUSE_IDS.every((id) => tailControls.some((c) => c.clause === id)),
   `${String(tailCaught)}/${String(tailControls.length)} caught · clauses covered ${String(new Set(tailControls.map((c) => c.clause)).size)}/${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} (R-004a's six; R-005a's five are ` +
-    `${ACT_TAIL_R005A_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r005a-reg35.ts — named here so the split of ownership is a reading, not a convention)`,
+    `${ACT_TAIL_R005A_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r005a-reg35.ts; R-006a's five are ` +
+    `${ACT_TAIL_R006A_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r006a-reg40.ts — named here so the split of ownership is a reading, not a convention)`,
 );
 check(
   "the registered reading is the discrimination side (every reported clause PASSes on it)",
   registered.every((c) => c.status === "PASS"),
-  `registered ${String(registered.filter((c) => c.status === "PASS").length)}/${String(registered.length)} PASS · R-004a controls ${String(tailControls.length)} · R-005a clauses reported here but controlled in the R-005a instrument: ${ACT_TAIL_R005A_CLAUSE_IDS.length}`,
+  `registered ${String(registered.filter((c) => c.status === "PASS").length)}/${String(registered.length)} PASS · R-004a controls ${String(tailControls.length)} · R-005a (${String(ACT_TAIL_R005A_CLAUSE_IDS.length)}) + R-006a (${String(ACT_TAIL_R006A_CLAUSE_IDS.length)}) clauses reported here but controlled in their own instruments`,
+);
+// The reported set grew to three registrations at R-006a (R-004a's six, R-005a's five,
+// R-006a's five). The partition is the invariant that keeps a NEW clause from silently
+// riding along with no instrument: the three sets must be pairwise disjoint, must cover
+// every reported clause, and must together be exactly the reported count. Sum vs distinct
+// catches an overlap; the unclaimed list catches a clause with no home.
+const claimedClauses = new Set([
+  ...ACT_TAIL_R004A_CLAUSE_IDS,
+  ...ACT_TAIL_R005A_CLAUSE_IDS,
+  ...ACT_TAIL_R006A_CLAUSE_IDS,
+]);
+const claimedSum =
+  ACT_TAIL_R004A_CLAUSE_IDS.length +
+  ACT_TAIL_R005A_CLAUSE_IDS.length +
+  ACT_TAIL_R006A_CLAUSE_IDS.length;
+const unclaimedClauses = registered.filter(
+  (c) => !claimedClauses.has(c.clause),
 );
 check(
-  "the two instruments' clause sets PARTITION the reported set (a future clause must be given a home)",
-  new Set([...ACT_TAIL_R004A_CLAUSE_IDS, ...ACT_TAIL_R005A_CLAUSE_IDS]).size ===
-    registered.length &&
-    registered.every(
-      (c) =>
-        ACT_TAIL_R004A_CLAUSE_IDS.includes(c.clause) ||
-        ACT_TAIL_R005A_CLAUSE_IDS.includes(c.clause),
-    ),
-  `reported ${String(registered.length)} · R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} + R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} = ` +
-    `${String(new Set([...ACT_TAIL_R004A_CLAUSE_IDS, ...ACT_TAIL_R005A_CLAUSE_IDS]).size)} (a twelfth clause with no instrument reddens this row)`,
+  "the three instruments' clause sets PARTITION the reported set (a future clause must be given a home)",
+  claimedClauses.size === registered.length &&
+    claimedSum === claimedClauses.size &&
+    unclaimedClauses.length === 0,
+  `reported ${String(registered.length)} · R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} + R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} + R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} = ` +
+    `${String(claimedSum)} claimed · ${String(claimedClauses.size)} distinct · ${String(unclaimedClauses.length)} unclaimed ` +
+    `(a seventeenth clause with no instrument reddens this row)`,
 );
 // Two-sided non-vacuity, on the clause whose subject is a DIRECTION: the law binds the
 // registered value and the band, and nothing else. So (a) an in-band value *above* Act I's
@@ -609,7 +629,7 @@ check(
     cutMatch !== null &&
     Number(cutMatch[1]) === 14.969697 &&
     cutMatch[2] === "10" &&
-    cutMatch[3] === "35" &&
+    cutMatch[3] === String(shipped().length) &&
     cutMatch[4] === "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15" &&
     ladderPass !== null &&
     ladderPass[1] === ladderPass[2] &&
@@ -678,8 +698,8 @@ console.log(
   `on the registered bytes, the registered ladder is ${ACT_II_B1_LADDER.map((r) => String(r.par)).join(" / ")} rising strictly on the execution axis,`,
 );
 console.log(
-  `§7.3's act-peak clause is discharged by the act's measured maximum (${ACT_II_R005A_REGISTERED_TAIL_EXEC.toFixed(6)} > Act I's ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)}, read over ${String(ACT_II_REGISTERED_IDS[0])}–${String(ACT_II_REGISTERED_IDS[ACT_II_REGISTERED_IDS.length - 1] ?? 0)} after R-005a) under all ${String(registered.length)}`,
+  `§7.3's act-peak clause reads the act's measured maximum (${ACT_II_R006A_REGISTERED_TAIL_EXEC.toFixed(6)} > Act I's ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)}, read over ${String(ACT_II_REGISTERED_IDS[0])}–${String(ACT_II_REGISTERED_IDS[ACT_II_REGISTERED_IDS.length - 1] ?? 0)} after R-006a; the value R-005a carried, ${ACT_II_R005A_REGISTERED_TAIL_EXEC.toFixed(6)}, is the frozen era basis its own three clauses read) under all ${String(registered.length)}`,
 );
 console.log(
-  `tail clauses (R-004a's six controlled HERE, R-005a's five controlled by scripts/attest-r005a-reg35.ts), and ${String(memberControls.length)}/${String(memberControls.length)} member controls are refused by name with the L16–L20 block un-restamped.`,
+  `tail clauses (R-004a's six controlled HERE, R-005a's five by scripts/attest-r005a-reg35.ts, R-006a's five by scripts/attest-r006a-reg40.ts), and ${String(memberControls.length)}/${String(memberControls.length)} member controls are refused by name with the L16–L20 block un-restamped.`,
 );

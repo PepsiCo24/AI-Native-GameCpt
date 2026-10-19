@@ -303,11 +303,21 @@ check(
   `measured [${measuredBand[0].toFixed(4)}, ${measuredBand[1].toFixed(4)}] · constant ` +
     `[${BLOCK_L1619_B_BAND[0].toFixed(4)}, ${BLOCK_L1619_B_BAND[1].toFixed(4)}]`,
 );
+// R-006a: this row used to type the total (`=== 35`). A hand-typed total is a census that
+// goes stale the moment a later batch registers — and the failure it produces is a red
+// instrument, not a red finding. So the total is now DERIVED from the three registrations
+// this block actually knows about (its own frozen basis, the five L16–L19/L20 rungs, and
+// whatever `src/core/solver/policy` currently registers as Act II), and the check is
+// **instrument agreement**: the directory census must equal the sum the law believes in.
+// R-006a widened `ACT_II_REGISTERED_IDS` to L21–L40, so this row reads 40 without a literal.
+const expectedRegistered =
+  15 + BLOCK_L1619_IDS.length + ACT_II_REGISTERED_IDS.length;
 check(
-  "the registered set is the 15-level basis + the 5 rungs (+ the registered Act II rungs, R-004a L21–L25 and R-005a L26–L35)",
-  shipped().length === 35 && basis.length === 15,
-  `root ${String(shipped().length)} files = ${String(basis.length)} basis + ${String(BLOCK_L1619_IDS.length)} rungs + ` +
-    `${String(ACT_II_REGISTERED_IDS.length)} Act II rungs (R-004a L21–L25 + R-005a L26–L35; excluded from this block's basis so the cut stays L1–L15)`,
+  "the registered set is the 15-level basis + the 5 rungs + the registered Act II rungs (R-004a L21–L25, R-005a L26–L35, R-006a L36–L40)",
+  shipped().length === expectedRegistered && basis.length === 15,
+  `root ${String(shipped().length)} files = 15 basis + ${String(BLOCK_L1619_IDS.length)} rungs + ` +
+    `${String(ACT_II_REGISTERED_IDS.length)} Act II rungs (R-004a + R-005a + R-006a; excluded from this block's basis so the cut stays L1–L15) ` +
+    `· derived total ${String(expectedRegistered)}`,
 );
 console.log("");
 
