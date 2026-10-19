@@ -282,66 +282,86 @@ test.describe("par route → win → HUD contract", () => {
     // from **cloud datums**; a throttled-local green is **necessary, not sufficient** —
     // it proves the row is not scheduler-fragile, never that it fits a starvation day.
     //
-    // ── R-005c: THE 35-LEVEL CHAIN, and the two booked numbers this arithmetic kills ─
+    // ── R-005c: THE 35-LEVEL CHAIN (historical — kept because its two numbers are
+    //    part of this constant's falsification chain) ─────────────────────────────
     // R-005a graduated Act II batches 2 + 3 (`l026`–`l035`) to the dataset root, so this
-    // row now walks **L1 → L35** — 35 par routes, 35 HUD reads, 34 `Next` clicks, the
-    // dialog's own action throughout (semantics INTACT: no `?level=` shortcut, no
-    // thinning, no direct navigation). Par total: `par(1…25) = 269` and
-    // `par(26…35) = 17+18+20+21+23+19+22+22+24+24 = 210` ⇒ **479 moves** (+78.1 % on the
-    // 25-rung chain the live constant was derived from). Measured locally at the R-005c
-    // tip (`--retries=0`, one worker, art-era bytes, no throttle):
+    // row then walked **L1 → L35** — 479 par moves. Measured locally at the R-005c tip
+    // (`--retries=0`, one worker, art-era bytes, no throttle, JSON reporter): run B
+    // **166 564 ms = 166.564 s** and run C **183 718 ms = 183.718 s**, and the derivation
+    // was taken on the worse sample: `ceil(1.5 × 4.40 × 183.718) = ceil(1_212.539) =
+    // 1_213_000 ms`. The two numbers that derivation falsified are the historical legs of
+    // the chain below.
     //
-    // | run | command | local total |
-    // |---|---|---|
-    // | A | whole `playthrough.spec.ts` once, plain (39 passed / 0 failed, 7.3 m file) | **2.7 m ≈ 162 s** (list reporter) |
-    // | B | this row alone, plain, JSON reporter (pre-final bytes) | **166 564 ms = 166.564 s** ✓ green |
-    // | C | this row alone, plain, JSON reporter (**the final bytes**) | **183 718 ms = 183.718 s** ✓ green |
+    // ── R-006c: THE 40-LEVEL CHAIN, RE-MEASURED FROM THIS TIP AND RE-DERIVED ────
+    // R-006a registered Act II batch 4, the act's closing rungs (`l036`–`l040`), so this
+    // row now walks **L1 → L40** — 40 par routes, 40 HUD reads, 39 `Next` clicks, **587
+    // moves** (`par(1…35) = 479` + `par(36…40) = 18+20+22+24+24 = 108`), i.e. **+22.55 %**
+    // on the 35-rung chain the live constant was derived from. The dialog's own action
+    // throughout — semantics INTACT: no `?level=` shortcut, no direct navigation, no
+    // thinning.
     //
-    // B and C walk the same route on the same build and differ by **+10.3 %**
-    // (166.564 → 183.718 s): this bench carries about a tenth of run-to-run leverage on a
-    // three-minute wall clock, which is itself a reason to derive off the spread rather
-    // than off one flattering sample.
+    // Two fresh local runs at this tip (`--retries=0`, one worker, no throttle, JSON
+    // reporter, `PS_E2E_PORT` 5222 / 5223), **both GREEN**:
+    //
+    // | run | local total |
+    // |---|---|
+    // | A | **191 060 ms = 191.060 s** ✓ green |
+    // | B | **211 602 ms = 211.602 s** ✓ green |
+    //
+    // The spread is **+10.8 %** on a three-and-a-half-minute wall clock — the same
+    // ~tenth-of-a-run leverage R-005c measured (166.564 → 183.718 s), and the reason the
+    // derivation reads the **worse** sample rather than a flattering one.
     //
     // Inputs (the QA-024 doctrine: walk-class envelopes derive from CLOUD datums; the
     // `4.40×` run-rate is the BOOKED cloud datum from QA-024's round `39031050727`,
     // item 131 law — not a local throttle rate, which is necessary-not-sufficient):
-    //   localTotal   = **183.718 s** — the **worse of the plain runs**, so the derivation
-    //                  is taken on the slowest observation, never the flattering one.
-    //                  (LV-014's 35-level forecast band, 162.6–174.1 s, contains runs A
-    //                  and B; run C lands **5.5 % above** the band's top. The band is
-    //                  quoted as *context* and is not the source — the derivation reads
-    //                  the measurements, not the forecast.)
-    //   cloudRate    = **4.40 ×** local (QA-024's booked rate for the work the cloud
-    //                  demonstrably completed: ≤ 360 / 81.783)
+    //   localTotal40 = **211.602 s** — the worse of the two plain runs.
+    //   cloudRate    = **4.40 ×** local.
     //   safety       = **1.5 ×** (item 77(d), the standing fitted×safety ≥ 1.5 leg)
     //
     // DERIVATION (the `refusalRouteEnvelopeMs` form: formula + inputs + result):
-    //   cloudFullChainS(35) = 4.40 × 183.718                       = 808.359 s
-    //   envelopeMs          = ceil(1.5 × 808.359) × 1000
-    //                       = ceil(1_212.539) × 1000               = **1_213_000 ms**
-    //   (at run B's 166.564 s the same form would give `ceil(1_099.322) = 1_100_000 ms`;
-    //    the worse observation is the one carried, so the constant below is 1_213_000.)
+    //   cloudFullChainS(40) = 4.40 × 211.602                       = 931.0488 s
+    //   envelopeMs          = ceil(1.5 × 931.0488) × 1000
+    //                       = ceil(1_396.5732) × 1000              = **1_397_000 ms**
+    //   (at run A's 191.060 s the same form gives `ceil(1_260.996) = 1_261_000 ms`; the
+    //    worse observation is the one carried, so the constant below is 1_397_000.)
     //
     // FALSIFICATIONS, written as arithmetic rather than as an opinion:
-    //   • the live **639_000 ms** is FALSIFIED at 35 levels by this same form —
+    //   • the **639_000 ms** constant was FALSIFIED at 35 rungs (historical, R-005c):
     //     1_213_000 / 639_000 = **1.90×** over it. It was derived from a 25-rung chain
-    //     (`cloudFullChainS = 360 × 96.715 / 81.783 = 425.7 s`; `×1.5 = 639 s`), so it
-    //     prices 269 moves where the row now walks 479; re-pricing it at 35 rungs by its
-    //     own formula is exactly the 808.4 s above, and **the old number may not be
-    //     re-used** (§7d's chain-envelope pre-alert, item 143's pre-ruling).
-    //   • the pre-registered **856_000 ms** same-family remedy is FALSIFIED too:
-    //     1_213_000 / 856_000 = **1.42×** over it, and the same-family face recomputed at
-    //     35 rungs is `ceil(1.5 × 5.9 × 183.718) = ceil(1_625.90) = 1_626_000 ms`.
+    //     (`ceil(1.5 × 4.40 × 96.715) × 1000 = ceil(638.319) × 1000` at QA-024's 96.715 s
+    //     sample), so it prices 269 moves where the row now walks 587.
+    //   • the pre-registered **856_000 ms** same-family remedy was FALSIFIED at 35 rungs
+    //     too (historical, R-005c): 1_213_000 / 856_000 = **1.42×** over it.
+    //   • **the live 1_213_000 ms is FALSIFIED AT 40 RUNGS by this measurement:**
+    //     `1_397_000 / 1_213_000 = **1.1517×** over it`. It prices 479 moves where the row
+    //     now walks 587; re-pricing it at 40 rungs by its own form is exactly the 931.0488 s
+    //     above, so **the old number may not be re-used** (the §7d chain-envelope
+    //     pre-alert, item 143's pre-ruling).
+    //
+    // THE LEVEL LANE'S PRE-ALERT, AND WHERE THIS MEASUREMENT LANDED. R-006a forecast the
+    // crossing before handing this row over (it owns no `tests/**` byte): it scaled the
+    // 35-rung local total by the *move* ratio — `183.718 × 587/479 = 225.1408 s` — and read
+    // `ceil(1.5 × 4.40 × 225.1408) = 1_486_000 ms`, i.e. **1.2251× over the then-live
+    // 1_213_000**. This measurement lands **BELOW that forecast**: 1_397_000 / 1_486_000 =
+    // **0.9401×**, i.e. **5.99 % under** it — and therefore *not* >2 % above, so no STOP
+    // was owed. The gap is the forecast's own model error, not a contradiction: a
+    // move-linear scale prices 587 moves as if cost were proportional to move count, while
+    // the per-rung fixed cost (open, first HUD read, dialog round trip) does not grow
+    // between the 35- and the 40-rung chains at all. The forecast was a forecast; the
+    // measurement is the number.
     //
     // PRE-REGISTERED NEXT BOUND — the same form, written before it is needed, so the next
-    // crossing is not a fresh improvisation:
-    //   1. **same-family face (this row's own remedy):** `ceil(1.5 × 5.9 × localTotal135)`
-    //      = 1_626_000 ms today.
-    //   2. **×100/35 work face (the dataset's next act, ADR-design-0005's 100-level
-    //      formulation booked to the architect at Act IV):** hold the cloud datum and
-    //      scale by the *work* the walk carries —
-    //      `ceil(1.5 × 4.40 × localTotal135 × 100/35) = ceil(1_212.539 × 2.857143) =
-    //      ceil(3_464.397) = 3_465_000 ms`.
+    // crossing is not a fresh improvisation (both read off THIS measurement's 211.602 s):
+    //   1. **same-family face (this row's own remedy):** `ceil(1.5 × 5.9 × 211.602)`
+    //      = `ceil(1_872.6777)` = **1_873_000 ms** today. (R-006a's forecast of this bound
+    //      was **1_993_000 ms** — 6.02 % above this one, for the same model reason; the
+    //      forecast is quoted beside, never adopted.)
+    //   2. **×100/40 work face (the dataset's next act, ADR-design-0005's 100-level
+    //      formulation booked to the architect at Act IV):**
+    //      `ceil(1.5 × 4.40 × 211.602 × 100/40) = ceil(1_396.5732 × 2.5) =
+    //      ceil(3_491.433) = **3_492_000 ms** today.` (R-006a's forecast: **3_715_000 ms**
+    //      — 6.00 % above.)
     //   Either bound is read off the same three published inputs, so a future dispatch
     //   re-takes the local walk and recomputes — it does not re-derive the form.
     //
@@ -350,7 +370,7 @@ test.describe("par route → win → HUD contract", () => {
     // scheduler-fragile and that the envelope survives cloud-class starvation *shape*
     // locally — it does **not** prove it fits a starvation day, because QA-024 measured
     // rate 20 at only 2.62× local while the cloud ran at 4.40×.
-    test.setTimeout(1_213_000);
+    test.setTimeout(1_397_000);
 
     // QA-024 starvation arm (opt-in, inert unless `PS_E2E_CPU_THROTTLE` is set —
     // `helpers/throttle.ts`): the cloud crossing this envelope is derived from
