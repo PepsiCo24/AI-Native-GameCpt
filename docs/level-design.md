@@ -1,10 +1,10 @@
 # Level Design — Phase Shift: Echo Grid / 双相棋盘：昼夜回响
 
 > Owner: **Agent 1 — Game Designer**
-> Version: **V1.6** *(V1.2 was GD-010 — §7.3.1–§7.3.4 + §7.8, the sawtooth ruling on Act II batch 2; V1.3 is GD-011 — §7.9 the band-endpoint law, §7.8 item 7 the C-path standing, §7.3.1 instance 3; V1.4 is GD-012 — §7.10 the Act III band + the L41–L45 opener rule + Act III par/star totality + the Act II→III seam relief, which V1.4b renumbers **instance 5**; **V1.4b is GD-012b — the relief register's numbering corrigendum: `L35→L36` is instance 4 by seam order, the `L40→L41` act-open renumbers to instance 5, no label text changed**; **V1.5 is GD-013 — §7.10.6 the Act III INTERIOR-BATCH rule B1–B7 (the anchor-advance ladder, `par 27` refused, the O3 reservation's scope over `L41–L50`), §7.10.7 the `L45→L46` `batch-seam` relief corrected into the register as instance 6 with the register-wide relief-admissibility test, both pre-published before any `L46–L50` census**; **V1.6 is GD-014 — §7.10.8 the XOR multi-switch door DEVICE RULING (option (a) DERIVABLE: `g6`'s covering derivation is multiplicity-blind, no second derivation is owed; the `H`/XOR composition is no new schema/core/validator contract — but it owes the `G2-X` effective-press reader, because the shipped press-then-cross readers test `targets` membership and an XOR press can *close* the door it targets) with the comprehension plan, §7.10.9 the `par 28` reservation RELEASED with its arithmetic and the `L51–L55` ladder law `[24,26,28,28,28]`, §7.10.10 the `L50→L51` `batch-seam` relief pre-published as register instance 7 + the register rider and finding F-GD014-1**; **V1.7 is GD-014b — the §7.10.8.2 C2 reader-text CORRIGENDUM (field path fixed; the two measurement-refused sub-clauses replaced by the entry-state + counterfactual instrument, ADR-architecture-0006 §4.2–§4.3 normative, refused original kept in a dated supersession record) and the instance-7 constants re-pinned to the register's PIN-LITERAL form; the GD-014 RULING itself is unchanged**)*
+> Version: **V1.9** *(rider fold-in, 2026-10-20: this label still read **V1.6** while the change log had run to **V1.7/V1.8** — GD-014c's named cosmetic residue, corrected here by the label's owner, no law text touched; **V1.8 is GD-015 — §7.10.11 the `L56–L60` ladder at `ℓ = 4` (B1–B7 applied, B6's no-fallback reading, the B7-vs-batch-3 named conditional), §7.10.12 the `L55→L56` `batch-seam` relief as register instance 8 — the register's first COMPARATOR-FREE bound, §7.10.13 the ACT-MAX RANK ruling for Act III + the plateau-top arithmetic + the `L56–L60` XOR pacing**; **V1.9 is GD-016 — new §7.11: the Act IV band (derived-exact), the `L61–L65` opener rule, the reservation's Act IV scope (`L61–L70`, `par ≤ 30`), the `L60→L61` `act-open` relief pre-published as register instance 9 — the register's first comparator-free ACT-OPEN bound — plus the Act IV interior-batch ladder DEFERRED to GD-017; ruling only — no code, no constant, no board**) *(V1.2 was GD-010 — §7.3.1–§7.3.4 + §7.8, the sawtooth ruling on Act II batch 2; V1.3 is GD-011 — §7.9 the band-endpoint law, §7.8 item 7 the C-path standing, §7.3.1 instance 3; V1.4 is GD-012 — §7.10 the Act III band + the L41–L45 opener rule + Act III par/star totality + the Act II→III seam relief, which V1.4b renumbers **instance 5**; **V1.4b is GD-012b — the relief register's numbering corrigendum: `L35→L36` is instance 4 by seam order, the `L40→L41` act-open renumbers to instance 5, no label text changed**; **V1.5 is GD-013 — §7.10.6 the Act III INTERIOR-BATCH rule B1–B7 (the anchor-advance ladder, `par 27` refused, the O3 reservation's scope over `L41–L50`), §7.10.7 the `L45→L46` `batch-seam` relief corrected into the register as instance 6 with the register-wide relief-admissibility test, both pre-published before any `L46–L50` census**; **V1.6 is GD-014 — §7.10.8 the XOR multi-switch door DEVICE RULING (option (a) DERIVABLE: `g6`'s covering derivation is multiplicity-blind, no second derivation is owed; the `H`/XOR composition is no new schema/core/validator contract — but it owes the `G2-X` effective-press reader, because the shipped press-then-cross readers test `targets` membership and an XOR press can *close* the door it targets) with the comprehension plan, §7.10.9 the `par 28` reservation RELEASED with its arithmetic and the `L51–L55` ladder law `[24,26,28,28,28]`, §7.10.10 the `L50→L51` `batch-seam` relief pre-published as register instance 7 + the register rider and finding F-GD014-1**; **V1.7 is GD-014b — the §7.10.8.2 C2 reader-text CORRIGENDUM (field path fixed; the two measurement-refused sub-clauses replaced by the entry-state + counterfactual instrument, ADR-architecture-0006 §4.2–§4.3 normative, refused original kept in a dated supersession record) and the instance-7 constants re-pinned to the register's PIN-LITERAL form; the GD-014 RULING itself is unchanged**)*
 > Date: 2026-10-20
-> Status: **Draft for Stage 2 prototype** (all level content requires Solver verification per ADR-0004; mechanic schedule per GATE D / ADR-0009; **100-level act architecture per GD-009 / ADR-design-0005, §7**; **act-close peak + pre-published relief labels per GD-010 / ADR-design-0006, §7.3.1–§7.3.2**; **band endpoints are derived-exact and inclusive per GD-011 / ADR-design-0007, §7.9**; **Act III's band, opener rule, par/star totality and seam relief per GD-012 / ADR-design-0008, §7.10**; **Act III's interior-batch ladder rule and the `L45→L46` `batch-seam` relief instance 6 per GD-013 / ADR-design-0009, §7.10.6–§7.10.7**; **the XOR multi-switch door device ruling, the `par 28` reservation's release + the `L51–L55` ladder law, and the `L50→L51` relief instance 7 per GD-014 / ADR-design-0010, §7.10.8–§7.10.10**)
-> Governing docs: `docs/game-design.md` (core rule §3, mechanics §5, rhythm §8, difficulty §11, move-depth ruling §14.2), ADR-0002, ADR-0004, **ADR-0008 rules 1–7** (entry-only solidity; clause 8 withdrawn), **ADR-0009** (checkerboard invariant; GATE D mechanics-forward), **ADR-design-0001** (dip law on the execution axis `D_exec`), **ADR-design-0003** (GD-011: the L12–L15 block law — par obligation, two-beat dip, latch grade), **ADR-design-0004** (L20 sealed landing), **ADR-design-0005** (GD-008 stars-not-cap + GD-009 act architecture), **ADR-design-0006** (GD-010 act-close peak clause + pre-published relief-label form), **ADR-design-0007** (GD-011 band-endpoint law + C-path standing), **ADR-design-0010 (GD-014 XOR device ruling + `par 28` release)**, ADR-architecture-0002 (metric #7 canonicality; gate (iii) ordered reader)
+> Status: **Draft for Stage 2 prototype** (all level content requires Solver verification per ADR-0004; mechanic schedule per GATE D / ADR-0009; **100-level act architecture per GD-009 / ADR-design-0005, §7**; **act-close peak + pre-published relief labels per GD-010 / ADR-design-0006, §7.3.1–§7.3.2**; **band endpoints are derived-exact and inclusive per GD-011 / ADR-design-0007, §7.9**; **Act III's band, opener rule, par/star totality and seam relief per GD-012 / ADR-design-0008, §7.10**; **Act III's interior-batch ladder rule and the `L45→L46` `batch-seam` relief instance 6 per GD-013 / ADR-design-0009, §7.10.6–§7.10.7**; **the XOR multi-switch door device ruling, the `par 28` reservation's release + the `L51–L55` ladder law, and the `L50→L51` relief instance 7 per GD-014 / ADR-design-0010, §7.10.8–§7.10.10**; **the `L56–L60` ladder, the `L55→L56` relief instance 8 and the Act III ACT-MAX RANK ruling per GD-015 / ADR-design-0011, §7.10.11–§7.10.13**; **the Act IV band, the `L61–L65` opener rule and the `L60→L61` relief instance 9 per GD-016 / ADR-design-0012, §7.11**)
+> Governing docs: `docs/game-design.md` (core rule §3, mechanics §5, rhythm §8, difficulty §11, move-depth ruling §14.2), ADR-0002, ADR-0004, **ADR-0008 rules 1–7** (entry-only solidity; clause 8 withdrawn), **ADR-0009** (checkerboard invariant; GATE D mechanics-forward), **ADR-design-0001** (dip law on the execution axis `D_exec`), **ADR-design-0003** (GD-011: the L12–L15 block law — par obligation, two-beat dip, latch grade), **ADR-design-0004** (L20 sealed landing), **ADR-design-0005** (GD-008 stars-not-cap + GD-009 act architecture), **ADR-design-0006** (GD-010 act-close peak clause + pre-published relief-label form), **ADR-design-0007** (GD-011 band-endpoint law + C-path standing), **ADR-design-0010 (GD-014 XOR device ruling + `par 28` release)**, **ADR-design-0011 (GD-015 `L56–L60` ladder + `L55→L56` relief instance 8 + the Act III ACT-MAX RANK rider on §7.3.2)**, **ADR-design-0012 (GD-016 Act IV band + `L61–L65` opener rule + `L60→L61` relief instance 9)**, ADR-architecture-0002 (metric #7 canonicality; gate (iii) ordered reader)
 
 ---
 
@@ -563,6 +563,15 @@ Board caps are §1's (≤ 7×7; `8×8` only with Orchestrator approval, R-L2 con
 > batch** against that half's rule. Bands are **inclusive at both ends** and are **derived from
 > the formula, never read back from rounded text**. §7.9 states the law and its blast radius; it
 > binds every gate, census filter and relief label in this file.
+> **Act IV's band is `[27.7500, 37.0625]`**, *printed* `[27.75, 37.06]` (GD-016, §7.11.1) — the
+> published growth law applied (`[23.7500, 33.0625] + 4`, and identically
+> `[24 + 3·1.2500, 32 + 3·1.6875]`, both readings agreeing to the last digit); Act IV's `par` band is
+> **`24–32` inclusive**: **the act spans `L61–L80` (§7.2, four batches of five — not `L61–L70`, which
+> is its first half)**, **its first half (`L61–L70`) carries its own derived scope `par ≤ 30`, `par 31`
+> inadmissible and `par 32` reserved** (GD-016, §7.11.3, a read-out of §7.10.2's O3), **its `act-close`
+> carrier window is `L71–L80`** (§7.3.2's own text: an act's **last two batches**), and **every Act IV
+> ladder value is even** (`par ≡ ACT_IV_PAR_FLOOR (mod 2)` — §7.11.1, the `par 31`/`par 33` refusal's
+> instrument).
 
 ### 7.3 The act-scale tail law (the one law this architecture changes)
 
@@ -614,7 +623,7 @@ pre-published label is **not registrable**.
 > par mirror held constant to isolate one variable), the label **says so** — a measurement instrument
 > is not a designed rhythm.
 
-Eight instances, listed in **seam order** — the register is **monotone by seam position**, not by the
+Nine instances, listed in **seam order** — the register is **monotone by seam position**, not by the
 order the rulings happened to be written (corrigendum **GD-012b**, changelog *V1.4b*: an earlier
 `V1.4` row numbered the `L40→L41` act-open label "instance 4" while the `L35→L36` seam was already
 being cited as the fourth instance by the registration ticket — the seam order below is the register's
@@ -784,6 +793,29 @@ order). Each is named with the constants the law files may carry:
    registration train — until then it is pre-published and unregistered. The instance carries the register
    finding **`F-GD015-1`** (a bound that needs no comparator still owes a **pinned** one at the fill-in, so
    the register form's two-board reading stays true) at §7.10.12.
+9. **`act-open` · L60→L61 · `ΔD_exec ∈ [−5.3125, −2.6875] (at par 24) · [−3.3125, −0.6875] (at par 26)` ·
+   band `[27.7500, 37.0625]`** (printed `[27.75, 37.06]`; §7.9's notation law) — the **Act III→Act IV**
+   act-open seam, **PRE-PUBLISHED BY GD-016 BEFORE ANY ACT IV BYTE EXISTS** (§7.11.4; ADR-design-0012).
+   This entry is the register's **index line only** — the full label text lives at **§7.11.4** and is **not
+   duplicated here**; the exact value is a **fill-in against that published form once `L61`'s `par` is
+   selected, never after the bytes**. It is the register's **first COMPARATOR-FREE `act-open` bound** — and
+   the reason is checkable: with `Δpar` **fixed by law** on both sides (`L60` at §7.10.11's closing `par 28`;
+   `L61` at O1/B1's Act IV floor anchor `par 24`, or `par 26` on O5's one admissible rising fill), the bound
+   is `Δpar + 3·ΔB` with `ΔB ∈ [−0.4375, +0.4375]` and **no measured left-side value enters it** —
+   `|3·ΔB| ≤ 1.3125 < |Δpar|` fixes the **sign** from the published band alone. It is **TWO HALVES, never a
+   hull** (a fill-in inside `[−5.3125, −0.6875]` but in neither half is **outside** the label). Unlike
+   instance 5 — the register's other `act-open`, which needed `L40 = 28.455319` as a comparator — this one
+   needs only that both boards are **in band**. Registration-side constants proposed:
+   `ACT_IV_B1_OPEN_RELIEF_LEVEL_ID = 61`,
+   `ACT_IV_B1_OPEN_RELIEF_PREVIOUS_LEVEL_ID_AT_REGISTRATION` / `_PREVIOUS_EXEC_AT_REGISTRATION`
+   **pin-literals** (`60` and `L60`'s registered value — **never** `ACT_III_REGISTERED_TAIL_*`: whether that
+   symbol points at `L60` depends on §7.10.13.3's rank comparison, so an alias would be correct only
+   **contingently**, which `F-GD015-1`'s rule forbids), `_DELTA_RANGE = [−5.3125, −0.6875]` (hull, **for
+   lookup only**), `_ADMISSIBLE_FIRST_RUNGS = [{ par 24, [−5.3125, −2.6875] }, { par 26, [−3.3125,
+   −0.6875] }]`. It registers **with Act IV's first batch**, in that registration train — until then it is
+   pre-published and unregistered. The instance carries **three self-voiding clauses** (the dilation
+   conditional; the `L60` left-side conditional that makes the label **VOID as published** if Act III's
+   batch 4 is B6-STOP-gated; and the `F-GD015-1` pin duty) at §7.11.4.
 
 #### 7.3.2 The ACT-CLOSE PEAK clause (new law; ADR-design-0006)
 
@@ -2158,6 +2190,399 @@ new device contract, no architect impact, no debut grade, and no new player-faci
 `L56–L60` adds is **composition over shipped law**: the released `par 28` class, the proven
 `4-pocket / 5-door / 5-press` device class, and §7.10.8's XOR read of shipped primitives.
 
+### 7.11 GD-016 published law — the Act IV band (derived-exact), the `L61–L65` opener rule, the reservation's Act IV scope, and the `L60→L61` `act-open` relief pre-published (register §7.3.1 **instance 9**)
+
+> Owner: **Agent 1 — Game Designer** · Task **GD-016** · Date **2026-10-20** · Status: **PUBLISHED LAW**
+> (full record, `Original Hypothesis → Problem → Change → Evidence → Result`:
+> `docs/decisions/design-0012-act-iv-band-opener-and-act-seam-relief.md` — a **new** record that is itself a
+> **rider** to ADR-design-0005 and ADR-design-0008, both quoted and extended, **never edited**)
+> Trigger: Act III's tail (`L56–L60`) is ruled and its census era is next, and **an act's band and opener are
+> ruled BEFORE its first census** — the precedent GD-012 set for Act III in exactly these words ("Act III was
+> ruled exactly this way before its first census"). No Act IV byte exists, and none may until this section
+> lands. The **Act IV juncture** is also where §7.10.5 booked the chain-envelope question to the Architect
+> (answered by ADR-architecture-0005, quoted here only as a pointer — this section reads **no** cross-act walk).
+
+#### 7.11.0 What this section does and does not publish (integrity statement, read first)
+
+| Quantity | Published here? | Why |
+|---|---|---|
+| Act IV's **`par` band** `24–32` | **NO — already law** | §7.2's act table publishes it (from ADR-design-0005 RULING B); this section **quotes** it and derives from it. |
+| Act IV's **`D_exec` band** | **YES — derived, not invented** | `[PAR_FLOOR + 3·B_lo, PAR_CEILING + 3·B_hi]` over the **measured** `B` band; no new weight, no new metric, no new arithmetic (§7.0). |
+| The **opener's selection rule** (`L61–L65`) | **YES — as law** | §7.10.2's O1–O6 **re-based** on Act IV's own constants: a rule, not a search (§7.10.2's standard). |
+| The opener's **`D_exec` values** | **NO** | They do not exist until the stage-`I` census selects rungs; only the multiset rule is law. |
+| Act IV's **registered maximum** / per-rung numbers | **NO** | §3.5's silence above the last measured row is untouched; the act's peak is a **measurement** made when a batch lands. |
+| A promise that `par 30` / `par 32` / the stage-`I`/`J` lattices are authorable | **NO** | **Named census obligations** on the level lane (§7.4), never promises (§7.0). |
+| Whether `H` populates Act III's tail, or stage `I`/`J` populates anything | **NO — nothing, in either direction** | `H` is **uncensused** (§7.10.11's own wording) and stages `I`/`J` have **no census at all**; **no ceiling claim is publishable in either direction** — O5's ABSENT/STOP discipline governs, never a substitute ladder. |
+
+Reused laws, unchanged: the locked core loop (one move ⇒ one flip, no manual switch button, illegal = no move
+and no flip); the checkerboard invariant (ADR-0009); entry-only solidity and never-crushed (ADR-0008 rules
+1–7); other-phase wall echo (ADR-0007); opposite-colour portals only; one switch per door below the XOR
+allowance; `T ≡ R ≡ 0`; §7's interior freedom; §7.3.1's label-before-bytes order; §7.3.2's carrier clause;
+§7.9's derive-from-formula law; §6.1.1's P2; §6.1.4's clone guard; §6.1.6's registry gate.
+
+**Two range readings corrected by the plan of record (the GD-012 precedent, quoted).** GD-012's own changelog
+row records *"the dispatch's 'L41–L6x' resolves to L60"* — a dispatch restatement is corrected against §7.2,
+never the reverse. Applied here:
+
+- **Act IV is `L61–L80`** (§7.2's row IV: four batches of five), **not** `L61–L70`; `L61–L70` is the act's
+  **first half**, and that is exactly the `par ≤ 30` scope §7.11.3 publishes.
+- **§7.3.2's carrier window for Act IV is `L71–L80`** — the clause's own text puts the carrier on an act's
+  **last two batches** ("for Act II: `L31–L40`"), and §7.10.1 reads Act III's as `L51–L60`. A carrier claim on
+  `L61–L70` would cite the wrong half of the act.
+
+#### 7.11.1 The Act IV EXEC band, derived-exact (§7.9 notation)
+
+| Constant | Value | Derivation |
+|---|---|---|
+| `ACT_IV_PAR_FLOOR` | **`24`** | §7.2's Act IV `par` band, lower endpoint |
+| `ACT_IV_PAR_CEILING` | **`32`** | §7.2's Act IV `par` band, upper endpoint |
+| `B` band | **`[1.2500, 1.6875]`** | measured, re-derived from L1–L15 every run, never widened; act-invariant **by reference** (assumption A1 below) |
+| `EXEC_FLOOR` | **`27.7500`** | `24 + 3·1.2500` |
+| `EXEC_CEILING` | **`37.0625`** | `32 + 3·1.6875` |
+| **Act IV `D_exec` band** | **`[27.7500, 37.0625]`**, *printed* `[27.75, 37.06]` | inclusive at both ends (§7.9); both endpoints dyadic ⇒ IEEE-754 bit-exact |
+
+```text
+growth law, read from §7.2's own act table   (BOTH readings agree to the last digit):
+  floors   : 16 (II) · 20 (III) · 24 (IV) · 28 (V)              ⇒ +4 per act
+  ceilings : floor + 8                                          ⇒ +4 per act
+  §7.10.1's read-out of Act II→III: "translates Act II's by exactly +4.0 on both ends (ΔEXEC = ΔPAR)"
+applied    : [23.7500, 33.0625] + 4 = [27.7500, 37.0625]
+independent check of the same pair (second reading):
+  EXEC_FLOOR   = 24 + 3·1.2500 = 27.7500
+  EXEC_CEILING = 32 + 3·1.6875 = 37.0625
+  §7.2's printed Act IV row is [27.75, 37.06] — the display rounding of exactly this pair (§7.9)
+```
+
+Both readings agree, so the **published law uniquely determines** Act IV's band and **no STOP-AND-ROUTE is
+owed** (contrast: had the table's row and the growth law differed by even one `LAW_PRECISION` quantum, this
+section would have had to name the admissible readings and STOP rather than pick by taste).
+
+**Assumptions the derivation leans on, each dated and each falsifiable.**
+
+- **A1 (2026-10-20) — the `B` band is act-invariant BY REFERENCE, not by re-measurement.** `policy.ts`'s
+  `ACT_II_B_BAND` and `ACT_III_B_BAND` are both **aliases of `BLOCK_L1619_B_BAND`** = `[1.2500, 1.6875]` (the
+  L1–L15 measurement); Act IV's band is derived on the **same** reference. The alternative reading (a fresh
+  per-act `B` band) is **unbuildable before a census** and would reprice every published band. If a census
+  ever widens the measured band, **every** act band moves: that is a design change (this file + an ADR),
+  never a generation outcome (§7.3).
+- **A2 (2026-10-20)** — the derivation uses `D_exec = par + 3·B` (the measured theorem, `T ≡ R ≡ 0`) and
+  §7.9's rule (derive from the formula; a printed band value is never a comparison operand).
+- **A3 (2026-10-20)** — the plan of record's act boundaries (§7.11.0's correction) hold. A re-split of the
+  100 levels across acts would re-open this whole section, not one line of it.
+
+**Read-outs, each stated so it can be checked rather than trusted.**
+
+- **Both endpoints are dyadic** (`27.7500 = 111/4`, `37.0625 = 593/16`) ⇒ bit-exact, and §7.9's inclusivity
+  is operator-free.
+- **The previous act's registered tail stays inside Act IV's band:** `ACT_III_REGISTERED_TAIL_EXEC`
+  (`30.455319`) is `2.705319` above the floor and `6.607181` below the ceiling — the §7.3 interior-freedom
+  shape (an act that opens below the previous peak, as a labelled relief, §7.11.4).
+- **Star totality is inherited, not re-ruled:** §7.10.3 already states that Act IV (`24–32`) falls inside
+  ADR-design-0005's **published** rows (`21–30 → k1 = 6 / k2 = 12`; `31–40 → +8 / +16`; `k1 = 2·⌈par/10⌉`,
+  `k2 = 2·k1`, `1★ = any finish`), so **no new star row is owed and `docs/game-design.md` §14.2 needs no
+  edit**.
+- **The admitted `par` range is `24–32` inclusive, and every in-ladder value is EVEN.** O1's window is
+  `PAR_FLOOR + 2k` and B1's anchor advances by exactly `+2`, so **every Act IV ladder value ≡
+  `ACT_IV_PAR_FLOOR` (mod 2)** — `25 · 27 · 29 · 31` have **no home in any Act IV ladder**. This is a
+  derivation, not a preference, and it is the instrument that refuses `par 31` (§7.11.5).
+- **A rung is admissible batch by batch** against the clause governing that batch (§7.2's band-notation
+  rider): the act band is the **outer range**, never a per-rung licence.
+
+#### 7.11.2 The `L61–L65` opener rule (six clauses, re-based — the level lane pre-runs this)
+
+**Ladder (derived, not searched): `[24, 26, 28, 30, 30]`.** The derivation is §7.10.2's **intersection
+re-based on Act IV's own constants** — quoted, never re-derived:
+
+| # | Clause (Act IV constants) | Content |
+|---|---|---|
+| **O1 · ladder** | `L_i = ACT_IV_PAR_FLOOR + 2·(i−1)`, `i = 1…5` | the P2-exact 5-member window (`24, 26, 28, 30, 32`) — §7.10.2's O1 with **the act's own floor** substituted |
+| **O2 · ceiling reservation** | the derived top rung `par 32` is **withheld**; the 5th rung repeats the truncated top at its within-par **maximum** | multiset **`[24, 26, 28, 30, 30]`** |
+| **O3 · why O2 is derived** | opener rungs top out at `30 + 3·1.6875 = 35.0625`; any `par 32` tail rung bottoms at `32 + 3·1.2500 = 35.7500` | **`35.7500 > 35.0625`**, margin **`0.6875`** ⇒ §7.3.2's `act-close` is satisfiable **by construction** on `L71–L80` **regardless of the opener's realised `B`**. The margin is **act-invariant by construction**: `2 − 3·(B_hi − B_lo) = 2 − 1.3125 = 0.6875` — the `+2` par step the P2 window earns, minus the widest `B` swing three weights can carry. It **coincides numerically** with `ACT_III_CEILING_RESERVATION_MARGIN` (a **checkable coincidence, never a template**: in `policy.ts` that constant is *derived* from its own act's endpoints and opener top, so the Act IV sibling is to be derived likewise) |
+| **O4 · anti-mirror** | the multiset must differ from **every registered Act II batch** (`[17,18,20,21,23]`, `[19,22,22,24,24]`, `[18,20,22,24,24]`) and from **every Act III batch's** (`[20,22,24,26,26]`, `[22,24,26,26,26]`, `[24,26,28,28,28]`, `[26,28,28,28,28]`, and any B6 outcome of batch 4) | checked **today** against all eight known multisets: `[24,26,28,30,30]` is distinct from each, and the distinctness is **structural**, not lucky — it is the only one carrying `30` at all. **Coinciding pars are printed, never hidden**; the check is re-run on the **realised** Act III sets at the Act IV census (batch 4's B6 path can only *remove* values, so no B6 outcome of batch 4 is `[24,26,28,30,30]`) |
+| **O5 · empty pool ⇒ ABSENT, never substituted** | a derived par absent from the stage-`I` census pool is **absent**; no out-of-set par is substituted; the shortfall is absorbed by **within-par repeats at the highest available derived par** | the fill is **rising** from an absent floor (the instance-5 precedent, whose union published exactly two admissible first rungs), so **two** first-rung readings are admissible: `par 24` (the anchor) and `par 26` (one P2 step up). If fewer than five rungs can be populated even so, the batch **STOP-AND-ROUTES to GD** — it never silently extends into the reserved ceiling |
+| **O6 · within-par convention** | the **final rung** takes the within-par **maximum** `D_exec`; every earlier rung the **minimum** | §7.10.2's O6 verbatim; with `par 30` doubled by the truncation, §7.10.6's **plural-same-par tie-break** applies from the act's **first** batch — the two `par 30` rungs take the pool's **lowest** accepted values in **ascending id order** |
+
+**No `act-peak` / `act-close` branch for the opener — RULED (mirrored).** §7.3.2 puts the carrier on the
+act's **last two batches** (`L71–L80` for Act IV) and §7.3's `act-peak` binds the act's **measured maximum**,
+evaluated per batch once that batch's peak exists. The opener **reports** its measured peak and **carries no
+clause**; what it carries is the §7.3.1 `act-open` relief (§7.11.4). Every rung this rule admits is **in band
+by construction** (`par 24` ⇒ `[27.7500, 29.0625]`; `par 30` ⇒ `[33.7500, 35.0625]`; both ⊆
+`[27.7500, 37.0625]`), so a rung outside the band is a **broken rule**, not a nuance.
+
+**Does the opener ENTER Act IV's band, or HOLD at Act III's ceiling? — RULED: it ENTERS, at the act's own
+floor.** The Act II→III precedent is decisive and is **quoted rather than re-argued**: Act III's opener anchors
+at `ACT_III_PAR_FLOOR = 20` while Act II's ceiling is `par 24`, i.e. the act opens **four `par` below the
+previous act's ceiling**, inside its **own** band, and the seam is published as a relief. U-002 **ratified**
+that default for the user, not silently: *"floor-anchored ladder `[20,22,24,26,26]` (par 20 opener, the `−4`
+par-term breath after Act II's par-24 climax)"*. So the mirror at Act IV is `L61 = par 24` — the act's own
+floor, with `Δpar = −4` against Act III's closing `par 28`.
+
+The **"hold" reading is REFUSED**, on three grounds, in the file's own terms:
+
+1. **It is a deviation from ratified law, and a deviation owes an ADR and a reason.** None exists on disk:
+   O1's ladder is floor-anchored **by its own formula**, and the only ratified reading of an act's opener is
+   the floor anchor.
+2. **It leaves the act's floor class homeless at the one batch that can home it cheaply.** `par 24` can appear
+   in any Act IV batch, but §7.10.9.1's tie-break ground (ii) — *"every value of the derived window keeps a
+   home in the act's ladders"* — is **live again at a new act's first batch** (no Act IV ladder has landed, so
+   nothing in the window has a home), whereas it was **SPENT** for Act III's `ℓ ≥ 2` batches. Recorded here so
+   it is not re-quoted after it dies again — exactly as GD-013 recorded ground (ii)'s death.
+3. **It would open the act by re-entering a class Act III already occupies four times.** `par 28`'s class is
+   `[31.7500, 33.0625]` — **the same numbers** as Act III's closing four rungs (`L57–L60`) — so a `par 28`
+   opener would make Act IV's first board a *par-class repeat* of the act that just closed, and its
+   distinctness would rest on geometry alone. Distinctness is checkable (clone guard §6.1.4), so this ground
+   is **not** a refusal by itself; it is recorded as why the hold is *also* undesirable, **never** as the
+   reason it is unlawful (ground 1 does that).
+
+**Shape principle at the seam (the dispatch's "same-par / different-shape" phrase, resolved by measurement).**
+The phrase is **not law text anywhere in this file**; the seam's published properties are (a) a §7.3
+**interior relaxation at a `ΔM = 0` boundary**, (b) a **re-anchor by arithmetic** (`Δpar = −4`, forced by
+O1/B1), and (c) a **multiset-difference** against every landed set (O4). So the seam's shape principle is
+stated in the register's own vocabulary: **same device class, different ladder shape**, with the
+shape-difference **machine-checkable** as O4's multiset inequality — and the felt reading (*a breath after the
+climax*) is a **labelled hypothesis** (§7.3.3's instrument reads `NOT TESTABLE, n = 0`), never an assertion.
+
+#### 7.11.3 The reservation's Act IV scope (`L61–L70`, `par ≤ 30`), ruled as a READ-OUT of O3
+
+```text
+reserved class      : par 32 ⇒ D_exec ∈ [32 + 3·1.2500, 32 + 3·1.6875] = [35.7500, 37.0625]
+first half's ceiling: 30 + 3·1.6875 = 35.0625 ⇒ margin 35.7500 − 35.0625 = 0.6875
+act band (derived)  : [27.7500, 37.0625] ⇒ the reserved class's TOP *is* the act ceiling (0 headroom above it)
+```
+
+- **Scope.** The first half (`L61–L70`) takes **`par ≤ 30`**; **`par 31` is inadmissible** (odd ⇒ no home in
+  any Act IV ladder, §7.11.1); **`par 32` is reserved** for the tail. This is **O3 re-based** — the
+  reservation is published with the act it belongs to, not as a new clause — and the **per-batch ladders that
+  consume it** are the Act IV **interior-batch** law, **DEFERRED to GD-017** (§7.11.5).
+- **The release of `par 32` is NOT ruled here.** §7.10.9.1's release was an **arithmetic act against a
+  registered act maximum**; Act IV has no registered row at all, so a release today would be a claim about a
+  tail that does not exist. It is **named** as the tail's own future GD ruling, with its own record.
+- **A rung is read batch by batch** (§7.2's band-notation rider): the act band is the outer range, and a
+  `par 32` rung in the first half is **in band and still inadmissible** — containment is not admissibility.
+
+#### 7.11.4 The pre-published `act-open` relief label (L60→L61) — register §7.3.1 **instance 9**
+
+**Why the seam exists, in arithmetic rather than in taste.** §7.11.2 anchors `L61` at `par 24` while Act III's
+closing rung `L60` sits at `par 28` (§7.10.11's B1–B5: the released ceiling, and the closing rung at its own
+within-par maximum), so the seam's `par` term is **negative by construction** — a §7.3 interior relaxation at
+a **`ΔM = 0`** boundary, and §7.3.1's rule is absolute: **an unlabelled relief is not registrable.** So it is
+labelled **here, before the census and before any byte**, with the exact value a **fill-in against this
+published form** (the instance-5/-6/-7/-8 order: bound → fill-in → bytes).
+
+**The published bound — the register's first COMPARATOR-FREE `act-open` bound.** Derivation shown, every
+constant read from the law module:
+
+```text
+ΔD_exec = Δpar + 3·ΔB     with Δpar = 24 − 28 = −4     (BOTH pars are LAW, not selections:
+                                                        O1/B1's Act IV floor anchor; §7.10.11's closing rung)
+ΔB      ∈ [1.2500 − 1.6875, 1.6875 − 1.2500] = [−0.4375, +0.4375]
+⇒ ΔD_exec ∈ [−5.3125, −2.6875]      (equivalently: [27.7500, 29.0625] − [31.7500, 33.0625])
+SIGN IS FIXED BY THE BAND:  |3·ΔB| ≤ 1.3125 < |Δpar| = 4  ⇒  ΔD_exec < 0 for EVERY in-band pair
+O5's one admissible rising fill (par 26):
+Δpar = 26 − 28 = −2  ⇒  ΔD_exec ∈ [−3.3125, −0.6875]   (equivalently: [29.7500, 31.0625] − [31.7500, 33.0625])
+```
+
+Three properties, stated so the lane **verifies** rather than trusts.
+
+- **(a) It needs NO comparator's number — unlike instance 5, the register's other `act-open`.** Instance 5's
+  bound is built on `L40 = 28.455319` (a measured left side); instance 9's left side is `L60`, whose `par` is
+  **law** (B4/B5's closing rung) and whose `B` is bounded by the **published band**, so the bound and its sign
+  are **comparator-independent** — the general form §7.10.12 named: **when `Δpar` is fixed by law and
+  `3·(B_hi − B_lo) < |Δpar|`, the bound and the sign are comparator-free.** The `1.3125` is `3·(B_hi − B_lo)`,
+  the same number §7.10.7 published as the `Δpar = 0` residue bound — quoted as a **checkable coincidence,
+  never a template**.
+- **(b) It is TWO HALVES, never a hull.** A fill-in is checked against the half its `par` names and **never**
+  against `[−5.3125, −0.6875]`: a value inside that hull but in neither half is **outside** the label (the
+  instance-6 rule, quoted). The halves' midpoints are exactly their `par` terms (`−4`, `−2`), and the `B` half
+  contributes `±0.65625` to each.
+- **(c) A numerical coincidence is named so it cannot be cross-quoted.** `[27.7500, 29.0625] − 30.455319 =
+  [−2.705319, −1.392819]` — **the same numbers** as instance 5's `par 22` half. The **referents differ**:
+  instance 5's is `L41`'s class against `L40`'s **measured** `B` (`1.4851`); this one is Act IV's **band-floor
+  class** against Act III's **registered tail**. The register's standing rule applies unchanged (`F-L31-2` /
+  `F-L36-2`: *a label that no longer describes the thing it measures*): **cross-quoting is forbidden**, and
+  the value is computed from the two boards' **own** measured `D_exec`.
+
+The full label, verbatim, for the registration ticket to cite:
+
+> **RELIEF LABEL — `act-open` seam L60→L61 · `ΔD_exec ∈ [−5.3125, −2.6875] at par 24 (O1/B1's anchor) ·
+> [−3.3125, −0.6875] at par 26 (O5's rising fill)`** (exact value filled in against this pre-published form
+> once `L61`'s `par` is selected, **never after the bytes**; **comparator-free** — no measured left-side value
+> enters it, because both `par` values are law and the `B` term is bounded by the published band) · **band
+> `[27.7500, 37.0625]`** (printed `[27.75, 37.06]`).
+> Interior relaxation at a **`ΔM = 0` boundary**, on the **execution axis only** — **never a dip, never a
+> claim of lower felt difficulty, and never the thing that satisfies a clause.** §6's dip law does **not**
+> fire: Act IV introduces **no** mechanic unit (§7.11.5), the phase-maze is **furniture on the same physics**
+> (§7.2's own family sentence), and the batch's boards are **variety inside §7.2's Act IV family**.
+> `act-peak`/`act-close` ride on the act's **measured maximum**, and the carrier obligation sits on
+> **`L71–L80`** (§7.3.2's own text). **The relief is an artifact of the measurement design, and it says so:**
+> §7.11.2's ladder is **derived** (floor-anchored, P2-exact, ceiling reserved for the tail), so the `par` term
+> drops by `4` **by construction** — §7.10.4's instance 5 is the same artifact of the same derivation one act
+> earlier, and §7.3.1's form already refuses to call that a designed rhythm (*"a measurement instrument is not
+> a designed rhythm"*). The label asserts **no** ease the instrument cannot see — `D_exec` is **blind to
+> comprehension** (`M`/`T` are not terms in it) — so *how the seam reads* is a **labelled Playtest
+> hypothesis** (§7.3.3; the star-era instrument reads `NOT TESTABLE, n = 0`), not a result.
+
+> **The self-voiding clauses (published because both sides' projections are future measurements).**
+> **(V1) The dilation conditional.** The bound holds **iff both boards' `B` sit in the published band** (§7.5:
+> a rung outside it must be **NAMED in the F-L16-2 excursion register**). If `L60` **or** `L61` lands a **named
+> excursion**, the band-width step is **void**: the label's value becomes a **fill-in against the measured
+> pair**, the published halves are **retired for this instance** (never widened to cover the excursion), and
+> the lane **STOP-AND-ROUTES to GD**. *Owner-program:* the level lane's **Act IV census** — the only program
+> that can produce the excursion — and the remedy is owed **before** the bytes.
+> **(V2) The left-side conditional.** `L60 = par 28` is law **only while Act III's batch 4 is registrable at
+> all**: §7.10.11's B6 makes every fallback at `ℓ = 4` a **flat batch**, and a flat batch is **STOP-gated** —
+> so if it fires, batch 4 registers **nothing** and this seam has **no lawful left side**. In that event
+> **this instance is VOID as published**, and it may not be re-published against a substituted or borrowed
+> batch: the Act IV opener is gated on Act III's close. *Owner-program:* the level lane's **`L56–L60`
+> census + registration train** — it reports, the design lane rules, and nothing is improvised in between.
+> **B7's multiset conditional** (§7.10.11's own NAMED CONDITIONAL) is inherited **unchanged**: on
+> multiset-equality the lane writes nothing and STOP-AND-ROUTES, and re-anchoring is a design decision with
+> its own ADR.
+> **(V3) The register-form obligation.** A comparator-free bound **still owes a pinned comparator at the
+> fill-in** (`F-GD015-1`), so the register form's two-board reading stays true — see the pin-literals below.
+> This clause is published **because this is the third occurrence of the same hazard class**: a hazard with two
+> named prior occurrences that is silently assumed to be gone is how the class returns.
+
+**Registration-side constants proposed — the PIN-LITERAL form (§7.10.10's register-wide form law).**
+`ACT_IV_B1_OPEN_RELIEF_LEVEL_ID = 61`;
+`ACT_IV_B1_OPEN_RELIEF_PREVIOUS_LEVEL_ID_AT_REGISTRATION = 60` and
+`ACT_IV_B1_OPEN_RELIEF_PREVIOUS_EXEC_AT_REGISTRATION = <L60's registered value>` as **literals** — each
+documented as *instance 9's comparator as published at registration*, filled **only after Act III's batch 4
+registers and before Act IV's bytes**; `ACT_IV_B1_OPEN_RELIEF_DELTA` **derived from the pin**, so no later
+registration can restamp it; `ACT_IV_B1_OPEN_RELIEF_DELTA_RANGE = [−5.3125, −0.6875]` (the **hull of the two
+halves**, carried **for lookup only** — a fill-in is checked against a half, never the hull);
+`ACT_IV_B1_OPEN_RELIEF_ADMISSIBLE_FIRST_RUNGS = [{ par 24, [−5.3125, −2.6875] }, { par 26, [−3.3125,
+−0.6875] }]`; `_DELTA = _EXEC − _PREVIOUS_EXEC_AT_REGISTRATION`. It must **never** alias
+`ACT_III_REGISTERED_TAIL_*`: whether that symbol points at `L60` depends on §7.10.13.3's **rank comparison**,
+so an alias would be correct only **contingently** — and `F-GD015-1`'s rule is that an alias is admissible
+only over a referent **frozen by construction**. Ladder-side constants proposed: `ACT_IV_PAR_FLOOR = 24`,
+`ACT_IV_PAR_CEILING = 32`, `ACT_IV_B_BAND = BLOCK_L1619_B_BAND`,
+`ACT_IV_EXEC_BAND = [ACT_IV_PAR_FLOOR + 3·ACT_IV_B_BAND[0], ACT_IV_PAR_CEILING + 3·ACT_IV_B_BAND[1]]`,
+`ACT_IV_OPENER_PAR_MULTISET = [24, 26, 28, 30, 30]`, `ACT_IV_OPENER_TOP_PAR = 30`,
+`ACT_IV_CEILING_RESERVATION_MARGIN = ACT_IV_PAR_CEILING + 3·B[0] − (ACT_IV_OPENER_TOP_PAR + 3·B[1])`
+(**derived, never typed** — the `policy.ts` shape), `ACT_IV_B1_IDS = [61…65]`, `ACT_IV_B1_ANCHOR_PAR =
+ACT_IV_PAR_FLOOR + 2·(1−1)`, `ACT_IV_TAIL_PAR_CEILING = ACT_IV_PAR_CEILING` (**reserved, unreleased**).
+
+#### 7.11.5 Mechanics stance (YAGNI), the comprehension plan (a NAMED HOLD), the deferrals, and the refusals
+
+**Mechanics stance — `ΔM = 0` through Act IV, by citation.** §7.2's own family sentence is the law here:
+*"Mechanism families use **locked vocabulary only** … a family is furniture on the same physics"*, and its Act
+IV row names **M0 wall-echo mazes · both-pair objects inside larger geometry · gauntlet-shaped boards (≥ 6-door
+rings) as FLAVOUR only**. §7.4's stages `I` (phase-maze) and `J` (gauntlet-flavour) are **generator lattices**,
+not devices, and **the plan names NO new device**: every ingredient is shipped law — M0 walls and their
+other-phase echo (ADR-0007), the shipped `doorIsOpen`, §1's portal array under the opposite-colour law, and
+geometry. Therefore **no Act IV rung may be scored as a debut**, §6's dip law **does not fire**, and **no
+architect-impact is flagged by this section**. **Asset Gate: unaffected** — no new board feature and no new
+player-facing object is introduced, so **no `asset-request` is owed by this ruling**. **Named conditional (the
+§7.10.5 closing sentence, mirrored):** if the stage-`I`/`J` census discovers that the maze read requires a
+**rule the core does not already have** (a solidity / echo / portal semantics absent from shipped law), that
+is **architect-impact** and needs **its own ADR before authoring** — it may not be smuggled in as "Act IV
+variety", and this section's `ΔM = 0` claim is then **void for that batch**. *Owner-program:* the level lane's
+stage-`I` census.
+
+**Comprehension plan — RULED as a NAMED HOLD (not a T-series extension).** No new teaching cycle is
+legislated by this ticket, and the hold rests on a stated basis rather than on silence:
+
+- Act IV's first batch introduces **no mechanic unit and no new board feature**, so §6's dip law does not fire
+  and **no debut rung exists for a teaching beat to hang on** (the T1–T4 precedent exists precisely because
+  the XOR read *was* a first encounter). What is already taught is **assumed, not re-taught**: T0's latch
+  (owned since L6–L10, Aha #1), M0's refusal (L3) and phantom-walk (L4–L5) beats, and the both-pair object's
+  Act III cycle (**T1–T4, complete at `L55`**).
+- What *can* fail is a **read**, not a rule: *the same tile answers by approach side* (§7.2's Act IV row). So
+  the hold carries the standing readability duties, **quoted and not weakened**: **R6** (zero text — §2's
+  show-don't-tell and the `L4+` text budget), **§6.1.4's clone guard** (the opener's five boards must be
+  mechanically distinct shapes — a maze-flavoured repeat is not a lattice member), and **§6.1.6 item 6 /
+  §7.5 item 5's registry gate** (a batch that is solver-proven but not legible does not ship).
+- **Named risk + its measurement window (LABELLED HYPOTHESIS, never a result):** *"that wall refused me … but
+  it let me through from the other side"* can read as **inconsistency** rather than as the shipped echo rule.
+  **Measurement:** **M4 refusals / M5 restarts / M6 undos** on `L61–L65` against `L60`, thresholds **frozen
+  before** the cohort runs (T6 discipline, §7.3.3's form; today the instrument reads **`NOT TESTABLE, n = 0`**).
+  **Falsification clause:** if the spike is measured, the geometry is **re-designed, never re-labelled**
+  (§6.2.5's standing rule for the L20 pocket, applied here by name), and the T-series extension is then owed
+  as **T5** at the ticket the next bullet names.
+- *Owner-program for the extension:* the Act IV **interior-batch** ticket (**GD-017**, below) — a teaching
+  cycle is a **per-rung** claim (which rung teaches what), and the interior batches' rungs are that ticket's;
+  legislating `T5` here would assign beats to rungs whose `par` values are not yet law.
+
+**Deferrals, each named with the era that owns it.**
+
+- **Act IV's interior-batch ladder law (B1–B7 at `ℓ = 2, 3, 4`) → GD-017, near its era.** GD-012's own
+  precedent: the Act III opener ticket **did not** legislate the interior ladders; GD-013 did, when the lane
+  was **gated** on it. The same gate will exist for `L66–L70`, and it is not raised by Act IV's band or its
+  opener.
+- **The one anchor the band law DOES force, and why.** The dispatch asks whether B1 is **act-scoped or
+  dataset-scoped**; **on disk it is ACT-SCOPED**: §7.10.9.2's B1 law text reads `A₃ = ACT_III_PAR_FLOOR +
+  2·(3−1)` and §7.10.11's reads `A₄ = ACT_III_PAR_FLOOR + 2·(4−1)` — the declarator names **its own act's
+  floor constant**, and `ℓ` indexes **that act's own batches**. The cross-act generalization is therefore
+  **substitution of the act's floor into the same formula** (which is exactly how O1 already writes it
+  generically), not a shared dataset-level counter. Checked arithmetically, the alternative reading
+  **collapses**: a dataset-scoped `ℓ = 5` at Act IV would give `A = 24 + 2·4 = 32` — **the act's own reserved
+  ceiling** — which O2/O3 forbids as an opener (it would consume the ceiling and destroy §7.3.2's
+  by-construction carrier guarantee). So the forced anchor at Act IV's first batch is **`ACT_IV_PAR_FLOOR =
+  24`** — the `+2` is the **step**, not the anchor — and it is **published here** as part of the opener law,
+  never deferred.
+- **The release of `par 32` → the Act IV tail's era**, with its own record (§7.11.3).
+- **The `T5` comprehension extension → GD-017** (above).
+- **Re-pinning duties owed at the Act IV era (register hygiene, named not performed).** Whatever registration
+  train moves the Act III act tail must **re-pin instance 6** and fill **instance 8's** pin
+  (`F-GD014-1` / `F-GD015-1`), and the **three disclosed growing-alias declarators** of item 167 (the
+  `ACT_III_PRE_R008_REGISTERED_TAIL_*` pair and the self-cancelling `ACT_III_B2_TAIL_ZERO_MOVE`, all
+  **symbol-anchored, no integers**) remain due at the **tail move**. None of it is a design edit — `src/**`
+  belongs to the level lane with Architect sign-off.
+
+**Refusals, with arithmetic where arithmetic does the refusing (and named as unmeasured where it does not).**
+
+- **REFUSED — any new device, mechanic unit, or board feature in Act IV.** `ΔM = 0` by §7.2's own family
+  sentence plus §7.4's lattice names; no census exists and none is claimed here.
+- **REFUSED — every out-of-band Act IV rung value, with the containment arithmetic shown** (the `par 29`
+  precedent's instrument rigor, §7.10.13, applied to Act IV's own numbers — because a lane that checked
+  **containment only** would let two of these through):
+  - **`par 33`:** `33 + 3·1.2500 = 36.7500` is **inside** `[27.7500, 37.0625]` (by `0.3125`) — so
+    **containment alone does not refuse it**. It is refused by the **`par` band** (`33 > ACT_IV_PAR_CEILING =
+    32`, an integer comparison with no operator question) **and** by the mod-2 derivation (odd). At the band
+    top `33 + 3·1.6875 = 38.0625` exceeds the ceiling by `1.0`.
+  - **`par 34`:** even, still `> 32` ⇒ refused by the `par` band; containment agrees only at the `B` floor
+    (`34 + 3·1.2500 = 37.7500 > 37.0625`, excess `0.6875`), and at the band top it exceeds by `2.0` — so
+    **two** instruments refuse it and neither is containment alone.
+  - **`par 31`:** **containment and the `par` band BOTH admit it** (`31 + 3·1.2500 = 34.7500` and
+    `31 + 3·1.6875 = 36.0625` are both ⊆ `[27.7500, 37.0625]`, and `31 ≤ 32`). It is refused **by the
+    derivation only** — odd ⇒ no home in any Act IV ladder — and it is **strictly dominated wherever it could
+    matter**, in two readings that must be stated together because neither alone is sufficient: **(i)** at any
+    in-band `B` it measures exactly `1.0` below the `par 32` rung built from the **same** `B`
+    (`31 + 3·B < 32 + 3·B` for *every* `B`); **(ii)** read **inside the reserved class**
+    (`D_exec ≥ 35.7500`, the class's own floor — §7.10.9.1's `par 27` form, read the same way, *inside the
+    ceiling class*) its reachable span is `[35.7500, 36.0625]` against `par 32`'s `[35.7500, 37.0625]` — an
+    **identical floor and a top `1.0` lower**, so a `par 31` rung can never measure above what the same `B`
+    yields at the reserved par. **This is the sharpest
+    single read-out in this section:** an Act IV admissibility test that does not carry the
+    `par`-band/parity derivation is **insufficient** — a checkable fact, not a preference.
+  - **`par 32` in the first half:** in band, in the derivation's parity class, and **still inadmissible**
+    (§7.11.3 — the reservation is O3's, and the act band is never a per-rung licence).
+- **REFUSED — re-stamping.** No published number moves: Act I/II/III bands, ladders, relief bounds and
+  registered rows are untouched, no instance's bound is widened, and `[24,26,28,30,30]` is **not** obtained by
+  editing any Act III number. The register counts by **seam order**, so instance 9 is **appended**, never
+  inserted.
+- **REFUSED — any ceiling claim while `H` is uncensused, in either direction.** `H` is **uncensused at
+  GD-015's publication** (§7.10.11's own wording) and stages `I`/`J` have **no census at all**, so: **no**
+  claim that `par 30`/`par 32` is authorable, **no** claim that it is not, and **no** claim that stage `I` can
+  populate the Act IV ladder. If it cannot, **O5 governs** — ABSENT-never-substituted, then
+  **STOP-AND-ROUTE to GD**: never a substitute `par`, never a borrowed registered ladder, never a re-anchored
+  batch.
+- **REFUSED — any Act IV rung law that would break monotone grades.** §7.10.13.4's published convention (**the
+  demand grade never falls as a batch's own measurement rises**, because a weaker demand on a
+  higher-measured board is a self-contradiction the file could not explain) is inherited as a binding
+  **constraint** on whatever GD-017 legislates: pandering grades, a **debut** grade under `ΔM = 0`, and a
+  FORCED demand on a relief rung are each refused — the last by §7.10.13.4's own construction-floor reasoning
+  (**one demand at a time**; *a relief rung may carry a device, never an obligation*).
+- **REFUSED — silence about the felt half.** Every player-facing claim in this section is a **labelled
+  hypothesis with a falsification clause** (§7.11.2's, §7.11.5's); my own sawtooth-over-plateau taste is
+  **not** evidence (AGENTS §7), and no playtest datum exists (`NOT TESTABLE, n = 0`).
+
+**`ΔM = 0` through Act IV's opener — the standing sentence.** No new mechanic unit, no new board feature, no
+new device contract, no architect impact, no debut grade, and no new player-facing text (R6). Everything
+`L61–L65` adds is **composition over shipped law**: the wall-echo read at maze scale, the both-pair object,
+and geometry inside Act IV's own derived band.
+
 ## 8. Change log
 
 | Date | Version | Change | Author |
@@ -2181,3 +2606,4 @@ new device contract, no architect impact, no debut grade, and no new player-faci
 | 2026-10-20 | V1.6a | **GD-014c — ANNOTATION ROW (cite hygiene only: no ruling, no value, no bound, no verdict moves; it annotates the V1.6 row above IN PLACE instead of rewriting it, per the GD-012b / GD-015 lineage rule).** **supersedes-ref: GD-014b**, under **ARCH-006 item (iv)** (constant hygiene / `F-GD014-1`) and **ADR-architecture-0006 §17.4**; the cite form applied here is the law of **ADR-architecture-0006 §10, `ARCH-006c` row (2026-10-20)**. **What is superseded, by name:** the V1.6 row's §7.10.10 sentence *“`_PREVIOUS_LEVEL_ID/_EXEC` **alias-typed with a `near()` assertion**”* — **the live law is NOT an alias.** **The live law, stated once:** a registered instance pins its published VALUES as **literals** — instance 7's left side is the pin `50` / `30.417021` (`ACT_III_B3_SEAM_RELIEF_PREVIOUS_LEVEL_ID_AT_REGISTRATION` / `_PREVIOUS_EXEC_AT_REGISTRATION`), the **delta is DERIVED from the pin** (so no later registration can restamp it), and `near()` is asserted **on the frozen pair** with message `F-GD014-1` — **never** against the live `ACT_III_REGISTERED_TAIL_*`, whose movement is lawful and printed as a reading. Where it resolves: the **V1.7 row immediately below** (GD-014b), §7.10.10's form-corrected constants paragraph, §7.10.10's **REGISTER-WIDE FORM LAW** block, and §7.3.1 **instance 7**. **Why this row exists while the V1.6 text above stays verbatim:** RV-014 flagged that sentence MEDIUM and un-annotated while its neighbours carry in-place supersession notes; the lineage rule is **annotate, never silently rewrite**, so the V1.6 row above is byte-identical and this row carries the correction. **Tool-lane reading order (unambiguous):** §7.3.1 instance 7 (index line) → §7.10.10 (law text + constants + the register-wide form law) → change log V1.6 (record) → **this annotation** → V1.7 (the superseding law) → V1.8. | Agent 1 (GD-014c) |
 | 2026-10-20 | V1.7 | **GD-014b — the §7.10.8.2 C2 reader-text CORRIGENDUM (texts only; the GD-014 RULING is UNCHANGED) + the register's PIN-LITERAL form law.** *(Trigger)* **ARCH-006** (ADR-architecture-0006 §4.2–§4.4, `docs/architecture.md` §17) **REFUSED the published C2 encoding by measurement** and routed the corrected instrument back to this lane: "the Architect refused the *text*, never the *ruling*". *(Corrected in place, §7.10.8.2 C2)* **(a) field path** `route[i].state.levelState.doorsOpen[d]` → **`route[i].state.doorsOpen[d]`** (`ArrivalRecord.state` is a `SearchState`, `src/core/state/types.ts:58–63`; `levelState` is `GameState`-only, `:107`). **(b) C2.2 replaced** — "the resolved openness CHANGES at that arrival" is **UNSATISFIABLE on shipped semantics** (base strictly alternates with the phase, `solid.ts:73–75`; every legal move flips it; ≤ 1 toggle per move, `solid.ts:220–226` ⇒ base-flip **cancels** parity-flip; measured **0 / 17 732** toggling arrivals changed their own target door vs **70 048 / 70 048** non-toggling, over **4 025** par routes) — by the **normative two-leg instrument of ADR-architecture-0006 §4.3, cited and never re-derived**: **ENTRY-STATE leg** `route[j−1].state.doorsOpen[d] === true` (**the C2.3 off-by-one correction**: **30 847** crossings, own-index open **0** vs entry-state open **30 847**) **+ COUNTERFACTUAL leg** (restore the pressed switch's **pre-arrival** value at `i`, recompute via the exported `resolveDoorsOpen` `solid.ts:113`, replay `i+1…j` through the shipped `applyMove` using the records' **own** `direction`, and **require the crossing to FAIL**); parity reading **printed beside**, never deciding (GD-008 shape); **no new core surface, no second derivation, no new search**. **The refused original is KEPT VERBATIM in a dated SUPERSESSION RECORD** inside §7.10.8.2 — *a corrigendum that erases its own evidence trail is a restamp* — together with its refutation and the note that **`divergence = 0` on any XOR-class census fires STOP-AND-ROUTE to GD by law** (never tool-patching, never a widened gate, never a re-labelled class), and that **under the literal text the FIRST census would have read `divergence = 100 %`** — an **instrument defect**, caught **pre-census**, so **no board was misproven**. *(Corrected in §7.10.10 + §7.3.1 instance 7 + property (c)). **Instance-7 constants are re-pinned to the PIN-LITERAL form** per ADR-architecture-0006 §17.4: `ACT_III_B3_SEAM_RELIEF_PREVIOUS_LEVEL_ID_AT_REGISTRATION = 50` / `_PREVIOUS_EXEC_AT_REGISTRATION = 30.417021` as **literals**, delta **DERIVED from the pin** (so no later registration can restamp it), `near()` assertion on the **frozen pair** with message `F-GD014-1`, **never** asserted against the live `ACT_III_REGISTERED_TAIL_*` (whose movement is lawful and **printed as a reading**); the batch-2 tail constant stays the **referent of the values**, never of an alias that could re-point. **New law-text:** *a registered instance pins its published VALUES as literals; aliases only for pre-ticket STANDARDS and closed registered sets* — an alias is admissible only over a referent **frozen by construction**, never over a **growing** set (`policy.ts:2573–2576`). *(Pointer re-pinned 2026-10-20 by GD-015 per **ADR-architecture-0006 §10 / ARCH-006b**: this row's copy read `policy.ts:2572–2576` and landed on the doc-comment above the declarator; the measured cite is `:2573–2576` — pointer only, no value, no bound and no verdict moves.)* *(Non-§7.10 bookkeeping)* §5's `L36–L45` pointer notes the handoff discharged; **`docs/game-design.md` §8's twin row gains the §7.10.8 + corrigendum pointer** (XOR = `targets` multiplicity over **≥ 2 distinct** switches, duplicates inside one switch **inert**, `ΔM = 0`, **first sighting `L52`** per the **T1 refusal-is-the-tutorial** plan). *(UNCHANGED, stated explicitly)* option **(a) DERIVABLE**, the **`G2-X` capability** (blast radius `scripts/**`), the **`par 28` release arithmetic** (`31.7500 > 31.0625`, margin `0.6875`), the ladder **`[24,26,28,28,28]`**, and the **instance-7 bound `[−2.667021, −1.354521]`** — the ruling stands; **only reader text and a constant's typing form moved**. *(Not touched)* every gate, band, `par`, weight, registered row, level byte, all of `src/**` / `scripts/**` / `tests/**`, and ADR-design-0005/-0006/-0007/-0008/-0009 bodies; ADR-design-0010 body quoted, with a **dated STATUS line** added. Full record: `docs/decisions/design-0010-xor-device-ruling-and-par28-release.md` (status note) + ADR-architecture-0006 §4.2–§4.4. | Agent 1 (GD-014b) |
 | 2026-10-20 | V1.8 | **GD-015 — new §7.10.11: the `L56–L60` ladder law at `ℓ = 4` (B1–B7 APPLIED, plus B6's no-fallback reading and the B7-vs-batch-3 conditional); new §7.10.12: the `L55→L56` `batch-seam` relief PRE-PUBLISHED as §7.3.1 instance 8 — the register's first COMPARATOR-FREE bound; new §7.10.13: the ACT-MAX RANK ruling for Act III + the plateau-top arithmetic + the `L56–L60` XOR pacing. Ruling only — no code, no constant, no board.** *(The trigger)* §7.10.10's closing paragraph hands batch 4 to this era **by name**, §7.10.9.2 B7 binds it to differ from every landed Act III multiset, and §7.5 forbids registering with a caveat — so the lane is gated on a **rule, not a search** (§7.10.2's standard). *(§7.10.11 · the ladder)* **`[26, 28, 28, 28, 28]`** (`L56 26 · L57 28 · L58 28 · L59 28 · L60 28`) from **B1** `A₄ = 20 + 2·3 = 26`; **B2** the rule now reproduces **three** landed multisets exactly (one more self-check per batch); **B3** the released ceiling unchanged, the first half's `par ≤ 26` and `par 27`'s inadmissibility unchanged; **B4** window `[26,28,30,32,34]` truncated at `28` → `[26,28]` + **3** repeats at the truncated top; **B5** closing rung at within-par max, the **three** non-final `par 28` rungs at the pool's ascending-id minimums (third occurrence of the plural-same-par case); **B6** *NO non-flat fallback exists at `ℓ = 4`* — the post-truncation window is `{26,28}`, so removing either value leaves a **singleton** ⇒ `[28×5]` or `[26×5]`, **both flat, both STOP-AND-ROUTE**, the STOP being on the **flatness** (generalised off the ceiling) with a second arithmetic ground for `[26×5]` (a batch that never enters the released class cannot discharge the carrier and cannot meet the rank duty); **B7** distinct from all three registered Act II multisets, from batches 1/2/3, **and from batch 3's REALISED set** (the conditional below). *(§7.10.11's conditional)* **B7-vs-BATCH-3 is published as a NAMED CONDITIONAL, never a certainty**: batch 3's realised multiset is unknown (LV-020's census is in the future) and B6 can move it to `[22,26,28,28,28]` / `[24,24,28,28,28]` / `[24,26,26,26,26]` (or the already-gated `[28×5]`); the lane **must print the realised multiset before batch 4's ladder is frozen**, the tool **re-runs B7 as a MULTISET-INEQUALITY over the REALISED set** (never a pairwise par comparison — coinciding pars are printed), and on equality it **writes nothing and STOP-AND-ROUTES to GD** (re-anchoring B1's tie-break is a design decision with its own ADR). **Known today as a reading, not a guarantee:** no admissible B6 path can raise a batch-3 rung to `26`, because a fill only removes values from a batch's own window and batch 3's anchor is `24`. *(§7.10.12 · instance 8)* `L55→L56` is pre-published **before the census and before any byte**: `Δpar = −2` **by law** (B1's anchor `26` vs batch 3's closing `28`), bound **`ΔD_exec ∈ [−3.3125, −0.6875]`** = `−2 + 3·ΔB`, `ΔB ∈ [−0.4375, +0.4375]`; **the register's FIRST COMPARATOR-FREE bound** — no measured left-side number enters it, and the **sign is fixed by the band** (`|3·ΔB| ≤ 1.3125 < |Δpar| = 2`), with the general form named for reuse: *when `Δpar` is fixed by law and `3·(B_hi − B_lo) < |Δpar|`, the bound — and the sign — are comparator-independent*. It is a **single half** (B6's fallbacks are both flat ⇒ STOP-gated ⇒ the only admissible left `par` is the anchor), its **midpoint is exactly the `par` term**, and the `1.3125` is quoted as the **checkable coincidence** with §7.10.7's `Δpar = 0` residue bound — never a template. Two named conditionals ride it: a **NAMED F-L16-2 excursion** on either board **voids the band-width step** ⇒ fill-in against the measured pair + **STOP-AND-ROUTE**; and if batch 3's realised closing par moves off `28`, `Δpar` stops being negative ⇒ §7.10.7's test makes the seam **not a relief** and **this instance is VOID as published** (re-publication as an instrument reading or a `par`-term-negative RISE is a **GD ruling**). *(§7.10.13 · the close)* **the ACT-MAX RANK law** (rider at §7.3.2, whose clause text is untouched): an act's **closing batch's maximum is the act's maximum wherever the pool permits the selection**, checked **before the bytes** by comparing the closing rung against the highest registered rung outside that batch — for Act III a **single comparison**, `L60` vs `L55` (both `par 28`, both B5 within-par maxima of **disjoint pools of one class**; `L56` can never be the act max, `31.0625 < 31.7500`, and B5 already outranks `L57–L59`), with the pool's failure published as a **NAMED act limitation with both numbers**, inherited verbatim from §7.3.2's escape hatch and **never** repaired by padding, re-anchoring, rejecting a proven board, or a caveat on a proof (§7.5 untouched). **The plateau-top arithmetic, said out loud:** the entire reachable span at `par 28` is `33.0625 − 31.7500 = 1.3125` — **4.31 %** of the act's registered tail — so batch 4's top four rungs live inside it and **three of its four steps are `Δpar = 0`**; the batch therefore has **no par headroom after `L57`** and the close's intensity must be carried by the **board and the device**. **Is four/five-`par-28` a climax or a fog? NOT A PERCEPTUAL RISK, on a published fact: `par` is never shown live (`GD-OQ1`, §7.1) and `D_exec` is not player-visible at all**, so the plateau is invisible as repetition while the four boards are mechanically distinct (clone guard §6.1.4) — a plateau the player cannot see cannot read as a fog. **(A) `L60` must be the within-act maximum is ADOPTED in its strongest satisfiable form** (pre-byte comparison + named shortfall), **(B) max-within-batch-4 is adopted as a consequence, never a substitute**, **(C) unconstrained is REFUSED**: the band admits an inversion of up to `1.3125`, so (A) is enforced by a **comparison, not by containment**, at **zero headroom cost** — the ceiling `33.0625` is shared by both candidates, so the duty creates no padding pressure — and (C) would let the file publish §7.3.2's *"a shape with a culmination"* about an act whose last board is its **weakest-measured** ceiling rung (the `F-L31-2`/`F-L36-2` class). The arithmetic half is law; the felt half is a **labelled hypothesis** with a **testable prediction** (a measured `M5/M6`/replay climb across `L57→L60` on an inverted close **falsifies** the rank duty and withdraws it with its own ADR; my sawtooth preference is not evidence, AGENTS §7). *(§7.10.13.4 · pacing, C4 continued)* the teaching cycle **completes at `L55`**, so `L56–L60` is the **expression** phase with `ΔM = 0` and **no debut grade**: **`L56` OFFERED, never FORCED** (`switchRequired: "exempt"` with its measured reason — a relief rung may carry the device but **may not carry an obligation**), **`L57` OFFERED** (the batch's **lowest-measured** `par 28` rung, so the released class arrives undemanded and the **demand grade stays monotone in the batch's own measured order**), **`L58` FORCED**, **`L59` FORCED**, **`L60` FORCED at the within-par maximum**; every XOR rung owes **R1–R6** + the **R5** refusal witness + **`G2-X`** (never the membership reader), and the named *"press un-opened the door"* risk gains a **second** measurement window (`L58` vs `L57`) under the same redesign-never-relabel rule. *(Refusals, arithmetic where arithmetic exists)* **`par 29`/`par 30` REFUSED** — out of band at the **par** level (`> 28`, integer, no operator question) and homed by no Act III ladder (`par ≡ ACT_III_PAR_FLOOR (mod 2)`); stated pre-emptively that the **`D_exec` band alone would NOT refuse `par 29`** (`29 + 3·1.2500 = 32.7500` is in band) while `29 + 3·1.6875 = 34.0625` and `30 + 3·1.2500 = 33.7500` exceed the ceiling — so the refusal is the **par band plus the derivation**, which is why both are written down. **`5-pocket` REFUSED as UNcensused** (named as unmeasured, not as arithmetic-refused); **any second derivation / schema / validator change REFUSED** (option (a) DERIVABLE, ARCH-006 signed) so `ΔM = 0` holds through the close **by code reading**; **a flat closing batch REFUSED** (B6's STOP). *(Register)* §7.3.1 goes **seven → eight instances** with instance 8 an **index line** (bound, single half, comparator-free property, pin-literal constants, `F-GD015-1`); §7.3.2 gains the **dated ACT-MAX RANK rider** with its body untouched. *(Evidence, and what it is not)* every constant is **read from `src/core/solver/policy.ts`** (`ACT_III_PAR_FLOOR 20` · `ACT_III_PAR_CEILING 28` · `ACT_III_B_BAND = BLOCK_L1619_B_BAND [1.25, 1.6875]` · `ACT_III_EXEC_BAND [23.75, 33.0625]` computed · `ACT_III_CEILING_RESERVATION_MARGIN 0.6875` · `ACT_III_OPENER_PAR_MULTISET` · `ACT_III_REGISTERED_TAIL_EXEC 30.455319` · `ACT_III_B2_BATCH_PEAK_EXEC 30.417021`) or **derived by the arithmetic printed beside it**, and a disk-reading verification script re-computed the band, the anchor, the truncation, both bounds, the spans and both refusal excesses **from `policy.ts` at this ticket's base** (no number retyped from memory); the **`H` both-pair lattice stays UNCENSUSED**, so **no ceiling claim is published in either direction** — B6 governs, never a substitute. **No playtest datum exists** (§7.3.3 reads `NOT TESTABLE, n = 0`), so the felt halves are labelled hypotheses and the tie-break stays a tie-break. *(Not touched)* the locked core loop (no AGENTS §2 triad — ladder/relief/rank law, not the phase loop), every registered row, every band value, every weight, every gate list, every sidecar cell, every level byte, all of `src/**` / `scripts/**` / `tests/**`, `docs/game-design.md`, and ADR-design-0005/-0006/-0007/-0008/-0009/-0010 bodies (**0009 and 0010 are riders**: quoted and extended, never edited); ADR-design-0011 is new and is itself a rider. *(Fold-in)* ARCH-006b's one named residue is discharged: the two stale `policy.ts:2572–2576` copies in this file (the §7.10.10 register-form law, and the V1.7 row) are re-pinned to **`:2573–2576`** with a dated cite of **ADR-architecture-0006 §10** — pointer only, nothing else at those two sites moved. Full record: `docs/decisions/design-0011-act-iii-closing-batch-law-and-act-max-rank.md` (rider to 0009 + 0010). | Agent 1 (GD-015) |
+| 2026-10-20 | V1.9 | **GD-016 — new §7.11: the Act IV band (derived-exact), the `L61–L65` opener rule, the reservation's Act IV scope (`L61–L70`, `par ≤ 30`), and the `L60→L61` `act-open` relief PRE-PUBLISHED as §7.3.1 instance 9 — the register's first COMPARATOR-FREE `act-open` bound; the Act IV interior-batch ladder is DEFERRED to GD-017 by name. Ruling only — no code, no constant, no board.** *(The trigger)* Act III's tail (`L56–L60`) is ruled and its census era is next; **an act's band and opener are ruled BEFORE its first census** — GD-012's own order for Act III — and no Act IV byte may exist until this section lands. *(§7.11.1 · the BAND)* Act IV is **`L61–L80`** (§7.2's row IV, four batches of five; **the dispatch's `L61–L70` is the act's FIRST HALF**, corrected by the plan of record exactly as GD-012 corrected `"L41–L6x"` → `L60`), and its `D_exec` band is **`[27.7500, 37.0625]`**, *printed* `[27.75, 37.06]` — **two readings agree to the last digit**: the published growth law (`[23.7500, 33.0625] + 4`, i.e. floors `16/20/24/28` and ceilings `floor + 8`, the `ΔEXEC = ΔPAR` read-out §7.10.1 already published for Act II→III) and the endpoints' own formula (`24 + 3·1.2500`, `32 + 3·1.6875`); both endpoints **dyadic** ⇒ bit-exact; **because the two readings agree the law uniquely determines the band and no STOP-AND-ROUTE is owed**. Three **dated assumptions** are published so the derivation can be falsified: **(A1)** the `B` band is act-invariant **by reference** (`ACT_II_B_BAND` and `ACT_III_B_BAND` are both aliases of `BLOCK_L1619_B_BAND`; a per-act re-measurement is unbuildable pre-census and would reprice every band); **(A2)** `D_exec = par + 3·B` + §7.9's derive-from-formula rule; **(A3)** the plan of record's act boundaries. Read-outs: the Act III registered tail `30.455319` is **inside** Act IV's band (`+2.705319` above the floor, `6.607181` below the ceiling — §7.3 interior freedom), **the carrier window is `L71–L80`** (§7.3.2's own text: an act's **last two batches**; §7.10.1 reads Act III's as `L51–L60`), **star totality is inherited not re-ruled** (Act IV `24–32` falls inside ADR-design-0005's published rows, so **no new star row and no `docs/game-design.md` §14.2 edit**), the admitted range is **`24–32` inclusive with every in-ladder value EVEN** (`par ≡ ACT_IV_PAR_FLOOR (mod 2)` — O1's `+2` window + B1's `+2` advance), and a rung is admissible **batch by batch** (the act band is the outer range, never a per-rung licence). *(§7.11.2 · the OPENER)* §7.10.2's **O1–O6 re-based on Act IV's constants** (quoted, never re-derived): ladder **`[24, 26, 28, 30, 30]`** — **O2** withholds the derived top `par 32` and the 5th rung repeats the truncated top `par 30` at its within-par maximum; **O3** opener rungs top out at `30 + 3·1.6875 = 35.0625` while any `par 32` tail rung bottoms at `32 + 3·1.2500 = 35.7500` — margin **`0.6875`**, **act-invariant by construction** (`2 − 3·(B_hi − B_lo) = 2 − 1.3125`) and a **checkable coincidence, never a template**, with `ACT_III_CEILING_RESERVATION_MARGIN` (in `policy.ts` that constant is *derived* from its own act's endpoints, so the Act IV sibling is derived likewise); **O4** the multiset differs from **all eight** known multisets (Act II's three, Act III's four, and batch 4's law set) and the distinctness is **structural** — it is the only one carrying `30`; **O5** ABSENT-never-substituted with a **rising** fill (the instance-5 precedent publishes exactly two admissible first rungs ⇒ `par 24` or `par 26`), then **STOP-AND-ROUTE**; **O6** final rung within-par maximum, earlier rungs minimum, with §7.10.6's **plural-same-par tie-break** applying from the act's **first** batch (`par 30` is doubled by the truncation). **The opener carries NO `act-peak`/`act-close` branch** (carrier on `L71–L80`; every rung in band by construction). **ENTERS THE BAND OR HOLDS AT ACT III'S CEILING? — ENTERS, at the act's own floor.** The Act II→III precedent is quoted: Act III's opener anchors at `ACT_III_PAR_FLOOR = 20` while Act II's ceiling is `par 24`, and **U-002 ratified exactly that default for the user** ("floor-anchored ladder `[20,22,24,26,26]` … the `−4` par-term breath"); so `L61 = par 24`, `Δpar = −4` against Act III's closing `par 28`. **The hold is REFUSED on three grounds:** (1) it deviates from ratified law and a deviation owes an ADR and a reason — none exists on disk; (2) it leaves the act's **floor class** homeless at the one batch that can home it cheaply, and §7.10.9.1's tie-break ground (ii) is **live again at a new act's first batch** (recorded so it is not re-quoted after it dies, as GD-013 recorded its death); (3) it would open the act by re-entering `par 28`'s class `[31.7500, 33.0625]` — **the same numbers** as Act III's closing four rungs — so distinctness would rest on geometry alone; ground 3 is **not** a refusal by itself and is labelled as desirability, never as unlawfulness. **Shape principle at the seam, resolved by measurement:** the dispatch's "same-par / different-shape" phrase **is not law text anywhere in this file**; the seam's published properties are a §7.3 interior relaxation at a `ΔM = 0` boundary, a re-anchor **by arithmetic**, and O4's **multiset-difference** — so the principle is stated as **same device class, different ladder shape**, machine-checkable, with the felt half a **labelled hypothesis**. *(§7.11.3 · the SCOPE)* O3 re-based: the first half **`L61–L70` takes `par ≤ 30`**, **`par 31` inadmissible**, **`par 32` reserved**; the **release of `par 32` is NOT ruled here** (§7.10.9.1's release was an arithmetic act against a *registered* act maximum; Act IV has no registered row, so it is named as the tail's own future GD ruling). *(§7.11.4 · instance 9)* the seam is pre-published **before the census and before any byte**: `Δpar = 24 − 28 = −4` **by law** ⇒ **`[−5.3125, −2.6875]`**, plus **O5's one rising-fill half** at `par 26` (`Δpar = −2`) ⇒ **`[−3.3125, −0.6875]`**, both **comparator-free** (no measured left-side value enters them; `|3·ΔB| ≤ 1.3125 < |Δpar|` fixes the **sign** from the published band alone — the general form §7.10.12 named, so instance 9 is the register's first comparator-free **`act-open`**, where instance 5 needed `L40 = 28.455319`); **two halves, never a hull** (a fill-in in the hull but in neither half is **outside** the label); a **named numerical coincidence** (`[27.7500, 29.0625] − 30.455319 = [−2.705319, −1.392819]`, the same numbers as instance 5's `par 22` half with **different referents**) is published so it cannot be cross-quoted. **Three self-voiding clauses, each with a named owner-program:** **(V1)** a **named F-L16-2 excursion** on either board voids the band-width step ⇒ fill-in against the measured pair + **STOP-AND-ROUTE** (owner: the Act IV census); **(V2)** `L60 = par 28` is law only while Act III's batch 4 is **registrable at all** — every B6 fallback at `ℓ = 4` is a flat, STOP-gated batch ⇒ if it fires the seam has **no lawful left side** and **this instance is VOID as published**, never re-published against a borrowed batch (owner: the `L56–L60` census + registration train); **B7's multiset conditional is inherited unchanged**; **(V3)** the `F-GD015-1` pin duty — a comparator-free bound **still owes a pinned comparator at the fill-in**, published because this is the **third occurrence** of that hazard class. Registration-side constants are proposed in the **PIN-LITERAL** form with the comparator declared **never** as an alias to `ACT_III_REGISTERED_TAIL_*` (whether that symbol points at `L60` depends on §7.10.13.3's rank comparison, so an alias would be correct only **contingently**). *(§7.11.5 · stance, comprehension, deferrals, refusals)* **`ΔM = 0` through Act IV by citation** (§7.2's own family sentence — *furniture on the same physics* — plus §7.4's stages `I`/`J` being **generator lattices**, not devices; the plan names **NO new device**), with the §7.10.5-style **named conditional** (a maze read needing a rule the core lacks is architect-impact and needs its own ADR *before* authoring, and the `ΔM = 0` claim is then void for that batch); **Asset Gate unaffected** (no new board feature ⇒ no `asset-request` owed). **Comprehension plan = NAMED HOLD, not a T-series extension:** no debut rung exists to hang a beat on, the shipped teaching is assumed (T0 latch; L3 refusal; L4–L5 phantom walk; the both-pair cycle T1–T4 complete at `L55`), and the hold carries R6 + §6.1.4's clone guard + the registry gate, with a **named risk** (*"it refused me here and let me through there"* reading as inconsistency) measured on **M4/M5/M6 at `L61–L65` vs `L60`** with thresholds frozen pre-cohort (`NOT TESTABLE, n = 0` today) and a **falsification clause** (spike ⇒ **re-designed, never re-labelled**); the `T5` extension is **deferred to GD-017** because a teaching cycle is a per-rung claim and the interior rungs are that ticket's. **Deferrals:** the Act IV **interior-batch ladder (B1–B7 at `ℓ = 2,3,4`) → GD-017 near its era** (GD-012's own precedent: the Act III opener ticket did not legislate interior ladders; GD-013 did, when gated) — **EXCEPT the one anchor the band law forces**, and the **B1 scope question is answered from disk**: B1 is **ACT-SCOPED** (its law text names `ACT_III_PAR_FLOOR` and `ℓ` indexes that act's own batches), so the cross-act generalization is **substituting the act's floor into the same formula**; the dataset-scoped reading **collapses arithmetically** (a dataset-scoped `ℓ = 5` would give `A = 24 + 2·4 = 32` — the act's own **reserved ceiling**, forbidden as an opener), so the forced anchor at Act IV's first batch is **`ACT_IV_PAR_FLOOR = 24`** (the `+2` is the **step**, not the anchor). Also deferred: the `par 32` release, `T5`, and the register's **re-pinning duties** (instances 6/8's pins + item 167's three disclosed growing-alias declarators at the tail move — `src/**`, level lane + Architect, never a design edit). **Refusals with arithmetic where arithmetic does the refusing:** **`par 33`** is **inside the band** at the `B` floor (`36.7500`, by `0.3125`) so **containment alone does not refuse it** — refused by the `par` band (`> 32`, integer, no operator question) **and** the mod-2 derivation (`38.0625` at the band top, excess `1.0`); **`par 34`** refused by the band with containment agreeing only at the floor (`37.7500`, excess `0.6875`) and `39.0625` at the top (excess `2.0`); **`par 31`** is admitted by **both** containment and the band (`[34.7500, 36.0625] ⊆` the band) and is refused **by the derivation only** — odd ⇒ no home — and **strictly dominated in two readings stated together**: at any in-band `B` it measures exactly `1.0` below the `par 32` rung built from the **same** `B`, and read **inside the reserved class** (`D_exec ≥ 35.7500`) its span is `[35.7500, 36.0625]` against `par 32`'s `[35.7500, 37.0625]` — identical floor, top `1.0` lower; which is the section's sharpest read-out: **an Act IV admissibility test without the `par`-band/parity derivation is insufficient**; **`par 32` in the first half** is in band, in the parity class, and **still inadmissible** (containment is not admissibility); **REFUSED** also: any new device/mechanic/board feature, **re-stamping** (no published number moves; instance 9 is **appended** in seam order, never inserted), **any ceiling claim while `H` is uncensused — in either direction** (stages `I`/`J` have no census at all; if the ladder cannot be populated **O5 governs**), **any Act IV rung law that would break monotone grades** (§7.10.13.4's convention inherited as a binding constraint: no pandering grades, no **debut** grade under `ΔM = 0`, no FORCED demand on a relief rung), and **silence about the felt half**. *(Evidence, and what it is not)* every number was **read from `src/core/solver/policy.ts` at this ticket's base or derived by the arithmetic printed beside it** (`BLOCK_L1619_B_BAND [1.25, 1.6875]` · `ACT_III_PAR_FLOOR 20` / `ACT_III_PAR_CEILING 28` / `ACT_III_EXEC_BAND` computed · `ACT_III_REGISTERED_TAIL_EXEC 30.455319` · `ACT_III_CEILING_RESERVATION_MARGIN` **computed** from its own act's endpoints) — no number retyped from memory, and **`ACT_IV_*` is ABSENT from `policy.ts` today** (this section *proposes* the constants; the lane writes them in its registration train); **no playtest datum exists**, so every felt half is a labelled hypothesis. *(Rider fold-in, disclosed)* the §:4 header version label still read **V1.6** while the change log had run to **V1.7/V1.8** — **GD-014c's named cosmetic residue** — now bumped to **V1.9** with a dated one-line note, and the header's status/governing-doc pointer lines gain **GD-015 (ADR-design-0011) and GD-016 (ADR-design-0012)** because a pointer set that stops at §7.10.10 mis-states what the file now binds: **label and pointers only, no law text touched**. *(Not touched)* the locked core loop (no AGENTS §2 triad — band/opener/relief law, not the phase loop), every registered row, every band value, every weight, every gate list, every sidecar cell, every level byte, all of `src/**` / `scripts/**` / `tests/**`, **`docs/game-design.md`** (no act-theme or pacing row moves — §8's pointer row already names Act IV's family, and the star law needs no new row), `docs/architecture*.md`, and ADR-design-0005/-0006/-0007/-0008/-0009/-0010/-0011 bodies (**0005 and 0008 are riders** here: quoted and extended, never edited). Full record: `docs/decisions/design-0012-act-iv-band-opener-and-act-seam-relief.md`. | Agent 1 (GD-016) |
