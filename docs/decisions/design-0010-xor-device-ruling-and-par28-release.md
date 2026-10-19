@@ -19,6 +19,22 @@
 > reservation's **release clause** to that answer **by name**; user ruling **U-002** placed the XOR debut in
 > the act's **second half**, i.e. this era.
 
+> **STATUS — 2026-10-20, GD-014b (corrigendum).** The `G2-X` **reader text** published in §7.10.8.2 C2 is
+> **CORRECTED** by the Game Designer (this lane owns that text) under **ADR-architecture-0006 §4.2/§4.3**
+> (`docs/architecture.md` §17.3), which is **normative** for the instrument: the wrong field path is fixed
+> (`route[i].state.doorsOpen[d]`), and C2.2/C2.3 — **refused by measurement** (0 / 17 732 toggling arrivals
+> changed their own target door; 30 847 crossings open at the **entry** state, 0 at the arrival) — are
+> replaced by the **entry-state leg + counterfactual-replay** witness, with the refused original kept
+> verbatim in a **dated supersession record** at `docs/level-design.md` §7.10.8.2. **The RULING ITSELF IS
+> UNCHANGED:** option **(a) DERIVABLE**, the **`G2-X` capability** (a `scripts/**`-only reader, no new core
+> surface), the **`par 28` release arithmetic** (floor `31.7500` > `31.0625`, margin `0.6875`), the ladder
+> **`[24,26,28,28,28]`**, and the **instance-7 bound** `[−2.667021, −1.354521]` all stand **exactly as
+> published**. The only other GD-014b change is **typing, not value**: instance 7's comparator constants are
+> re-pinned to the register's **PIN-LITERAL** form per §17.4 (`50` / `30.417021` as
+> `_PREVIOUS_LEVEL_ID_AT_REGISTRATION` / `_PREVIOUS_EXEC_AT_REGISTRATION`, delta **derived from the pin**,
+> `near()` assertion on the frozen pair) — the **values, the bound and the ledger arithmetic do not move**;
+> the register-wide form law is now law-text at `docs/level-design.md` §7.10.10.
+
 ---
 
 ## Why this is its own ADR (and not a §-edit inside ADR-design-0008 or -0009)
