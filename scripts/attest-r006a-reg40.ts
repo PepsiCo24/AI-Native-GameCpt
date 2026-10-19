@@ -22,18 +22,19 @@
  *        files), and the **§6.1.4 clone-guard census**. A control table re-implemented here would be
  *        a statement about *this file* instead of about the proof.
  *   [3/6] **§7.3's act-scale tail law** — the act peaks and the fifteen rows are **measured** and
- *        fed to `actScaleTailGuards`, which reports **sixteen** clauses (R-004a's six, R-005a's
- *        five, R-006a's five; the three sets are asserted to **partition** the reported set). The
- *        clause pin expression that MOVED at this ticket is named — `act-tail-peak-advantage`, from
- *        the batch-1-only/whole-act form to the live act's own advantage — and no R-004a/R-005a
- *        *constant value* moved.
+ *        fed to `actScaleTailGuards`, which reports **twenty-two** clauses since R-007 opened Act
+ *        III (R-004a's six, R-005a's five, R-006a's five, R-007's six; the four sets are asserted to
+ *        **partition** the reported set — the assertion is refreshed, not relaxed).
+ *        R-006a's five are named here. The clause pin expression that MOVED at this ticket is
+ *        named — `act-tail-peak-advantage`, from the batch-1-only/whole-act form to the live act's
+ *        own advantage — and no R-004a/R-005a *constant value* moved.
  *   [4/6] **anti-tautology controls, one per R-006a clause** — a restamped row table, a relabelled
  *        live tail, a restamped pre-registration standard, a narrowed `D_exec` ceiling and a
  *        restamped seam. Each must FAIL **its own clause** by name, and the registered reading must
- *        PASS all sixteen. Then **both directions of the basis split**, which is the structural
- *        claim this ticket makes: moving the **frozen era basis** must fail exactly R-005a's three
- *        act-level clauses and leave the live ones green; moving the **live act** must fail exactly
- *        the live clauses and leave R-005a's record green.
+ *        PASS every reported clause. Then **both directions of the basis split**, which is the
+ *        structural claim this ticket makes: moving the **frozen era basis** must fail exactly
+ *        R-005a's three act-level clauses and leave the live ones green; moving the **live act**
+ *        must fail exactly the live clauses and leave R-005a's record green.
  *   [5/6] **§7.3.1's fourth instance, and the sawtooth** — the registered drop passes its clause, an
  *        out-of-band seam FAILs, a measurement that omits a registered rung FAILs, *every* adjacent
  *        drop in the registered act is a named instance (three of them now), and the **falsification
@@ -94,6 +95,7 @@ import {
   ACT_TAIL_R004A_CLAUSE_IDS,
   ACT_TAIL_R005A_CLAUSE_IDS,
   ACT_TAIL_R006A_CLAUSE_IDS,
+  ACT_TAIL_R007_CLAUSE_IDS,
   LAW_PRECISION,
   actScaleTailGuards,
   allOffShortestSolution,
@@ -409,7 +411,7 @@ check(
     cutMatch[3] === String(shipped().length) &&
     cutMatch[4] === "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15",
   `CUT D_exec max = ${cutMatch?.[1] ?? "n/a"} · par(L15) = ${cutMatch?.[2] ?? "n/a"} · ` +
-    `${cutMatch?.[3] ?? "n/a"} shipped files (instrument census ${String(shipped().length)}) · basis ids [${cutMatch?.[4] ?? "n/a"}] — the L16–L20 block and every registered Act II rung are excluded from the cut's own filter`,
+    `${cutMatch?.[3] ?? "n/a"} shipped files (instrument census ${String(shipped().length)}) · basis ids [${cutMatch?.[4] ?? "n/a"}] — the L16–L20 block and every registered act batch (Act II [21…40] + Act III batch 1 [41…45] at R-007) are excluded from the cut's own filter`,
 );
 
 // Non-vacuity, both halves of the section: a reader that cannot move is not evidence, and an
@@ -477,17 +479,35 @@ const priorKeys = new Set(
   all.filter((s) => !ACT_II_B4_IDS.includes(s.id)).map((s) => cloneKeyOf(s.level)),
 );
 const b4Collisions = [...b4Census.keys()].filter((k) => priorKeys.has(k));
+// The guard is an **invariant about the whole shipped set**, not a record of one registration: its
+// job is to catch a board that re-stamps a registered geometry, and a later act cloning an earlier
+// one is precisely the construction it must not go blind to. So the *basis* (all shipped files,
+// above) stays live, while the **R-006a era reading is pinned** — ids 1–40 read 36 distinct keys at
+// this ticket and can never read anything else, because the registration is a byte-copy and those
+// bytes are immutable (ADR-0004). The live half is then stated as a **structure** rather than as a
+// typed total, so a later registration moves the census without reddening a row that is not about
+// batch 4: every post-R-006a board must be fresh, across the split and within it.
+const censusAtR006a = censusOf(all.filter((s) => s.id <= ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID));
+const postR006a = all.filter((s) => s.id > ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID);
+const censusPostR006a = censusOf(postR006a);
 check(
   "§6.1.4 clone guard — the five batch-4 rungs carry five distinct seal-inclusive keys, 0 of them colliding with the other registered boards",
-  b4Census.size === 5 && b4Collisions.length === 0 && censusAll.size === 36,
-  `${String(censusAll.size)} distinct key(s) over the ${String(all.length)} registered root files · batch 4: ${String(b4Census.size)} distinct over ${String(ACT_II_B4_IDS.length)} rung(s) · ` +
+  b4Census.size === 5 &&
+    b4Collisions.length === 0 &&
+    censusAtR006a.size === 36 &&
+    censusPostR006a.size === postR006a.length &&
+    censusAll.size === censusAtR006a.size + censusPostR006a.size,
+  `${String(censusAll.size)} distinct key(s) over the ${String(all.length)} registered root files ` +
+    `(${String(censusAtR006a.size)} over ids 1–${String(ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID)} = the era reading published at R-006a, ` +
+    `+ ${String(censusPostR006a.size)} over the ${String(postR006a.length)} post-R-006a file(s) = 0 cross-split and 0 intra-split collisions) · ` +
+    `batch 4: ${String(b4Census.size)} distinct over ${String(ACT_II_B4_IDS.length)} rung(s) · ` +
     `${String(b4Collisions.length)} colliding with the other ${String(all.length - ACT_II_B4_IDS.length)} registered board(s)`,
 );
 check(
   "§6.1.4 clone guard — the key itself has not drifted (it still reproduces the 31 distinct keys LV-017's transcript recorded over ids 1–35)",
   censusR005aEra.size === 31,
   `ids 1–${String(ACT_II_R005A_REGISTERED_TAIL_LEVEL_ID)} ⇒ ${String(censusR005aEra.size)} distinct key(s) (published reading 31) · ` +
-    `ids 1–40 ⇒ ${String(censusAll.size)} — the census is a Map, so the collision groups are visible in the key list rather than inferred`,
+    `the LIVE shipped set (ids 1–${String(all.at(-1)?.id ?? 0)}, ${String(all.length)} files) ⇒ ${String(censusAll.size)} — the printed live total moves with the dataset and is never typed as an era count; the census is a Map, so the collision groups are visible in the key list rather than inferred`,
 );
 console.log("");
 
@@ -531,31 +551,36 @@ check(
   registered.every((c) => c.status === "PASS"),
   `${String(registered.filter((c) => c.status === "PASS").length)}/${String(registered.length)} clauses PASS`,
 );
-// The partition, in the three-instrument form. R-006a grew the reported set from eleven to
-// sixteen; the invariant that keeps a NEW clause from riding along with no instrument is that the
-// three registrations' clause lists are pairwise disjoint AND cover every reported clause AND
+// The partition, in the four-instrument form. R-006a grew the reported set from eleven to
+// sixteen and R-007 grew it to twenty-two (six + five + five + six, the last set written across an
+// act boundary); the invariant that keeps a NEW clause from riding along with no instrument is that
+// the four registrations' clause lists are pairwise disjoint AND cover every reported clause AND
 // together equal the reported count. Sum vs distinct catches an overlap; the unclaimed list
-// catches a clause with no home.
+// catches a clause with no home. **Refreshed at R-007, not relaxed**: the R-007 list joins the
+// claimed union and every R-006a assertion below is unchanged.
 const claimedClauses = new Set([
   ...ACT_TAIL_R004A_CLAUSE_IDS,
   ...ACT_TAIL_R005A_CLAUSE_IDS,
   ...ACT_TAIL_R006A_CLAUSE_IDS,
+  ...ACT_TAIL_R007_CLAUSE_IDS,
 ]);
 const claimedSum =
   ACT_TAIL_R004A_CLAUSE_IDS.length +
   ACT_TAIL_R005A_CLAUSE_IDS.length +
-  ACT_TAIL_R006A_CLAUSE_IDS.length;
+  ACT_TAIL_R006A_CLAUSE_IDS.length +
+  ACT_TAIL_R007_CLAUSE_IDS.length;
 const unclaimedClauses = registered.filter(
   (c) => !claimedClauses.has(c.clause),
 );
 check(
-  "the clause split PARTITIONS the reported set across three instruments, and this one owns R-006a's five",
+  "the clause split PARTITIONS the reported set across four instruments, and this one owns R-006a's five",
   claimedClauses.size === registered.length &&
     claimedSum === claimedClauses.size &&
     unclaimedClauses.length === 0,
   `reported ${String(registered.length)} = R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} (scripts/attest-r004a-act2.ts) + ` +
     `R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} (scripts/attest-r005a-reg35.ts) + ` +
-    `R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} [${ACT_TAIL_R006A_CLAUSE_IDS.join(", ")}] (here) = ` +
+    `R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} [${ACT_TAIL_R006A_CLAUSE_IDS.join(", ")}] (here) + ` +
+    `R-007 ${String(ACT_TAIL_R007_CLAUSE_IDS.length)} (scripts/attest-r007-reg45.ts) = ` +
     `${String(claimedSum)} claimed · ${String(claimedClauses.size)} distinct · ${String(unclaimedClauses.length)} unclaimed`,
 );
 // A named reading rather than a claim: the ONE pin expression that moved at this ticket. Nothing
@@ -672,7 +697,7 @@ check(
   `${String(tailCaught)}/${String(tailControls.length)} caught · clauses covered ${String(new Set(tailControls.map((c) => c.clause)).size)}/${String(ACT_TAIL_R006A_CLAUSE_IDS.length)}`,
 );
 check(
-  "discrimination: the registered reading PASSes all sixteen clauses while every control FAILs one",
+  "discrimination: the registered reading PASSes every reported clause while every control FAILs one",
   registered.every((c) => c.status === "PASS") &&
     tailControls.every((control) =>
       actScaleTailGuards(control.reading).some(

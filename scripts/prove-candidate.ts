@@ -113,6 +113,30 @@ const LADDER = (argOf("ladder") ?? "").split(",").filter((s) => s !== "").map(Nu
  * quote a peak the registration does not publish. */
 const ACT1_PEAK = Number(argOf("peak") ?? String(ACT === 3 ? ACT_II_R006A_REGISTERED_TAIL_EXEC : ACT_I_REGISTERED_PEAK_EXEC));
 
+/**
+ * F-L41-4 — the **act-aware NAME** of the operand `ACT1_PEAK` carries.
+ *
+ * `:114` has always read the comparator **act-aware** (Act III's is the *previous* act's
+ * registered maximum, i.e. Act II's `L40` tail `28.455319`; Act II's is Act I's registered peak
+ * `24.729412`), but the two ladder-table label sites and the two per-rung prints named it
+ * "Act I peak" / "Act I measured peak" unconditionally. The **value** was right and the **name**
+ * was wrong — a printed string that misdescribes its own reading, the same class as F-L36-1 /
+ * F-L36-2. Found by LV-018 (`scripts/prove-candidate-l4145.transcript.md` §0, F-L41-4, booked
+ * not fixed) and repaired here **in its own commit** (R-007 F-L41-4, disclosed): the asserting
+ * line (`act-peak`, per rung) was already act-aware, so **no verdict moves** — proved by
+ * re-running both ladders before/after with the identical verdicts quoted in the R-007 record.
+ *
+ * Away from `--act=3` every string below is **byte-identical** to what it printed before this
+ * edit, so the Act II receipts (R-004a / R-005a / R-006a transcripts) stay reproducible.
+ */
+const PEAK_NAME_LONG =
+  ACT === 3
+    ? "the previous act's registered maximum (Act II ≡ L40's measured D_exec)"
+    : "Act I's measured peak";
+const PEAK_NAME_SHORT = ACT === 3 ? "vs the previous act's registered max" : "vs Act I peak";
+const PEAK_NAME_LADDER = ACT === 3 ? "Δ vs previous act's reg. max" : "Δ vs Act I peak";
+const BAND_ACTIC = ACT === 3 ? "III" : "II";
+
 interface Gate {
   readonly id: string;
   readonly ok: boolean;
@@ -175,8 +199,17 @@ function measureCut(): { floor: number; l15Par: number; n: number; basis: readon
     // commit). The cut is still **frozen at L1–L15 = 14.969697**. The law's own id set
     // (`ACT_II_REGISTERED_IDS`, batch 1 + 2 + 3) is what the filter reads, so a future
     // registration extends the law once and this instrument follows it.
+    //
+    // R-007: same rule, **first act boundary** — Act III's opener (L41–L45) lands in the
+    // root, and the cut basis read 30.455319, so EVERY new rung was refused by
+    // `escalation  D_exec=24.257329 > CUT 30.455319` (measured, not remembered: that is
+    // the first line of the R-007 registration run). `ACT_III_B1_IDS` is the law's own
+    // id list for the act, so the exclusion grows by the act rather than by five typed
+    // ids. The cut stays **frozen at L1–L15 = 14.969697** — the across-act escalation
+    // belongs to §7.3's `act-peak` clause (`actScaleTailGuards`), never to a moving cut.
     if (BLOCK_L1619_IDS.includes(level.id)) continue;
     if (ACT_II_REGISTERED_IDS.includes(level.id)) continue;
+    if (ACT_III_B1_IDS.includes(level.id)) continue;
     basis.push(level.id);
     const d = analyseDifficulty(level, explore(level));
     if (d.Dexec !== null && d.Dexec > floor) floor = d.Dexec;
@@ -300,7 +333,7 @@ function judge(
             id: "act-peak",
             ok: PEAK_RUNG === null || rung === PEAK_RUNG ? (diff.Dexec !== null && diff.Dexec > ACT1_PEAK) : true,
             detail:
-              `D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} vs ${ACT === 3 ? "the PREVIOUS act's registered maximum (Act II ≡ L40's measured D_exec)" : "Act I's measured peak"} ${ACT1_PEAK.toFixed(6)} ` +
+              `D_exec=${diff.Dexec === null ? "n/a" : diff.Dexec.toFixed(6)} vs ${ACT === 3 ? `the PREVIOUS act's registered maximum (Act II ≡ L40's measured D_exec)` : PEAK_NAME_LONG} ${ACT1_PEAK.toFixed(6)} ` +
               `(delta ${diff.Dexec === null ? "n/a" : (diff.Dexec - ACT1_PEAK).toFixed(6)}) — §7.3 puts the across-act obligation on the act's measured ` +
               `PEAK, never on every interior member: ${PEAK_RUNG === null ? "no ladder given, so the clause is reported (this file is treated as the peak)" : `ladder peak rung = L${String(PEAK_RUNG)}`}`,
           },
@@ -1118,16 +1151,23 @@ function multiPocketGates(
 // ── run ───────────────────────────────────────────────────────────────────────
 
 const cut = measureCut();
+// F-R007-2 (R-007, disclosed): this line's exclusion clause printed **Act II's** id list while
+// `measureCut()` had just been extended to exclude **Act III's** opener as well, so the label
+// under-reported its own reading — the F-L41-4 class one line further down. The clause is now
+// **derived from the two constants** (`ACT_II_REGISTERED_IDS` + `ACT_III_B1_IDS`) instead of
+// re-typing one of them, so the next act boundary cannot leave it behind again. Eye-readers: the
+// trim in the attest instruments (`cutLine.replace(/ \(the L16.*$/, "")`) and their
+// `D_exec max … basis ids […]` regex both stop before this clause, so no transcript byte moved.
 console.log(`prove-candidate — CUT re-measured from the shipped set: D_exec max = ${cut.floor.toFixed(6)} ` +
   `· par(L15) = ${String(cut.l15Par)} · ${String(cut.n)} shipped files · basis ids [${cut.basis.join(", ")}] ` +
-  `(the L16–L20 block and the registered Act II batches [${ACT_II_REGISTERED_IDS.join(", ")}] are excluded from their own filter — see measureCut)`);
+  `(the L16–L20 block, the registered Act II batches [${ACT_II_REGISTERED_IDS.join(", ")}] and Act III batch 1 [${ACT_III_B1_IDS.join(", ")}] are excluded from their own filter — see measureCut)`);
 console.log(
   `family ${FAMILY}${FAMILY === "g" ? " (Act II multi-pocket — §7.2 / §7.4 stage G)" : " (the L20 sealed landing — §6.2.6)"}` +
     ` · act ${String(ACT)}` +
     (ACT === 3
       ? ` (band [${String(ACT2_PAR_BAND[0])}, ${String(ACT2_PAR_BAND[1])}] par · [${String(ACT2_EXEC_BAND[0])}, ${String(ACT2_EXEC_BAND[1])}] D_exec, derived-exact §7.10.1; §7.10.2's opener multiset [${ACT_III_OPENER_PAR_MULTISET.join(", ")}]; batch ids [${ACT_III_B1_IDS.join(", ")}])`
       : "") +
-    ` · ${ACT === 3 ? "the previous act's registered maximum" : "Act I's measured peak"} the batch must clear: ${ACT1_PEAK.toFixed(6)}` +
+    ` · ${ACT === 3 ? "the previous act's registered maximum" : PEAK_NAME_LONG} the batch must clear: ${ACT1_PEAK.toFixed(6)}` +
     (PEAK_RUNG === null ? " (no --ladder: the across-act clause is reported per file)" : ` · ladder peak rung L${String(PEAK_RUNG)}`),
 );
 
@@ -1154,7 +1194,7 @@ function proveOne(file: string, rung: number): Proved {
       `D_exec=${verdict.dexec === null ? "n/a" : verdict.dexec.toFixed(6)} ` +
       `B=${verdict.b === null ? "n/a" : verdict.b.toFixed(4)} ` +
       `(CUT ${cut.floor.toFixed(6)}, delta ${verdict.dexec === null ? "n/a" : (verdict.dexec - cut.floor).toFixed(6)}; ` +
-      `delta vs Act I peak ${verdict.dexec === null ? "n/a" : (verdict.dexec - ACT1_PEAK).toFixed(6)})`,
+      `delta ${PEAK_NAME_SHORT} ${verdict.dexec === null ? "n/a" : (verdict.dexec - ACT1_PEAK).toFixed(6)})`,
   );
   if (verdict.view !== null) {
     const v = verdict.view;
@@ -1252,7 +1292,7 @@ for (const id of targets) {
 if (LADDER.length > 0) {
   console.log(`\n${"═".repeat(78)}\nLADDER TABLE — ${LADDER.map((i) => `L${String(i)}`).join(", ")} (§7.2 band, §7.3 rise, §7.7 handoff)`);
   console.log(
-    "rung · par · D_exec · B · coverage · prev-step Δpar · strictly-rising D_exec · Δ vs Act I peak " + ACT1_PEAK.toFixed(6),
+    "rung · par · D_exec · B · coverage · prev-step Δpar · strictly-rising D_exec · " + PEAK_NAME_LADDER + " " + ACT1_PEAK.toFixed(6),
   );
   let prevPar: number | null = null;
   let prevExec: number | null = null;
@@ -1275,8 +1315,8 @@ if (LADDER.length > 0) {
   );
   console.log(
     `batch peak: ${maxRow === null || maxRow.dexec === null ? "n/a" : `L${String(maxRow.id)} at ${maxRow.dexec.toFixed(6)}`} · ` +
-      `Act I measured peak ${ACT1_PEAK.toFixed(6)} · §7.3 act-peak clause ${maxRow !== null && maxRow.dexec !== null && maxRow.dexec > ACT1_PEAK ? "DISCHARGED" : "NOT DISCHARGED"} ` +
-      `· headroom to the Act II ceiling ${String(ACT2_EXEC_BAND[1])} (printed ${ACT2_EXEC_BAND[1].toFixed(2)}; §7.9 — derived-exact is the value): ${maxRow === null || maxRow.dexec === null ? "n/a" : (ACT2_EXEC_BAND[1] - maxRow.dexec).toFixed(6)}`,
+      `${ACT === 3 ? "Previous act's registered max" : "Act I measured peak"} ${ACT1_PEAK.toFixed(6)} · §7.3 act-peak clause ${maxRow !== null && maxRow.dexec !== null && maxRow.dexec > ACT1_PEAK ? "DISCHARGED" : "NOT DISCHARGED"} ` +
+      `· headroom to the Act ${BAND_ACTIC} ceiling ${String(ACT2_EXEC_BAND[1])} (printed ${ACT2_EXEC_BAND[1].toFixed(2)}; §7.9 — derived-exact is the value): ${maxRow === null || maxRow.dexec === null ? "n/a" : (ACT2_EXEC_BAND[1] - maxRow.dexec).toFixed(6)}`,
   );
   // F-L31-2 (`scripts/prove-candidate-l3135.transcript.md` §0): this line used to assert
   // "every control caught on every rung" as a STRING LITERAL, printing it even when a control had

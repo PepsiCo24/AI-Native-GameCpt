@@ -20,16 +20,18 @@
  *        its measured `LADDER RESULT`). A control table re-implemented here would be a statement
  *        about *this file* instead of about the proof.
  *   [3/6] **§7.3's act-scale tail law** — the act peaks and the ten rows are **measured** and fed
- *        to `actScaleTailGuards`, which reports **sixteen** clauses. R-004a owns six of them
- *        (`scripts/attest-r004a-act2.ts`), R-006a five (`scripts/attest-r006a-reg40.ts`); the
- *        five this file owns are named here. The three sets partition the reported set, and
+ *        to `actScaleTailGuards`, which reports **twenty-two** clauses since R-007 opened Act III.
+ *        R-004a owns six of them (`scripts/attest-r004a-act2.ts`), R-006a five
+ *        (`scripts/attest-r006a-reg40.ts`), R-007 six (`scripts/attest-r007-reg45.ts`); the
+ *        five this file owns are named here. The four sets partition the reported set, and
  *        R-005a's three act-level clauses read the **frozen** era basis (`ACT_II_R005A_ERA_IDS`)
  *        rather than the live act — that is why this file's tail-pin control moves the era basis,
  *        not `actII`.
  *   [4/6] **anti-tautology controls, one per R-005a clause** — a single-row restamp of the
  *        registered table, a restamped *measured* row, a relabelled tail, a restamped
  *        pre-registration standard, a narrowed `D_exec` ceiling, and a restamped seam. Each must
- *        FAIL **its own clause** by name, and the registered reading must PASS all sixteen.
+ *        FAIL **its own clause** by name, and the registered reading must PASS every reported
+ *        clause.
  *   [5/6] **the §7.3.1 seams and the sawtooth, probed in both directions** — the registered drops
  *        pass the clause (so "cross-batch monotony" is falsified by measurement, not by prose),
  *        an out-of-band seam FAILs, a measurement that omits a registered rung FAILs, and *every
@@ -84,6 +86,7 @@ import {
   ACT_TAIL_R004A_CLAUSE_IDS,
   ACT_TAIL_R005A_CLAUSE_IDS,
   ACT_TAIL_R006A_CLAUSE_IDS,
+  ACT_TAIL_R007_CLAUSE_IDS,
   LAW_PRECISION,
   actScaleTailGuards,
   allOffShortestSolution,
@@ -384,7 +387,7 @@ check(
     cutMatch[3] === String(shipped().length) &&
     cutMatch[4] === "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15",
   `CUT D_exec max = ${cutMatch?.[1] ?? "n/a"} · par(L15) = ${cutMatch?.[2] ?? "n/a"} · ` +
-    `${cutMatch?.[3] ?? "n/a"} shipped files (instrument census ${String(shipped().length)}) · basis ids [${cutMatch?.[4] ?? "n/a"}] — the L16–L20 block and every registered Act II rung are excluded from the cut's own filter`,
+    `${cutMatch?.[3] ?? "n/a"} shipped files (instrument census ${String(shipped().length)}) · basis ids [${cutMatch?.[4] ?? "n/a"}] — the L16–L20 block and every registered act batch (Act II [21…40] + Act III batch 1 [41…45] at R-007) are excluded from the cut's own filter`,
 );
 // Non-vacuity, both halves of the section: a reader that cannot move is not evidence, and an
 // instrument that accepts the wrong directory is not reading the registered bytes.
@@ -469,20 +472,23 @@ check(
   `${String(registered.filter((c) => c.status === "PASS").length)}/${String(registered.length)} clauses PASS`,
 );
 check(
-  "the clause split partitions the reported set (three instruments), and this instrument owns R-005a's five",
+  "the clause split partitions the reported set (four instruments), and this instrument owns R-005a's five",
   registered.length ===
     ACT_TAIL_R004A_CLAUSE_IDS.length +
       ACT_TAIL_R005A_CLAUSE_IDS.length +
-      ACT_TAIL_R006A_CLAUSE_IDS.length &&
+      ACT_TAIL_R006A_CLAUSE_IDS.length +
+      ACT_TAIL_R007_CLAUSE_IDS.length &&
     registered.every(
       (c) =>
         ACT_TAIL_R004A_CLAUSE_IDS.includes(c.clause) ||
         ACT_TAIL_R005A_CLAUSE_IDS.includes(c.clause) ||
-        ACT_TAIL_R006A_CLAUSE_IDS.includes(c.clause),
+        ACT_TAIL_R006A_CLAUSE_IDS.includes(c.clause) ||
+        ACT_TAIL_R007_CLAUSE_IDS.includes(c.clause),
     ),
   `reported ${String(registered.length)} = R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} (controlled by scripts/attest-r004a-act2.ts) + ` +
     `R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} [${ACT_TAIL_R005A_CLAUSE_IDS.join(", ")}] (controlled here) + ` +
-    `R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} (controlled by scripts/attest-r006a-reg40.ts)`,
+    `R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} (controlled by scripts/attest-r006a-reg40.ts) + ` +
+    `R-007 ${String(ACT_TAIL_R007_CLAUSE_IDS.length)} (controlled by scripts/attest-r007-reg45.ts; refreshed here at R-007, not relaxed — every R-005a assertion above is unchanged)`,
 );
 console.log("");
 
@@ -582,7 +588,7 @@ check(
     `(R-004a's six are controlled in scripts/attest-r004a-act2.ts — the split is asserted there as a partition)`,
 );
 check(
-  "discrimination: the registered reading PASSes all sixteen clauses while every control FAILs one",
+  "discrimination: the registered reading PASSes every reported clause while every control FAILs one",
   registered.every((c) => c.status === "PASS") &&
     tailControls.every((c) =>
       actScaleTailGuards(c.reading).some((x) => x.status === "FAIL"),

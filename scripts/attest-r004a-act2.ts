@@ -58,6 +58,7 @@ import {
   ACT_TAIL_R004A_CLAUSE_IDS,
   ACT_TAIL_R005A_CLAUSE_IDS,
   ACT_TAIL_R006A_CLAUSE_IDS,
+  ACT_TAIL_R007_CLAUSE_IDS,
 
   ACT_I_REGISTERED_PEAK_EXEC,
   ACT_I_REGISTERED_PEAK_LEVEL_ID,
@@ -357,38 +358,44 @@ check(
     ACT_TAIL_R004A_CLAUSE_IDS.every((id) => tailControls.some((c) => c.clause === id)),
   `${String(tailCaught)}/${String(tailControls.length)} caught · clauses covered ${String(new Set(tailControls.map((c) => c.clause)).size)}/${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} (R-004a's six; R-005a's five are ` +
     `${ACT_TAIL_R005A_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r005a-reg35.ts; R-006a's five are ` +
-    `${ACT_TAIL_R006A_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r006a-reg40.ts — named here so the split of ownership is a reading, not a convention)`,
+    `${ACT_TAIL_R006A_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r006a-reg40.ts; R-007's six are ` +
+    `${ACT_TAIL_R007_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r007-reg45.ts — named here so the split of ownership is a reading, not a convention)`,
 );
 check(
   "the registered reading is the discrimination side (every reported clause PASSes on it)",
   registered.every((c) => c.status === "PASS"),
-  `registered ${String(registered.filter((c) => c.status === "PASS").length)}/${String(registered.length)} PASS · R-004a controls ${String(tailControls.length)} · R-005a (${String(ACT_TAIL_R005A_CLAUSE_IDS.length)}) + R-006a (${String(ACT_TAIL_R006A_CLAUSE_IDS.length)}) clauses reported here but controlled in their own instruments`,
+  `registered ${String(registered.filter((c) => c.status === "PASS").length)}/${String(registered.length)} PASS · R-004a controls ${String(tailControls.length)} · R-005a (${String(ACT_TAIL_R005A_CLAUSE_IDS.length)}) + R-006a (${String(ACT_TAIL_R006A_CLAUSE_IDS.length)}) + R-007 (${String(ACT_TAIL_R007_CLAUSE_IDS.length)}) clauses reported here but controlled in their own instruments`,
 );
 // The reported set grew to three registrations at R-006a (R-004a's six, R-005a's five,
-// R-006a's five). The partition is the invariant that keeps a NEW clause from silently
-// riding along with no instrument: the three sets must be pairwise disjoint, must cover
-// every reported clause, and must together be exactly the reported count. Sum vs distinct
-// catches an overlap; the unclaimed list catches a clause with no home.
+// R-006a's five) and to **four** at R-007 (R-007's six, the first written across an act
+// boundary). The partition is the invariant that keeps a NEW clause from silently riding
+// along with no instrument: the four sets must be pairwise disjoint, must cover every
+// reported clause, and must together be exactly the reported count. Sum vs distinct catches
+// an overlap; the unclaimed list catches a clause with no home. **Refreshed at R-007, not
+// relaxed**: the R-007 list is added to the claimed union, and every R-004a assertion above
+// is unchanged.
 const claimedClauses = new Set([
   ...ACT_TAIL_R004A_CLAUSE_IDS,
   ...ACT_TAIL_R005A_CLAUSE_IDS,
   ...ACT_TAIL_R006A_CLAUSE_IDS,
+  ...ACT_TAIL_R007_CLAUSE_IDS,
 ]);
 const claimedSum =
   ACT_TAIL_R004A_CLAUSE_IDS.length +
   ACT_TAIL_R005A_CLAUSE_IDS.length +
-  ACT_TAIL_R006A_CLAUSE_IDS.length;
+  ACT_TAIL_R006A_CLAUSE_IDS.length +
+  ACT_TAIL_R007_CLAUSE_IDS.length;
 const unclaimedClauses = registered.filter(
   (c) => !claimedClauses.has(c.clause),
 );
 check(
-  "the three instruments' clause sets PARTITION the reported set (a future clause must be given a home)",
+  "the four instruments' clause sets PARTITION the reported set (a future clause must be given a home)",
   claimedClauses.size === registered.length &&
     claimedSum === claimedClauses.size &&
     unclaimedClauses.length === 0,
-  `reported ${String(registered.length)} · R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} + R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} + R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} = ` +
+  `reported ${String(registered.length)} · R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} + R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} + R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} + R-007 ${String(ACT_TAIL_R007_CLAUSE_IDS.length)} = ` +
     `${String(claimedSum)} claimed · ${String(claimedClauses.size)} distinct · ${String(unclaimedClauses.length)} unclaimed ` +
-    `(a seventeenth clause with no instrument reddens this row)`,
+    `(a twenty-third clause with no instrument reddens this row)`,
 );
 // Two-sided non-vacuity, on the clause whose subject is a DIRECTION: the law binds the
 // registered value and the band, and nothing else. So (a) an in-band value *above* Act I's
@@ -638,7 +645,7 @@ check(
   `scripts/prove-candidate.ts --family=g --ladder=21,22,23,24,25 --dir=src/levels on this tree: exit ${String(ladderExit)} · ` +
     `CUT D_exec max = ${cutMatch?.[1] ?? "n/a"} · par(L15) = ${cutMatch?.[2] ?? "n/a"} · ${cutMatch?.[3] ?? "n/a"} shipped files · ` +
     `basis ids [${cutMatch?.[4] ?? "n/a"}] · LADDER ${ladderPass === null ? "n/a" : `${ladderPass[1]}/${ladderPass[2]} ACCEPT, controls named ${ladderPass[3]}/${ladderPass[4]}`} — ` +
-    "the L16–L20 block and the registered Act II batches are excluded from the cut's own filter and prove under their own laws",
+    "the L16–L20 block and every registered act batch (Act II + Act III batch 1 at R-007) are excluded from the cut's own filter and prove under their own laws",
 );
 // Non-vacuity, both halves. A row that cannot fail is not evidence, so the reader and the
 // instrument are each probed with an input that MUST move them.
@@ -701,5 +708,5 @@ console.log(
   `§7.3's act-peak clause reads the act's measured maximum (${ACT_II_R006A_REGISTERED_TAIL_EXEC.toFixed(6)} > Act I's ${ACT_I_REGISTERED_PEAK_EXEC.toFixed(6)}, read over ${String(ACT_II_REGISTERED_IDS[0])}–${String(ACT_II_REGISTERED_IDS[ACT_II_REGISTERED_IDS.length - 1] ?? 0)} after R-006a; the value R-005a carried, ${ACT_II_R005A_REGISTERED_TAIL_EXEC.toFixed(6)}, is the frozen era basis its own three clauses read) under all ${String(registered.length)}`,
 );
 console.log(
-  `tail clauses (R-004a's six controlled HERE, R-005a's five by scripts/attest-r005a-reg35.ts, R-006a's five by scripts/attest-r006a-reg40.ts), and ${String(memberControls.length)}/${String(memberControls.length)} member controls are refused by name with the L16–L20 block un-restamped.`,
+  `tail clauses (R-004a's six controlled HERE, R-005a's five by scripts/attest-r005a-reg35.ts, R-006a's five by scripts/attest-r006a-reg40.ts, R-007's six by scripts/attest-r007-reg45.ts), and ${String(memberControls.length)}/${String(memberControls.length)} member controls are refused by name with the L16–L20 block un-restamped.`,
 );
