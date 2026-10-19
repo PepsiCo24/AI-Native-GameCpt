@@ -1,7 +1,7 @@
 # Architecture — Phase Shift: Echo Grid
 
 > Owner: **Agent 2 — Technical Architect**
-> Version: **V0.9**
+> Version: **V1.0**
 > Date: 2026-10-20
 > Status: **LOCKED for prototype**
 
@@ -501,7 +501,135 @@ Operative (worst-admissible) face, era tips: L81–L85 `4_363_000` (72.7 min, un
 - **Citation pointers recorded while ruling (both measured, so nobody chases them):** `docs/ai-native-pipeline.md` has **no §7d/§7e** — the pin dossiers are `src/levels/README.md` §7d `:1450` / §7e `:1649` / §7f `:1792`; and that file's **§8.29 does not exist** (highest is §8.28 `:1534`), so the 50-rung era's pre-alert has no numbering home yet — the level lane's to allocate.
 - **Nothing else moves:** no core rule, no `GameState`, no schema, no level, no `par`, no band, no gate, no registry, no PINS, no sidecar cell, no workflow, no shipped constant.
 
-## 17. Change log
+## 17. XOR multi-switch doors — representation, the reader contract, and the registered-instance constant form — **RULING** (2026-10-20, ADR-architecture-0006)
+
+Answers the device-contract question LV-018 handed to **Game Designer + Architect** (`docs/project-status.md`
+items 154/159) as published in `docs/level-design.md` §7.10.8–§7.10.10 / **ADR-design-0010**. **Docs-only:
+no byte of `src/**`, `scripts/**`, `tests/**` moves** (`git numstat` 0). Every number below is a
+measurement on the shipped core or the shipped dataset, or a read of a cited `file:line`.
+
+### 17.1 Representation — the XOR door is `targets` multiplicity on the **shipped** predicate
+
+- An XOR door is a `Door` with **≥ 2 switches** listing its id in `targets`. The composition is
+  **already shipped** in `doorIsOpen` (`src/core/rules/solid.ts:93–106`): `open = baseDoorOpen(color, phase) ⊕ (#ON
+  targeting switches mod 2)`, `baseDoorOpen` at `solid.ts:73–75` (`red` open in A, `blue` open in B).
+- **No schema field, no validator rule, no core predicate, no policy code.** The schema already admits it
+  (`src/core/level/index.ts:176`), and the validator's `[multi-switch-door]` **stays a warning**
+  (`src/core/level/index.ts:622`, home ruled in ADR-architecture-0003 R5): never a rejection, never a
+  repair, never a Solver gate. Measured on the reference XOR board: `errors=0 warnings=1` (code
+  `multi-switch-door`).
+- **Boundary clarification (law):** the parity carrier is the count of **distinct switches**. Duplicate
+  ids inside **one** switch's `targets` are **inert** — `sw.targets.includes(door.id)` is a boolean test
+  (`solid.ts:102`), the validator counts distinct switch ids (`index.ts:601`) and warns not at all, and the
+  two boards' walks are measured **identical**. **No schema tightening** (YAGNI: it would change the schema
+  for zero capability and risk rejecting shipped bytes). One switch is never an XOR link.
+
+### 17.2 No second derivation — the covering rule is targets-blind
+
+`scripts/room-derivation.ts` — the single truth source both `author-l21.ts` and `prove-candidate.ts`
+consume — contains **no read of `targets` at all** (`grep -n "targets" scripts/room-derivation.ts` → no
+match, 132-line file; `derivedWalkSealedRooms` `:69`, `doorsCoveringTwoRooms` `:124`). A door tile blocks
+in **every** phase and **every** switch state, so no switch write can move a region boundary. Measured as
+a mutation experiment over **all 50 shipped levels** (45 with ≥ 1 switch): the covering list and the derived
+room `doorIds` **moved in 0/50**. ⇒ **no second derivation is owed**; §6.2.3 clause 3 is structural, clause 4
+is measured on the shared `applyMove` state graph where the XOR truth table already lives.
+
+### 17.3 `G2-X` — a `scripts/**`-only reader over state that the records already carry
+
+- The two shipped press-then-cross readers test **`targets` membership** and read **no** door openness
+  (`scripts/author-l21.ts:1964/:1987`, `scripts/prove-candidate.ts:275/:293`). Membership is sound for a
+  single-switch door and **unsound under XOR**: it is satisfied by a press that did the **opposite** of
+  opening the door (measured: the reference board credits `{i:1, s1 → cross:4}` while the door is **closed**
+  at that press).
+- **No new core surface is needed** (the item's refusal condition does **not** fire): `ArrivalRecord`
+  (`src/core/solver/bfs.ts:647–660`) already carries `state` (`SearchState` = `player, phase, doorsOpen,
+  switchesOn`, `src/core/state/types.ts:58–63`), `toggledOn`/`toggledOff`, and `direction`. **Blast radius:
+  `scripts/**` only.** No AGENTS §2 triad — an XOR door changes a **state**, never a position.
+- **Corrigendum to the published encoding form (normative; §7.10.8.2 C2's literal text is refused).** Two of
+  C2's sub-clauses are unusable as written:
+  - **C2.2** ("the resolved openness **changes** at that arrival") is **unsatisfiable at any arrival that
+    toggles a targeting switch**: the colour base strictly alternates with the phase, every legal move
+    flips the phase, and at most one switch toggles per move (`switchAt` returns one switch; a portal's
+    landing tile triggers nothing) ⇒ base-flip and parity-flip **cancel**. Measured over **4 025** par routes
+    on the 45 door-bearing shipped boards: **17 732** toggling arrivals — the toggled switch's own door
+    changed **0**; **70 048** non-toggling arrivals — changed **70 048/70 048**.
+  - **C2.3** is off by one index: legality is judged on the **pre-move** state and openness is recomputed
+    **after** the flip, so a player legally standing on a door tile has the door **closed** in the new phase.
+    Measured: **30 847** door-tile crossings — `door[j].state.doorsOpen[d] === true` at the crossing
+    **arrival: 0**; at the crossing **entry state: 30 847**.
+  - **Also a wrong field path:** `route[i].state.levelState.doorsOpen[d]` — `ArrivalRecord.state` is a
+    `SearchState`; `levelState` exists only on `GameState` (`src/core/state/types.ts:107`). Correct:
+    **`route[i].state.doorsOpen[d]`**.
+- **What LV-020 may encode (`G2-X`, normative).** For **every** par route, for every crossed door `d` with
+  **≥ 2** targeting switches: (1) the crossing's **entry state** has `route[j−1].state.doorsOpen[d] === true`
+  (read on the replay below, where it is not a tautology); **and** (2) an **effective press** exists at some
+  `i < j` — a toggled id whose `targets` list `d` — proven by **counterfactual replay**: from the state at
+  `i`, restore that switch's pre-arrival value, recompute `doorsOpen` with the exported
+  **`resolveDoorsOpen`** (`solid.ts:113`), replay `i+1…j` with the shipped **`applyMove`** using the
+  records' own `direction`, and require the crossing to **fail**. Both legs use exported core functions and
+  the records' own data only — no new search, no second derivation, O(par) per witness. The parity reading
+  (`doorsOpen[d]` vs `baseDoorOpen(d.color, phase)`) is **printed beside** the verdict, never deciding it
+  (GD-008 shape). One negative control per reader, named from the lane's **measured** refusal
+  (membership-pass / corrected-fail).
+- **Order + STOP-AND-ROUTE (standing rule).** `G2-X` encodes **before** the census (a gate repaired after a
+  census owes the identical command re-run — the LV-019 `F-L46-1` precedent), and the membership-vs-`G2-X`
+  divergence is **printed**. **If any future census finds `divergence = 0` on an XOR class, the
+  STOP-AND-ROUTE fires to the Game Designer — never to tool-patching.** Under the **literal** C2 the first
+  census must read `divergence = 100 %` (0/17 732 measured); that is an **instrument defect** answered by the
+  corrigendum, not by moving a threshold.
+
+### 17.4 Registered-instance constants — the form law (`F-GD014-1`)
+
+**A registered instance's left side is a published number and may not move after registration.**
+
+- The shipped typing confirms the form: registered **values** are **literals**
+  (`ACT_III_REGISTERED_TAIL_LEVEL_ID = 45` / `ACT_III_REGISTERED_TAIL_EXEC = 30.455319`,
+  `src/core/solver/policy.ts:2312/:2315`; `ACT_III_B2_BATCH_PEAK_EXEC = 30.417021`, `:2606/:2607`), while a
+  **pre-ticket standard** is an **alias** (`ACT_III_PRE_R008_REGISTERED_TAIL_*` `:2584/:2587`).
+- **Instance 6 violates the form:** `ACT_III_B2_SEAM_RELIEF_PREVIOUS_LEVEL_ID/_EXEC` alias
+  `ACT_III_REGISTERED_TAIL_*` (`policy.ts:2515/:2518`), so when the released `par 28` class moves the act
+  maximum off `L45` (by construction `≥ 31.7500 > 30.455319`) the published `−4.212830`
+  (`26.242489 − 30.455319`, recomputed ✓) is **silently restamped by a constant**.
+- **Approved remedy shape (text spec; `src/core/solver/**` is the level lane's, applied with this sign-off):
+  pin, derive from the pin, assert the frozen pair.** (1) add
+  `ACT_III_B2_SEAM_RELIEF_PREVIOUS_EXEC_AT_REGISTRATION = 30.455319` (literal; level id `45` likewise, each
+  documented as *as published at registration*); (2) make `ACT_III_B2_SEAM_RELIEF_DELTA` derive from the
+  **pin**, not the moving alias; (3) replace the deleted alias with a `near(...)`-style assertion
+  (`near` idiom at `policy.ts:3140`) of the **published pair** (exec − pinned previous == published delta),
+  message naming `F-GD014-1`. **Do not assert against the live `ACT_III_REGISTERED_TAIL_EXEC`** — the tail
+  moving is lawful and expected; that fact is **printed as a reading** (cf. `actIIIWidened`,
+  `policy.ts:3504–3505`), never raised as a violation.
+- **Alias admissibility (law).** An alias is admissible **only** when its referent is **frozen by
+  construction** — a literal, or a measurement over a **closed, already-registered** id set (e.g. a batch
+  peak). It is **not** admissible for a value defined over a set that still **grows** (the act's registered
+  ids, `policy.ts:2572–2576`). Two second instances of the class are disclosed for the lane:
+  `ACT_III_PRE_R008_REGISTERED_TAIL_*` (`:2584/:2587`) aliases the growing-set tail — the ticket that moves
+  the tail **re-pins the standard to the literal it published**; and `ACT_III_B2_TAIL_ZERO_MOVE`
+  (`:2631–2632`) is **self-cancelling by construction** (both operands are one constant) ⇒ it reads
+  `0.000000` for any tail, is a **label not a measurement**, and **must never be cited as evidence that the
+  act maximum did not move**.
+
+### 17.5 Boundary and follow-ups
+
+- **`Renderer → Gameplay → Core ← Solver` unharmed.** No module, dependency, field or predicate is added;
+  the XOR device is a state rule already inside `doorIsOpen`, and `G2-X` is a reader over `SearchState`
+  records core already produces (the corrected replay *calls* `applyMove`/`resolveDoorsOpen` — reusing the
+  one truth source is the point). `Solver → Phaser` stays forbidden (§12.1). The locked core loop is
+  untouched (**no AGENTS §2 triad**): entry-only solidity, illegal move = no move and no flip, embedded
+  states legal and safe, deterministic only; the closing-door trap class is already refused by the shipped
+  `deadStates 0` / `T ≡ R ≡ 0` invariant.
+- **Hand-offs, by name.** (a) **Game Designer**: two corrigenda owed to `docs/level-design.md` §7.10.8.2 C2 —
+  the field path and clauses 2/3 (GD owns that text; the Architect does not edit it). (b) **Level AI +
+  Solver (`scripts/**`)**: encode the §17.3 corrected reader before the `H`-both-pair census, one measured
+  negative control per implementation, divergence printed. (c) **QA (`tests/**`)**: a pin that a registered
+  instance's published pair cannot be re-pointed by a later registration is the natural home if a test is
+  wanted — the shipped `attest-*` instruments already encode the pre-ticket-standard shape and are the
+  precedent to follow.
+- **Deliberately NOT designed (YAGNI):** no `xor` field, no validator rule, no policy code, no new search,
+  no second covering derivation, no orbit/tooling generalisation, no schema tightening for duplicate
+  targets. The device needs none of them.
+
+## 18. Change log
 
 | Date | Version | Change | Author |
 |---|---|---|---|
@@ -514,3 +642,4 @@ Operative (worst-admissible) face, era tips: L81–L85 `4_363_000` (72.7 min, un
 | 2026-10-15 | V0.7 | AR-0006 sweep (ADR-architecture-0003, five rulings; docs-only). **R1:** divergence-rate citations unified on the test-pinned **46/2000 (2.3 %)** (`ordered-companion.test.ts` §5); 18/2000 / 0.9 % demoted to labeled historical (out-of-repo harness, generator never committed — second corrigendum of that class after the 9/200 residue); corrigendum annotations at §8.1 依据 (iii) and on ADR-architecture-0002; LV-007D execution wording issued to LV/GD. **R2:** `graphics2d.ts` keeps interface + compile-time probe co-located (terminal — `verbatimModuleSyntax` + all-`import type` consumers ⇒ zero runtime footprint; split rejected as churn, no ticket). **R3:** accepted-set metrics persist as generated sidecar `docs/level-difficulty.report.json` + `tests/solver/**` freshness pin (specified; **LV-007E**) — recompute-only rejected (drift class), level-schema fields rejected (derived data out of the authoring source; `par` stays the sole exception); §8 metric block rewritten to shipped field names, §12 gains the freshness row. **R4:** `isPlayerEmbedded` is rule semantics ⇒ home is `src/core/rules` via `solidAt` (R-queue micro-ticket; fixes the `systems → renderer` reverse edge RV-005 n-6 and deletes a second solidity truth); §4 gains the within-`src/game` arrow clause. **R5:** multi-switch-target flag homed at the validator-warning layer; no policy code until GD quantifies the L36+ allowance (one-code-one-control discipline; n-13 precedent); §7 gains the two-verdicts-two-layers rule. **Docs debts:** §3 scripts tree rewritten to the three real scripts (`author-lv006-candidates.ts` / `validate-levels.ts` / `solve-levels.ts` — `generate-levels` never existed); §8.1 ship facts moved to present tense (companion shipped LV-007B, gate-(iii) reader LV-007C, all follow-ups landed) with the two legs declared deliberately unstitched (A3; item 39) | Agent 2 (Architect) |
 | 2026-10-17 | V0.8 | AR-007 / ARCH-001 (ADR-architecture-0004; docs-only, no code). New **§15 census infrastructure** answers the F-L20-3 handed-over question (item 116, RV-011) and rules census cost. **(1) Symmetry law:** the `x=4`/`x=6` `tested` identity is the parity-preserving half of a `D2` orbit law of the far rectangle `Γ_F` — `tested = N(parity) × K(orbit)`, `N(even)=9 / N(odd)=8`; the committed 18-row ≤10 table factorises exactly on every row (outer columns `K` 354 129 / 2 347 134 / 5 028 103; centre 1 338 255 / 8 262 157 / 17 541 071), and the `σ_y` half appears as equal per-near `K` with 9-vs-8 totals (`4,2` 9 × 5 028 103 vs `4,3` 8 × 5 028 103). **(2) Results are not symmetric:** the mirror is an automorphism of the enumeration graph, not of the environment — `pocketLeaks` sees the phase-indexed sealed column on the left and the board edge on the right. **LAW (first-column dead):** a landing at `x = CX+1` always satisfies `entryPhase(near) = solidPhase(CX, y)`, so `arrivalPhase` is never solid there and **no pocket from a first-column landing can ever be leak-free, in any frame** — the measured `x=4 → 0` is a law, and the G frame's `column-leak` refusals are the same law. **(3) Census reporting defect (finding, level lane's ticket):** `sealedPocket` can never reject a connected pocket (bipartite dist-parity argument: `single-phase == tested` on all twelve class-bearing landings), and the `single`/`sealed` counters sit **inside** the `if (hereSealed > 0)` print gate, so the `x=4` "0 single-phase" is a suppressed counter, not a measurement — `724 203 655 − 592 804 433 = 131 399 222` and `16 431 095 − 13 163 780 = 3 267 315` are exactly the `x=4` `tested` sums, and the ≤8 "licensing arithmetic" is a tautology. **Blast radius zero on accepts**: leak-free totals, the histogram and every shipped number stand. **(4) Ruling — exploit-with-proof for sizes, never for accepts:** ≤ 1 walked landing per `D2` orbit, predicted `tested = N(own parity) × K(orbit mate)`, results inherited only per-gate under an established equivariance condition `g(σ(P)) = g(P)` (`g_leak` fails, `g_single` is information-free), first-column leak-free ≡ 0 usable as a law, no cross-frame/cap/instrument inheritance. Observe-only, blanket-forbid and auto-orbit tooling all rejected (§13). Probes named for the level lane (gate-removed orbit pair; ≤8 retro-test predicts `K(6,2) = 117 587` per near) | Agent 2 (Architect) |
 | 2026-10-20 | V0.9 | ARCH-005 (ADR-architecture-0005; docs-only, no code, no test byte). New **§16 chain-row envelope law + cadence + 100-rung split ruling** answers the formulation booked at `docs/project-status.md` items 143 (`:1873`) / 154 (`:1895`) / 159 (`:1905`) / 160 (`:1907`) and at `docs/level-design.md` §7.10 (`:1191`–`:1194`). **(1) LAW (form):** `M(N) = Σ par(1..N)`; `LOCAL_TOTAL(N) = c_move·M(N) + c_rung·N`; `envelope(N) = ceil(SAFETY × CLOUD_RATE × LOCAL_TOTAL(N)) × 1000`; `trigger(N) = ceil(SAFETY × CLOUD_RATE × (1+ρ) × LOCAL_TOTAL(N)) × 1000`. `SAFETY = 1.5` (item-77(d), `tests/e2e/playthrough.spec.ts:333`); `CLOUD_RATE = 4.40` (certified QA-024 datum, round `39031050727`, `:241`–`:242`); `c_move = 0.296754 s/move`, `c_rung = 0.909297 s/rung` — **fit outputs over the last four carried observations** (25/35/40/45 rungs → `M` 269/479/587/705, carried locals 96.715/183.718/211.602/244.875 s), never hand-edited; `ρ = 0.08` on the **trigger face only**. **The law alarms, it never edits:** a crossing `trigger(N)` is a STOP-and-measure order (fresh two-run tip measurement + re-derivation by this form; the shipped constant is always the measurement). The form encodes the measured forecast defect: the lane's move-linear forecasts over-read by **+6.40 %** @40 and **+3.78 %** @45 (`docs/ai-native-pipeline.md:1489`; `:363`–`:366`) because they carry no per-rung fixed term (`:369`–`:371`). **(2) Validation:** all five published constants are instances of the same form — `639_000` @25, `856_000` (×5.9 family) @25, `1_213_000` @35, `1_397_000` @40, `1_617_000` @45 — each reproduced exactly; fit residues **+6.04 / −5.31 / −0.49 / +2.15 %**; LOO **−0.70 %** @40, **+6.06 %** @45, **−7.28 %** @35, **+27.36 %** @25 ⇒ `ρ = 0.08` and **domain `N ≥ 35`** (short routes make per-move cost non-constant). **(3) Cadence CAD-1…CAD-5:** trigger recomputed every era; anchor = two tip runs, worse sample carried; measurement cadence relaxes to every-other-era (rungs a multiple of 10) **plus every act-opening era** (twice-test earned on the 40/45 LOO residuals); automatic reversion on any red run, any residue > `ρ`, or a new act; **no cadence may thin the walk** (entry at a row's own first rung, dialog-own-`Next` only, no mid-chain hop, no skipped rung). **(4) 100-rung RULING:** threshold `X = 5_040_000 ms` = 84 min = **the worst e2e job clock ever observed** (`tests/e2e/playthrough.spec.ts:221`; `docs/project-status.md:1841` three 1.4 h-class days 52.2/59.8/84 min) — a **demonstrated-class** line, not a platform line (the e2e job sets no `timeout-minutes`, measured 0 occurrences in `.github/workflows/ci.yml`). Band faces at 100 rungs (Acts III/IV/V at band floor/mid/ceiling): **band-min 4_571_000 ms (76.2 min, never crosses) · band-mid 5_041_000 ms (84.0 min, crosses at N = 100) · band-max 5_511_000 ms (91.8 min, crosses at N = 94)** — all **1.27×–1.53×** above the lane's published `×100/45` work face (3_592_000 ms, `:382`) and the dispatch's ≈63 min (`2 × 1_901_000`). Operative band-max era tips: L86–L90 `4_746_000 ms` (79.1 min, **under — last single-row era**) → L91–L95 `5_128_000 ms` (85.5 min, over) ⇒ **keep the single row to L90, split at the L86–L90 era**; split form = **contiguous era segments** (L1–L90 / L91–L95 / L96–L100), each row entering at its own first rung and asserting the **`Next` handover out of its era** at the tip, so every transition is exercised exactly once per round and no rung is unwalked; option (ii) (era rows + rare full-chain smoke) **rejected** — it leaves act-boundary transitions unexercised per push and duplicates walks; `§7.6(e)` keeps the milestone-only full chain (`docs/level-design.md:881`–`:883`). Not a CI speed-up (`workers: 1` ⇒ the segments telescope to the same total), and not frozen at L90 (the boundary re-prices off the real sidecar every era). **(5) Seam-neutrality check:** the law is **act-blind** — its only dataset input is a prefix sum over act-label-free level bytes and every constant is global, so a seam-crossing rung prices as an interior one (avoids F-L41-3/4's "act-blind LABEL with act-aware VALUE", `docs/ai-native-pipeline.md:1492`); the act band constants (`src/core/solver/policy.ts:1566`, `:2146`) are **not** law inputs; the split choice is the branch §7.10 declared open (`:1192`–`:1194`), so Act III is not re-opened. **(6) CI-budget risk stated:** the ticket costs zero; the next era **alarms before it is measured** (`trigger(50) = 2_078_000 ms` vs live `1_617_000` = 1.29×, point face 1_924_000 = 1.19×, `M(50) = 829` from the L46–L50 shelf pars 22/24/26/26/26 = `ACT_III_B2_PAR_MULTISET`, `policy.ts:2438`) ⇒ **R-008c owes STOP-and-measure**; with `retries: 0` (`playwright.config.ts:70`) and cloud retry policy v2 (`.github/workflows/ci.yml:67`–`:70`) a red row costs a named ticket **plus a full job re-run**, and the split trades one envelope for three independent red opportunities. Shipped constant untouched at `1_617_000` (`tests/e2e/playthrough.spec.ts:395`). Two citation pointers recorded (both measured): `docs/ai-native-pipeline.md` has **no §7d/§7e** (they are `src/levels/README.md` §7d `:1450` / §7e `:1649` / §7f `:1792`) and **no §8.29** (highest §8.28 `:1534`). **No core rule, no state, no schema, no level, no `par`, no band, no gate, no registry, no PINS, no sidecar cell, no workflow, no shipped constant moved** | Agent 2 (Architect) |
+| 2026-10-20 | V1.0 | ARCH-006 (ADR-architecture-0006; docs-only, no code, no test byte, `git numstat` 0 on `src/**` `scripts/**` `tests/**`). New **§17 XOR multi-switch door ruling** answers the device-contract question LV-018 handed to Game Designer + Architect (ADR-design-0010 / `docs/level-design.md` §7.10.8–§7.10.10), verified from disk and by executing the shipped core rather than by reading the claim. **(1) Representation ACCEPTED:** XOR = `targets` multiplicity (**≥ 2 distinct switches**) over the **shipped** `doorIsOpen` (`src/core/rules/solid.ts:93–106`; `baseDoorOpen` `:73–75`) ⇒ no schema field (`src/core/level/index.ts:176`), no validator rule, no core predicate, no policy code; `[multi-switch-door]` **stays a warning** (`:622`, ADR-architecture-0003 R5); measured `errors=0 warnings=1` on the reference board. **Boundary clarification added:** duplicate ids inside **one** switch's `targets` are **inert** (`includes` is boolean, `:102`; validator counts distinct switch ids, `:601`) — measured identical walks, zero warnings — and **no schema tightening** is owed. **(2) No second derivation ACCEPTED:** `scripts/room-derivation.ts` reads **no** `targets` at all (`grep` → no match in 132 lines; `derivedWalkSealedRooms` `:69`, `doorsCoveringTwoRooms` `:124`), and the mutation experiment over **all 50 shipped levels** moves the covering list **0/50** ⇒ the invariance claim is measured, not argued. **(3) `G2-X` capability ACCEPTED, published encoding REFUSED, corrected form normative:** both membership readers are targets-only (`scripts/author-l21.ts:1964/:1987`, `scripts/prove-candidate.ts:275/:293`) and the records already carry what is needed (`ArrivalRecord` = `state` (`SearchState`: `player, phase, doorsOpen, switchesOn`), `toggledOn`/`toggledOff`, `direction` — `src/core/solver/bfs.ts:647–660`, `src/core/state/types.ts:58–63`) ⇒ **zero `src/**` change, no AGENTS §2 triad**. Two measured corrigenda to `docs/level-design.md` §7.10.8.2 C2: **C2.2 is unsatisfiable** (base strictly alternates with the phase, every legal move flips it, ≤ 1 toggle per move ⇒ base-flip cancels parity-flip; measured **17 732** toggling arrivals with **0** changed own-target doors and **70 048/70 048** non-toggling arrivals changed, over **4 025** par routes on 45 door-bearing boards) and **C2.3 is off by one index** (legality reads the **entry** state, openness is recomputed after the flip: **30 847** crossings, crossing-arrival open **0**, entry-state open **30 847**); plus a **wrong field path** (`route[i].state.levelState.doorsOpen[d]` — `levelState` is `GameState`-only, `src/core/state/types.ts:107`; correct is `route[i].state.doorsOpen[d]`). Normative reader: entry-state openness at `j−1` **plus** a **counterfactual replay** using the exported `resolveDoorsOpen` (`solid.ts:113`) and the shipped `applyMove` with the press suppressed — no new search, no second derivation, O(par) per witness; parity reading printed beside the verdict (GD-008 shape); one negative control from a measured refusal. **Standing STOP-AND-ROUTE restated:** `G2-X` encodes **before** the census (LV-019 `F-L46-1` precedent), divergence printed, and **if any future census finds `divergence = 0` on an XOR class the STOP fires to the Game Designer — never to tool-patching**; under the literal C2 the first census must read `divergence = 100 %` (0/17 732), which is an **instrument defect**, not a missing class. **(4) `F-GD014-1` constant form ACCEPTED, remedy shape approved as a text spec:** registered **values** are **literals** (`policy.ts:2312/:2315`, `:2606/:2607`), pre-ticket **standards** are **aliases** (`:2584/:2587`), and instance 6's published left side is aliased through the wrong channel (`:2515/:2518`, published `−4.212830 = 26.242489 − 30.455319` recomputed ✓) ⇒ remedy = **pin** (`_PREVIOUS_EXEC_AT_REGISTRATION = 30.455319`, level id `45` literal), **derive** the delta from the pin, **assert the frozen pair** with the `near` idiom (`:3140`) — never against the live tail (moving is lawful; that fact is a printed **reading**, cf. `actIIIWidened` `:3504–3505`). **New law: alias admissibility** — admissible only for a referent **frozen by construction** (a literal, or a measurement over a closed registered id set such as a batch peak), **not** for a value defined over a **growing** set (the act's registered ids, `:2572–2576`). Two second instances disclosed: `ACT_III_PRE_R008_REGISTERED_TAIL_*` (`:2584/:2587`) and the self-cancelling `ACT_III_B2_TAIL_ZERO_MOVE` (`:2631–2632`, a **label not a measurement**). **Boundary:** `Renderer → Gameplay → Core ← Solver` unharmed — no module, dependency, field or predicate added; the XOR device is a state rule already inside `doorIsOpen`; `G2-X` is a `scripts/**` reader over core-produced records; `Solver → Phaser` stays forbidden (§12.1); **no core-loop change, no AGENTS §2 triad**. **Hand-offs:** Game Designer owes the C2 corrigenda (GD owns that text); the level lane encodes §17.3 before the `H`-both-pair census; QA may pin the published pair. **Untouched:** every gate, band, `par`, weight, registered row, level byte, and all of `src/**` / `scripts/**` / `tests/**` | Agent 2 (Architect) |
