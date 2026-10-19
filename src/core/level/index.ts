@@ -583,9 +583,13 @@ export function validateLevel(raw: unknown): ValidationResult {
   // **validator warning** — a hard acceptance edge that needs no search must not
   // make acceptance depend on a search run. Through L35 the shape is *legal but
   // flagged*; there is no rejection to name, hence no `POLICY_VIOLATION_CODES`
-  // entry and no negative control (YAGNI until GD quantifies the L36+
-  // allowance — the n-13 precedent: `switch-without-targets` warns here *and*
-  // rejects in policy, one layer per verdict strength).
+  // entry and no negative control (YAGNI until a gate reads the allowance — the
+  // n-13 precedent: `switch-without-targets` warns here *and* rejects in policy,
+  // one layer per verdict strength). The allowance's *range* moved, its *layer*
+  // did not: `§1` pins the XOR semantics (RV-002 M-5) and `§7.2`'s acts table now
+  // runs to Act III (L41–L60), where `§7.10.5` rules no schema/core/validator
+  // change is needed — so the old "L36+ / not quantified yet" reading is retired
+  // here and in the message below (the `L6–L35` cap itself is unchanged).
   //
   // What counts, precisely:
   // - **distinct switch ids** whose `targets` name this door — two switches are
@@ -615,7 +619,7 @@ export function validateLevel(raw: unknown): ValidationResult {
     if (feeders.length < 2) return;
     const named = feeders.map((f) => `switches[${f.index}] "${f.id}"`).join(", ");
     warnings.push(
-      `[multi-switch-door] doors[${i}] "${door.id}" is targeted by ${String(feeders.length)} switches (${named}) — docs/level-design.md §1 allows at most ONE switch per door in L6–L35 (the L36+ allowance is not quantified yet). LEGAL and flagged for review only: this warning never rejects a candidate, never repairs one, and never gates the Solver's proof of solvability. A hard rejection above the allowance is Solver-side policy and does not exist yet (ADR-architecture-0003 R5). Counted per distinct switch id — a switch naming the same door twice counts once; whether the door's tile is also a switch tile is irrelevant to this count.`,
+      `[multi-switch-door] doors[${i}] "${door.id}" is targeted by ${String(feeders.length)} switches (${named}) — docs/level-design.md §1 allows at most ONE switch per door in L6–L35 (the range now runs to Act III's L41–L60, §7.2; the allowance above L35 is a review-flagged XOR composition — §1 / RV-002 M-5 — and no gate reads it yet). LEGAL and flagged for review only: this warning never rejects a candidate, never repairs one, and never gates the Solver's proof of solvability. A hard rejection above the allowance is Solver-side policy and does not exist yet (ADR-architecture-0003 R5). Counted per distinct switch id — a switch naming the same door twice counts once; whether the door's tile is also a switch tile is irrelevant to this count.`,
     );
   });
 
