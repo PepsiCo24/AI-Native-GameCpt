@@ -29,6 +29,17 @@
  * `STOP_AND_ROUTE` (exit 1) is the only honest answer to a disagreement: the registered bytes
  * are immutable and are never re-authored to fit a later reading.
  *
+ * **`refreshed:` R-008 (registration of `l046`–`l050`).** Two rows of this instrument are
+ * *statements about the law's shape* rather than about R-004a's own registration, and the law's
+ * shape changed: the reported clause set grew from twenty-two to **twenty-eight** when R-008's six
+ * clauses (the first written as an act's basis widened *inside* the act) landed. The claimed union
+ * gained `ACT_TAIL_R008_CLAUSE_IDS` and the printed ownership lines gained the fifth instrument
+ * (`scripts/attest-r008-reg50.ts`). Nothing else moved: every §7.3 tail clause still PASSes, R-004a's
+ * own six controls still fail exactly their own clauses, the batch-1 rows still reproduce on the
+ * bytes and the L16–L20 block is still un-restamped. This is the same *refresh, not relax* R-007
+ * and R-006a performed on their predecessors — a partition row is a reading of the current law and
+ * is expected to move when a registration adds a clause; the assertions it guards are not.
+ *
  *   npx tsx scripts/attest-r004a-act2.ts
  */
 import { execFileSync } from "node:child_process";
@@ -59,6 +70,7 @@ import {
   ACT_TAIL_R005A_CLAUSE_IDS,
   ACT_TAIL_R006A_CLAUSE_IDS,
   ACT_TAIL_R007_CLAUSE_IDS,
+  ACT_TAIL_R008_CLAUSE_IDS,
 
   ACT_I_REGISTERED_PEAK_EXEC,
   ACT_I_REGISTERED_PEAK_LEVEL_ID,
@@ -359,43 +371,47 @@ check(
   `${String(tailCaught)}/${String(tailControls.length)} caught · clauses covered ${String(new Set(tailControls.map((c) => c.clause)).size)}/${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} (R-004a's six; R-005a's five are ` +
     `${ACT_TAIL_R005A_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r005a-reg35.ts; R-006a's five are ` +
     `${ACT_TAIL_R006A_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r006a-reg40.ts; R-007's six are ` +
-    `${ACT_TAIL_R007_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r007-reg45.ts — named here so the split of ownership is a reading, not a convention)`,
+    `${ACT_TAIL_R007_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r007-reg45.ts; R-008's six are ` +
+    `${ACT_TAIL_R008_CLAUSE_IDS.join(", ")} and are controlled by scripts/attest-r008-reg50.ts — named here so the split of ownership is a reading, not a convention)`,
 );
 check(
   "the registered reading is the discrimination side (every reported clause PASSes on it)",
   registered.every((c) => c.status === "PASS"),
-  `registered ${String(registered.filter((c) => c.status === "PASS").length)}/${String(registered.length)} PASS · R-004a controls ${String(tailControls.length)} · R-005a (${String(ACT_TAIL_R005A_CLAUSE_IDS.length)}) + R-006a (${String(ACT_TAIL_R006A_CLAUSE_IDS.length)}) + R-007 (${String(ACT_TAIL_R007_CLAUSE_IDS.length)}) clauses reported here but controlled in their own instruments`,
+  `registered ${String(registered.filter((c) => c.status === "PASS").length)}/${String(registered.length)} PASS · R-004a controls ${String(tailControls.length)} · R-005a (${String(ACT_TAIL_R005A_CLAUSE_IDS.length)}) + R-006a (${String(ACT_TAIL_R006A_CLAUSE_IDS.length)}) + R-007 (${String(ACT_TAIL_R007_CLAUSE_IDS.length)}) + R-008 (${String(ACT_TAIL_R008_CLAUSE_IDS.length)}) clauses reported here but controlled in their own instruments`,
 );
 // The reported set grew to three registrations at R-006a (R-004a's six, R-005a's five,
-// R-006a's five) and to **four** at R-007 (R-007's six, the first written across an act
-// boundary). The partition is the invariant that keeps a NEW clause from silently riding
-// along with no instrument: the four sets must be pairwise disjoint, must cover every
-// reported clause, and must together be exactly the reported count. Sum vs distinct catches
-// an overlap; the unclaimed list catches a clause with no home. **Refreshed at R-007, not
-// relaxed**: the R-007 list is added to the claimed union, and every R-004a assertion above
-// is unchanged.
+// R-006a's five), to **four** at R-007 (R-007's six, the first written across an act
+// boundary), and to **five** at R-008 (R-008's six, the first written as an act's basis
+// widened *inside* the act). The partition is the invariant that keeps a NEW clause from
+// silently riding along with no instrument: the five sets must be pairwise disjoint, must
+// cover every reported clause, and must together be exactly the reported count. Sum vs
+// distinct catches an overlap; the unclaimed list catches a clause with no home.
+// **Refreshed at R-008, not relaxed**: the R-008 list is added to the claimed union, and
+// every R-004a assertion above is unchanged.
 const claimedClauses = new Set([
   ...ACT_TAIL_R004A_CLAUSE_IDS,
   ...ACT_TAIL_R005A_CLAUSE_IDS,
   ...ACT_TAIL_R006A_CLAUSE_IDS,
   ...ACT_TAIL_R007_CLAUSE_IDS,
+  ...ACT_TAIL_R008_CLAUSE_IDS,
 ]);
 const claimedSum =
   ACT_TAIL_R004A_CLAUSE_IDS.length +
   ACT_TAIL_R005A_CLAUSE_IDS.length +
   ACT_TAIL_R006A_CLAUSE_IDS.length +
-  ACT_TAIL_R007_CLAUSE_IDS.length;
+  ACT_TAIL_R007_CLAUSE_IDS.length +
+  ACT_TAIL_R008_CLAUSE_IDS.length;
 const unclaimedClauses = registered.filter(
   (c) => !claimedClauses.has(c.clause),
 );
 check(
-  "the four instruments' clause sets PARTITION the reported set (a future clause must be given a home)",
+  "the five instruments' clause sets PARTITION the reported set (a future clause must be given a home)",
   claimedClauses.size === registered.length &&
     claimedSum === claimedClauses.size &&
     unclaimedClauses.length === 0,
-  `reported ${String(registered.length)} · R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} + R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} + R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} + R-007 ${String(ACT_TAIL_R007_CLAUSE_IDS.length)} = ` +
+  `reported ${String(registered.length)} · R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} + R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} + R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} + R-007 ${String(ACT_TAIL_R007_CLAUSE_IDS.length)} + R-008 ${String(ACT_TAIL_R008_CLAUSE_IDS.length)} = ` +
     `${String(claimedSum)} claimed · ${String(claimedClauses.size)} distinct · ${String(unclaimedClauses.length)} unclaimed ` +
-    `(a twenty-third clause with no instrument reddens this row)`,
+    `(a clause with no instrument reddens this row)`,
 );
 // Two-sided non-vacuity, on the clause whose subject is a DIRECTION: the law binds the
 // registered value and the band, and nothing else. So (a) an in-band value *above* Act I's

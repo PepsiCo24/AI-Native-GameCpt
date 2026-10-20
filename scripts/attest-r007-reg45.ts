@@ -11,11 +11,27 @@
  *   [1/6] **byte identity** — each new root file is `git`-hashed **and** `sha256`-hashed and
  *        compared with the shelf it was moved from at the dispatch base (`82dd808`, the parent
  *        of the tip the train was cut from). A check that cannot run (git cannot answer) is a
- *        FAILURE, never a skip. The shelf is *also* read: after this registration it must be
- *        **empty of level files** — batch 1 MOVED its five rungs, so a shelf still holding them
- *        would mean the move silently became a copy. The **successor name** is verified ABSENT
- *        from the root *and* from the shelf by reading both directories (`l046` does not exist
- *        yet, and this instrument must not assume it either way).
+ *        FAILURE, never a skip. The shelf is *also* read, and it is read as an **era state**
+ *        rather than as a constant: batch 1 MOVED its five rungs out of it, so a shelf still
+ *        holding any of `ACT_III_B1_IDS` would mean the move silently became a copy (two
+ *        byte-identical copies of one rung is exactly the drift `git mv` exists to prevent). At
+ *        R-007 the shelf was EMPTY; LV-019 later occupied it with a *different* batch
+ *        (`l046`–`l050`) and **R-008 then moved that batch to the root too**, so the refresh reads
+ *        the shelf as EMPTY again while keeping the durable half — no shelf file may carry a
+ *        registered id (any act's), and every shelf id must be strictly above the registered root
+ *        maximum. The **successor name** is read as an era state as well: at R-007's tip
+ *        `l046` was absent from the root, and R-008 has since registered it (attested BY NAME in
+ *        `scripts/attest-r008-reg50.ts`), so this instrument now claims the absence of the
+ *        **successor's successor** (`l051.json`) from both directories — that is the name whose
+ *        absence is a claim about *this* tip, and L51–L60 are UNBOOKED.
+ *        *(Refresh, disclosed: R-007's original body asserted an EMPTY shelf and a successor
+ *        absent from BOTH directories, and its roster check typed the count 45. All three were era
+ *        claims about the shelf and the roster at R-007's tip; LV-019's occupancy falsified the
+ *        shelf claim lawfully, and R-008's registration falsified the roster and successor claims
+ *        the same way — a shelf is a work surface and a roster is a reading, not frozen artifacts.
+ *        Precedent: R-006a's refresh of the R-005a attest, and R-008's refresh of R-004a/R-005a/
+ *        R-006a at this ticket. The five registered rungs' byte identity, the ladder proof and every
+ *        act-level clause are UNCHANGED.)*
  *   [2/6] **the five registered rows, re-measured on the ROOT bytes** — par (solver-stamped),
  *        `D_exec`, `B`, coverage, the all-OFF world, `T`/`R` and the audit's violation list,
  *        each against `ACT_III_B1_LADDER` (`@/core/solver/policy`, the law) and not against a
@@ -54,6 +70,33 @@
  *
  * `STOP_AND_ROUTE` (exit 1) is the only honest answer to a disagreement: the registered bytes are
  * immutable and are never re-authored to fit a later reading (ADR-0004).
+ *
+ * **`refreshed:` R-008 (registration of `l046`–`l050`).** Five rows of this instrument are
+ * *readings of the current dataset and law shape* rather than claims about R-007's registration, and
+ * all five moved when R-008 landed: (1) the roster never typed a count in the durable form (an
+ * unbroken run `1…N`, N read) instead of the era count 45; (2) the successor row now attests
+ * `l046`'s registration BY NAME in the successor's own instrument and claims the absence of
+ * `l051`; (3) the clone-guard census grows `41 → 46` distinct keys over `50` files with the
+ * batch-2 five shown fresh; (4) the partition row gained `ACT_TAIL_R008_CLAUSE_IDS` and the fifth
+ * instrument's name (`22 → 28` clauses); (5) the relief-register row gained instance 6
+ * (`4 → 5` specs, `batch-seam 3 → 4`) while asserting R-007's spec is still the register's only
+ * `act-open` and still sits at its own index. Nothing else moved: the five rungs' byte identity,
+ * their re-measured rows, the 13/13 controls per rung at the root, the six R-007 clause controls,
+ * the act boundary probed in both directions, the sawtooth over R-007's own era basis (still four
+ * drops and twenty rises), the fifth label's bound/notation/provenance rows and the derived-midpoint
+ * peak probe are byte-for-byte the same readings.
+ *
+ * **F-R008-3 (found at this refresh, and repaired here rather than reported and left).** The
+ * clone-guard's *drift* row printed a **typed span caption against a live value**:
+ * `ids 1–45 ⇒ ${censusAll.size}` — and `censusAll` is the whole *shipped* set. At R-007's tip the two
+ * agreed by coincidence (41 keys over the 45 files that made up `1–45`); at R-008's they disagree
+ * loudly (the caption still says `1–45`, the value reads 46 over 50 files). The number was never
+ * wrong, the **label** was typed — the F-R007-2 class, in this instrument's own census row. It is
+ * repaired the way the train's other census rows are written: an explicit era slice (`id ≤
+ * max(registered)`) with its own pin, R-007's tip reading of 41 over ids 1–45 pinned as an
+ * arithmetic identity on frozen ids (`36 + 5 = 41`), and the live total printed with a span derived
+ * from the shipped set. The repair is a STRENGTHENING (one pin added, one live/era split made
+ * explicit) and it moves one printed line.
  *
  *   npx tsx scripts/attest-r007-reg45.ts
  *   npx tsx scripts/attest-r007-reg45.ts --origin=<sha>:src/levels/candidates   # override the byte-identity source
@@ -101,6 +144,7 @@ import {
   ACT_III_PAR_FLOOR,
   ACT_III_PRE_R007_REGISTERED_TAIL_EXEC,
   ACT_III_PRE_R007_REGISTERED_TAIL_LEVEL_ID,
+  ACT_III_REGISTERED_IDS,
   ACT_III_REGISTERED_PEAK_ADVANTAGE_VS_ACT_II,
   ACT_III_REGISTERED_TAIL_EXEC,
   ACT_III_REGISTERED_TAIL_LEVEL_ID,
@@ -111,6 +155,7 @@ import {
   ACT_TAIL_R005A_CLAUSE_IDS,
   ACT_TAIL_R006A_CLAUSE_IDS,
   ACT_TAIL_R007_CLAUSE_IDS,
+  ACT_TAIL_R008_CLAUSE_IDS,
   LAW_PRECISION,
   actScaleTailGuards,
   allOffShortestSolution,
@@ -215,33 +260,55 @@ for (const id of ACT_III_B1_IDS) {
       : "NOT RUN — git could not answer; a check that did not run is never a pass",
   );
 }
-// The shelf is read as a *state*: a registration that MOVED five files leaves it empty, and a
-// shelf still holding them would mean the move silently became a copy (two byte-identical copies
-// of the same rung is exactly the drift `git mv` exists to prevent).
+// The shelf is read as an *era state*, not as a constant. A registration that MOVED five files
+// leaves it empty at that tip; a shelf still holding a moved rung would mean the move silently
+// became a copy (two byte-identical copies of the same rung is exactly the drift `git mv` exists
+// to prevent). LV-019 later *occupied* the shelf with a different batch (`l046`–`l050`), so the
+// durable reading is not "empty" but "no registered id, and every id above the registered root
+// max": a candidate is legal on the shelf precisely while it is NOT a registered rung.
 const shelfEntries = readdirSync(SHELF_DIR);
 const shelfLevels = shelfEntries.filter((n) => /^l\d+\.json$/.test(n));
+const shelfIds = shelfLevels.map((n) => Number(/^l(\d+)\.json$/.exec(n)?.[1] ?? Number.NaN));
+const rootMaxId = Math.max(...ACT_III_REGISTERED_IDS);
+const shelfHoldsRegistered = shelfIds.filter((id) => ACT_III_REGISTERED_IDS.includes(id));
+const shelfAboveRootMax = shelfIds.every((id) => id > rootMaxId);
 check(
-  "the shelf is EMPTY of level files (R-007 MOVED the five rungs; a copy would have left them)",
-  shelfLevels.length === 0,
+  "the shelf holds no registered rung and every shelf id is strictly above the registered root max (R-007 MOVED its five; a copy would have left them)",
+  shelfHoldsRegistered.length === 0 &&
+    shelfAboveRootMax &&
+    shelfIds.length === shelfLevels.length,
   `src/levels/candidates holds ${String(shelfLevels.length)} level file(s) ` +
-    `[${shelfEntries.join(" ")}] — README only`,
+    `[${shelfEntries.join(" ")}] — ids [${shelfIds.join(", ")}] (root max registered id ${String(rootMaxId)}); ` +
+    `shelf files carrying a registered id: [${shelfHoldsRegistered.join(", ")}]; ` +
+    `every shelf id above the root max = ${String(shelfAboveRootMax)} — at R-007's tip this read EMPTY, ` +
+    `and the reading is era-scoped so a later occupancy is *measured* here rather than forbidden`,
 );
-// The roster, read rather than assumed: 45 registered rungs, and the successor name ABSENT from
-// both directories. A registration that also created `l046` would be a second, un-booked move.
-const rootNames = readdirSync(LEVELS_DIR).filter((n) => /^l\d+\.json$/.test(n));
+// The roster, read rather than assumed: an unbroken run `l001`…`l###`, and the successor name's
+// status read as an **era state** rather than as a constant. At R-007's tip the successor
+// (`l046.json`) was UNREGISTERED and the run ended at 45; R-008 has since registered it, so the
+// durable law is: the root holds one unbroken run (a gap or a duplicate fails here), and the
+// **successor of the successor** is the name whose absence is a claim about *this* tip. Five
+// files cannot appear without a registration ticket, so what this row guards is not "45" but
+// "nothing is registered twice and nothing is missing".
+const NEXT_SUCCESSOR_NAME = "l051.json";
+const rootNames = readdirSync(LEVELS_DIR)
+  .filter((n) => /^l\d+\.json$/.test(n))
+  .sort();
 check(
-  "the roster is exactly 45 registered rungs at the root, in one unbroken run",
-  rootNames.length === 45 &&
+  "the roster is an unbroken run of registered rungs at the root (45 at R-007's tip; the count is read, never typed)",
+  rootNames.length >= 45 &&
     rootNames[0] === "l001.json" &&
-    rootNames[44] === "l045.json" &&
     rootNames.every((n, i) => n === fileOf(i + 1)),
-  `${String(rootNames.length)} files · first ${rootNames[0] ?? "n/a"} · last ${rootNames[44] ?? "n/a"} · ids 1…${String(rootNames.length)} with no gap`,
+  `${String(rootNames.length)} files · first ${rootNames[0] ?? "n/a"} · last ${rootNames[rootNames.length - 1] ?? "n/a"} · ids 1…${String(rootNames.length)} with no gap, no duplicate and no out-of-run name (R-007's tip read 45)`,
 );
 check(
-  `the successor name ${SUCCESSOR_NAME} is ABSENT from the root AND from the shelf (read, not assumed)`,
-  !rootNames.includes(SUCCESSOR_NAME) && !shelfEntries.includes(SUCCESSOR_NAME),
-  `root holds ${String(rootNames.filter((n) => n === SUCCESSOR_NAME).length)} and the shelf holds ` +
-    `${String(shelfEntries.filter((n) => n === SUCCESSOR_NAME).length)} — the shelf is UNBOOKED (Act III's next batch is not named by this ticket)`,
+  `the successor ${SUCCESSOR_NAME} is now REGISTERED at the root by a later ticket, and the successor's successor ${NEXT_SUCCESSOR_NAME} is ABSENT from the root AND the shelf (both read, not assumed)`,
+  rootNames.includes(SUCCESSOR_NAME) &&
+    !rootNames.includes(NEXT_SUCCESSOR_NAME) &&
+    !shelfEntries.includes(NEXT_SUCCESSOR_NAME),
+  `root holds ${String(rootNames.filter((n) => n === SUCCESSOR_NAME).length)} ${SUCCESSOR_NAME} (R-007's era claim was "absent": R-008 registered it, and that registration is attested BY NAME by ` +
+    `scripts/attest-r008-reg50.ts — the presence alone is not evidence) · ${NEXT_SUCCESSOR_NAME}: root ${String(rootNames.filter((n) => n === NEXT_SUCCESSOR_NAME).length)}, shelf ${String(shelfEntries.filter((n) => n === NEXT_SUCCESSOR_NAME).length)} — ` +
+    `L51–L60 stay UNBOOKED at this tip, so the absence is measured rather than expected`,
 );
 console.log("");
 
@@ -473,8 +540,9 @@ check(
 
 // Non-vacuity, both halves of the section: a reader that cannot move is not evidence, and an
 // instrument that accepts the wrong directory is not reading the registered bytes. The exit-code
-// half is probed by pointing the SAME ladder at the now-EMPTY shelf — the directory the five bytes
-// were moved out of — which must exit non-zero rather than silently "proving" nothing.
+// half is probed by pointing the SAME ladder at the shelf (`src/levels/candidates`) — a directory
+// that does NOT hold the registered rungs (it was emptied by R-007 and is now occupied by a later
+// batch) — which must exit non-zero rather than silently "proving" nothing.
 const readCutBasis = (line: string): string | null =>
   /basis ids \[([\d, ]+)\]/.exec(line)?.[1] ?? null;
 const liveBasis = readCutBasis(cutLine ?? "");
@@ -488,12 +556,12 @@ const relabelledBasis = readCutBasis(
 );
 const shelfRun = proveCandidate([], "src/levels/candidates");
 check(
-  "the freezer clause can fail (both halves probed live) — the reader distinguishes a relabelled basis, and the prover refuses the EMPTY shelf",
+  "the freezer clause can fail (both halves probed live) — the reader distinguishes a relabelled basis, and the prover refuses a directory without the registered ladder",
   liveBasis === "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15" &&
     relabelledBasis === "16, 17, 18, 19, 20" &&
     shelfRun.exit !== 0,
   `live basis [${liveBasis ?? "n/a"}] vs the relabelled basis [${relabelledBasis ?? "n/a"}] — the reader distinguishes them; ` +
-    `a ladder pointed at the now-EMPTY shelf (src/levels/candidates) exits ${String(shelfRun.exit)} (required ≠ 0) — neither the reader nor the prover's exit code is an assumption`,
+    `a ladder pointed at the shelf (src/levels/candidates, which holds no registered rung) exits ${String(shelfRun.exit)} (required ≠ 0) — neither the reader nor the prover's exit code is an assumption`,
 );
 
 // ── §6.1.4 clone guard ───────────────────────────────────────────────────────
@@ -537,27 +605,51 @@ const censusR006aEra = censusOf(
 );
 const actIIICensus = censusOf(measured.map((m) => ({ id: m.id, level: m.level })));
 const priorKeys = new Set(
-  all.filter((s) => !ACT_III_B1_IDS.includes(s.id)).map((s) => cloneKeyOf(s.level)),
+  all
+    .filter((s) => !ACT_III_REGISTERED_IDS.includes(s.id))
+    .map((s) => cloneKeyOf(s.level)),
 );
 const actIIICollisions = [...actIIICensus.keys()].filter((k) => priorKeys.has(k));
+// F-R008-3 (found and repaired at R-008's refresh of this instrument): this row used to print a
+// **typed span caption against a live value** — `ids 1–45 ⇒ ${censusAll.size}` while `censusAll`
+// was the whole *shipped* set, so at R-007's tip the two agreed by coincidence (41 over 45 files)
+// and at R-008's they disagreed (the caption still said `1–45`, the value read 46 over 50 files).
+// The number was never wrong — the *label* was typed. Repaired the way the train's other census
+// rows are written: the era reading is an EXPLICIT slice with its own pin (and R-007's own tip
+// reading of 41 over ids 1–45 is pinned as an arithmetic identity on frozen ids), and the live half
+// is printed with a span derived from the shipped set.
+const registeredTop = Math.max(...ACT_III_REGISTERED_IDS);
+const censusA3B2 = censusOf(
+  all.filter((s) => s.id > Math.max(...ACT_III_B1_IDS) && s.id <= registeredTop),
+);
+const censusThruR008 = censusOf(all.filter((s) => s.id <= registeredTop));
+const censusPostR008 = censusOf(all.filter((s) => s.id > registeredTop));
 check(
-  "§6.1.4 clone guard — the five Act III rungs carry five distinct seal-inclusive keys, 0 of them colliding with the other 40 registered boards",
+  "§6.1.4 clone guard — the five Act III rungs carry five distinct seal-inclusive keys, 0 of them colliding with the other registered boards",
   actIIICensus.size === 5 &&
     actIIICollisions.length === 0 &&
     censusR006aEra.size === 36 &&
-    censusAll.size === 41 &&
-    censusAll.size === censusR006aEra.size + actIIICensus.size,
+    censusA3B2.size === 5 &&
+    censusThruR008.size === 46 &&
+    censusAll.size === censusThruR008.size + censusPostR008.size &&
+    censusAll.size ===
+      censusR006aEra.size + actIIICensus.size + censusA3B2.size + censusPostR008.size,
   `${String(censusAll.size)} distinct key(s) over the ${String(all.length)} registered root files ` +
     `(${String(censusR006aEra.size)} over ids 1–${String(ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID)} = the reading R-006a's census published, ` +
-    `+ ${String(actIIICensus.size)} ⇒ the new act's five are all FRESH: 0 cross-act and 0 intra-batch collisions) · ` +
-    `collisions with the other ${String(all.length - ACT_III_B1_IDS.length)} board(s): [${actIIICollisions.join(", ")}]`,
+    `+ ${String(actIIICensus.size)} for Act III's opener = ${String(censusR006aEra.size + actIIICensus.size)}, which is what R-007's tip read over its 45 files; ` +
+    `+ ${String(censusA3B2.size)} for R-008's batch ⇒ ${String(censusThruR008.size)} over ids 1–${String(registeredTop)}: the new batch's five are all FRESH with 0 cross-act and 0 intra-batch collisions) · ` +
+    `post-R-008 file(s) then ⇒ ${String(censusPostR008.size)} over ${String(censusPostR008.size)} file(s) and the LIVE total ${String(censusAll.size)} is printed, never typed · ` +
+    `collisions of R-007's five with the other ${String(all.length - ACT_III_B1_IDS.length)} board(s): [${actIIICollisions.join(", ")}]`,
 );
 check(
-  "§6.1.4 clone guard — the key itself has not drifted (it still reproduces the 31 distinct keys LV-017's transcript recorded over ids 1–35)",
-  censusR005aEra.size === 31,
+  "§6.1.4 clone guard — the key itself has not drifted (it still reproduces the 31 distinct keys LV-017's transcript recorded over ids 1–35 and the 36 over ids 1–40)",
+  censusR005aEra.size === 31 &&
+    censusR006aEra.size === 36 &&
+    censusR006aEra.size + actIIICensus.size === 41,
   `ids 1–${String(ACT_II_R005A_ERA_IDS[ACT_II_R005A_ERA_IDS.length - 1])} ⇒ ${String(censusR005aEra.size)} distinct key(s) (published reading 31) · ` +
     `ids 1–${String(ACT_II_R006A_REGISTERED_TAIL_LEVEL_ID)} ⇒ ${String(censusR006aEra.size)} (published reading 36) · ` +
-    `ids 1–45 ⇒ ${String(censusAll.size)} — the census is a Map, so the collision groups are visible in the key list rather than inferred`,
+    `ids 1–45 ⇒ ${String(censusR006aEra.size + actIIICensus.size)} (published reading 41 — R-007's tip, pinned as an identity on frozen ids) · ` +
+    `the LIVE shipped set (ids 1–${String(all.at(-1)?.id ?? 0)}, ${String(all.length)} files) ⇒ ${String(censusAll.size)} — the printed live total moves with the dataset and is never typed as an era count; the census is a Map, so the collision groups are visible in the key list rather than inferred`,
 );
 console.log("");
 
@@ -612,15 +704,17 @@ const claimedClauses = new Set<ActTailClauseId>([
   ...ACT_TAIL_R005A_CLAUSE_IDS,
   ...ACT_TAIL_R006A_CLAUSE_IDS,
   ...ACT_TAIL_R007_CLAUSE_IDS,
+  ...ACT_TAIL_R008_CLAUSE_IDS,
 ]);
 const claimedSum =
   ACT_TAIL_R004A_CLAUSE_IDS.length +
   ACT_TAIL_R005A_CLAUSE_IDS.length +
   ACT_TAIL_R006A_CLAUSE_IDS.length +
-  ACT_TAIL_R007_CLAUSE_IDS.length;
+  ACT_TAIL_R007_CLAUSE_IDS.length +
+  ACT_TAIL_R008_CLAUSE_IDS.length;
 const unclaimedClauses = registered.filter((c) => !claimedClauses.has(c.clause));
 check(
-  "the clause split PARTITIONS the reported set across four instruments, and this one owns R-007's six",
+  "the clause split PARTITIONS the reported set across five instruments, and this one owns R-007's six",
   claimedClauses.size === registered.length &&
     claimedSum === claimedClauses.size &&
     unclaimedClauses.length === 0 &&
@@ -628,7 +722,8 @@ check(
   `reported ${String(registered.length)} = R-004a ${String(ACT_TAIL_R004A_CLAUSE_IDS.length)} (scripts/attest-r004a-act2.ts) + ` +
     `R-005a ${String(ACT_TAIL_R005A_CLAUSE_IDS.length)} (scripts/attest-r005a-reg35.ts) + ` +
     `R-006a ${String(ACT_TAIL_R006A_CLAUSE_IDS.length)} (scripts/attest-r006a-reg40.ts) + ` +
-    `R-007 ${String(ACT_TAIL_R007_CLAUSE_IDS.length)} [${ACT_TAIL_R007_CLAUSE_IDS.join(", ")}] (here) = ` +
+    `R-007 ${String(ACT_TAIL_R007_CLAUSE_IDS.length)} [${ACT_TAIL_R007_CLAUSE_IDS.join(", ")}] (here) + ` +
+    `R-008 ${String(ACT_TAIL_R008_CLAUSE_IDS.length)} (scripts/attest-r008-reg50.ts; refreshed here at R-008, not relaxed — R-007's own six clauses, their controls and every printed reading above are unchanged) = ` +
     `${String(claimedSum)} claimed · ${String(claimedClauses.size)} distinct · ${String(unclaimedClauses.length)} unclaimed`,
 );
 check(
@@ -1114,12 +1209,15 @@ check(
   "§7.3.1 / §7.10.4 — instance 5 in the register, and the first `act-open` SPEC the law types",
   ACT_III_B1_OPEN_RELIEF.instance === 5 &&
     ACT_III_B1_OPEN_RELIEF.kind === "act-open" &&
-    ACT_SEAM_RELIEFS_ALL.length === 4 &&
+    ACT_SEAM_RELIEFS_ALL.length === 5 &&
     ACT_SEAM_RELIEFS_ALL.every((s, i) => s.instance === i + 2) &&
     ACT_SEAM_RELIEFS_ALL.filter((s) => s.kind === "act-open").length === 1 &&
-    ACT_SEAM_RELIEFS_ALL.filter((s) => s.kind === "batch-seam").length === 3,
+    ACT_SEAM_RELIEFS_ALL.filter((s) => s.kind === "batch-seam").length === 4 &&
+    ACT_SEAM_RELIEFS_ALL[3] === ACT_III_B1_OPEN_RELIEF &&
+    ACT_SEAM_RELIEFS_ALL[4]?.instance === 6,
   `register: ${ACT_SEAM_RELIEFS_ALL.map((s) => `#${String(s.instance)} ${s.kind} L${String(s.fromLevelId)}→L${String(s.toLevelId)}`).join(" · ")} — ` +
-    `instances 2–5, so §7.3.1's instance 1 (the registered act-open at L20→L21, R-004a's labelled plateau relaxation) is cited by its own clause ` +
+    `instances 2–6 after R-008 appended instance 6 (the act's interior \`batch-seam\` L45→L46) at index 4, so this ticket's spec is still the register's ONLY \`act-open\` and still sits at index 3; ` +
+    `§7.3.1's instance 1 (the registered act-open at L20→L21, R-004a's labelled plateau relaxation) is cited by its own clause ` +
     `(act-tail-l21-open-relief) rather than re-typed here · the Act-II batch seams keep their own list (ACT_II_SEAM_RELIEFS_ALL) and this register is the union, ` +
     `so no Act-II-named constant had to lie about its contents`,
 );
